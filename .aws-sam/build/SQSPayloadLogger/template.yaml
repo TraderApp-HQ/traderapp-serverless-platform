@@ -10,22 +10,15 @@ Metadata:
     Minify: true
     Target: "es2020"
 
-# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 Globals:
   Function:
     LoggingConfig:
       LogFormat: JSON
 
-# Resources declares the AWS resources that you want to include in the stack
-# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/resources-section-structure.html
 Resources:
-  # This is an SQS queue with all default configuration properties. To learn more about the available options, see
-  # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-sqs-queues.html
   SimpleQueue:
     Type: AWS::SQS::Queue
 
-  # This is the Lambda function definition associated with the source code: sqs-payload-logger.js. For all available properties, see
-  # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
   SQSPayloadLogger:
     Type: AWS::Serverless::Function
     Properties:
@@ -36,8 +29,6 @@ Resources:
       Architectures:
         - x86_64
       Handler: dist/sqs-payload-logger.sqsPayloadLoggerHandler
-      # This property associates this Lambda function with the SQS queue defined above, so that whenever the queue
-      # receives a message, the Lambda function is invoked
       Events:
         SQSQueueEvent:
           Type: SQS
@@ -46,5 +37,4 @@ Resources:
       MemorySize: 128
       Timeout: 25 # Chosen to be less than the default SQS Visibility Timeout of 30 seconds
       Policies:
-        # Give Lambda basic execution Permission to the helloFromLambda
         - AWSLambdaBasicExecutionRole

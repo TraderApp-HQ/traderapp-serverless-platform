@@ -5,7 +5,7 @@ codeuri = "/Users/i/Documents/TraderApp codes/traderapp-serverless-platform"
 runtime = "nodejs20.x"
 architecture = "x86_64"
 handler = "dist/sqs-payload-logger.sqsPayloadLoggerHandler"
-manifest_hash = "a1e5034089e5ee0d890614b9bb32675d"
+manifest_hash = "3408dc58bd201f3ae491e0d62a04a707"
 packagetype = "Zip"
 functions = ["SQSPayloadLogger"]
 
