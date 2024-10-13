@@ -10,4 +10,5 @@ export default {
     collectCoverage: true,
     coverageReporters: ["text", "lcov"],
     collectCoverageFrom: ["src/**/*.ts"],
+    testPathIgnorePatterns: ["/node_modules/", "/.aws-sam/"],
 };

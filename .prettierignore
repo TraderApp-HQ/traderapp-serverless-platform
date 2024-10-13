@@ -7,3 +7,4 @@ buildspec.yml
 jest.config.ts
 README.md
 tsconfig.json
+.prettierrc.json
