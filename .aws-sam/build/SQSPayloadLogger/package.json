@@ -25,9 +25,6 @@
         "clean": "rm -rf ./dist",
         "test": "jest --passWithNoTests",
         "test:watch": "jest --watch",
-        "lint": "eslint . --config .eslintrc.json",
-        "lint:fix": "eslint . --fix --config .eslintrc.json",
-        "format:check": "prettier --check .",
         "format:write": "prettier --write .",
         "prepare": "husky"
     }
