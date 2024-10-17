@@ -6,7 +6,12 @@
         "esModuleInterop": true,
         "skipLibCheck": true,
         "forceConsistentCasingInFileNames": true,
-        "outDir": "./dist"
+        "outDir": "./dist",
+        "baseUrl": ".",  // Set the base URL to the root of your project
+        "paths": {
+            "src/*": ["./src/*"]  // Map "src/" to the root directory
+        },
+        "moduleResolution": "node"
     },
     "include": ["src/**/*.ts"],
     "exclude": ["node_modules"]

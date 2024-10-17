@@ -1,0 +1,41 @@
+<mjml>
+  <mj-head>
+    <mj-title>TraderApp</mj-title>
+    <mj-style>
+      .br_20 {
+        border: 1px solid #D1D7F0;
+        border-radius: 10px !important;
+      }
+
+      .otp {
+        width: 500px !important;
+        background: red;
+      }
+    </mj-style>
+  </mj-head>
+  <mj-body background-color="white">
+    <mj-section></mj-section>
+
+    <mj-wrapper css-class="br_20">
+      <mj-section>
+        <mj-column>
+          <mj-image width="150px" align="left" src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/traderapp-logo.png">TraderApp</mj-image>
+
+          <mj-text font-size="16px" font-weight="200" line-height="1">Hi {USER_NAME}</mj-text>
+          <mj-text font-size="16px" font-weight="200" line-height="1.5">{BODY}</mj-text>
+          <mj-text font-size="16px" font-weight="200" line-height="1">Thanks,</mj-text>
+          <mj-text font-size="16px" font-weight="200" line-height="0">TraderApp Team.</mj-text>
+          <mj-spacer></mj-spacer>
+          <mj-social icon-size="25px" mode="horizontal" vertical-align="middle" align="left">
+            <mj-social-element href="https://x.com/traderapp" src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/twitter22.png" />
+            <mj-social-element href="https://www.facebook.com/traderappofficial?mibextid=ZbWKwL" src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/facebook22.png" />
+            <mj-social-element href="https://instagram.com/traderapphq" src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/ig22.png" />
+            <mj-social-element href="https://traderapp.finance/#" src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/tiktok22.png" />
+            <mj-social-element href="https://chat.whatsapp.com/IXrOLV0xWra8DHNqVCmHrj" src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/wa22.png" />
+          </mj-social>
+          <mj-text font-size="14px" font-weight="200" line-height="1">Copyright © 2024 Trader App, All rights reserved.Treader App | 23 ikoyi Lagos</mj-text>
+        </mj-column>
+      </mj-section>
+    </mj-wrapper>
+  </mj-body>
+</mjml>

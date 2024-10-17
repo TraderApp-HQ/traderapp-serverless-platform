@@ -1,5 +1,4 @@
-// Import sqsPayloadLoggerHandler function from sqs-payload-logger.mjs
-import { sqsPayloadLoggerHandler } from "../../../src/handlers/sqs-payload-logger";
+import { handler as sqsPayloadLoggerHandler } from "../../../src/handlers/sqs-logger/sqs-payload-logger";
 import { jest } from "@jest/globals";
 import { SQSEvent } from "aws-lambda";
 

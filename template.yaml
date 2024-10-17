@@ -1,6 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: >-
-  traderapp-serverless-platform
+Description: traderapp-serverless-platform
 Transform:
   - AWS::Serverless-2016-10-31
 
@@ -8,33 +7,68 @@ Metadata:
   BuildMethod: esbuild
   BuildProperties:
     Minify: true
-    Target: "es2020"
+    Target: es2020
+    SourceMap: true
+    InlineSourceMap: false
+    External:
+      - aws-sdk # Example of excluding the AWS SDK
+    AbsWorkingDir: . # Root directory for absolute imports
 
 Globals:
   Function:
     LoggingConfig:
       LogFormat: JSON
 
-Resources:
-  SimpleQueue:
-    Type: AWS::SQS::Queue
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - staging
+      - prod
+    Description: Environment name to prefix resources
 
-  SQSPayloadLogger:
+Resources:
+  emailOtpQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${Environment}-emailOtpQueue
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt emailOtpDLQ.Arn
+        maxReceiveCount: 3
+  emailOtpDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${Environment}-emailOtpDLQ
+
+  sendEmailOtp:
     Type: AWS::Serverless::Function
     Properties:
-      Description:
-        A Lambda function that logs the payload of messages sent to an
-        associated SQS queue.
+      Environment:
+        Variables:
+          ENV: !Ref Environment
+      FunctionName: !Sub ${Environment}-sendEmailOtp
       Runtime: nodejs20.x
       Architectures:
         - x86_64
-      Handler: dist/sqs-payload-logger.sqsPayloadLoggerHandler
+      Handler: dist/handlers/send-email-otp.handler
       Events:
         SQSQueueEvent:
           Type: SQS
           Properties:
-            Queue: !GetAtt SimpleQueue.Arn
+            Queue: !GetAtt emailOtpQueue.Arn
       MemorySize: 128
-      Timeout: 25 # Chosen to be less than the default SQS Visibility Timeout of 30 seconds
+      Timeout: 30
+      DeadLetterQueue:
+        Type: SQS
+        TargetArn: !GetAtt emailOtpDLQ.Arn
       Policies:
         - AWSLambdaBasicExecutionRole
+        - Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource:
+                - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:common-secrets/${Environment}*
+                - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:notifications-service/${Environment}*
