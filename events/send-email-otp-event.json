@@ -4,7 +4,13 @@
             "body": {
                 "event": "OTP",
                 "messageObject": {
-                    "recipients": [{ "firstName": "John", "lastName": "Doe", "emailAddress": "ekidhaja@gmail.com" }],
+                    "recipients": [
+                        {
+                            "firstName": "John",
+                            "lastName": "Doe",
+                            "emailAddress": "ekidhaja@gmail.com"
+                        }
+                    ],
                     "message": "123456"
                 }
             }

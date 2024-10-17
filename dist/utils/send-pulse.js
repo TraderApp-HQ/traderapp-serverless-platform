@@ -20011,16 +20011,16 @@ var require_dist_cjs53 = __commonJS({
 // src/utils/send-pulse.ts
 var send_pulse_exports = {};
 __export(send_pulse_exports, {
-  default: () => send_pulse_default,
-  sendpulseEmailSender: () => sendpulseEmailSender,
-  someFunction: () => someFunction
+  default: () => send_pulse_default
 });
 module.exports = __toCommonJS(send_pulse_exports);
 var import_sendpulse_api = __toESM(require_sendpulse_api());
 
 // src/config/secrets/helpers.ts
 var import_client_secrets_manager = __toESM(require_dist_cjs53());
-var client = new import_client_secrets_manager.SecretsManagerClient({ region: process.env.AWS_REGION || "eu-west-1" });
+var client = new import_client_secrets_manager.SecretsManagerClient({
+  region: process.env.AWS_REGION || "eu-west-1"
+});
 var getSecrets = async (secretName) => {
   try {
     console.info("Secret name", { secretName });
@@ -20041,7 +20041,9 @@ var SendpulseEmailService = class _SendpulseEmailService {
   // Static async factory method to handle async initialization
   static async create() {
     const instance = new _SendpulseEmailService();
-    const notificationsServiceSecrets = await getSecrets(`${"notifications-service" /* notificationsServiceSecrets */}/${process.env.ENV}`);
+    const notificationsServiceSecrets = await getSecrets(
+      `${"notifications-service" /* notificationsServiceSecrets */}/${process.env.ENV}`
+    );
     instance.API_USER_ID = notificationsServiceSecrets.SENDPULSE_API_USER_ID;
     instance.API_SECRET = notificationsServiceSecrets.SENDPULSE_API_SECRET;
     instance.TOKEN_STORAGE = notificationsServiceSecrets.SENDPULSE_TOKEN_STORAGE;
@@ -20049,13 +20051,23 @@ var SendpulseEmailService = class _SendpulseEmailService {
     return instance;
   }
   initSendpulse() {
-    import_sendpulse_api.default.init(this.API_USER_ID, this.API_SECRET, this.TOKEN_STORAGE, (token) => {
-      if (token && token.is_error) {
-        throw new Error("Sendpulse keys not found.");
+    import_sendpulse_api.default.init(
+      this.API_USER_ID,
+      this.API_SECRET,
+      this.TOKEN_STORAGE,
+      (token) => {
+        if (token && token.is_error) {
+          throw new Error("Sendpulse keys not found.");
+        }
       }
-    });
+    );
   }
-  async sendEmail({ recipient, subject, body, from }) {
+  async sendEmail({
+    recipient,
+    subject,
+    body,
+    from
+  }) {
     const email = {
       html: body,
       subject,
@@ -20079,7 +20091,12 @@ var SendpulseEmailService = class _SendpulseEmailService {
       }, email);
     });
   }
-  sendBulkEmail({ recipients, subject, body, from }) {
+  sendBulkEmail({
+    recipients,
+    subject,
+    body,
+    from
+  }) {
     const email = {
       html: body,
       subject,
@@ -20089,51 +20106,15 @@ var SendpulseEmailService = class _SendpulseEmailService {
       },
       to: recipients
     };
-    import_sendpulse_api.default.smtpSendMail((data) => {
-      console.log(data);
-    }, email);
+    return new Promise((resolve, reject) => {
+      import_sendpulse_api.default.smtpSendMail((data) => {
+        if (data && data.result === true) {
+          resolve(data);
+        } else {
+          reject(new Error("Failed to send email"));
+        }
+      }, email);
+    });
   }
 };
 var send_pulse_default = SendpulseEmailService;
-var someFunction = () => {
-  console.log("some function running");
-};
-var sendpulseEmailSender = async ({
-  recipient,
-  subject,
-  body
-  // from,
-}) => {
-  const API_USER_ID = process.env.SENDPULSE_API_USER_ID ?? "2532a0a730e58fefd4208f2631224476";
-  const API_SECRET = process.env.SENDPULSE_API_SECRET ?? "24b174ddb44c9df131b52843a7a74a83";
-  const TOKEN_STORAGE = process.env.SENDPULSE_TOKEN_STORAGE ?? "/tmp/";
-  import_sendpulse_api.default.init(API_USER_ID, API_SECRET, TOKEN_STORAGE, function(token) {
-    if (token && token.is_error) {
-      throw new Error("Sendpulse keys not found.");
-    }
-    const answerGetter = function(data) {
-      console.log(data);
-    };
-    const email = {
-      html: "This is an email",
-      subject: "Test email",
-      from: {
-        // name: from ? from.name : "TraderApp",
-        // email: from ? from.email : "noreply@traderapp.finance",
-        name: "TraderApp",
-        email: "noreply@traderapp.finance"
-      },
-      to: [
-        {
-          email: "ekidhaja@gmail.com"
-        }
-      ]
-    };
-    import_sendpulse_api.default.smtpSendMail(answerGetter, email);
-  });
-};
-// Annotate the CommonJS export names for ESM import in node:
-0 && (module.exports = {
-  sendpulseEmailSender,
-  someFunction
-});

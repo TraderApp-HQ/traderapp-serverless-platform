@@ -21532,31 +21532,46 @@ var formatEmailMessageBody = ({
   switch (event) {
     case "GENERAL" /* GENERAL */: {
       templateBody = general_default;
-      templateBody = templateBody.replace(/{USER_NAME}/g, recipient.firstName);
+      templateBody = templateBody.replace(
+        /{USER_NAME}/g,
+        recipient.firstName
+      );
       templateBody = templateBody.replace(/{BODY}/g, message);
       break;
     }
     case "OTP" /* OTP */: {
       templateBody = otp_default;
-      templateBody = templateBody.replace(/{USER_NAME}/g, recipient.firstName);
+      templateBody = templateBody.replace(
+        /{USER_NAME}/g,
+        recipient.firstName
+      );
       templateBody = templateBody.replace(/{OTP}/g, message);
       break;
     }
     case "RESET_PASSWORD" /* RESET_PASSWORD */: {
       templateBody = password_reseet_template_default;
-      templateBody = templateBody.replace(/{USER_NAME}/g, recipient.firstName);
+      templateBody = templateBody.replace(
+        /{USER_NAME}/g,
+        recipient.firstName
+      );
       templateBody = templateBody.replace(/{RESET_LINK}/g, message);
       break;
     }
     case "CREATE_USER" /* CREATE_USER */: {
       templateBody = create_user_template_default;
-      templateBody = templateBody.replace(/{USER_NAME}/g, recipient.firstName);
+      templateBody = templateBody.replace(
+        /{USER_NAME}/g,
+        recipient.firstName
+      );
       templateBody = templateBody.replace(/{RESET_LINK}/g, message);
       break;
     }
     case "WELCOME" /* WELCOME */: {
       templateBody = get_started_template_default;
-      templateBody = templateBody.replace(/{USER_NAME}/g, recipient.firstName);
+      templateBody = templateBody.replace(
+        /{USER_NAME}/g,
+        recipient.firstName
+      );
       break;
     }
     default:
@@ -21570,7 +21585,9 @@ var import_sendpulse_api = __toESM(require_sendpulse_api());
 
 // src/config/secrets/helpers.ts
 var import_client_secrets_manager = __toESM(require_dist_cjs53());
-var client = new import_client_secrets_manager.SecretsManagerClient({ region: process.env.AWS_REGION || "eu-west-1" });
+var client = new import_client_secrets_manager.SecretsManagerClient({
+  region: process.env.AWS_REGION || "eu-west-1"
+});
 var getSecrets = async (secretName) => {
   try {
     console.info("Secret name", { secretName });
@@ -21591,7 +21608,9 @@ var SendpulseEmailService = class _SendpulseEmailService {
   // Static async factory method to handle async initialization
   static async create() {
     const instance = new _SendpulseEmailService();
-    const notificationsServiceSecrets = await getSecrets(`${"notifications-service" /* notificationsServiceSecrets */}/${process.env.ENV}`);
+    const notificationsServiceSecrets = await getSecrets(
+      `${"notifications-service" /* notificationsServiceSecrets */}/${process.env.ENV}`
+    );
     instance.API_USER_ID = notificationsServiceSecrets.SENDPULSE_API_USER_ID;
     instance.API_SECRET = notificationsServiceSecrets.SENDPULSE_API_SECRET;
     instance.TOKEN_STORAGE = notificationsServiceSecrets.SENDPULSE_TOKEN_STORAGE;
@@ -21599,13 +21618,23 @@ var SendpulseEmailService = class _SendpulseEmailService {
     return instance;
   }
   initSendpulse() {
-    import_sendpulse_api.default.init(this.API_USER_ID, this.API_SECRET, this.TOKEN_STORAGE, (token) => {
-      if (token && token.is_error) {
-        throw new Error("Sendpulse keys not found.");
+    import_sendpulse_api.default.init(
+      this.API_USER_ID,
+      this.API_SECRET,
+      this.TOKEN_STORAGE,
+      (token) => {
+        if (token && token.is_error) {
+          throw new Error("Sendpulse keys not found.");
+        }
       }
-    });
+    );
   }
-  async sendEmail({ recipient, subject, body, from }) {
+  async sendEmail({
+    recipient,
+    subject,
+    body,
+    from
+  }) {
     const email = {
       html: body,
       subject,
@@ -21629,7 +21658,12 @@ var SendpulseEmailService = class _SendpulseEmailService {
       }, email);
     });
   }
-  sendBulkEmail({ recipients, subject, body, from }) {
+  sendBulkEmail({
+    recipients,
+    subject,
+    body,
+    from
+  }) {
     const email = {
       html: body,
       subject,
@@ -21639,9 +21673,15 @@ var SendpulseEmailService = class _SendpulseEmailService {
       },
       to: recipients
     };
-    import_sendpulse_api.default.smtpSendMail((data) => {
-      console.log(data);
-    }, email);
+    return new Promise((resolve, reject) => {
+      import_sendpulse_api.default.smtpSendMail((data) => {
+        if (data && data.result === true) {
+          resolve(data);
+        } else {
+          reject(new Error("Failed to send email"));
+        }
+      }, email);
+    });
   }
 };
 var send_pulse_default = SendpulseEmailService;
@@ -21650,7 +21690,7 @@ var send_pulse_default = SendpulseEmailService;
 var NotificationsService = class {
   constructor() {
   }
-  async processMessagesAndSendEmail(queueMessages) {
+  async processMessagesAndSendEmails(queueMessages) {
     const sendpulseEmailService = await send_pulse_default.create();
     const promises = [];
     queueMessages.forEach((message) => {
@@ -21662,19 +21702,14 @@ var NotificationsService = class {
       const subject = message.body.messageObject.subject ?? "TraderApp Notification";
       const recipient = message.body.messageObject.recipients[0].emailAddress;
       console.log("Trying to send email: ", recipient, subject);
-      promises.push(sendpulseEmailService.sendEmail({ recipient, subject, body }));
+      promises.push(
+        sendpulseEmailService.sendEmail({ recipient, subject, body })
+      );
     });
     await Promise.all(promises);
   }
-  //   public async sendBulkEmailWithSendpulse({
-  //     recipients,
-  //     subject,
-  //     body,
-  //     from,
-  //   }: ISendBulkEmailInput): Promise<void> {
-  //     const sendpulseEmailService = await SendpulseEmailService.create();
-  //     sendpulseEmailService.sendBulkEmail({ recipients, subject, body, from });
-  //   }
+  async sendBulkEmailWithSendpulse(queueMessages) {
+  }
 };
 var NotificationsService_default = new NotificationsService();
 // Annotate the CommonJS export names for ESM import in node:

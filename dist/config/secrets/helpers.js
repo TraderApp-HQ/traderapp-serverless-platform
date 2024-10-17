@@ -19192,7 +19192,9 @@ __export(helpers_exports, {
 });
 module.exports = __toCommonJS(helpers_exports);
 var import_client_secrets_manager = __toESM(require_dist_cjs53());
-var client = new import_client_secrets_manager.SecretsManagerClient({ region: process.env.AWS_REGION || "eu-west-1" });
+var client = new import_client_secrets_manager.SecretsManagerClient({
+  region: process.env.AWS_REGION || "eu-west-1"
+});
 var getSecrets = async (secretName) => {
   try {
     console.info("Secret name", { secretName });

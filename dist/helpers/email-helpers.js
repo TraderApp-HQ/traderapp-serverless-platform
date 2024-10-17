@@ -1540,31 +1540,46 @@ var formatEmailMessageBody = ({
   switch (event) {
     case "GENERAL" /* GENERAL */: {
       templateBody = general_default;
-      templateBody = templateBody.replace(/{USER_NAME}/g, recipient.firstName);
+      templateBody = templateBody.replace(
+        /{USER_NAME}/g,
+        recipient.firstName
+      );
       templateBody = templateBody.replace(/{BODY}/g, message);
       break;
     }
     case "OTP" /* OTP */: {
       templateBody = otp_default;
-      templateBody = templateBody.replace(/{USER_NAME}/g, recipient.firstName);
+      templateBody = templateBody.replace(
+        /{USER_NAME}/g,
+        recipient.firstName
+      );
       templateBody = templateBody.replace(/{OTP}/g, message);
       break;
     }
     case "RESET_PASSWORD" /* RESET_PASSWORD */: {
       templateBody = password_reseet_template_default;
-      templateBody = templateBody.replace(/{USER_NAME}/g, recipient.firstName);
+      templateBody = templateBody.replace(
+        /{USER_NAME}/g,
+        recipient.firstName
+      );
       templateBody = templateBody.replace(/{RESET_LINK}/g, message);
       break;
     }
     case "CREATE_USER" /* CREATE_USER */: {
       templateBody = create_user_template_default;
-      templateBody = templateBody.replace(/{USER_NAME}/g, recipient.firstName);
+      templateBody = templateBody.replace(
+        /{USER_NAME}/g,
+        recipient.firstName
+      );
       templateBody = templateBody.replace(/{RESET_LINK}/g, message);
       break;
     }
     case "WELCOME" /* WELCOME */: {
       templateBody = get_started_template_default;
-      templateBody = templateBody.replace(/{USER_NAME}/g, recipient.firstName);
+      templateBody = templateBody.replace(
+        /{USER_NAME}/g,
+        recipient.firstName
+      );
       break;
     }
     default:
