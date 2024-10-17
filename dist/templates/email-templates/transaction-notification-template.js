@@ -1,29 +1,6 @@
 "use strict";
-var __defProp = Object.defineProperty;
-var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
-var __getOwnPropNames = Object.getOwnPropertyNames;
-var __hasOwnProp = Object.prototype.hasOwnProperty;
-var __export = (target, all) => {
-  for (var name in all)
-    __defProp(target, name, { get: all[name], enumerable: true });
-};
-var __copyProps = (to, from, except, desc) => {
-  if (from && typeof from === "object" || typeof from === "function") {
-    for (let key of __getOwnPropNames(from))
-      if (!__hasOwnProp.call(to, key) && key !== except)
-        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
-  }
-  return to;
-};
-var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
-
-// src/templates/email-templates/transaction-notification-template.ts
-var transaction_notification_template_exports = {};
-__export(transaction_notification_template_exports, {
-  default: () => transaction_notification_template_default
-});
-module.exports = __toCommonJS(transaction_notification_template_exports);
-var transactionNotificationTemplate = `<!doctype html>
+Object.defineProperty(exports, "__esModule", { value: true });
+const transactionNotificationTemplate = `<!doctype html>
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 
 <head>
@@ -225,12 +202,12 @@ var transactionNotificationTemplate = `<!doctype html>
                               </tr>
                               <tr>
                                 <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                                  <div style="font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:16px;font-weight:200;line-height:1.5;text-align:left;color:#000000;">Thanks for signing up. If you have any questions, send us a message at hi@traderappi.com or on Twitter. We\u2019d love to hear from you.</div>
+                                  <div style="font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:16px;font-weight:200;line-height:1.5;text-align:left;color:#000000;">Thanks for signing up. If you have any questions, send us a message at hi@traderappi.com or on Twitter. We’d love to hear from you.</div>
                                 </td>
                               </tr>
                               <tr>
                                 <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                                  <div style="font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:13px;line-height:1;text-align:left;color:#000000;">\u2014 The team</div>
+                                  <div style="font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:13px;line-height:1;text-align:left;color:#000000;">— The team</div>
                                 </td>
                               </tr>
                               <tr>
@@ -346,7 +323,7 @@ var transactionNotificationTemplate = `<!doctype html>
                               </tr>
                               <tr>
                                 <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                                  <div style="font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:14px;font-weight:200;line-height:1;text-align:left;color:#000000;">Copyright \xA9 2024 Trader App, All rights reserved.</div>
+                                  <div style="font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:14px;font-weight:200;line-height:1;text-align:left;color:#000000;">Copyright © 2024 Trader App, All rights reserved.</div>
                                 </td>
                               </tr>
                             </tbody>
@@ -370,4 +347,4 @@ var transactionNotificationTemplate = `<!doctype html>
 
 </html>
 `;
-var transaction_notification_template_default = transactionNotificationTemplate;
+exports.default = transactionNotificationTemplate;
