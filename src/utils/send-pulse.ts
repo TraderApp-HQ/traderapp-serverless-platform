@@ -2,6 +2,7 @@ import sendpulse from "sendpulse-api";
 import { getSecrets } from "src/config/secrets/helpers";
 import { INotificationsServiceSecrets } from "src/config/secrets/interfaces";
 import { SecretLocation } from "src/config/secrets/enums";
+const data = ''
 
 export interface IContact {
     name?: string;
