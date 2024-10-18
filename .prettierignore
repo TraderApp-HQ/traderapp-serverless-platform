@@ -8,3 +8,5 @@ jest.config.ts
 README.md
 tsconfig.json
 .prettierrc.json
+dist
+.aws-sam
