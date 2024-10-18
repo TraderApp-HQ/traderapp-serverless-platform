@@ -3,8 +3,7 @@ import {
     IQueueEmailMessageBody,
     IQueueEmailMessageBodyObject,
 } from "src/config/interfaces";
-import log from "@dazn/lambda-powertools-logger";
-// import NotificationsService from 'src/services/NotificationsService';
+// import log from "@dazn/lambda-powertools-logger";
 import NotificationsService from "src/services/NotificationsService";
 
 export const handler = async (event: SQSEvent): Promise<void> => {

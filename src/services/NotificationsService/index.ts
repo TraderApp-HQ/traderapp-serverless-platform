@@ -1,13 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { IQueueEmailMessageBody } from "src/config/interfaces";
 import { formatEmailMessageBody } from "src/helpers/email-helpers";
-import SendpulseEmailService, { IContact } from "src/utils/send-pulse";
-
-interface ISendBulkEmailInput {
-    recipients: IContact[];
-    subject: string;
-    body: string;
-    from?: IContact;
-}
+import SendpulseEmailService from "src/utils/send-pulse";
 
 export class NotificationsService {
     constructor() {}
@@ -35,12 +29,12 @@ export class NotificationsService {
         await Promise.all(promises);
     }
 
-    public async sendBulkEmailWithSendpulse(
-        queueMessages: IQueueEmailMessageBody[]
-    ): Promise<void> {
-        // const sendpulseEmailService = await SendpulseEmailService.create();
-        // sendpulseEmailService.sendBulkEmail({ recipients, subject, body, from });
-    }
+    // public async sendBulkEmailWithSendpulse(
+    //     queueMessages: IQueueEmailMessageBody[]
+    // ): Promise<void> {
+    //     const sendpulseEmailService = await SendpulseEmailService.create();
+    //     sendpulseEmailService.sendBulkEmail({ recipients, subject, body, from });
+    // }
 }
 
 export default new NotificationsService();

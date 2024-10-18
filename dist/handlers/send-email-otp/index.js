@@ -21707,8 +21707,12 @@ var NotificationsService = class {
     });
     await Promise.all(promises);
   }
-  async sendBulkEmailWithSendpulse(queueMessages) {
-  }
+  // public async sendBulkEmailWithSendpulse(
+  //     queueMessages: IQueueEmailMessageBody[]
+  // ): Promise<void> {
+  //     const sendpulseEmailService = await SendpulseEmailService.create();
+  //     sendpulseEmailService.sendBulkEmail({ recipients, subject, body, from });
+  // }
 };
 var NotificationsService_default = new NotificationsService();
 
