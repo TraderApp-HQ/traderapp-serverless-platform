@@ -11251,7 +11251,7 @@ var require_package = __commonJS({
     module2.exports = {
       name: "@aws-sdk/client-secrets-manager",
       description: "AWS SDK for JavaScript Secrets Manager Client for Node.js, Browser and React Native",
-      version: "3.670.0",
+      version: "3.675.0",
       scripts: {
         build: "concurrently 'yarn:build:cjs' 'yarn:build:es' 'yarn:build:types'",
         "build:cjs": "node ../../scripts/compilation/inline client-secrets-manager",
@@ -11270,10 +11270,10 @@ var require_package = __commonJS({
       dependencies: {
         "@aws-crypto/sha256-browser": "5.2.0",
         "@aws-crypto/sha256-js": "5.2.0",
-        "@aws-sdk/client-sso-oidc": "3.670.0",
-        "@aws-sdk/client-sts": "3.670.0",
+        "@aws-sdk/client-sso-oidc": "3.675.0",
+        "@aws-sdk/client-sts": "3.675.0",
         "@aws-sdk/core": "3.667.0",
-        "@aws-sdk/credential-provider-node": "3.670.0",
+        "@aws-sdk/credential-provider-node": "3.675.0",
         "@aws-sdk/middleware-host-header": "3.667.0",
         "@aws-sdk/middleware-logger": "3.667.0",
         "@aws-sdk/middleware-recursion-detection": "3.667.0",
@@ -11281,7 +11281,7 @@ var require_package = __commonJS({
         "@aws-sdk/region-config-resolver": "3.667.0",
         "@aws-sdk/types": "3.667.0",
         "@aws-sdk/util-endpoints": "3.667.0",
-        "@aws-sdk/util-user-agent-browser": "3.670.0",
+        "@aws-sdk/util-user-agent-browser": "3.675.0",
         "@aws-sdk/util-user-agent-node": "3.669.0",
         "@smithy/config-resolver": "^3.0.9",
         "@smithy/core": "^2.4.8",
@@ -11308,13 +11308,13 @@ var require_package = __commonJS({
         "@smithy/util-middleware": "^3.0.7",
         "@smithy/util-retry": "^3.0.7",
         "@smithy/util-utf8": "^3.0.0",
+        "@types/uuid": "^9.0.1",
         tslib: "^2.6.2",
         uuid: "^9.0.1"
       },
       devDependencies: {
         "@tsconfig/node16": "16.1.3",
         "@types/node": "^16.18.96",
-        "@types/uuid": "^9.0.4",
         concurrently: "7.0.0",
         "downlevel-dts": "0.10.1",
         rimraf: "3.0.2",
@@ -12099,7 +12099,7 @@ var require_package2 = __commonJS({
     module2.exports = {
       name: "@aws-sdk/client-sso",
       description: "AWS SDK for JavaScript Sso Client for Node.js, Browser and React Native",
-      version: "3.670.0",
+      version: "3.675.0",
       scripts: {
         build: "concurrently 'yarn:build:cjs' 'yarn:build:es' 'yarn:build:types'",
         "build:cjs": "node ../../scripts/compilation/inline client-sso",
@@ -12126,7 +12126,7 @@ var require_package2 = __commonJS({
         "@aws-sdk/region-config-resolver": "3.667.0",
         "@aws-sdk/types": "3.667.0",
         "@aws-sdk/util-endpoints": "3.667.0",
-        "@aws-sdk/util-user-agent-browser": "3.670.0",
+        "@aws-sdk/util-user-agent-browser": "3.675.0",
         "@aws-sdk/util-user-agent-node": "3.669.0",
         "@smithy/config-resolver": "^3.0.9",
         "@smithy/core": "^2.4.8",
@@ -13364,7 +13364,7 @@ var require_package3 = __commonJS({
     module2.exports = {
       name: "@aws-sdk/client-sso-oidc",
       description: "AWS SDK for JavaScript Sso Oidc Client for Node.js, Browser and React Native",
-      version: "3.670.0",
+      version: "3.675.0",
       scripts: {
         build: "concurrently 'yarn:build:cjs' 'yarn:build:es' 'yarn:build:types'",
         "build:cjs": "node ../../scripts/compilation/inline client-sso-oidc",
@@ -13384,7 +13384,7 @@ var require_package3 = __commonJS({
         "@aws-crypto/sha256-browser": "5.2.0",
         "@aws-crypto/sha256-js": "5.2.0",
         "@aws-sdk/core": "3.667.0",
-        "@aws-sdk/credential-provider-node": "3.670.0",
+        "@aws-sdk/credential-provider-node": "3.675.0",
         "@aws-sdk/middleware-host-header": "3.667.0",
         "@aws-sdk/middleware-logger": "3.667.0",
         "@aws-sdk/middleware-recursion-detection": "3.667.0",
@@ -13392,7 +13392,7 @@ var require_package3 = __commonJS({
         "@aws-sdk/region-config-resolver": "3.667.0",
         "@aws-sdk/types": "3.667.0",
         "@aws-sdk/util-endpoints": "3.667.0",
-        "@aws-sdk/util-user-agent-browser": "3.670.0",
+        "@aws-sdk/util-user-agent-browser": "3.675.0",
         "@aws-sdk/util-user-agent-node": "3.669.0",
         "@smithy/config-resolver": "^3.0.9",
         "@smithy/core": "^2.4.8",
@@ -13448,7 +13448,7 @@ var require_package3 = __commonJS({
       },
       license: "Apache-2.0",
       peerDependencies: {
-        "@aws-sdk/client-sts": "^3.670.0"
+        "@aws-sdk/client-sts": "^3.675.0"
       },
       browser: {
         "./dist-es/runtimeConfig": "./dist-es/runtimeConfig.browser"
@@ -15100,7 +15100,7 @@ var require_package4 = __commonJS({
     module2.exports = {
       name: "@aws-sdk/client-sts",
       description: "AWS SDK for JavaScript Sts Client for Node.js, Browser and React Native",
-      version: "3.670.0",
+      version: "3.675.0",
       scripts: {
         build: "concurrently 'yarn:build:cjs' 'yarn:build:es' 'yarn:build:types'",
         "build:cjs": "node ../../scripts/compilation/inline client-sts",
@@ -15121,9 +15121,9 @@ var require_package4 = __commonJS({
       dependencies: {
         "@aws-crypto/sha256-browser": "5.2.0",
         "@aws-crypto/sha256-js": "5.2.0",
-        "@aws-sdk/client-sso-oidc": "3.670.0",
+        "@aws-sdk/client-sso-oidc": "3.675.0",
         "@aws-sdk/core": "3.667.0",
-        "@aws-sdk/credential-provider-node": "3.670.0",
+        "@aws-sdk/credential-provider-node": "3.675.0",
         "@aws-sdk/middleware-host-header": "3.667.0",
         "@aws-sdk/middleware-logger": "3.667.0",
         "@aws-sdk/middleware-recursion-detection": "3.667.0",
@@ -15131,7 +15131,7 @@ var require_package4 = __commonJS({
         "@aws-sdk/region-config-resolver": "3.667.0",
         "@aws-sdk/types": "3.667.0",
         "@aws-sdk/util-endpoints": "3.667.0",
-        "@aws-sdk/util-user-agent-browser": "3.670.0",
+        "@aws-sdk/util-user-agent-browser": "3.675.0",
         "@aws-sdk/util-user-agent-node": "3.669.0",
         "@smithy/config-resolver": "^3.0.9",
         "@smithy/core": "^2.4.8",
