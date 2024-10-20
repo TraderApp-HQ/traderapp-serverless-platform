@@ -27827,7 +27827,7 @@ var deployQueueUrls = async (env2, configFilePath2) => {
         await updateSecrets(`${secretFolder}/${env2}`, secretUpdates);
       } catch (error) {
         console.error(
-          `Failed to update secrets in folder ${secretFolder}/${env2}`
+          `Failed to update secrets in folder ${secretFolder}/${env2}. Error: ${error}`
         );
       }
     }

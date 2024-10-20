@@ -12,6 +12,7 @@
         "test:watch": "jest --watch",
         "format:write": "prettier --write .",
         "prepare": "husky",
+        "deploy": "sam deploy",
         "deploy-secrets": "npx ts-node src/config/secrets/deploy-secrets.ts"
     },
     "dependencies": {
