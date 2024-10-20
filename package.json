@@ -12,10 +12,11 @@
         "test:watch": "jest --watch",
         "format:write": "prettier --write .",
         "prepare": "husky",
+        "deploy": "sam deploy",
         "deploy-secrets": "npx ts-node src/config/secrets/deploy-secrets.ts"
     },
     "dependencies": {
-        "@aws-sdk/client-secrets-manager": "^3.670.0",
+        "@aws-sdk/client-secrets-manager": "^3.675.0",
         "@aws-sdk/client-sqs": "^3.675.0",
         "@dazn/lambda-powertools-logger": "^1.28.1",
         "js-yaml": "^4.1.0",
@@ -26,7 +27,7 @@
         "@types/aws-lambda": "^8.10.145",
         "@types/jest": "^29.5.13",
         "@types/js-yaml": "^4.0.9",
-        "@types/node": "^22.7.5",
+        "@types/node": "^22.7.7",
         "@typescript-eslint/eslint-plugin": "^8.9.0",
         "@typescript-eslint/parser": "^8.9.0",
         "esbuild": "^0.24.0",
