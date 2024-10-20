@@ -17,16 +17,27 @@ var __copyProps = (to, from, except, desc) => {
 };
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
-// src/handlers/sqs-logger/sqs-payload-logger.ts
-var sqs_payload_logger_exports = {};
-__export(sqs_payload_logger_exports, {
-  handler: () => handler
+// src/handlers/send-email-otp/test-data.ts
+var test_data_exports = {};
+__export(test_data_exports, {
+  mockSQSEvent: () => mockSQSEvent
 });
-module.exports = __toCommonJS(sqs_payload_logger_exports);
-var handler = async (event) => {
-  console.info(JSON.stringify(event));
+module.exports = __toCommonJS(test_data_exports);
+var mockSQSEvent = {
+  Records: [
+    {
+      body: JSON.stringify({
+        body: {
+          recipients: [{ emailAddress: "test@example.com" }],
+          message: "Test message",
+          subject: "Test subject",
+          event: "TestEvent"
+        }
+      })
+    }
+  ]
 };
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
-  handler
+  mockSQSEvent
 });

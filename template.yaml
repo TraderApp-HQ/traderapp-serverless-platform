@@ -41,6 +41,18 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       QueueName: !Sub ${Environment}-emailOtpDLQ
+  
+  emailNotificationsQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${Environment}-emailNotificationsQueue
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt emailNotificationsDLQ.Arn
+        maxReceiveCount: 3
+  emailNotificationsDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${Environment}-emailNotificationsDLQ
 
   sendEmailOtp:
     Type: AWS::Serverless::Function
@@ -71,4 +83,34 @@ Resources:
                 - secretsmanager:GetSecretValue
               Resource:
                 - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:common-secrets/${Environment}*
+                - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:notifications-service/${Environment}*
+
+  sendEmailNotifications:
+    Type: AWS::Serverless::Function
+    Properties:
+      Environment:
+        Variables:
+          ENV: !Ref Environment
+      FunctionName: !Sub ${Environment}-sendEmailNotifications
+      Runtime: nodejs20.x
+      Architectures:
+        - x86_64
+      Handler: dist/handlers/send-email-notifications.handler
+      Events:
+        SQSQueueEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt emailNotificationsQueue.Arn
+      MemorySize: 128
+      Timeout: 30
+      DeadLetterQueue:
+        Type: SQS
+        TargetArn: !GetAtt emailNotificationsDLQ.Arn
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource:
                 - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:notifications-service/${Environment}*

@@ -1,22 +1,21 @@
 import { SQSRecord } from "aws-lambda";
 import { EventTemplate } from "src/config/enums";
 
-export interface IEmailRecipient {
+export interface IMessageRecipient {
     firstName: string;
     lastName?: string;
-    emailAddress: string;
-}
-export interface IEmailMessageObject {
-    recipients: [IEmailRecipient];
-    subject?: string;
-    message: string;
+    phoneNumber?: string;
+    emailAddress?: string;
+    countryPhoneCode?: string;
 }
 
-export interface IQueueEmailMessageBodyObject {
-    messageObject: IEmailMessageObject;
+export interface IQueueMessageBodyObject {
+    recipients: [IMessageRecipient];
+    subject?: string;
+    message: string;
     event: EventTemplate;
 }
 
-export interface IQueueEmailMessageBody extends Omit<SQSRecord, "body"> {
-    body: IQueueEmailMessageBodyObject;
+export interface IQueueMessageBody extends Omit<SQSRecord, "body"> {
+    body: IQueueMessageBodyObject;
 }

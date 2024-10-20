@@ -7,9 +7,9 @@
         "skipLibCheck": true,
         "forceConsistentCasingInFileNames": true,
         "outDir": "./dist",
-        "baseUrl": ".",  // Set the base URL to the root of your project
+        "baseUrl": ".",
         "paths": {
-            "src/*": ["./src/*"]  // Map "src/" to the root directory
+            "src/*": ["./src/*"]
         },
         "moduleResolution": "node"
     },

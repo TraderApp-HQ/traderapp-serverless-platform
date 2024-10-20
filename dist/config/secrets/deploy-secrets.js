@@ -33,829 +33,6 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 ));
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
-// node_modules/sendpulse-api/api/sendpulse.js
-var require_sendpulse = __commonJS({
-  "node_modules/sendpulse-api/api/sendpulse.js"(exports2) {
-    "use strict";
-    var https = require("https");
-    var crypto5 = require("crypto");
-    var fs = require("fs");
-    var API_URL = "api.sendpulse.com";
-    var API_USER_ID = "";
-    var API_SECRET = "";
-    var TOKEN_STORAGE = "";
-    var TOKEN = "";
-    var ERRORS = {
-      INVALID_TOKEN: "Invalid token",
-      INVALID_RESPONSE: "Bad response from server",
-      INVALID_CREDENTIALS: "Invalid credentials"
-    };
-    function md52(data) {
-      var md5sum = crypto5.createHash("md5");
-      md5sum.update(data);
-      return md5sum.digest("hex");
-    }
-    function base64(data) {
-      var b = new Buffer(data);
-      return b.toString("base64");
-    }
-    function mkdirSyncRecursive(directory) {
-      var path = directory.replace(/\/$/, "").split("/");
-      for (var i = 1; i <= path.length; i++) {
-        var segment = path.slice(0, i).join("/");
-        segment.length > 0 && !fs.existsSync(segment) ? fs.mkdirSync(segment) : null;
-      }
-    }
-    function init(user_id, secret, storage, callback) {
-      API_USER_ID = user_id;
-      API_SECRET = secret;
-      TOKEN_STORAGE = storage;
-      if (!callback) {
-        callback = function() {
-        };
-      }
-      if (!fs.existsSync(TOKEN_STORAGE)) {
-        mkdirSyncRecursive(TOKEN_STORAGE);
-      }
-      if (TOKEN_STORAGE.substr(-1) !== "/") {
-        TOKEN_STORAGE += "/";
-      }
-      var hashName = md52(API_USER_ID + "::" + API_SECRET);
-      if (fs.existsSync(TOKEN_STORAGE + hashName)) {
-        TOKEN = fs.readFileSync(TOKEN_STORAGE + hashName, { encoding: "utf8" });
-      }
-      if (!TOKEN.length) {
-        getToken(callback);
-        return;
-      }
-      callback(TOKEN);
-    }
-    function sendRequest(path, method, data, useToken, callback) {
-      var headers = {};
-      headers["Content-Type"] = "application/json";
-      headers["Content-Length"] = Buffer.byteLength(JSON.stringify(data));
-      if (useToken && TOKEN.length) {
-        headers["Authorization"] = "Bearer " + TOKEN;
-      }
-      if (method === void 0) {
-        method = "POST";
-      }
-      if (useToken === void 0) {
-        useToken = false;
-      }
-      var options = {
-        //uri: API_URL,
-        path: "/" + path,
-        port: 443,
-        hostname: API_URL,
-        method,
-        headers
-      };
-      var req = https.request(
-        options,
-        function(response) {
-          var str = "";
-          response.on("data", function(chunk) {
-            str += chunk;
-          });
-          response.on("end", function() {
-            try {
-              var answer = JSON.parse(str);
-            } catch (ex) {
-              var answer = returnError(ERRORS.INVALID_RESPONSE);
-            }
-            if (response.statusCode === 401) {
-              if (answer.error === "invalid_client") {
-                callback(returnError(ERRORS.INVALID_CREDENTIALS));
-                return;
-              }
-              getToken(function(result) {
-                if (result && result.is_error === 1) {
-                  callback(result);
-                  return;
-                }
-                sendRequest(path, method, data, true, callback);
-              });
-              return;
-            }
-            callback(answer);
-          });
-        }
-      );
-      req.write(JSON.stringify(data));
-      req.on("error", function(error) {
-        if (error.message !== void 0) {
-          var answer = returnError(error.message, error.errno);
-        } else {
-          var answer = returnError(error.code, error.errno);
-        }
-        callback(answer);
-      });
-      req.end();
-    }
-    function getToken(callback) {
-      if (!callback) {
-        callback = function() {
-        };
-      }
-      var data = {
-        grant_type: "client_credentials",
-        client_id: API_USER_ID,
-        client_secret: API_SECRET
-      };
-      sendRequest("oauth/access_token", "POST", data, false, saveToken);
-      function saveToken(data2) {
-        if (data2 && data2.is_error) {
-          callback(data2);
-          return;
-        }
-        TOKEN = data2.access_token;
-        var hashName = md52(API_USER_ID + "::" + API_SECRET);
-        fs.writeFileSync(TOKEN_STORAGE + hashName, TOKEN);
-        callback(TOKEN);
-      }
-    }
-    function returnError(message, code) {
-      var data = { is_error: 1 };
-      if (message !== void 0 && message.length) {
-        data["message"] = message;
-      }
-      if (code !== void 0 && code) {
-        data["error_code"] = code;
-      }
-      return data;
-    }
-    function serialize(mixed_value) {
-      var val2, key, okey, ktype = "", vals = "", count = 0, _utf8Size = function(str) {
-        var size = 0, i = 0, l = str.length, code = "";
-        for (i = 0; i < l; i++) {
-          code = str.charCodeAt(i);
-          if (code < 128) {
-            size += 1;
-          } else if (code < 2048) {
-            size += 2;
-          } else if (code < 55296) {
-            size += 3;
-          } else if (code < 56320) {
-            var lo = str.charCodeAt(++i);
-            if (i < l && lo >= 56320 && lo <= 57343) {
-              size += 4;
-            } else {
-              size = 0;
-            }
-          } else if (code < 57344) {
-            size = 0;
-          } else {
-            size += 3;
-          }
-        }
-        return size;
-      }, _getType = function(inp) {
-        var match, key2, cons, types, type2 = typeof inp;
-        if (type2 === "object" && !inp) {
-          return "null";
-        }
-        if (type2 === "object") {
-          if (!inp.constructor) {
-            return "object";
-          }
-          cons = inp.constructor.toString();
-          match = cons.match(/(\w+)\(/);
-          if (match) {
-            cons = match[1].toLowerCase();
-          }
-          types = ["boolean", "number", "string", "array"];
-          for (key2 in types) {
-            if (cons == types[key2]) {
-              type2 = types[key2];
-              break;
-            }
-          }
-        }
-        return type2;
-      }, type = _getType(mixed_value);
-      switch (type) {
-        case "function":
-          val2 = "";
-          break;
-        case "boolean":
-          val2 = "b:" + (mixed_value ? "1" : "0");
-          break;
-        case "number":
-          val2 = (Math.round(mixed_value) == mixed_value ? "i" : "d") + ":" + mixed_value;
-          break;
-        case "string":
-          val2 = "s:" + _utf8Size(mixed_value) + ':"' + mixed_value + '"';
-          break;
-        case "array":
-        case "object":
-          val2 = "a";
-          for (key in mixed_value) {
-            if (mixed_value.hasOwnProperty(key)) {
-              ktype = _getType(mixed_value[key]);
-              if (ktype === "function") {
-                continue;
-              }
-              okey = key.match(/^[0-9]+$/) ? parseInt(key, 10) : key;
-              vals += serialize(okey) + serialize(mixed_value[key]);
-              count++;
-            }
-          }
-          val2 += ":" + count + ":{" + vals + "}";
-          break;
-        case "undefined":
-        default:
-          val2 = "N";
-          break;
-      }
-      if (type !== "object" && type !== "array") {
-        val2 += ";";
-      }
-      return val2;
-    }
-    function listAddressBooks(callback, limit, offset) {
-      var data = {};
-      if (limit === void 0) {
-        limit = null;
-      } else {
-        data["limit"] = limit;
-      }
-      if (offset === void 0) {
-        offset = null;
-      } else {
-        data["offset"] = offset;
-      }
-      sendRequest("addressbooks", "GET", data, true, callback);
-    }
-    function createAddressBook(callback, bookName) {
-      if (bookName === void 0 || !bookName.length) {
-        return callback(returnError("Empty book name"));
-      }
-      var data = { bookName };
-      sendRequest("addressbooks", "POST", data, true, callback);
-    }
-    function editAddressBook(callback, id, bookName) {
-      if (id === void 0 || bookName === void 0 || !bookName.length) {
-        return callback(returnError("Empty book name or book id"));
-      }
-      var data = { name: bookName };
-      sendRequest("addressbooks/" + id, "PUT", data, true, callback);
-    }
-    function removeAddressBook(callback, id) {
-      if (id === void 0) {
-        return callback(returnError("Empty book id"));
-      }
-      sendRequest("addressbooks/" + id, "DELETE", {}, true, callback);
-    }
-    function listEmailTemplates(callback) {
-      sendRequest("templates", "GET", {}, true, callback);
-    }
-    function getEmailTemplate(callback, id) {
-      if (id === void 0) {
-        return callback(returnError("Empty email template id"));
-      }
-      sendRequest("template/" + id, "GET", {}, true, callback);
-    }
-    function getBookInfo(callback, id) {
-      if (id === void 0) {
-        return callback(returnError("Empty book id"));
-      }
-      sendRequest("addressbooks/" + id, "GET", {}, true, callback);
-    }
-    function getEmailsFromBook(callback, id) {
-      if (id === void 0) {
-        return callback(returnError("Empty book id"));
-      }
-      sendRequest("addressbooks/" + id + "/emails", "GET", {}, true, callback);
-    }
-    function addEmails(callback, id, emails) {
-      if (id === void 0 || emails === void 0 || !emails.length) {
-        return callback(returnError("Empty email or book id"));
-      }
-      var data = { emails: serialize(emails) };
-      sendRequest("addressbooks/" + id + "/emails", "POST", data, true, callback);
-    }
-    function removeEmails(callback, id, emails) {
-      if (id === void 0 || emails === void 0 || !emails.length) {
-        return callback(returnError("Empty email or book id"));
-      }
-      var data = { emails: serialize(emails) };
-      sendRequest("addressbooks/" + id + "/emails", "DELETE", data, true, callback);
-    }
-    function getEmailInfo(callback, id, email) {
-      if (id === void 0 || email === void 0 || !email.length) {
-        return callback(returnError("Empty email or book id"));
-      }
-      sendRequest("addressbooks/" + id + "/emails/" + email, "GET", {}, true, callback);
-    }
-    function updateEmailVariables(callback, id, email, variables) {
-      if (id === void 0 || email === void 0 || variables === void 0 || !variables.length) {
-        return callback(returnError("Empty email, variables or book id"));
-      }
-      var data = {
-        email,
-        variables
-      };
-      sendRequest("addressbooks/" + id + "/emails/variable", "POST", data, true, callback);
-    }
-    function campaignCost(callback, id) {
-      if (id === void 0) {
-        return callback(returnError("Empty book id"));
-      }
-      sendRequest("addressbooks/" + id + "/cost", "GET", {}, true, callback);
-    }
-    function listCampaigns(callback, limit, offset) {
-      var data = {};
-      if (limit === void 0) {
-        limit = null;
-      } else {
-        data["limit"] = limit;
-      }
-      if (offset === void 0) {
-        offset = null;
-      } else {
-        data["offset"] = offset;
-      }
-      sendRequest("campaigns", "GET", data, true, callback);
-    }
-    function getCampaignInfo(callback, id) {
-      if (id === void 0) {
-        return callback(returnError("Empty book id"));
-      }
-      sendRequest("campaigns/" + id, "GET", {}, true, callback);
-    }
-    function campaignStatByCountries(callback, id) {
-      if (id === void 0) {
-        return callback(returnError("Empty book id"));
-      }
-      sendRequest("campaigns/" + id + "/countries", "GET", {}, true, callback);
-    }
-    function campaignStatByReferrals(callback, id) {
-      if (id === void 0) {
-        return callback(returnError("Empty book id"));
-      }
-      sendRequest("campaigns/" + id + "/referrals", "GET", {}, true, callback);
-    }
-    function createCampaign(callback, senderName, senderEmail, subject, body, bookId, name, attachments) {
-      if (senderName === void 0 || !senderName.length || senderEmail === void 0 || !senderEmail.length || subject === void 0 || !subject.length || body === void 0 || !body.length || bookId === void 0) {
-        return callback(returnError("Not all data."));
-      }
-      if (name === void 0) {
-        name = "";
-      }
-      if (attachments === void 0) {
-        attachments = "";
-      }
-      if (attachments.length) {
-        attachments = serialize(attachments);
-      }
-      var data = {
-        sender_name: senderName,
-        sender_email: senderEmail,
-        //subject: encodeURIComponent(subject),
-        //subject: urlencode(subject),
-        subject,
-        body: base64(body),
-        list_id: bookId,
-        name,
-        attachments
-      };
-      sendRequest("campaigns", "POST", data, true, callback);
-    }
-    function cancelCampaign(callback, id) {
-      if (id === void 0) {
-        return callback(returnError("Empty campaign id"));
-      }
-      sendRequest("campaigns/" + id, "DELETE", {}, true, callback);
-    }
-    function listSenders(callback) {
-      sendRequest("senders", "GET", {}, true, callback);
-    }
-    function addSender(callback, senderName, senderEmail) {
-      if (senderEmail === void 0 || !senderEmail.length || senderName === void 0 || !senderName.length) {
-        return callback(returnError("Empty sender name or email"));
-      }
-      var data = {
-        email: senderEmail,
-        name: senderName
-      };
-      sendRequest("senders", "POST", data, true, callback);
-    }
-    function removeSender(callback, senderEmail) {
-      if (senderEmail === void 0 || !senderEmail.length) {
-        return callback(returnError("Empty email"));
-      }
-      var data = {
-        email: senderEmail
-      };
-      sendRequest("senders", "DELETE", data, true, callback);
-    }
-    function activateSender(callback, senderEmail, code) {
-      if (senderEmail === void 0 || !senderEmail.length || code === void 0 || !code.length) {
-        return callback(returnError("Empty email or activation code"));
-      }
-      var data = {
-        code
-      };
-      sendRequest("senders/" + senderEmail + "/code", "POST", data, true, callback);
-    }
-    function getSenderActivationMail(callback, senderEmail) {
-      if (senderEmail === void 0 || !senderEmail.length) {
-        return callback(returnError("Empty email"));
-      }
-      sendRequest("senders/" + senderEmail + "/code", "GET", {}, true, callback);
-    }
-    function getEmailGlobalInfo(callback, email) {
-      if (email === void 0 || !email.length) {
-        return callback(returnError("Empty email"));
-      }
-      sendRequest("emails/" + email, "GET", {}, true, callback);
-    }
-    function removeEmailFromAllBooks(callback, email) {
-      if (email === void 0 || !email.length) {
-        return callback(returnError("Empty email"));
-      }
-      sendRequest("emails/" + email, "DELETE", {}, true, callback);
-    }
-    function emailStatByCampaigns(callback, email) {
-      if (email === void 0 || !email.length) {
-        return callback(returnError("Empty email"));
-      }
-      sendRequest("emails/" + email + "/campaigns", "GET", {}, true, callback);
-    }
-    function getBlackList(callback) {
-      sendRequest("blacklist", "GET", {}, true, callback);
-    }
-    function addToBlackList(callback, emails, comment) {
-      if (emails === void 0 || !emails.length) {
-        return callback(returnError("Empty email"));
-      }
-      if (comment === void 0) {
-        comment = "";
-      }
-      var data = {
-        emails: base64(emails),
-        comment
-      };
-      sendRequest("blacklist", "POST", data, true, callback);
-    }
-    function removeFromBlackList(callback, emails) {
-      if (emails === void 0 || !emails.length) {
-        return callback(returnError("Empty emails"));
-      }
-      var data = {
-        emails: base64(emails)
-      };
-      sendRequest("blacklist", "DELETE", data, true, callback);
-    }
-    function getBalance(callback, currency) {
-      if (currency === void 0) {
-        var url = "balance";
-      } else {
-        var url = "balance/" + currency.toUpperCase();
-      }
-      sendRequest(url, "GET", {}, true, callback);
-    }
-    function smtpListEmails(callback, limit, offset, fromDate, toDate, sender, recipient) {
-      if (limit === void 0) {
-        limit = 0;
-      }
-      if (offset === void 0) {
-        offset = 0;
-      }
-      if (fromDate === void 0) {
-        fromDate = "";
-      }
-      if (toDate === void 0) {
-        toDate = "";
-      }
-      if (sender === void 0) {
-        sender = "";
-      }
-      if (recipient === void 0) {
-        recipient = "";
-      }
-      var data = {
-        limit,
-        offset,
-        from: fromDate,
-        to: toDate,
-        sender,
-        recipient
-      };
-      sendRequest("smtp/emails", "GET", data, true, callback);
-    }
-    function smtpGetEmailInfoById(callback, id) {
-      if (id === void 0 || !id.length) {
-        return callback(returnError("Empty id"));
-      }
-      sendRequest("smtp/emails/" + id, "GET", {}, true, callback);
-    }
-    function smtpUnsubscribeEmails(callback, emails) {
-      if (emails === void 0) {
-        return callback(returnError("Empty emails"));
-      }
-      var data = {
-        emails: serialize(emails)
-      };
-      sendRequest("smtp/unsubscribe", "POST", data, true, callback);
-    }
-    function smtpRemoveFromUnsubscribe(callback, emails) {
-      if (emails === void 0) {
-        return callback(returnError("Empty emails"));
-      }
-      var data = {
-        emails: serialize(emails)
-      };
-      sendRequest("smtp/unsubscribe", "DELETE", data, true, callback);
-    }
-    function smtpListIP(callback) {
-      sendRequest("smtp/ips", "GET", {}, true, callback);
-    }
-    function smtpListAllowedDomains(callback) {
-      sendRequest("smtp/domains", "GET", {}, true, callback);
-    }
-    function smtpAddDomain(callback, email) {
-      if (email === void 0 || !email.length) {
-        return callback(returnError("Empty email"));
-      }
-      var data = {
-        email
-      };
-      sendRequest("smtp/domains", "POST", data, true, callback);
-    }
-    function smtpVerifyDomain(callback, email) {
-      if (email === void 0 || !email.length) {
-        return callback(returnError("Empty email"));
-      }
-      sendRequest("smtp/domains/" + email, "GET", {}, true, callback);
-    }
-    function smtpSendMail(callback, email) {
-      if (email === void 0) {
-        return callback(returnError("Empty email data"));
-      }
-      if (email.html)
-        email["html"] = base64(email["html"]);
-      var data = {
-        email: serialize(email)
-      };
-      sendRequest("smtp/emails", "POST", data, true, callback);
-    }
-    function smsAddPhones(callback, addressbook_id, phones) {
-      if (addressbook_id === void 0 || phones === void 0 || !phones.length) {
-        return callback(returnError("Empty phones or book id"));
-      }
-      var data = {
-        addressBookId: addressbook_id,
-        phones: JSON.stringify(phones)
-      };
-      sendRequest("sms/numbers", "POST", data, true, callback);
-    }
-    function smsAddPhonesWithVariables(callback, addressbook_id, phones) {
-      if (addressbook_id === void 0 || phones === void 0 || !Object.keys(phones).length) {
-        return callback(returnError("Empty phones or book id"));
-      }
-      var data = {
-        addressBookId: addressbook_id,
-        phones: JSON.stringify(phones)
-      };
-      sendRequest("sms/numbers/variables", "POST", data, true, callback);
-    }
-    function smsRemovePhones(callback, addressbook_id, phones) {
-      if (addressbook_id === void 0 || phones === void 0 || !phones.length) {
-        return callback(returnError("Empty phones or book id"));
-      }
-      var data = {
-        addressBookId: addressbook_id,
-        phones: JSON.stringify(phones)
-      };
-      sendRequest("sms/numbers", "DELETE", data, true, callback);
-    }
-    function smsGetBlackList(callback) {
-      sendRequest("sms/black_list", "GET", {}, true, callback);
-    }
-    function smsGetPhoneInfo(callback, addressbook_id, phone) {
-      if (addressbook_id === void 0 || phone === void 0) {
-        return callback(returnError("Empty phone or book id"));
-      }
-      sendRequest("sms/numbers/info/" + addressbook_id + "/" + phone, "GET", {}, true, callback);
-    }
-    function smsUpdatePhonesVariables(callback, addressbook_id, phones, variables) {
-      if (addressbook_id === void 0) {
-        return callback(returnError("Empty book id"));
-      }
-      if (phones === void 0 || !phones.length) {
-        return callback(returnError("Empty phones"));
-      }
-      if (variables === void 0 || !Object.keys(variables).length) {
-        return callback(returnError("Empty variables"));
-      }
-      var data = {
-        "addressBookId": addressbook_id,
-        "phones": JSON.stringify(phones),
-        "variables": JSON.stringify(variables)
-      };
-      sendRequest("sms/numbers", "PUT", data, true, callback);
-    }
-    function smsGetPhonesInfoFromBlacklist(callback, phones) {
-      if (phones === void 0 || !phones.length) {
-        return callback(returnError("Empty phones"));
-      }
-      var data = {
-        "phones": JSON.stringify(phones)
-      };
-      sendRequest("sms/black_list/by_numbers", "GET", data, true, callback);
-    }
-    function smsAddPhonesToBlacklist(callback, phones, comment) {
-      if (phones === void 0 || !phones.length) {
-        return callback(returnError("Empty phones"));
-      }
-      var data = {
-        "phones": JSON.stringify(phones),
-        "description": comment
-      };
-      sendRequest("sms/black_list", "POST", data, true, callback);
-    }
-    function smsDeletePhonesFromBlacklist(callback, phones) {
-      if (phones === void 0 || !phones.length) {
-        return callback(returnError("Empty phones"));
-      }
-      var data = {
-        "phones": JSON.stringify(phones)
-      };
-      sendRequest("sms/black_list", "DELETE", data, true, callback);
-    }
-    function smsAddCampaign(callback, sender_name, addressbook_id, body, date, transliterate) {
-      if (sender_name === void 0) {
-        return callback(returnError("Empty sender name"));
-      }
-      if (addressbook_id === void 0) {
-        return callback(returnError("Empty book id"));
-      }
-      if (body === void 0) {
-        return callback(returnError("Empty sms text"));
-      }
-      var data = {
-        "sender": sender_name,
-        "addressBookId": addressbook_id,
-        "body": body,
-        "date": date,
-        "transliterate": transliterate
-      };
-      sendRequest("sms/campaigns", "POST", data, true, callback);
-    }
-    function smsSend(callback, sender_name, phones, body, date, transliterate, route) {
-      if (sender_name === void 0) {
-        return callback(returnError("Empty sender name"));
-      }
-      if (phones === void 0 || !phones.length) {
-        return callback(returnError("Empty phones"));
-      }
-      if (body === void 0) {
-        return callback(returnError("Empty sms text"));
-      }
-      var data = {
-        "sender": sender_name,
-        "phones": JSON.stringify(phones),
-        "body": body,
-        "date": date,
-        "transliterate": transliterate,
-        "route": route
-      };
-      sendRequest("sms/send", "POST", data, true, callback);
-    }
-    function smsGetListCampaigns(callback, date_from, date_to) {
-      var data = {
-        "dateFrom": date_from,
-        "dateTo": date_to
-      };
-      sendRequest("sms/campaigns/list", "GET", data, true, callback);
-    }
-    function smsGetCampaignInfo(callback, campaign_id) {
-      if (campaign_id === void 0) {
-        return callback(returnError("Empty sms campaign id"));
-      }
-      sendRequest("sms/campaigns/info/" + campaign_id, "GET", {}, true, callback);
-    }
-    function smsCancelCampaign(callback, campaign_id) {
-      if (campaign_id === void 0) {
-        return callback(returnError("Empty sms campaign id"));
-      }
-      sendRequest("sms/campaigns/cancel/" + campaign_id, "PUT", {}, true, callback);
-    }
-    function smsGetCampaignCost(callback, sender_name, body, addressbook_id, phones) {
-      if (sender_name === void 0) {
-        return callback(returnError("Empty sender name"));
-      }
-      if (body === void 0) {
-        return callback(returnError("Empty sms text"));
-      }
-      if (addressbook_id === void 0 || phones === void 0 || !phones.length) {
-        return callback(returnError("Empty book id or phones"));
-      }
-      var data = {
-        "sender": sender_name,
-        "body": body,
-        "addressBookId": addressbook_id
-      };
-      if (phones.length) {
-        data["phones"] = JSON.stringify(phones);
-      }
-      sendRequest("sms/campaigns/cost", "GET", data, true, callback);
-    }
-    function smsDeleteCampaign(callback, campaign_id) {
-      if (campaign_id === void 0) {
-        return callback(returnError("Empty sms campaign id"));
-      }
-      var data = {
-        "id": campaign_id
-      };
-      sendRequest("sms/campaigns", "DELETE", data, true, callback);
-    }
-    function sendRowRequest(path, method, data, callback) {
-      if (data === void 0) {
-        data = {};
-      }
-      if (!callback) {
-        callback = function() {
-        };
-      }
-      var allowedMethods = ["POST", "GET", "DELETE", "PUT", "PATCH"];
-      if (!allowedMethods.includes(method)) {
-        return callback(returnError("Method not allowed"));
-      }
-      sendRequest(path, method, data, true, callback);
-    }
-    exports2.init = init;
-    exports2.listAddressBooks = listAddressBooks;
-    exports2.createAddressBook = createAddressBook;
-    exports2.editAddressBook = editAddressBook;
-    exports2.removeAddressBook = removeAddressBook;
-    exports2.listEmailTemplates = listEmailTemplates;
-    exports2.getEmailTemplate = getEmailTemplate;
-    exports2.getBookInfo = getBookInfo;
-    exports2.getEmailsFromBook = getEmailsFromBook;
-    exports2.addEmails = addEmails;
-    exports2.removeEmails = removeEmails;
-    exports2.getEmailInfo = getEmailInfo;
-    exports2.updateEmailVariables = updateEmailVariables;
-    exports2.campaignCost = campaignCost;
-    exports2.listCampaigns = listCampaigns;
-    exports2.getCampaignInfo = getCampaignInfo;
-    exports2.campaignStatByCountries = campaignStatByCountries;
-    exports2.campaignStatByReferrals = campaignStatByReferrals;
-    exports2.createCampaign = createCampaign;
-    exports2.cancelCampaign = cancelCampaign;
-    exports2.listSenders = listSenders;
-    exports2.addSender = addSender;
-    exports2.removeSender = removeSender;
-    exports2.activateSender = activateSender;
-    exports2.getSenderActivationMail = getSenderActivationMail;
-    exports2.getEmailGlobalInfo = getEmailGlobalInfo;
-    exports2.removeEmailFromAllBooks = removeEmailFromAllBooks;
-    exports2.emailStatByCampaigns = emailStatByCampaigns;
-    exports2.getBlackList = getBlackList;
-    exports2.addToBlackList = addToBlackList;
-    exports2.removeFromBlackList = removeFromBlackList;
-    exports2.getBalance = getBalance;
-    exports2.smtpListEmails = smtpListEmails;
-    exports2.smtpGetEmailInfoById = smtpGetEmailInfoById;
-    exports2.smtpUnsubscribeEmails = smtpUnsubscribeEmails;
-    exports2.smtpRemoveFromUnsubscribe = smtpRemoveFromUnsubscribe;
-    exports2.smtpListIP = smtpListIP;
-    exports2.smtpListAllowedDomains = smtpListAllowedDomains;
-    exports2.smtpAddDomain = smtpAddDomain;
-    exports2.smtpVerifyDomain = smtpVerifyDomain;
-    exports2.smtpSendMail = smtpSendMail;
-    exports2.smsGetBlackList = smsGetBlackList;
-    exports2.smsAddPhones = smsAddPhones;
-    exports2.smsAddPhonesWithVariables = smsAddPhonesWithVariables;
-    exports2.smsRemovePhones = smsRemovePhones;
-    exports2.smsGetPhoneInfo = smsGetPhoneInfo;
-    exports2.smsUpdatePhonesVariables = smsUpdatePhonesVariables;
-    exports2.smsGetPhonesInfoFromBlacklist = smsGetPhonesInfoFromBlacklist;
-    exports2.smsAddPhonesToBlacklist = smsAddPhonesToBlacklist;
-    exports2.smsDeletePhonesFromBlacklist = smsDeletePhonesFromBlacklist;
-    exports2.smsAddCampaign = smsAddCampaign;
-    exports2.smsSend = smsSend;
-    exports2.smsGetListCampaigns = smsGetListCampaigns;
-    exports2.smsGetCampaignInfo = smsGetCampaignInfo;
-    exports2.smsCancelCampaign = smsCancelCampaign;
-    exports2.smsGetCampaignCost = smsGetCampaignCost;
-    exports2.smsDeleteCampaign = smsDeleteCampaign;
-    exports2.getToken = getToken;
-    exports2.sendRequest = sendRowRequest;
-  }
-});
-
-// node_modules/sendpulse-api/index.js
-var require_sendpulse_api = __commonJS({
-  "node_modules/sendpulse-api/index.js"(exports2, module2) {
-    "use strict";
-    module2.exports = require_sendpulse();
-  }
-});
-
 // node_modules/@smithy/types/dist-cjs/index.js
 var require_dist_cjs = __commonJS({
   "node_modules/@smithy/types/dist-cjs/index.js"(exports2, module2) {
@@ -1249,10 +426,10 @@ var require_dist_cjs3 = __commonJS({
       return input;
     }
     __name(resolveHostHeaderConfig, "resolveHostHeaderConfig");
-    var hostHeaderMiddleware = /* @__PURE__ */ __name((options) => (next) => async (args) => {
-      if (!import_protocol_http8.HttpRequest.isInstance(args.request))
-        return next(args);
-      const { request } = args;
+    var hostHeaderMiddleware = /* @__PURE__ */ __name((options) => (next) => async (args2) => {
+      if (!import_protocol_http8.HttpRequest.isInstance(args2.request))
+        return next(args2);
+      const { request } = args2;
       const { handlerProtocol = "" } = options.requestHandler.metadata || {};
       if (handlerProtocol.indexOf("h2") >= 0 && !request.headers[":authority"]) {
         delete request.headers["host"];
@@ -1263,7 +440,7 @@ var require_dist_cjs3 = __commonJS({
           host += `:${request.port}`;
         request.headers["host"] = host;
       }
-      return next(args);
+      return next(args2);
     }, "hostHeaderMiddleware");
     var hostHeaderMiddlewareOptions = {
       name: "hostHeaderMiddleware",
@@ -1309,10 +486,10 @@ var require_dist_cjs4 = __commonJS({
       loggerMiddlewareOptions: () => loggerMiddlewareOptions
     });
     module2.exports = __toCommonJS2(src_exports);
-    var loggerMiddleware = /* @__PURE__ */ __name(() => (next, context) => async (args) => {
+    var loggerMiddleware = /* @__PURE__ */ __name(() => (next, context) => async (args2) => {
       var _a, _b;
       try {
-        const response = await next(args);
+        const response = await next(args2);
         const { clientName, commandName, logger, dynamoDbDocumentClientOptions = {} } = context;
         const { overrideInputFilterSensitiveLog, overrideOutputFilterSensitiveLog } = dynamoDbDocumentClientOptions;
         const inputFilterSensitiveLog = overrideInputFilterSensitiveLog ?? context.inputFilterSensitiveLog;
@@ -1321,7 +498,7 @@ var require_dist_cjs4 = __commonJS({
         (_a = logger == null ? void 0 : logger.info) == null ? void 0 : _a.call(logger, {
           clientName,
           commandName,
-          input: inputFilterSensitiveLog(args.input),
+          input: inputFilterSensitiveLog(args2.input),
           output: outputFilterSensitiveLog(outputWithoutMetadata),
           metadata: $metadata
         });
@@ -1333,7 +510,7 @@ var require_dist_cjs4 = __commonJS({
         (_b = logger == null ? void 0 : logger.error) == null ? void 0 : _b.call(logger, {
           clientName,
           commandName,
-          input: inputFilterSensitiveLog(args.input),
+          input: inputFilterSensitiveLog(args2.input),
           error,
           metadata: error.$metadata
         });
@@ -1387,19 +564,19 @@ var require_dist_cjs5 = __commonJS({
     var TRACE_ID_HEADER_NAME = "X-Amzn-Trace-Id";
     var ENV_LAMBDA_FUNCTION_NAME = "AWS_LAMBDA_FUNCTION_NAME";
     var ENV_TRACE_ID = "_X_AMZN_TRACE_ID";
-    var recursionDetectionMiddleware = /* @__PURE__ */ __name((options) => (next) => async (args) => {
-      const { request } = args;
+    var recursionDetectionMiddleware = /* @__PURE__ */ __name((options) => (next) => async (args2) => {
+      const { request } = args2;
       if (!import_protocol_http8.HttpRequest.isInstance(request) || options.runtime !== "node" || request.headers.hasOwnProperty(TRACE_ID_HEADER_NAME)) {
-        return next(args);
+        return next(args2);
       }
       const functionName = process.env[ENV_LAMBDA_FUNCTION_NAME];
       const traceId = process.env[ENV_TRACE_ID];
-      const nonEmptyString = /* @__PURE__ */ __name((str) => typeof str === "string" && str.length > 0, "nonEmptyString");
+      const nonEmptyString = /* @__PURE__ */ __name((str2) => typeof str2 === "string" && str2.length > 0, "nonEmptyString");
       if (nonEmptyString(functionName) && nonEmptyString(traceId)) {
         request.headers[TRACE_ID_HEADER_NAME] = traceId;
       }
       return next({
-        ...args,
+        ...args2,
         request
       });
     }, "recursionDetectionMiddleware");
@@ -1458,19 +635,19 @@ var require_dist_cjs6 = __commonJS({
 
 // node_modules/@smithy/core/dist-es/middleware-http-auth-scheme/httpAuthSchemeMiddleware.js
 function convertHttpAuthSchemesToMap(httpAuthSchemes) {
-  const map = /* @__PURE__ */ new Map();
+  const map2 = /* @__PURE__ */ new Map();
   for (const scheme of httpAuthSchemes) {
-    map.set(scheme.schemeId, scheme);
+    map2.set(scheme.schemeId, scheme);
   }
-  return map;
+  return map2;
 }
 var import_types, import_util_middleware, httpAuthSchemeMiddleware;
 var init_httpAuthSchemeMiddleware = __esm({
   "node_modules/@smithy/core/dist-es/middleware-http-auth-scheme/httpAuthSchemeMiddleware.js"() {
     import_types = __toESM(require_dist_cjs());
     import_util_middleware = __toESM(require_dist_cjs6());
-    httpAuthSchemeMiddleware = (config, mwOptions) => (next, context) => async (args) => {
-      const options = config.httpAuthSchemeProvider(await mwOptions.httpAuthSchemeParametersProvider(config, context, args.input));
+    httpAuthSchemeMiddleware = (config, mwOptions) => (next, context) => async (args2) => {
+      const options = config.httpAuthSchemeProvider(await mwOptions.httpAuthSchemeParametersProvider(config, context, args2.input));
       const authSchemes = convertHttpAuthSchemesToMap(config.httpAuthSchemes);
       const smithyContext = (0, import_util_middleware.getSmithyContext)(context);
       const failureReasons = [];
@@ -1498,7 +675,7 @@ var init_httpAuthSchemeMiddleware = __esm({
       if (!smithyContext.selectedHttpAuthScheme) {
         throw new Error(failureReasons.join("\n"));
       }
-      return next(args);
+      return next(args2);
     };
   }
 });
@@ -1808,7 +985,7 @@ var require_dist_cjs8 = __commonJS({
     var prefixKeyRegex = /^([\w-]+)\s(["'])?([\w-@\+\.%:/]+)\2$/;
     var profileNameBlockList = ["__proto__", "profile __proto__"];
     var parseIni = /* @__PURE__ */ __name((iniData) => {
-      const map = {};
+      const map2 = {};
       let currentSection;
       let currentSubSection;
       for (const iniLine of iniData.split(/\r?\n/)) {
@@ -1843,14 +1020,14 @@ var require_dist_cjs8 = __commonJS({
               if (currentSubSection && iniLine.trimStart() === iniLine) {
                 currentSubSection = void 0;
               }
-              map[currentSection] = map[currentSection] || {};
+              map2[currentSection] = map2[currentSection] || {};
               const key = currentSubSection ? [currentSubSection, name].join(CONFIG_PREFIX_SEPARATOR) : name;
-              map[currentSection][key] = value;
+              map2[currentSection][key] = value;
             }
           }
         }
       }
-      return map;
+      return map2;
     }, "parseIni");
     var import_slurpFile = require_slurpFile();
     var swallowError = /* @__PURE__ */ __name(() => ({}), "swallowError");
@@ -2000,12 +1177,12 @@ var require_getEndpointUrlConfig = __commonJS({
     var ENV_ENDPOINT_URL = "AWS_ENDPOINT_URL";
     var CONFIG_ENDPOINT_URL = "endpoint_url";
     var getEndpointUrlConfig = (serviceId) => ({
-      environmentVariableSelector: (env) => {
+      environmentVariableSelector: (env2) => {
         const serviceSuffixParts = serviceId.split(" ").map((w) => w.toUpperCase());
-        const serviceEndpointUrl = env[[ENV_ENDPOINT_URL, ...serviceSuffixParts].join("_")];
+        const serviceEndpointUrl = env2[[ENV_ENDPOINT_URL, ...serviceSuffixParts].join("_")];
         if (serviceEndpointUrl)
           return serviceEndpointUrl;
-        const endpointUrl = env[ENV_ENDPOINT_URL];
+        const endpointUrl = env2[ENV_ENDPOINT_URL];
         if (endpointUrl)
           return endpointUrl;
         return void 0;
@@ -2172,8 +1349,8 @@ var require_dist_cjs12 = __commonJS({
       serializerMiddlewareOption: () => serializerMiddlewareOption2
     });
     module2.exports = __toCommonJS2(src_exports);
-    var deserializerMiddleware = /* @__PURE__ */ __name((options, deserializer) => (next) => async (args) => {
-      const { response } = await next(args);
+    var deserializerMiddleware = /* @__PURE__ */ __name((options, deserializer) => (next) => async (args2) => {
+      const { response } = await next(args2);
       try {
         const parsed = await deserializer(response, options);
         return {
@@ -2196,15 +1373,15 @@ var require_dist_cjs12 = __commonJS({
         throw error;
       }
     }, "deserializerMiddleware");
-    var serializerMiddleware = /* @__PURE__ */ __name((options, serializer) => (next, context) => async (args) => {
+    var serializerMiddleware = /* @__PURE__ */ __name((options, serializer) => (next, context) => async (args2) => {
       var _a;
       const endpoint = ((_a = context.endpointV2) == null ? void 0 : _a.url) && options.urlParser ? async () => options.urlParser(context.endpointV2.url) : options.endpoint;
       if (!endpoint) {
         throw new Error("No valid endpoint provider available.");
       }
-      const request = await serializer(args.input, { ...options, endpoint });
+      const request = await serializer(args2.input, { ...options, endpoint });
       return next({
-        ...args,
+        ...args2,
         request
       });
     }, "serializerMiddleware");
@@ -2397,10 +1574,10 @@ var require_dist_cjs13 = __commonJS({
       config,
       instructions
     }) => {
-      return (next, context) => async (args) => {
+      return (next, context) => async (args2) => {
         var _a, _b, _c;
         const endpoint = await getEndpointFromInstructions(
-          args.input,
+          args2.input,
           {
             getEndpointParameterInstructions() {
               return instructions;
@@ -2432,7 +1609,7 @@ var require_dist_cjs13 = __commonJS({
           }
         }
         return next({
-          ...args
+          ...args2
         });
       };
     }, "endpointMiddleware");
@@ -2553,9 +1730,9 @@ var init_httpSigningMiddleware = __esm({
     };
     defaultSuccessHandler = (httpResponse, signingProperties) => {
     };
-    httpSigningMiddleware = (config) => (next, context) => async (args) => {
-      if (!import_protocol_http.HttpRequest.isInstance(args.request)) {
-        return next(args);
+    httpSigningMiddleware = (config) => (next, context) => async (args2) => {
+      if (!import_protocol_http.HttpRequest.isInstance(args2.request)) {
+        return next(args2);
       }
       const smithyContext = (0, import_util_middleware2.getSmithyContext)(context);
       const scheme = smithyContext.selectedHttpAuthScheme;
@@ -2564,8 +1741,8 @@ var init_httpSigningMiddleware = __esm({
       }
       const { httpAuthOption: { signingProperties = {} }, identity, signer } = scheme;
       const output = await next({
-        ...args,
-        request: await signer.sign(args.request, identity, signingProperties)
+        ...args2,
+        request: await signer.sign(args2.request, identity, signingProperties)
       }).catch((signer.errorHandler || defaultErrorHandler)(signingProperties));
       (signer.successHandler || defaultSuccessHandler)(output.response, signingProperties);
       return output;
@@ -2727,11 +1904,11 @@ var init_parse = __esm({
 });
 
 // node_modules/uuid/dist/esm-node/v35.js
-function stringToBytes(str) {
-  str = unescape(encodeURIComponent(str));
+function stringToBytes(str2) {
+  str2 = unescape(encodeURIComponent(str2));
   const bytes = [];
-  for (let i = 0; i < str.length; ++i) {
-    bytes.push(str.charCodeAt(i));
+  for (let i = 0; i < str2.length; ++i) {
+    bytes.push(str2.charCodeAt(i));
   }
   return bytes;
 }
@@ -3099,14 +2276,14 @@ var require_dist_cjs15 = __commonJS({
         this.currentCapacity = this.currentCapacity - amount;
       }
       refillTokenBucket() {
-        const timestamp = this.getCurrentTimeInSeconds();
+        const timestamp2 = this.getCurrentTimeInSeconds();
         if (!this.lastTimestamp) {
-          this.lastTimestamp = timestamp;
+          this.lastTimestamp = timestamp2;
           return;
         }
-        const fillAmount = (timestamp - this.lastTimestamp) * this.fillRate;
+        const fillAmount = (timestamp2 - this.lastTimestamp) * this.fillRate;
         this.currentCapacity = Math.min(this.maxCapacity, this.currentCapacity + fillAmount);
-        this.lastTimestamp = timestamp;
+        this.lastTimestamp = timestamp2;
       }
       updateClientSendingRate(response) {
         let calculatedRate;
@@ -3131,9 +2308,9 @@ var require_dist_cjs15 = __commonJS({
       cubicThrottle(rateToUse) {
         return this.getPrecise(rateToUse * this.beta);
       }
-      cubicSuccess(timestamp) {
+      cubicSuccess(timestamp2) {
         return this.getPrecise(
-          this.scaleConstant * Math.pow(timestamp - this.lastThrottleTime - this.timeWindow, 3) + this.lastMaxRate
+          this.scaleConstant * Math.pow(timestamp2 - this.lastThrottleTime - this.timeWindow, 3) + this.lastMaxRate
         );
       }
       enableTokenBucket() {
@@ -4614,8 +3791,8 @@ or increase socketAcquisitionWarningTimeout=(millis) in the NodeHttpHandler conf
               abortSignal.onabort = onAbort;
             }
           }
-          req.on("frameError", (type, code, id) => {
-            rejectWithDestroy(new Error(`Frame type id ${type} in stream id ${id} has failed with code ${code}.`));
+          req.on("frameError", (type2, code, id) => {
+            rejectWithDestroy(new Error(`Frame type id ${type2} in stream id ${id} has failed with code ${code}.`));
           });
           req.on("error", rejectWithDestroy);
           req.on("aborted", () => {
@@ -5333,11 +4510,11 @@ var require_dist_cjs26 = __commonJS({
       return (0, import_util_utf8.toUtf8)(payload);
     }
     __name(transformToString, "transformToString");
-    function transformFromString(str, encoding) {
+    function transformFromString(str2, encoding) {
       if (encoding === "base64") {
-        return Uint8ArrayBlobAdapter.mutate((0, import_util_base64.fromBase64)(str));
+        return Uint8ArrayBlobAdapter.mutate((0, import_util_base64.fromBase64)(str2));
       }
-      return Uint8ArrayBlobAdapter.mutate((0, import_util_utf8.fromUtf8)(str));
+      return Uint8ArrayBlobAdapter.mutate((0, import_util_utf8.fromUtf8)(str2));
     }
     __name(transformFromString, "transformFromString");
     var _Uint8ArrayBlobAdapter = class _Uint8ArrayBlobAdapter2 extends Uint8Array {
@@ -5440,7 +4617,7 @@ var require_dist_cjs27 = __commonJS({
       limitedParseFloat32: () => limitedParseFloat32,
       loadConfigsForDefaultMode: () => loadConfigsForDefaultMode,
       logger: () => logger,
-      map: () => map,
+      map: () => map2,
       parseBoolean: () => parseBoolean,
       parseEpochTimestamp: () => parseEpochTimestamp,
       parseRfc3339DateTime: () => parseRfc3339DateTime,
@@ -5707,8 +4884,8 @@ var require_dist_cjs27 = __commonJS({
     var createAggregatedClient = /* @__PURE__ */ __name((commands, Client2) => {
       for (const command of Object.keys(commands)) {
         const CommandCtor = commands[command];
-        const methodImpl = /* @__PURE__ */ __name(async function(args, optionsOrCb, cb) {
-          const command2 = new CommandCtor(args);
+        const methodImpl = /* @__PURE__ */ __name(async function(args2, optionsOrCb, cb) {
+          const command2 = new CommandCtor(args2);
           if (typeof optionsOrCb === "function") {
             this.send(command2, optionsOrCb);
           } else if (typeof cb === "function") {
@@ -6136,10 +5313,10 @@ var require_dist_cjs27 = __commonJS({
     var isLeapYear = /* @__PURE__ */ __name((year) => {
       return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
     }, "isLeapYear");
-    var parseDateValue = /* @__PURE__ */ __name((value, type, lower, upper) => {
+    var parseDateValue = /* @__PURE__ */ __name((value, type2, lower, upper) => {
       const dateVal = strictParseByte(stripLeadingZeroes(value));
       if (dateVal < lower || dateVal > upper) {
-        throw new TypeError(`${type} must be between ${lower} and ${upper}, inclusive`);
+        throw new TypeError(`${type2} must be between ${lower} and ${upper}, inclusive`);
       }
       return dateVal;
     }, "parseDateValue");
@@ -6184,16 +5361,16 @@ var require_dist_cjs27 = __commonJS({
     };
     __name(_ServiceException, "ServiceException");
     var ServiceException = _ServiceException;
-    var decorateServiceException = /* @__PURE__ */ __name((exception, additions = {}) => {
+    var decorateServiceException = /* @__PURE__ */ __name((exception2, additions = {}) => {
       Object.entries(additions).filter(([, v]) => v !== void 0).forEach(([k, v]) => {
-        if (exception[k] == void 0 || exception[k] === "") {
-          exception[k] = v;
+        if (exception2[k] == void 0 || exception2[k] === "") {
+          exception2[k] = v;
         }
       });
-      const message = exception.message || exception.Message || "UnknownError";
-      exception.message = message;
-      delete exception.Message;
-      return exception;
+      const message = exception2.message || exception2.Message || "UnknownError";
+      exception2.message = message;
+      delete exception2.Message;
+      return exception2;
     }, "decorateServiceException");
     var throwDefaultError = /* @__PURE__ */ __name(({ output, parsedBody, exceptionCtor, errorCode }) => {
       const $metadata = deserializeMetadata(output);
@@ -6248,8 +5425,8 @@ var require_dist_cjs27 = __commonJS({
         warningEmitted2 = true;
       }
     }, "emitWarningIfUnsupportedVersion");
-    function extendedEncodeURIComponent(str) {
-      return encodeURIComponent(str).replace(/[!'()*]/g, function(c) {
+    function extendedEncodeURIComponent(str2) {
+      return encodeURIComponent(str2).replace(/[!'()*]/g, function(c) {
         return "%" + c.charCodeAt(0).toString(16).toUpperCase();
       });
     }
@@ -6375,7 +5552,7 @@ var require_dist_cjs27 = __commonJS({
     };
     __name(_NoOpLogger, "NoOpLogger");
     var NoOpLogger = _NoOpLogger;
-    function map(arg0, arg1, arg2) {
+    function map2(arg0, arg1, arg2) {
       let target;
       let filter;
       let instructions;
@@ -6401,7 +5578,7 @@ var require_dist_cjs27 = __commonJS({
       }
       return target;
     }
-    __name(map, "map");
+    __name(map2, "map");
     var convertMap = /* @__PURE__ */ __name((target) => {
       const output = {};
       for (const [k, v] of Object.entries(target || {})) {
@@ -6417,7 +5594,7 @@ var require_dist_cjs27 = __commonJS({
       return out;
     }, "take");
     var mapWithFilter = /* @__PURE__ */ __name((target, filter, instructions) => {
-      return map(
+      return map2(
         target,
         Object.entries(instructions).reduce(
           (_instructions, [key, value]) => {
@@ -6711,12 +5888,12 @@ var require_dist_cjs28 = __commonJS({
         }
         return maxAttempts;
       }
-      async retry(next, args, options) {
+      async retry(next, args2, options) {
         let retryTokenAmount;
         let attempts = 0;
         let totalDelay = 0;
         const maxAttempts = await this.getMaxAttempts();
-        const { request } = args;
+        const { request } = args2;
         if (import_protocol_http8.HttpRequest.isInstance(request)) {
           request.headers[import_util_retry.INVOCATION_ID_HEADER] = (0, import_uuid.v4)();
         }
@@ -6728,7 +5905,7 @@ var require_dist_cjs28 = __commonJS({
             if (options == null ? void 0 : options.beforeRequest) {
               await options.beforeRequest();
             }
-            const { response, output } = await next(args);
+            const { response, output } = await next(args2);
             if (options == null ? void 0 : options.afterRequest) {
               options.afterRequest(response);
             }
@@ -6783,8 +5960,8 @@ var require_dist_cjs28 = __commonJS({
         this.rateLimiter = rateLimiter ?? new import_util_retry.DefaultRateLimiter();
         this.mode = import_util_retry.RETRY_MODES.ADAPTIVE;
       }
-      async retry(next, args) {
-        return super.retry(next, args, {
+      async retry(next, args2) {
+        return super.retry(next, args2, {
           beforeRequest: async () => {
             return this.rateLimiter.getSendToken();
           },
@@ -6800,8 +5977,8 @@ var require_dist_cjs28 = __commonJS({
     var ENV_MAX_ATTEMPTS = "AWS_MAX_ATTEMPTS";
     var CONFIG_MAX_ATTEMPTS = "max_attempts";
     var NODE_MAX_ATTEMPT_CONFIG_OPTIONS = {
-      environmentVariableSelector: (env) => {
-        const value = env[ENV_MAX_ATTEMPTS];
+      environmentVariableSelector: (env2) => {
+        const value = env2[ENV_MAX_ATTEMPTS];
         if (!value)
           return void 0;
         const maxAttempt = parseInt(value);
@@ -6843,17 +6020,17 @@ var require_dist_cjs28 = __commonJS({
     var ENV_RETRY_MODE = "AWS_RETRY_MODE";
     var CONFIG_RETRY_MODE = "retry_mode";
     var NODE_RETRY_MODE_CONFIG_OPTIONS = {
-      environmentVariableSelector: (env) => env[ENV_RETRY_MODE],
+      environmentVariableSelector: (env2) => env2[ENV_RETRY_MODE],
       configFileSelector: (profile) => profile[CONFIG_RETRY_MODE],
       default: import_util_retry.DEFAULT_RETRY_MODE
     };
-    var omitRetryHeadersMiddleware = /* @__PURE__ */ __name(() => (next) => async (args) => {
-      const { request } = args;
+    var omitRetryHeadersMiddleware = /* @__PURE__ */ __name(() => (next) => async (args2) => {
+      const { request } = args2;
       if (import_protocol_http8.HttpRequest.isInstance(request)) {
         delete request.headers[import_util_retry.INVOCATION_ID_HEADER];
         delete request.headers[import_util_retry.REQUEST_HEADER];
       }
-      return next(args);
+      return next(args2);
     }, "omitRetryHeadersMiddleware");
     var omitRetryHeadersMiddlewareOptions = {
       name: "omitRetryHeadersMiddleware",
@@ -6869,7 +6046,7 @@ var require_dist_cjs28 = __commonJS({
     }), "getOmitRetryHeadersPlugin");
     var import_smithy_client5 = require_dist_cjs27();
     var import_isStreamingPayload = require_isStreamingPayload();
-    var retryMiddleware = /* @__PURE__ */ __name((options) => (next, context) => async (args) => {
+    var retryMiddleware = /* @__PURE__ */ __name((options) => (next, context) => async (args2) => {
       var _a;
       let retryStrategy = await options.retryStrategy();
       const maxAttempts = await options.maxAttempts();
@@ -6879,7 +6056,7 @@ var require_dist_cjs28 = __commonJS({
         let lastError = new Error();
         let attempts = 0;
         let totalRetryDelay = 0;
-        const { request } = args;
+        const { request } = args2;
         const isRequest = import_protocol_http8.HttpRequest.isInstance(request);
         if (isRequest) {
           request.headers[import_util_retry.INVOCATION_ID_HEADER] = (0, import_uuid.v4)();
@@ -6889,7 +6066,7 @@ var require_dist_cjs28 = __commonJS({
             if (isRequest) {
               request.headers[import_util_retry.REQUEST_HEADER] = `attempt=${attempts + 1}; max=${maxAttempts}`;
             }
-            const { response, output } = await next(args);
+            const { response, output } = await next(args2);
             retryStrategy.recordSuccess(retryToken);
             output.$metadata.attempts = attempts + 1;
             output.$metadata.totalRetryDelay = totalRetryDelay;
@@ -6923,7 +6100,7 @@ var require_dist_cjs28 = __commonJS({
         retryStrategy = retryStrategy;
         if (retryStrategy == null ? void 0 : retryStrategy.mode)
           context.userAgent = [...context.userAgent || [], ["cfg/retry-mode", retryStrategy.mode]];
-        return retryStrategy.retry(next, args);
+        return retryStrategy.retry(next, args2);
       }
     }, "retryMiddleware");
     var isRetryStrategyV2 = /* @__PURE__ */ __name((retryStrategy) => typeof retryStrategy.acquireInitialRetryToken !== "undefined" && typeof retryStrategy.refreshRetryTokenForRetry !== "undefined" && typeof retryStrategy.recordSuccess !== "undefined", "isRetryStrategyV2");
@@ -7290,8 +6467,8 @@ function createPaginator(ClientCtor, CommandCtor, inputTokenName, outputTokenNam
 var makePagedClientRequest, get;
 var init_createPaginator = __esm({
   "node_modules/@smithy/core/dist-es/pagination/createPaginator.js"() {
-    makePagedClientRequest = async (CommandCtor, client2, input, ...args) => {
-      return await client2.send(new CommandCtor(input), ...args);
+    makePagedClientRequest = async (CommandCtor, client, input, ...args2) => {
+      return await client.send(new CommandCtor(input), ...args2);
     };
     get = (fromObject, path) => {
       let cursor = fromObject;
@@ -8419,9 +7596,9 @@ var init_resolveAwsSdkSigV4AConfig = __esm({
       return config;
     };
     NODE_SIGV4A_CONFIG_OPTIONS = {
-      environmentVariableSelector(env) {
-        if (env.AWS_SIGV4A_SIGNING_REGION_SET) {
-          return env.AWS_SIGV4A_SIGNING_REGION_SET.split(",").map((_) => _.trim());
+      environmentVariableSelector(env2) {
+        if (env2.AWS_SIGV4A_SIGNING_REGION_SET) {
+          return env2.AWS_SIGV4A_SIGNING_REGION_SET.split(",").map((_) => _.trim());
         }
         throw new import_property_provider.ProviderError("AWS_SIGV4A_SIGNING_REGION_SET not set in env.", {
           tryNextLink: true
@@ -9812,11 +8989,11 @@ var require_strnum = __commonJS({
       eNotation: true
       //skipLike: /regex/
     };
-    function toNumber(str, options = {}) {
+    function toNumber(str2, options = {}) {
       options = Object.assign({}, consider, options);
-      if (!str || typeof str !== "string") return str;
-      let trimmedStr = str.trim();
-      if (options.skipLike !== void 0 && options.skipLike.test(trimmedStr)) return str;
+      if (!str2 || typeof str2 !== "string") return str2;
+      let trimmedStr = str2.trim();
+      if (options.skipLike !== void 0 && options.skipLike.test(trimmedStr)) return str2;
       else if (options.hex && hexRegex.test(trimmedStr)) {
         return Number.parseInt(trimmedStr, 16);
       } else {
@@ -9826,34 +9003,34 @@ var require_strnum = __commonJS({
           const leadingZeros = match[2];
           let numTrimmedByZeros = trimZeros(match[3]);
           const eNotation = match[4] || match[6];
-          if (!options.leadingZeros && leadingZeros.length > 0 && sign && trimmedStr[2] !== ".") return str;
-          else if (!options.leadingZeros && leadingZeros.length > 0 && !sign && trimmedStr[1] !== ".") return str;
+          if (!options.leadingZeros && leadingZeros.length > 0 && sign && trimmedStr[2] !== ".") return str2;
+          else if (!options.leadingZeros && leadingZeros.length > 0 && !sign && trimmedStr[1] !== ".") return str2;
           else {
             const num = Number(trimmedStr);
             const numStr = "" + num;
             if (numStr.search(/[eE]/) !== -1) {
               if (options.eNotation) return num;
-              else return str;
+              else return str2;
             } else if (eNotation) {
               if (options.eNotation) return num;
-              else return str;
+              else return str2;
             } else if (trimmedStr.indexOf(".") !== -1) {
               if (numStr === "0" && numTrimmedByZeros === "") return num;
               else if (numStr === numTrimmedByZeros) return num;
               else if (sign && numStr === "-" + numTrimmedByZeros) return num;
-              else return str;
+              else return str2;
             }
             if (leadingZeros) {
               if (numTrimmedByZeros === numStr) return num;
               else if (sign + numTrimmedByZeros === numStr) return num;
-              else return str;
+              else return str2;
             }
             if (trimmedStr === numStr) return num;
             else if (trimmedStr === sign + numStr) return num;
-            return str;
+            return str2;
           }
         } else {
-          return str;
+          return str2;
         }
       }
     }
@@ -9906,8 +9083,8 @@ var require_OrderedObjParser = __commonJS({
           "copyright": { regex: /&(copy|#169);/g, val: "\xA9" },
           "reg": { regex: /&(reg|#174);/g, val: "\xAE" },
           "inr": { regex: /&(inr|#8377);/g, val: "\u20B9" },
-          "num_dec": { regex: /&#([0-9]{1,7});/g, val: (_, str) => String.fromCharCode(Number.parseInt(str, 10)) },
-          "num_hex": { regex: /&#x([0-9a-fA-F]{1,6});/g, val: (_, str) => String.fromCharCode(Number.parseInt(str, 16)) }
+          "num_dec": { regex: /&#([0-9]{1,7});/g, val: (_, str2) => String.fromCharCode(Number.parseInt(str2, 10)) },
+          "num_hex": { regex: /&#x([0-9a-fA-F]{1,6});/g, val: (_, str2) => String.fromCharCode(Number.parseInt(str2, 16)) }
         };
         this.addExternalEntities = addExternalEntities;
         this.parseXml = parseXml;
@@ -10267,12 +9444,12 @@ var require_OrderedObjParser = __commonJS({
         tagExp += ch;
       }
     }
-    function findClosingIndex(xmlData, str, i, errMsg) {
-      const closingIndex = xmlData.indexOf(str, i);
+    function findClosingIndex(xmlData, str2, i, errMsg) {
+      const closingIndex = xmlData.indexOf(str2, i);
       if (closingIndex === -1) {
         throw new Error(errMsg);
       } else {
-        return closingIndex + str.length - 1;
+        return closingIndex + str2.length - 1;
       }
     }
     function readTagExp(xmlData, i, removeNSPrefix, closingChar = ">") {
@@ -11058,9 +10235,9 @@ var require_dist_cjs32 = __commonJS({
     var import_protocol_http8 = require_dist_cjs2();
     var import_core22 = (init_dist_es2(), __toCommonJS(dist_es_exports2));
     var ACCOUNT_ID_ENDPOINT_REGEX = /\d{12}\.ddb/;
-    async function checkFeatures(context, config, args) {
+    async function checkFeatures(context, config, args2) {
       var _a, _b, _c, _d, _e, _f, _g;
-      const request = args.request;
+      const request = args2.request;
       if (((_a = request == null ? void 0 : request.headers) == null ? void 0 : _a["smithy-protocol"]) === "rpc-v2-cbor") {
         (0, import_core22.setFeature)(context, "PROTOCOL_RPC_V2_CBOR", "M");
       }
@@ -11130,16 +10307,16 @@ var require_dist_cjs32 = __commonJS({
       return buffer;
     }
     __name(encodeFeatures, "encodeFeatures");
-    var userAgentMiddleware = /* @__PURE__ */ __name((options) => (next, context) => async (args) => {
+    var userAgentMiddleware = /* @__PURE__ */ __name((options) => (next, context) => async (args2) => {
       var _a, _b, _c, _d;
-      const { request } = args;
+      const { request } = args2;
       if (!import_protocol_http8.HttpRequest.isInstance(request)) {
-        return next(args);
+        return next(args2);
       }
       const { headers } = request;
       const userAgent = ((_a = context == null ? void 0 : context.userAgent) == null ? void 0 : _a.map(escapeUserAgent)) || [];
       const defaultUserAgent = (await options.defaultUserAgentProvider()).map(escapeUserAgent);
-      await checkFeatures(context, options, args);
+      await checkFeatures(context, options, args2);
       const awsContext = context;
       defaultUserAgent.push(
         `m/${encodeFeatures(
@@ -11166,7 +10343,7 @@ var require_dist_cjs32 = __commonJS({
         headers[X_AMZ_USER_AGENT] = sdkUserAgentValue;
       }
       return next({
-        ...args,
+        ...args2,
         request
       });
     }, "userAgentMiddleware");
@@ -11234,21 +10411,21 @@ var require_dist_cjs33 = __commonJS({
       numberSelector: () => numberSelector
     });
     module2.exports = __toCommonJS2(src_exports);
-    var booleanSelector = /* @__PURE__ */ __name((obj, key, type) => {
+    var booleanSelector = /* @__PURE__ */ __name((obj, key, type2) => {
       if (!(key in obj))
         return void 0;
       if (obj[key] === "true")
         return true;
       if (obj[key] === "false")
         return false;
-      throw new Error(`Cannot load ${type} "${key}". Expected "true" or "false", got ${obj[key]}.`);
+      throw new Error(`Cannot load ${type2} "${key}". Expected "true" or "false", got ${obj[key]}.`);
     }, "booleanSelector");
-    var numberSelector = /* @__PURE__ */ __name((obj, key, type) => {
+    var numberSelector = /* @__PURE__ */ __name((obj, key, type2) => {
       if (!(key in obj))
         return void 0;
       const numberValue = parseInt(obj[key], 10);
       if (Number.isNaN(numberValue)) {
-        throw new TypeError(`Cannot load ${type} '${key}'. Expected number, got '${obj[key]}'.`);
+        throw new TypeError(`Cannot load ${type2} '${key}'. Expected number, got '${obj[key]}'.`);
       }
       return numberValue;
     }, "numberSelector");
@@ -11306,7 +10483,7 @@ var require_dist_cjs34 = __commonJS({
     var CONFIG_USE_DUALSTACK_ENDPOINT = "use_dualstack_endpoint";
     var DEFAULT_USE_DUALSTACK_ENDPOINT = false;
     var NODE_USE_DUALSTACK_ENDPOINT_CONFIG_OPTIONS = {
-      environmentVariableSelector: (env) => (0, import_util_config_provider.booleanSelector)(env, ENV_USE_DUALSTACK_ENDPOINT, import_util_config_provider.SelectorType.ENV),
+      environmentVariableSelector: (env2) => (0, import_util_config_provider.booleanSelector)(env2, ENV_USE_DUALSTACK_ENDPOINT, import_util_config_provider.SelectorType.ENV),
       configFileSelector: (profile) => (0, import_util_config_provider.booleanSelector)(profile, CONFIG_USE_DUALSTACK_ENDPOINT, import_util_config_provider.SelectorType.CONFIG),
       default: false
     };
@@ -11314,7 +10491,7 @@ var require_dist_cjs34 = __commonJS({
     var CONFIG_USE_FIPS_ENDPOINT = "use_fips_endpoint";
     var DEFAULT_USE_FIPS_ENDPOINT = false;
     var NODE_USE_FIPS_ENDPOINT_CONFIG_OPTIONS = {
-      environmentVariableSelector: (env) => (0, import_util_config_provider.booleanSelector)(env, ENV_USE_FIPS_ENDPOINT, import_util_config_provider.SelectorType.ENV),
+      environmentVariableSelector: (env2) => (0, import_util_config_provider.booleanSelector)(env2, ENV_USE_FIPS_ENDPOINT, import_util_config_provider.SelectorType.ENV),
       configFileSelector: (profile) => (0, import_util_config_provider.booleanSelector)(profile, CONFIG_USE_FIPS_ENDPOINT, import_util_config_provider.SelectorType.CONFIG),
       default: false
     };
@@ -11358,7 +10535,7 @@ var require_dist_cjs34 = __commonJS({
     var REGION_ENV_NAME = "AWS_REGION";
     var REGION_INI_NAME = "region";
     var NODE_REGION_CONFIG_OPTIONS = {
-      environmentVariableSelector: (env) => env[REGION_ENV_NAME],
+      environmentVariableSelector: (env2) => env2[REGION_ENV_NAME],
       configFileSelector: (profile) => profile[REGION_INI_NAME],
       default: () => {
         throw new Error("Region is missing");
@@ -11477,11 +10654,11 @@ var require_dist_cjs35 = __commonJS({
     var import_protocol_http8 = require_dist_cjs2();
     var CONTENT_LENGTH_HEADER = "content-length";
     function contentLengthMiddleware(bodyLengthChecker) {
-      return (next) => async (args) => {
-        const request = args.request;
+      return (next) => async (args2) => {
+        const request = args2.request;
         if (import_protocol_http8.HttpRequest.isInstance(request)) {
           const { body, headers } = request;
-          if (body && Object.keys(headers).map((str) => str.toLowerCase()).indexOf(CONTENT_LENGTH_HEADER) === -1) {
+          if (body && Object.keys(headers).map((str2) => str2.toLowerCase()).indexOf(CONTENT_LENGTH_HEADER) === -1) {
             try {
               const length = bodyLengthChecker(body);
               request.headers = {
@@ -11493,7 +10670,7 @@ var require_dist_cjs35 = __commonJS({
           }
         }
         return next({
-          ...args,
+          ...args2,
           request
         });
       };
@@ -11940,7 +11117,7 @@ function __classPrivateFieldIn(state, receiver) {
   if (receiver === null || typeof receiver !== "object" && typeof receiver !== "function") throw new TypeError("Cannot use 'in' operator on non-object");
   return typeof state === "function" ? receiver === state : state.has(receiver);
 }
-function __addDisposableResource(env, value, async) {
+function __addDisposableResource(env2, value, async) {
   if (value !== null && value !== void 0) {
     if (typeof value !== "object" && typeof value !== "function") throw new TypeError("Object expected.");
     var dispose, inner;
@@ -11961,22 +11138,22 @@ function __addDisposableResource(env, value, async) {
         return Promise.reject(e);
       }
     };
-    env.stack.push({ value, dispose, async });
+    env2.stack.push({ value, dispose, async });
   } else if (async) {
-    env.stack.push({ async: true });
+    env2.stack.push({ async: true });
   }
   return value;
 }
-function __disposeResources(env) {
+function __disposeResources(env2) {
   function fail(e) {
-    env.error = env.hasError ? new _SuppressedError(e, env.error, "An error was suppressed during disposal.") : e;
-    env.hasError = true;
+    env2.error = env2.hasError ? new _SuppressedError(e, env2.error, "An error was suppressed during disposal.") : e;
+    env2.hasError = true;
   }
   var r, s = 0;
   function next() {
-    while (r = env.stack.pop()) {
+    while (r = env2.stack.pop()) {
       try {
-        if (!r.async && s === 1) return s = 0, env.stack.push(r), Promise.resolve().then(next);
+        if (!r.async && s === 1) return s = 0, env2.stack.push(r), Promise.resolve().then(next);
         if (r.dispose) {
           var result = r.dispose.call(r.value);
           if (r.async) return s |= 2, Promise.resolve(result).then(next, function(e) {
@@ -11988,8 +11165,8 @@ function __disposeResources(env) {
         fail(e);
       }
     }
-    if (s === 1) return env.hasError ? Promise.reject(env.error) : Promise.resolve();
-    if (env.hasError) throw env.error;
+    if (s === 1) return env2.hasError ? Promise.reject(env2.error) : Promise.resolve();
+    if (env2.hasError) throw env2.error;
   }
   return next();
 }
@@ -12436,7 +11613,7 @@ var require_dist_cjs37 = __commonJS({
     var ENV_ENDPOINT_NAME = "AWS_EC2_METADATA_SERVICE_ENDPOINT";
     var CONFIG_ENDPOINT_NAME = "ec2_metadata_service_endpoint";
     var ENDPOINT_CONFIG_OPTIONS = {
-      environmentVariableSelector: (env) => env[ENV_ENDPOINT_NAME],
+      environmentVariableSelector: (env2) => env2[ENV_ENDPOINT_NAME],
       configFileSelector: (profile) => profile[CONFIG_ENDPOINT_NAME],
       default: void 0
     };
@@ -12448,7 +11625,7 @@ var require_dist_cjs37 = __commonJS({
     var ENV_ENDPOINT_MODE_NAME = "AWS_EC2_METADATA_SERVICE_ENDPOINT_MODE";
     var CONFIG_ENDPOINT_MODE_NAME = "ec2_metadata_service_endpoint_mode";
     var ENDPOINT_MODE_CONFIG_OPTIONS = {
-      environmentVariableSelector: (env) => env[ENV_ENDPOINT_MODE_NAME],
+      environmentVariableSelector: (env2) => env2[ENV_ENDPOINT_MODE_NAME],
       configFileSelector: (profile) => profile[CONFIG_ENDPOINT_MODE_NAME],
       default: "IPv4"
       /* IPv4 */
@@ -12523,8 +11700,8 @@ For more information, please visit: ` + STATIC_STABILITY_DOC_URL
           let fallbackBlockedFromProcessEnv = false;
           const configValue = await (0, import_node_config_provider.loadConfig)(
             {
-              environmentVariableSelector: (env) => {
-                const envValue = env[AWS_EC2_METADATA_V1_DISABLED];
+              environmentVariableSelector: (env2) => {
+                const envValue = env2[AWS_EC2_METADATA_V1_DISABLED];
                 fallbackBlockedFromProcessEnv = !!envValue && envValue !== "false";
                 if (envValue === void 0) {
                   throw new import_property_provider2.CredentialsProviderError(
@@ -12710,9 +11887,9 @@ var require_requestHelpers = __commonJS({
     exports2.createGetRequest = createGetRequest;
     async function getCredentials(response, logger) {
       const stream = (0, util_stream_1.sdkStreamMixin)(response.body);
-      const str = await stream.transformToString();
+      const str2 = await stream.transformToString();
       if (response.statusCode === 200) {
-        const parsed = JSON.parse(str);
+        const parsed = JSON.parse(str2);
         if (typeof parsed.AccessKeyId !== "string" || typeof parsed.SecretAccessKey !== "string" || typeof parsed.Token !== "string" || typeof parsed.Expiration !== "string") {
           throw new property_provider_1.CredentialsProviderError("HTTP credential provider response not of the required format, an object matching: { AccessKeyId: string, SecretAccessKey: string, Token: string, Expiration: string(rfc3339) }", { logger });
         }
@@ -12726,7 +11903,7 @@ var require_requestHelpers = __commonJS({
       if (response.statusCode >= 400 && response.statusCode < 500) {
         let parsedBody = {};
         try {
-          parsedBody = JSON.parse(str);
+          parsedBody = JSON.parse(str2);
         } catch (e) {
         }
         throw Object.assign(new property_provider_1.CredentialsProviderError(`Server responded with status: ${response.statusCode}`, { logger }), {
@@ -13371,8 +12548,8 @@ var require_dist_cjs42 = __commonJS({
     var AWS_DEFAULTS_MODE_ENV = "AWS_DEFAULTS_MODE";
     var AWS_DEFAULTS_MODE_CONFIG = "defaults_mode";
     var NODE_DEFAULTS_MODE_CONFIG_OPTIONS = {
-      environmentVariableSelector: (env) => {
-        return env[AWS_DEFAULTS_MODE_ENV];
+      environmentVariableSelector: (env2) => {
+        return env2[AWS_DEFAULTS_MODE_ENV];
       },
       configFileSelector: (profile) => {
         return profile[AWS_DEFAULTS_MODE_CONFIG];
@@ -13545,7 +12722,7 @@ var require_dist_cjs43 = __commonJS({
     var REGION_ENV_NAME = "AWS_REGION";
     var REGION_INI_NAME = "region";
     var NODE_REGION_CONFIG_OPTIONS = {
-      environmentVariableSelector: (env) => env[REGION_ENV_NAME],
+      environmentVariableSelector: (env2) => env2[REGION_ENV_NAME],
       configFileSelector: (profile) => profile[REGION_INI_NAME],
       default: () => {
         throw new Error("Region is missing");
@@ -13999,11 +13176,11 @@ var require_dist_cjs44 = __commonJS({
         message: import_smithy_client5.expectString
       });
       Object.assign(contents, doc);
-      const exception = new InvalidRequestException({
+      const exception2 = new InvalidRequestException({
         $metadata: deserializeMetadata(parsedOutput),
         ...contents
       });
-      return (0, import_smithy_client5.decorateServiceException)(exception, parsedOutput.body);
+      return (0, import_smithy_client5.decorateServiceException)(exception2, parsedOutput.body);
     }, "de_InvalidRequestExceptionRes");
     var de_ResourceNotFoundExceptionRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
       const contents = (0, import_smithy_client5.map)({});
@@ -14012,11 +13189,11 @@ var require_dist_cjs44 = __commonJS({
         message: import_smithy_client5.expectString
       });
       Object.assign(contents, doc);
-      const exception = new ResourceNotFoundException({
+      const exception2 = new ResourceNotFoundException({
         $metadata: deserializeMetadata(parsedOutput),
         ...contents
       });
-      return (0, import_smithy_client5.decorateServiceException)(exception, parsedOutput.body);
+      return (0, import_smithy_client5.decorateServiceException)(exception2, parsedOutput.body);
     }, "de_ResourceNotFoundExceptionRes");
     var de_TooManyRequestsExceptionRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
       const contents = (0, import_smithy_client5.map)({});
@@ -14025,11 +13202,11 @@ var require_dist_cjs44 = __commonJS({
         message: import_smithy_client5.expectString
       });
       Object.assign(contents, doc);
-      const exception = new TooManyRequestsException({
+      const exception2 = new TooManyRequestsException({
         $metadata: deserializeMetadata(parsedOutput),
         ...contents
       });
-      return (0, import_smithy_client5.decorateServiceException)(exception, parsedOutput.body);
+      return (0, import_smithy_client5.decorateServiceException)(exception2, parsedOutput.body);
     }, "de_TooManyRequestsExceptionRes");
     var de_UnauthorizedExceptionRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
       const contents = (0, import_smithy_client5.map)({});
@@ -14038,11 +13215,11 @@ var require_dist_cjs44 = __commonJS({
         message: import_smithy_client5.expectString
       });
       Object.assign(contents, doc);
-      const exception = new UnauthorizedException({
+      const exception2 = new UnauthorizedException({
         $metadata: deserializeMetadata(parsedOutput),
         ...contents
       });
-      return (0, import_smithy_client5.decorateServiceException)(exception, parsedOutput.body);
+      return (0, import_smithy_client5.decorateServiceException)(exception2, parsedOutput.body);
     }, "de_UnauthorizedExceptionRes");
     var deserializeMetadata = /* @__PURE__ */ __name((output) => ({
       httpStatusCode: output.statusCode,
@@ -15170,11 +14347,11 @@ var require_dist_cjs45 = __commonJS({
         error_description: import_smithy_client5.expectString
       });
       Object.assign(contents, doc);
-      const exception = new AccessDeniedException({
+      const exception2 = new AccessDeniedException({
         $metadata: deserializeMetadata(parsedOutput),
         ...contents
       });
-      return (0, import_smithy_client5.decorateServiceException)(exception, parsedOutput.body);
+      return (0, import_smithy_client5.decorateServiceException)(exception2, parsedOutput.body);
     }, "de_AccessDeniedExceptionRes");
     var de_AuthorizationPendingExceptionRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
       const contents = (0, import_smithy_client5.map)({});
@@ -15184,11 +14361,11 @@ var require_dist_cjs45 = __commonJS({
         error_description: import_smithy_client5.expectString
       });
       Object.assign(contents, doc);
-      const exception = new AuthorizationPendingException({
+      const exception2 = new AuthorizationPendingException({
         $metadata: deserializeMetadata(parsedOutput),
         ...contents
       });
-      return (0, import_smithy_client5.decorateServiceException)(exception, parsedOutput.body);
+      return (0, import_smithy_client5.decorateServiceException)(exception2, parsedOutput.body);
     }, "de_AuthorizationPendingExceptionRes");
     var de_ExpiredTokenExceptionRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
       const contents = (0, import_smithy_client5.map)({});
@@ -15198,11 +14375,11 @@ var require_dist_cjs45 = __commonJS({
         error_description: import_smithy_client5.expectString
       });
       Object.assign(contents, doc);
-      const exception = new ExpiredTokenException({
+      const exception2 = new ExpiredTokenException({
         $metadata: deserializeMetadata(parsedOutput),
         ...contents
       });
-      return (0, import_smithy_client5.decorateServiceException)(exception, parsedOutput.body);
+      return (0, import_smithy_client5.decorateServiceException)(exception2, parsedOutput.body);
     }, "de_ExpiredTokenExceptionRes");
     var de_InternalServerExceptionRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
       const contents = (0, import_smithy_client5.map)({});
@@ -15212,11 +14389,11 @@ var require_dist_cjs45 = __commonJS({
         error_description: import_smithy_client5.expectString
       });
       Object.assign(contents, doc);
-      const exception = new InternalServerException({
+      const exception2 = new InternalServerException({
         $metadata: deserializeMetadata(parsedOutput),
         ...contents
       });
-      return (0, import_smithy_client5.decorateServiceException)(exception, parsedOutput.body);
+      return (0, import_smithy_client5.decorateServiceException)(exception2, parsedOutput.body);
     }, "de_InternalServerExceptionRes");
     var de_InvalidClientExceptionRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
       const contents = (0, import_smithy_client5.map)({});
@@ -15226,11 +14403,11 @@ var require_dist_cjs45 = __commonJS({
         error_description: import_smithy_client5.expectString
       });
       Object.assign(contents, doc);
-      const exception = new InvalidClientException({
+      const exception2 = new InvalidClientException({
         $metadata: deserializeMetadata(parsedOutput),
         ...contents
       });
-      return (0, import_smithy_client5.decorateServiceException)(exception, parsedOutput.body);
+      return (0, import_smithy_client5.decorateServiceException)(exception2, parsedOutput.body);
     }, "de_InvalidClientExceptionRes");
     var de_InvalidClientMetadataExceptionRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
       const contents = (0, import_smithy_client5.map)({});
@@ -15240,11 +14417,11 @@ var require_dist_cjs45 = __commonJS({
         error_description: import_smithy_client5.expectString
       });
       Object.assign(contents, doc);
-      const exception = new InvalidClientMetadataException({
+      const exception2 = new InvalidClientMetadataException({
         $metadata: deserializeMetadata(parsedOutput),
         ...contents
       });
-      return (0, import_smithy_client5.decorateServiceException)(exception, parsedOutput.body);
+      return (0, import_smithy_client5.decorateServiceException)(exception2, parsedOutput.body);
     }, "de_InvalidClientMetadataExceptionRes");
     var de_InvalidGrantExceptionRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
       const contents = (0, import_smithy_client5.map)({});
@@ -15254,11 +14431,11 @@ var require_dist_cjs45 = __commonJS({
         error_description: import_smithy_client5.expectString
       });
       Object.assign(contents, doc);
-      const exception = new InvalidGrantException({
+      const exception2 = new InvalidGrantException({
         $metadata: deserializeMetadata(parsedOutput),
         ...contents
       });
-      return (0, import_smithy_client5.decorateServiceException)(exception, parsedOutput.body);
+      return (0, import_smithy_client5.decorateServiceException)(exception2, parsedOutput.body);
     }, "de_InvalidGrantExceptionRes");
     var de_InvalidRedirectUriExceptionRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
       const contents = (0, import_smithy_client5.map)({});
@@ -15268,11 +14445,11 @@ var require_dist_cjs45 = __commonJS({
         error_description: import_smithy_client5.expectString
       });
       Object.assign(contents, doc);
-      const exception = new InvalidRedirectUriException({
+      const exception2 = new InvalidRedirectUriException({
         $metadata: deserializeMetadata(parsedOutput),
         ...contents
       });
-      return (0, import_smithy_client5.decorateServiceException)(exception, parsedOutput.body);
+      return (0, import_smithy_client5.decorateServiceException)(exception2, parsedOutput.body);
     }, "de_InvalidRedirectUriExceptionRes");
     var de_InvalidRequestExceptionRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
       const contents = (0, import_smithy_client5.map)({});
@@ -15282,11 +14459,11 @@ var require_dist_cjs45 = __commonJS({
         error_description: import_smithy_client5.expectString
       });
       Object.assign(contents, doc);
-      const exception = new InvalidRequestException({
+      const exception2 = new InvalidRequestException({
         $metadata: deserializeMetadata(parsedOutput),
         ...contents
       });
-      return (0, import_smithy_client5.decorateServiceException)(exception, parsedOutput.body);
+      return (0, import_smithy_client5.decorateServiceException)(exception2, parsedOutput.body);
     }, "de_InvalidRequestExceptionRes");
     var de_InvalidRequestRegionExceptionRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
       const contents = (0, import_smithy_client5.map)({});
@@ -15298,11 +14475,11 @@ var require_dist_cjs45 = __commonJS({
         region: import_smithy_client5.expectString
       });
       Object.assign(contents, doc);
-      const exception = new InvalidRequestRegionException({
+      const exception2 = new InvalidRequestRegionException({
         $metadata: deserializeMetadata(parsedOutput),
         ...contents
       });
-      return (0, import_smithy_client5.decorateServiceException)(exception, parsedOutput.body);
+      return (0, import_smithy_client5.decorateServiceException)(exception2, parsedOutput.body);
     }, "de_InvalidRequestRegionExceptionRes");
     var de_InvalidScopeExceptionRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
       const contents = (0, import_smithy_client5.map)({});
@@ -15312,11 +14489,11 @@ var require_dist_cjs45 = __commonJS({
         error_description: import_smithy_client5.expectString
       });
       Object.assign(contents, doc);
-      const exception = new InvalidScopeException({
+      const exception2 = new InvalidScopeException({
         $metadata: deserializeMetadata(parsedOutput),
         ...contents
       });
-      return (0, import_smithy_client5.decorateServiceException)(exception, parsedOutput.body);
+      return (0, import_smithy_client5.decorateServiceException)(exception2, parsedOutput.body);
     }, "de_InvalidScopeExceptionRes");
     var de_SlowDownExceptionRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
       const contents = (0, import_smithy_client5.map)({});
@@ -15326,11 +14503,11 @@ var require_dist_cjs45 = __commonJS({
         error_description: import_smithy_client5.expectString
       });
       Object.assign(contents, doc);
-      const exception = new SlowDownException({
+      const exception2 = new SlowDownException({
         $metadata: deserializeMetadata(parsedOutput),
         ...contents
       });
-      return (0, import_smithy_client5.decorateServiceException)(exception, parsedOutput.body);
+      return (0, import_smithy_client5.decorateServiceException)(exception2, parsedOutput.body);
     }, "de_SlowDownExceptionRes");
     var de_UnauthorizedClientExceptionRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
       const contents = (0, import_smithy_client5.map)({});
@@ -15340,11 +14517,11 @@ var require_dist_cjs45 = __commonJS({
         error_description: import_smithy_client5.expectString
       });
       Object.assign(contents, doc);
-      const exception = new UnauthorizedClientException({
+      const exception2 = new UnauthorizedClientException({
         $metadata: deserializeMetadata(parsedOutput),
         ...contents
       });
-      return (0, import_smithy_client5.decorateServiceException)(exception, parsedOutput.body);
+      return (0, import_smithy_client5.decorateServiceException)(exception2, parsedOutput.body);
     }, "de_UnauthorizedClientExceptionRes");
     var de_UnsupportedGrantTypeExceptionRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
       const contents = (0, import_smithy_client5.map)({});
@@ -15354,11 +14531,11 @@ var require_dist_cjs45 = __commonJS({
         error_description: import_smithy_client5.expectString
       });
       Object.assign(contents, doc);
-      const exception = new UnsupportedGrantTypeException({
+      const exception2 = new UnsupportedGrantTypeException({
         $metadata: deserializeMetadata(parsedOutput),
         ...contents
       });
-      return (0, import_smithy_client5.decorateServiceException)(exception, parsedOutput.body);
+      return (0, import_smithy_client5.decorateServiceException)(exception2, parsedOutput.body);
     }, "de_UnsupportedGrantTypeExceptionRes");
     var deserializeMetadata = /* @__PURE__ */ __name((output) => ({
       httpStatusCode: output.statusCode,
@@ -16816,74 +15993,74 @@ var require_dist_cjs48 = __commonJS({
     var de_ExpiredTokenExceptionRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
       const body = parsedOutput.body;
       const deserialized = de_ExpiredTokenException(body.Error, context);
-      const exception = new ExpiredTokenException({
+      const exception2 = new ExpiredTokenException({
         $metadata: deserializeMetadata(parsedOutput),
         ...deserialized
       });
-      return (0, import_smithy_client5.decorateServiceException)(exception, body);
+      return (0, import_smithy_client5.decorateServiceException)(exception2, body);
     }, "de_ExpiredTokenExceptionRes");
     var de_IDPCommunicationErrorExceptionRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
       const body = parsedOutput.body;
       const deserialized = de_IDPCommunicationErrorException(body.Error, context);
-      const exception = new IDPCommunicationErrorException({
+      const exception2 = new IDPCommunicationErrorException({
         $metadata: deserializeMetadata(parsedOutput),
         ...deserialized
       });
-      return (0, import_smithy_client5.decorateServiceException)(exception, body);
+      return (0, import_smithy_client5.decorateServiceException)(exception2, body);
     }, "de_IDPCommunicationErrorExceptionRes");
     var de_IDPRejectedClaimExceptionRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
       const body = parsedOutput.body;
       const deserialized = de_IDPRejectedClaimException(body.Error, context);
-      const exception = new IDPRejectedClaimException({
+      const exception2 = new IDPRejectedClaimException({
         $metadata: deserializeMetadata(parsedOutput),
         ...deserialized
       });
-      return (0, import_smithy_client5.decorateServiceException)(exception, body);
+      return (0, import_smithy_client5.decorateServiceException)(exception2, body);
     }, "de_IDPRejectedClaimExceptionRes");
     var de_InvalidAuthorizationMessageExceptionRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
       const body = parsedOutput.body;
       const deserialized = de_InvalidAuthorizationMessageException(body.Error, context);
-      const exception = new InvalidAuthorizationMessageException({
+      const exception2 = new InvalidAuthorizationMessageException({
         $metadata: deserializeMetadata(parsedOutput),
         ...deserialized
       });
-      return (0, import_smithy_client5.decorateServiceException)(exception, body);
+      return (0, import_smithy_client5.decorateServiceException)(exception2, body);
     }, "de_InvalidAuthorizationMessageExceptionRes");
     var de_InvalidIdentityTokenExceptionRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
       const body = parsedOutput.body;
       const deserialized = de_InvalidIdentityTokenException(body.Error, context);
-      const exception = new InvalidIdentityTokenException({
+      const exception2 = new InvalidIdentityTokenException({
         $metadata: deserializeMetadata(parsedOutput),
         ...deserialized
       });
-      return (0, import_smithy_client5.decorateServiceException)(exception, body);
+      return (0, import_smithy_client5.decorateServiceException)(exception2, body);
     }, "de_InvalidIdentityTokenExceptionRes");
     var de_MalformedPolicyDocumentExceptionRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
       const body = parsedOutput.body;
       const deserialized = de_MalformedPolicyDocumentException(body.Error, context);
-      const exception = new MalformedPolicyDocumentException({
+      const exception2 = new MalformedPolicyDocumentException({
         $metadata: deserializeMetadata(parsedOutput),
         ...deserialized
       });
-      return (0, import_smithy_client5.decorateServiceException)(exception, body);
+      return (0, import_smithy_client5.decorateServiceException)(exception2, body);
     }, "de_MalformedPolicyDocumentExceptionRes");
     var de_PackedPolicyTooLargeExceptionRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
       const body = parsedOutput.body;
       const deserialized = de_PackedPolicyTooLargeException(body.Error, context);
-      const exception = new PackedPolicyTooLargeException({
+      const exception2 = new PackedPolicyTooLargeException({
         $metadata: deserializeMetadata(parsedOutput),
         ...deserialized
       });
-      return (0, import_smithy_client5.decorateServiceException)(exception, body);
+      return (0, import_smithy_client5.decorateServiceException)(exception2, body);
     }, "de_PackedPolicyTooLargeExceptionRes");
     var de_RegionDisabledExceptionRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
       const body = parsedOutput.body;
       const deserialized = de_RegionDisabledException(body.Error, context);
-      const exception = new RegionDisabledException({
+      const exception2 = new RegionDisabledException({
         $metadata: deserializeMetadata(parsedOutput),
         ...deserialized
       });
-      return (0, import_smithy_client5.decorateServiceException)(exception, body);
+      return (0, import_smithy_client5.decorateServiceException)(exception2, body);
     }, "de_RegionDisabledExceptionRes");
     var se_AssumeRoleRequest = /* @__PURE__ */ __name((input, context) => {
       var _a2, _b, _c, _d;
@@ -18514,7 +17691,7 @@ var require_dist_cjs53 = __commonJS({
       PreconditionNotMetException: () => PreconditionNotMetException,
       PublicPolicyException: () => PublicPolicyException,
       PutResourcePolicyCommand: () => PutResourcePolicyCommand,
-      PutSecretValueCommand: () => PutSecretValueCommand,
+      PutSecretValueCommand: () => PutSecretValueCommand2,
       PutSecretValueRequestFilterSensitiveLog: () => PutSecretValueRequestFilterSensitiveLog,
       RemoveRegionsFromReplicationCommand: () => RemoveRegionsFromReplicationCommand,
       ReplicateSecretToRegionsCommand: () => ReplicateSecretToRegionsCommand,
@@ -19431,110 +18608,110 @@ var require_dist_cjs53 = __commonJS({
     var de_DecryptionFailureRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
       const body = parsedOutput.body;
       const deserialized = (0, import_smithy_client5._json)(body);
-      const exception = new DecryptionFailure({
+      const exception2 = new DecryptionFailure({
         $metadata: deserializeMetadata(parsedOutput),
         ...deserialized
       });
-      return (0, import_smithy_client5.decorateServiceException)(exception, body);
+      return (0, import_smithy_client5.decorateServiceException)(exception2, body);
     }, "de_DecryptionFailureRes");
     var de_EncryptionFailureRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
       const body = parsedOutput.body;
       const deserialized = (0, import_smithy_client5._json)(body);
-      const exception = new EncryptionFailure({
+      const exception2 = new EncryptionFailure({
         $metadata: deserializeMetadata(parsedOutput),
         ...deserialized
       });
-      return (0, import_smithy_client5.decorateServiceException)(exception, body);
+      return (0, import_smithy_client5.decorateServiceException)(exception2, body);
     }, "de_EncryptionFailureRes");
     var de_InternalServiceErrorRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
       const body = parsedOutput.body;
       const deserialized = (0, import_smithy_client5._json)(body);
-      const exception = new InternalServiceError({
+      const exception2 = new InternalServiceError({
         $metadata: deserializeMetadata(parsedOutput),
         ...deserialized
       });
-      return (0, import_smithy_client5.decorateServiceException)(exception, body);
+      return (0, import_smithy_client5.decorateServiceException)(exception2, body);
     }, "de_InternalServiceErrorRes");
     var de_InvalidNextTokenExceptionRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
       const body = parsedOutput.body;
       const deserialized = (0, import_smithy_client5._json)(body);
-      const exception = new InvalidNextTokenException({
+      const exception2 = new InvalidNextTokenException({
         $metadata: deserializeMetadata(parsedOutput),
         ...deserialized
       });
-      return (0, import_smithy_client5.decorateServiceException)(exception, body);
+      return (0, import_smithy_client5.decorateServiceException)(exception2, body);
     }, "de_InvalidNextTokenExceptionRes");
     var de_InvalidParameterExceptionRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
       const body = parsedOutput.body;
       const deserialized = (0, import_smithy_client5._json)(body);
-      const exception = new InvalidParameterException({
+      const exception2 = new InvalidParameterException({
         $metadata: deserializeMetadata(parsedOutput),
         ...deserialized
       });
-      return (0, import_smithy_client5.decorateServiceException)(exception, body);
+      return (0, import_smithy_client5.decorateServiceException)(exception2, body);
     }, "de_InvalidParameterExceptionRes");
     var de_InvalidRequestExceptionRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
       const body = parsedOutput.body;
       const deserialized = (0, import_smithy_client5._json)(body);
-      const exception = new InvalidRequestException({
+      const exception2 = new InvalidRequestException({
         $metadata: deserializeMetadata(parsedOutput),
         ...deserialized
       });
-      return (0, import_smithy_client5.decorateServiceException)(exception, body);
+      return (0, import_smithy_client5.decorateServiceException)(exception2, body);
     }, "de_InvalidRequestExceptionRes");
     var de_LimitExceededExceptionRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
       const body = parsedOutput.body;
       const deserialized = (0, import_smithy_client5._json)(body);
-      const exception = new LimitExceededException({
+      const exception2 = new LimitExceededException({
         $metadata: deserializeMetadata(parsedOutput),
         ...deserialized
       });
-      return (0, import_smithy_client5.decorateServiceException)(exception, body);
+      return (0, import_smithy_client5.decorateServiceException)(exception2, body);
     }, "de_LimitExceededExceptionRes");
     var de_MalformedPolicyDocumentExceptionRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
       const body = parsedOutput.body;
       const deserialized = (0, import_smithy_client5._json)(body);
-      const exception = new MalformedPolicyDocumentException({
+      const exception2 = new MalformedPolicyDocumentException({
         $metadata: deserializeMetadata(parsedOutput),
         ...deserialized
       });
-      return (0, import_smithy_client5.decorateServiceException)(exception, body);
+      return (0, import_smithy_client5.decorateServiceException)(exception2, body);
     }, "de_MalformedPolicyDocumentExceptionRes");
     var de_PreconditionNotMetExceptionRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
       const body = parsedOutput.body;
       const deserialized = (0, import_smithy_client5._json)(body);
-      const exception = new PreconditionNotMetException({
+      const exception2 = new PreconditionNotMetException({
         $metadata: deserializeMetadata(parsedOutput),
         ...deserialized
       });
-      return (0, import_smithy_client5.decorateServiceException)(exception, body);
+      return (0, import_smithy_client5.decorateServiceException)(exception2, body);
     }, "de_PreconditionNotMetExceptionRes");
     var de_PublicPolicyExceptionRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
       const body = parsedOutput.body;
       const deserialized = (0, import_smithy_client5._json)(body);
-      const exception = new PublicPolicyException({
+      const exception2 = new PublicPolicyException({
         $metadata: deserializeMetadata(parsedOutput),
         ...deserialized
       });
-      return (0, import_smithy_client5.decorateServiceException)(exception, body);
+      return (0, import_smithy_client5.decorateServiceException)(exception2, body);
     }, "de_PublicPolicyExceptionRes");
     var de_ResourceExistsExceptionRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
       const body = parsedOutput.body;
       const deserialized = (0, import_smithy_client5._json)(body);
-      const exception = new ResourceExistsException({
+      const exception2 = new ResourceExistsException({
         $metadata: deserializeMetadata(parsedOutput),
         ...deserialized
       });
-      return (0, import_smithy_client5.decorateServiceException)(exception, body);
+      return (0, import_smithy_client5.decorateServiceException)(exception2, body);
     }, "de_ResourceExistsExceptionRes");
     var de_ResourceNotFoundExceptionRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
       const body = parsedOutput.body;
       const deserialized = (0, import_smithy_client5._json)(body);
-      const exception = new ResourceNotFoundException({
+      const exception2 = new ResourceNotFoundException({
         $metadata: deserializeMetadata(parsedOutput),
         ...deserialized
       });
-      return (0, import_smithy_client5.decorateServiceException)(exception, body);
+      return (0, import_smithy_client5.decorateServiceException)(exception2, body);
     }, "de_ResourceNotFoundExceptionRes");
     var se_CreateSecretRequest = /* @__PURE__ */ __name((input, context) => {
       return (0, import_smithy_client5.take)(input, {
@@ -19881,7 +19058,7 @@ var require_dist_cjs53 = __commonJS({
     }).s("secretsmanager", "PutSecretValue", {}).n("SecretsManagerClient", "PutSecretValueCommand").f(PutSecretValueRequestFilterSensitiveLog, void 0).ser(se_PutSecretValueCommand).de(de_PutSecretValueCommand).build() {
     };
     __name(_PutSecretValueCommand, "PutSecretValueCommand");
-    var PutSecretValueCommand = _PutSecretValueCommand;
+    var PutSecretValueCommand2 = _PutSecretValueCommand;
     var _RemoveRegionsFromReplicationCommand = class _RemoveRegionsFromReplicationCommand extends import_smithy_client5.Command.classBuilder().ep(commonParams).m(function(Command, cs, config, o) {
       return [
         (0, import_middleware_serde2.getSerdePlugin)(config, this.serialize, this.deserialize),
@@ -19985,7 +19162,7 @@ var require_dist_cjs53 = __commonJS({
       ListSecretsCommand,
       ListSecretVersionIdsCommand,
       PutResourcePolicyCommand,
-      PutSecretValueCommand,
+      PutSecretValueCommand: PutSecretValueCommand2,
       RemoveRegionsFromReplicationCommand,
       ReplicateSecretToRegionsCommand,
       RestoreSecretCommand,
@@ -20008,1887 +19185,8678 @@ var require_dist_cjs53 = __commonJS({
   }
 });
 
-// node_modules/@dazn/lambda-powertools-correlation-ids/index.js
-var require_lambda_powertools_correlation_ids = __commonJS({
-  "node_modules/@dazn/lambda-powertools-correlation-ids/index.js"(exports2, module2) {
-    var DEBUG_LOG_ENABLED = "debug-log-enabled";
-    var CorrelationIds = class {
-      constructor(context = {}) {
-        this.context = context;
-      }
-      clearAll() {
-        this.context = {};
-      }
-      replaceAllWith(ctx) {
-        this.context = ctx;
-      }
-      set(key, value) {
-        if (!key.startsWith("x-correlation-")) {
-          key = "x-correlation-" + key;
-        }
-        this.context[key] = value;
-      }
-      get() {
-        return this.context;
-      }
-      get debugLoggingEnabled() {
-        return this.context[DEBUG_LOG_ENABLED] === "true";
-      }
-      set debugLoggingEnabled(enabled) {
-        this.context[DEBUG_LOG_ENABLED] = enabled ? "true" : "false";
-      }
-      static clearAll() {
-        globalCorrelationIds.clearAll();
-      }
-      static replaceAllWith(...args) {
-        globalCorrelationIds.replaceAllWith(...args);
-      }
-      static set(...args) {
-        globalCorrelationIds.set(...args);
-      }
-      static get() {
-        return globalCorrelationIds.get();
-      }
-      static get debugLoggingEnabled() {
-        return globalCorrelationIds.debugLoggingEnabled;
-      }
-      static set debugLoggingEnabled(enabled) {
-        globalCorrelationIds.debugLoggingEnabled = enabled;
-      }
+// node_modules/@aws-sdk/middleware-sdk-sqs/dist-cjs/index.js
+var require_dist_cjs54 = __commonJS({
+  "node_modules/@aws-sdk/middleware-sdk-sqs/dist-cjs/index.js"(exports2, module2) {
+    "use strict";
+    var __defProp2 = Object.defineProperty;
+    var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
+    var __getOwnPropNames2 = Object.getOwnPropertyNames;
+    var __hasOwnProp2 = Object.prototype.hasOwnProperty;
+    var __name = (target, value) => __defProp2(target, "name", { value, configurable: true });
+    var __export2 = (target, all) => {
+      for (var name in all)
+        __defProp2(target, name, { get: all[name], enumerable: true });
     };
-    if (!global.CORRELATION_IDS) {
-      global.CORRELATION_IDS = new CorrelationIds();
-    }
-    var globalCorrelationIds = global.CORRELATION_IDS;
-    module2.exports = CorrelationIds;
-  }
-});
-
-// node_modules/@dazn/lambda-powertools-logger/index.js
-var require_lambda_powertools_logger = __commonJS({
-  "node_modules/@dazn/lambda-powertools-logger/index.js"(exports2, module2) {
-    var CorrelationIds = require_lambda_powertools_correlation_ids();
-    var LogLevels = {
-      DEBUG: 20,
-      INFO: 30,
-      WARN: 40,
-      ERROR: 50
+    var __copyProps2 = (to, from, except, desc) => {
+      if (from && typeof from === "object" || typeof from === "function") {
+        for (let key of __getOwnPropNames2(from))
+          if (!__hasOwnProp2.call(to, key) && key !== except)
+            __defProp2(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc2(from, key)) || desc.enumerable });
+      }
+      return to;
     };
-    var DEFAULT_CONTEXT = {
-      awsRegion: process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION,
-      functionName: process.env.AWS_LAMBDA_FUNCTION_NAME,
-      functionVersion: process.env.AWS_LAMBDA_FUNCTION_VERSION,
-      functionMemorySize: process.env.AWS_LAMBDA_FUNCTION_MEMORY_SIZE,
-      environment: process.env.ENVIRONMENT || process.env.STAGE
-      // convention in our functions
-    };
-    var Logger = class {
-      constructor({
-        correlationIds = CorrelationIds,
-        level = process.env.LOG_LEVEL
-      } = {}) {
-        this.correlationIds = correlationIds;
-        this.level = (level || "DEBUG").toUpperCase();
-        this.originalLevel = this.level;
-        if (correlationIds.debugEnabled) {
-          this.enableDebug();
-        }
-      }
-      get context() {
-        return {
-          ...DEFAULT_CONTEXT,
-          ...this.correlationIds.get()
-        };
-      }
-      isEnabled(level) {
-        return level >= (LogLevels[this.level] || LogLevels.DEBUG);
-      }
-      appendError(params, err) {
-        if (!err) {
-          return params;
-        }
-        return {
-          ...params || {},
-          errorName: err.name,
-          errorMessage: err.message,
-          stackTrace: err.stack
-        };
-      }
-      log(levelName, message, params) {
-        const level = LogLevels[levelName];
-        if (!this.isEnabled(level)) {
-          return;
-        }
-        const logMsg = {
-          ...this.context,
-          ...params,
-          level,
-          sLevel: levelName,
-          message
-        };
-        const consoleMethods = {
-          DEBUG: console.debug,
-          INFO: console.info,
-          WARN: console.warn,
-          ERROR: console.error
-        };
-        consoleMethods[levelName](JSON.stringify(
-          { message, ...params, ...logMsg },
-          (key, value) => typeof value === "bigint" ? value.toString() : value
-        ));
-      }
-      debug(msg, params) {
-        this.log("DEBUG", msg, params);
-      }
-      info(msg, params) {
-        this.log("INFO", msg, params);
-      }
-      warn(msg, params, err) {
-        const parameters = !err && params instanceof Error ? this.appendError({}, params) : this.appendError(params, err);
-        this.log("WARN", msg, parameters);
-      }
-      error(msg, params, err) {
-        const parameters = !err && params instanceof Error ? this.appendError({}, params) : this.appendError(params, err);
-        this.log("ERROR", msg, parameters);
-      }
-      enableDebug() {
-        this.level = "DEBUG";
-        return () => this.resetLevel();
-      }
-      resetLevel() {
-        this.level = this.originalLevel;
-      }
-      static debug(...args) {
-        globalLogger.debug(...args);
-      }
-      static info(...args) {
-        globalLogger.info(...args);
-      }
-      static warn(...args) {
-        globalLogger.warn(...args);
-      }
-      static error(...args) {
-        globalLogger.error(...args);
-      }
-      static enableDebug() {
-        return globalLogger.enableDebug();
-      }
-      static resetLevel() {
-        globalLogger.resetLevel();
-      }
-      static get level() {
-        return globalLogger.level;
-      }
-    };
-    var globalLogger = new Logger();
-    module2.exports = Logger;
-  }
-});
-
-// src/services/NotificationsService/index.ts
-var NotificationsService_exports = {};
-__export(NotificationsService_exports, {
-  NotificationsService: () => NotificationsService,
-  default: () => NotificationsService_default
-});
-module.exports = __toCommonJS(NotificationsService_exports);
-
-// src/templates/email-templates/create-user-template.ts
-var createUserTemplate = `<!doctype html>
-<html xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
-
-<head>
-  <title> TraderApp </title>
-  <!--[if !mso]><!-->
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <!--<![endif]-->
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style type="text/css">
-    #outlook a {
-      padding: 0;
-    }
-
-    body {
-      margin: 0;
-      padding: 0;
-      -webkit-text-size-adjust: 100%;
-      -ms-text-size-adjust: 100%;
-    }
-
-    table,
-    td {
-      border-collapse: collapse;
-      mso-table-lspace: 0pt;
-      mso-table-rspace: 0pt;
-    }
-
-    img {
-      border: 0;
-      height: auto;
-      line-height: 100%;
-      outline: none;
-      text-decoration: none;
-      -ms-interpolation-mode: bicubic;
-    }
-
-    p {
-      display: block;
-      margin: 13px 0;
-    }
-  </style>
-  <!--[if mso]>
-        <noscript>
-        <xml>
-        <o:OfficeDocumentSettings>
-          <o:AllowPNG/>
-          <o:PixelsPerInch>96</o:PixelsPerInch>
-        </o:OfficeDocumentSettings>
-        </xml>
-        </noscript>
-        <![endif]-->
-  <!--[if lte mso 11]>
-        <style type="text/css">
-          .mj-outlook-group-fix { width:100% !important; }
-        </style>
-        <![endif]-->
-  <!--[if !mso]><!-->
-  <link href="https://fonts.googleapis.com/css?family=Ubuntu:300,400,500,700" rel="stylesheet" type="text/css">
-  <style type="text/css">
-    @import url(https://fonts.googleapis.com/css?family=Ubuntu:300,400,500,700);
-  </style>
-  <!--<![endif]-->
-  <style type="text/css">
-    @media only screen and (min-width:480px) {
-      .mj-column-per-100 {
-        width: 100% !important;
-        max-width: 100%;
-      }
-    }
-  </style>
-  <style media="screen and (min-width:480px)">
-    .moz-text-html .mj-column-per-100 {
-      width: 100% !important;
-      max-width: 100%;
-    }
-  </style>
-  <style type="text/css">
-    @media only screen and (max-width:480px) {
-      table.mj-full-width-mobile {
-        width: 100% !important;
-      }
-
-      td.mj-full-width-mobile {
-        width: auto !important;
-      }
-    }
-  </style>
-  <style type="text/css">
-    .br_20 {
-      border: 1px solid #D1D7F0;
-      border-radius: 10px !important;
-    }
-
-    .otp {
-      width: 500px !important;
-      background: red;
-    }
-  </style>
-</head>
-
-<body style="word-spacing:normal;background-color:white;">
-  <div style="background-color:white;">
-    <!--[if mso | IE]><table align="center" border="0" cellpadding="0" cellspacing="0" class="" style="width:600px;" width="600" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
-    <div style="margin:0px auto;max-width:600px;">
-      <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:100%;">
-        <tbody>
-          <tr>
-            <td style="direction:ltr;font-size:0px;padding:20px 0;text-align:center;">
-              <!--[if mso | IE]><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr></tr></table><![endif]-->
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <!--[if mso | IE]></td></tr></table><table align="center" border="0" cellpadding="0" cellspacing="0" class="br_20-outlook" style="width:600px;" width="600" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
-    <div class="br_20" style="margin:0px auto;max-width:600px;">
-      <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:100%;">
-        <tbody>
-          <tr>
-            <td style="direction:ltr;font-size:0px;padding:20px 0;text-align:center;">
-              <!--[if mso | IE]><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr><td class="" width="600px" ><table align="center" border="0" cellpadding="0" cellspacing="0" class="" style="width:600px;" width="600" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
-              <div style="margin:0px auto;max-width:600px;">
-                <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:100%;">
-                  <tbody>
-                    <tr>
-                      <td style="direction:ltr;font-size:0px;padding:20px 0;text-align:center;">
-                        <!--[if mso | IE]><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr><td class="" style="vertical-align:top;width:600px;" ><![endif]-->
-                        <div class="mj-column-per-100 mj-outlook-group-fix" style="font-size:0px;text-align:left;direction:ltr;display:inline-block;vertical-align:top;width:100%;">
-                          <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="vertical-align:top;" width="100%">
-                            <tbody>
-                              <tr>
-                                <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                                  <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:collapse;border-spacing:0px;">
-                                    <tbody>
-                                      <tr>
-                                        <td style="width:150px;">
-                                          <img height="auto" src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/traderapp-logo.png" style="border:0;display:block;outline:none;text-decoration:none;height:auto;width:100%;font-size:13px;" width="150" />
-                                        </td>
-                                      </tr>
-                                    </tbody>
-                                  </table>
-                                </td>
-                              </tr>
-                              <tr>
-                                <td align="center" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                                  <div style="font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:16px;font-weight:400;line-height:1;text-align:left;color:#000000;">Welcome to TraderApp</div>
-                                </td>
-                              </tr>
-                              <tr>
-                                <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                                  <div style="font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:16px;font-weight:300;line-height:1;text-align:left;color:#000000;">Hi {USER_NAME},</div>
-                                </td>
-                              </tr>
-                              <tr>
-                                <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                                  <div style="font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:16px;font-weight:200;line-height:1.5;text-align:left;color:#000000;">We&apos;re excited to welcome you to Trader App and we&apos;re even more excited about what we&apos;ve got planned. You&apos;re already on your way to building a well structured finance.</div>
-                                </td>
-                              </tr>
-                              <tr>
-                                <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                                  <div style="font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:16px;font-weight:200;line-height:1.5;text-align:left;color:#000000;">Click the button below to quickly reset your password and login into your account.</div>
-                                </td>
-                              </tr>
-                              <tr>
-                                <td align="center" vertical-align="middle" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                                  <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:separate;line-height:100%;">
-                                    <tr>
-                                      <td align="center" bgcolor="#1836B2" role="presentation" style="border:none;border-radius:6px;cursor:auto;mso-padding-alt:10px 25px;background:#1836B2;" valign="middle">
-                                        <a href="{RESET_LINK}" style="display:inline-block;background:#1836B2;color:#ffffff;font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:13px;font-weight:normal;line-height:120%;margin:0;text-decoration:none;text-transform:none;padding:10px 25px;mso-padding-alt:0px;border-radius:6px;" target="_blank"> Reset Password </a>
-                                      </td>
-                                    </tr>
-                                  </table>
-                                </td>
-                              </tr>
-                              <tr>
-                                <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                                  <div style="font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:16px;font-weight:200;line-height:0;text-align:left;color:#000000;">Have any question? Reach out to us on <mj-text href="#">here.</mj-text>
-                                  </div>
-                                </td>
-                              </tr>
-                              <tr>
-                                <td style="font-size:0px;word-break:break-word;">
-                                  <div style="height:20px;line-height:20px;">&#8202;</div>
-                                </td>
-                              </tr>
-                              <tr>
-                                <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                                  <div style="font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:16px;font-weight:300;line-height:1;text-align:left;color:#000000;">Thanks,</div>
-                                </td>
-                              </tr>
-                              <tr>
-                                <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                                  <div style="font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:16px;font-weight:400;line-height:0;text-align:left;color:#000000;">TraderApp Team.</div>
-                                </td>
-                              </tr>
-                              <tr>
-                                <td style="font-size:0px;word-break:break-word;">
-                                  <div style="height:20px;line-height:20px;">&#8202;</div>
-                                </td>
-                              </tr>
-                              <tr>
-                                <td align="left" vertical-align="middle" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                                  <!--[if mso | IE]><table align="left" border="0" cellpadding="0" cellspacing="0" role="presentation" ><tr><td><![endif]-->
-                                  <table align="left" border="0" cellpadding="0" cellspacing="0" role="presentation" style="float:none;display:inline-table;">
-                                    <tr>
-                                      <td style="padding:4px;vertical-align:middle;">
-                                        <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-radius:3px;width:25px;">
-                                          <tr>
-                                            <td style="font-size:0;height:25px;vertical-align:middle;width:25px;">
-                                              <a href="https://x.com/traderapp" target="_blank">
-                                                <img height="25" src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/twitter22.png" style="border-radius:3px;display:block;" width="25" />
-                                              </a>
-                                            </td>
-                                          </tr>
-                                        </table>
-                                      </td>
-                                    </tr>
-                                  </table>
-                                  <!--[if mso | IE]></td><td><![endif]-->
-                                  <table align="left" border="0" cellpadding="0" cellspacing="0" role="presentation" style="float:none;display:inline-table;">
-                                    <tr>
-                                      <td style="padding:4px;vertical-align:middle;">
-                                        <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-radius:3px;width:25px;">
-                                          <tr>
-                                            <td style="font-size:0;height:25px;vertical-align:middle;width:25px;">
-                                              <a href="https://www.facebook.com/traderappofficial?mibextid=ZbWKwL" target="_blank">
-                                                <img height="25" src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/facebook22.png" style="border-radius:3px;display:block;" width="25" />
-                                              </a>
-                                            </td>
-                                          </tr>
-                                        </table>
-                                      </td>
-                                    </tr>
-                                  </table>
-                                  <!--[if mso | IE]></td><td><![endif]-->
-                                  <table align="left" border="0" cellpadding="0" cellspacing="0" role="presentation" style="float:none;display:inline-table;">
-                                    <tr>
-                                      <td style="padding:4px;vertical-align:middle;">
-                                        <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-radius:3px;width:25px;">
-                                          <tr>
-                                            <td style="font-size:0;height:25px;vertical-align:middle;width:25px;">
-                                              <a href="https://instagram.com/traderapphq" target="_blank">
-                                                <img height="25" src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/ig22.png" style="border-radius:3px;display:block;" width="25" />
-                                              </a>
-                                            </td>
-                                          </tr>
-                                        </table>
-                                      </td>
-                                    </tr>
-                                  </table>
-                                  <!--[if mso | IE]></td><td><![endif]-->
-                                  <table align="left" border="0" cellpadding="0" cellspacing="0" role="presentation" style="float:none;display:inline-table;">
-                                    <tr>
-                                      <td style="padding:4px;vertical-align:middle;">
-                                        <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-radius:3px;width:25px;">
-                                          <tr>
-                                            <td style="font-size:0;height:25px;vertical-align:middle;width:25px;">
-                                              <a href="https://traderapp.finance/#" target="_blank">
-                                                <img height="25" src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/tiktok22.png" style="border-radius:3px;display:block;" width="25" />
-                                              </a>
-                                            </td>
-                                          </tr>
-                                        </table>
-                                      </td>
-                                    </tr>
-                                  </table>
-                                  <!--[if mso | IE]></td><td><![endif]-->
-                                  <table align="left" border="0" cellpadding="0" cellspacing="0" role="presentation" style="float:none;display:inline-table;">
-                                    <tr>
-                                      <td style="padding:4px;vertical-align:middle;">
-                                        <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-radius:3px;width:25px;">
-                                          <tr>
-                                            <td style="font-size:0;height:25px;vertical-align:middle;width:25px;">
-                                              <a href="https://chat.whatsapp.com/IXrOLV0xWra8DHNqVCmHrj" target="_blank">
-                                                <img height="25" src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/wa22.png" style="border-radius:3px;display:block;" width="25" />
-                                              </a>
-                                            </td>
-                                          </tr>
-                                        </table>
-                                      </td>
-                                    </tr>
-                                  </table>
-                                  <!--[if mso | IE]></td></tr></table><![endif]-->
-                                </td>
-                              </tr>
-                              <tr>
-                                <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                                  <div style="font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:14px;font-weight:200;line-height:1;text-align:left;color:#000000;">Copyright \xA9 2024 Trader App, All rights reserved.</div>
-                                </td>
-                              </tr>
-                            </tbody>
-                          </table>
-                        </div>
-                        <!--[if mso | IE]></td></tr></table><![endif]-->
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-              <!--[if mso | IE]></td></tr></table></td></tr></table><![endif]-->
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <!--[if mso | IE]></td></tr></table><![endif]-->
-  </div>
-</body>
-
-</html>`;
-var create_user_template_default = createUserTemplate;
-
-// src/templates/email-templates/general.ts
-var generalTemplate = `<!doctype html>
-<html xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
-
-<head>
-  <title> TraderApp </title>
-  <!--[if !mso]><!-->
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <!--<![endif]-->
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style type="text/css">
-    #outlook a {
-      padding: 0;
-    }
-
-    body {
-      margin: 0;
-      padding: 0;
-      -webkit-text-size-adjust: 100%;
-      -ms-text-size-adjust: 100%;
-    }
-
-    table,
-    td {
-      border-collapse: collapse;
-      mso-table-lspace: 0pt;
-      mso-table-rspace: 0pt;
-    }
-
-    img {
-      border: 0;
-      height: auto;
-      line-height: 100%;
-      outline: none;
-      text-decoration: none;
-      -ms-interpolation-mode: bicubic;
-    }
-
-    p {
-      display: block;
-      margin: 13px 0;
-    }
-  </style>
-  <!--[if mso]>
-        <noscript>
-        <xml>
-        <o:OfficeDocumentSettings>
-          <o:AllowPNG/>
-          <o:PixelsPerInch>96</o:PixelsPerInch>
-        </o:OfficeDocumentSettings>
-        </xml>
-        </noscript>
-        <![endif]-->
-  <!--[if lte mso 11]>
-        <style type="text/css">
-          .mj-outlook-group-fix { width:100% !important; }
-        </style>
-        <![endif]-->
-  <!--[if !mso]><!-->
-  <link href="https://fonts.googleapis.com/css?family=Ubuntu:300,400,500,700" rel="stylesheet" type="text/css">
-  <style type="text/css">
-    @import url(https://fonts.googleapis.com/css?family=Ubuntu:300,400,500,700);
-  </style>
-  <!--<![endif]-->
-  <style type="text/css">
-    @media only screen and (min-width:480px) {
-      .mj-column-per-100 {
-        width: 100% !important;
-        max-width: 100%;
-      }
-    }
-  </style>
-  <style media="screen and (min-width:480px)">
-    .moz-text-html .mj-column-per-100 {
-      width: 100% !important;
-      max-width: 100%;
-    }
-  </style>
-  <style type="text/css">
-    @media only screen and (max-width:480px) {
-      table.mj-full-width-mobile {
-        width: 100% !important;
-      }
-
-      td.mj-full-width-mobile {
-        width: auto !important;
-      }
-    }
-  </style>
-  <style type="text/css">
-    .br_20 {
-      border: 1px solid #D1D7F0;
-      border-radius: 10px !important;
-    }
-
-    .otp {
-      width: 500px !important;
-      background: red;
-    }
-  </style>
-</head>
-
-<body style="word-spacing:normal;background-color:white;">
-  <div style="background-color:white;">
-    <!--[if mso | IE]><table align="center" border="0" cellpadding="0" cellspacing="0" class="" style="width:600px;" width="600" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
-    <div style="margin:0px auto;max-width:600px;">
-      <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:100%;">
-        <tbody>
-          <tr>
-            <td style="direction:ltr;font-size:0px;padding:20px 0;text-align:center;">
-              <!--[if mso | IE]><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr></tr></table><![endif]-->
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <!--[if mso | IE]></td></tr></table><table align="center" border="0" cellpadding="0" cellspacing="0" class="br_20-outlook" style="width:600px;" width="600" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
-    <div class="br_20" style="margin:0px auto;max-width:600px;">
-      <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:100%;">
-        <tbody>
-          <tr>
-            <td style="direction:ltr;font-size:0px;padding:20px 0;text-align:center;">
-              <!--[if mso | IE]><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr><td class="" width="600px" ><table align="center" border="0" cellpadding="0" cellspacing="0" class="" style="width:600px;" width="600" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
-              <div style="margin:0px auto;max-width:600px;">
-                <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:100%;">
-                  <tbody>
-                    <tr>
-                      <td style="direction:ltr;font-size:0px;padding:20px 0;text-align:center;">
-                        <!--[if mso | IE]><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr><td class="" style="vertical-align:top;width:600px;" ><![endif]-->
-                        <div class="mj-column-per-100 mj-outlook-group-fix" style="font-size:0px;text-align:left;direction:ltr;display:inline-block;vertical-align:top;width:100%;">
-                          <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="vertical-align:top;" width="100%">
-                            <tbody>
-                              <tr>
-                                <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                                  <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:collapse;border-spacing:0px;">
-                                    <tbody>
-                                      <tr>
-                                        <td style="width:150px;">
-                                          <img height="auto" src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/traderapp-logo.png" style="border:0;display:block;outline:none;text-decoration:none;height:auto;width:100%;font-size:13px;" width="150" />
-                                        </td>
-                                      </tr>
-                                    </tbody>
-                                  </table>
-                                </td>
-                              </tr>
-                              <tr>
-                                <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                                  <div style="font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:16px;font-weight:200;line-height:1;text-align:left;color:#000000;">Hi {USER_NAME}</div>
-                                </td>
-                              </tr>
-                              <tr>
-                                <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                                  <div style="font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:16px;font-weight:200;line-height:1.5;text-align:left;color:#000000;">{BODY}</div>
-                                </td>
-                              </tr>
-                              <tr>
-                                <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                                  <div style="font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:16px;font-weight:200;line-height:1;text-align:left;color:#000000;">Thanks,</div>
-                                </td>
-                              </tr>
-                              <tr>
-                                <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                                  <div style="font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:16px;font-weight:200;line-height:0;text-align:left;color:#000000;">TraderApp Team.</div>
-                                </td>
-                              </tr>
-                              <tr>
-                                <td style="font-size:0px;word-break:break-word;">
-                                  <div style="height:20px;line-height:20px;">&#8202;</div>
-                                </td>
-                              </tr>
-                              <tr>
-                                <td align="left" vertical-align="middle" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                                  <!--[if mso | IE]><table align="left" border="0" cellpadding="0" cellspacing="0" role="presentation" ><tr><td><![endif]-->
-                                  <table align="left" border="0" cellpadding="0" cellspacing="0" role="presentation" style="float:none;display:inline-table;">
-                                    <tr>
-                                      <td style="padding:4px;vertical-align:middle;">
-                                        <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-radius:3px;width:25px;">
-                                          <tr>
-                                            <td style="font-size:0;height:25px;vertical-align:middle;width:25px;">
-                                              <a href="https://x.com/traderapp" target="_blank">
-                                                <img height="25" src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/twitter22.png" style="border-radius:3px;display:block;" width="25" />
-                                              </a>
-                                            </td>
-                                          </tr>
-                                        </table>
-                                      </td>
-                                    </tr>
-                                  </table>
-                                  <!--[if mso | IE]></td><td><![endif]-->
-                                  <table align="left" border="0" cellpadding="0" cellspacing="0" role="presentation" style="float:none;display:inline-table;">
-                                    <tr>
-                                      <td style="padding:4px;vertical-align:middle;">
-                                        <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-radius:3px;width:25px;">
-                                          <tr>
-                                            <td style="font-size:0;height:25px;vertical-align:middle;width:25px;">
-                                              <a href="https://www.facebook.com/traderappofficial?mibextid=ZbWKwL" target="_blank">
-                                                <img height="25" src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/facebook22.png" style="border-radius:3px;display:block;" width="25" />
-                                              </a>
-                                            </td>
-                                          </tr>
-                                        </table>
-                                      </td>
-                                    </tr>
-                                  </table>
-                                  <!--[if mso | IE]></td><td><![endif]-->
-                                  <table align="left" border="0" cellpadding="0" cellspacing="0" role="presentation" style="float:none;display:inline-table;">
-                                    <tr>
-                                      <td style="padding:4px;vertical-align:middle;">
-                                        <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-radius:3px;width:25px;">
-                                          <tr>
-                                            <td style="font-size:0;height:25px;vertical-align:middle;width:25px;">
-                                              <a href="https://instagram.com/traderapphq" target="_blank">
-                                                <img height="25" src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/ig22.png" style="border-radius:3px;display:block;" width="25" />
-                                              </a>
-                                            </td>
-                                          </tr>
-                                        </table>
-                                      </td>
-                                    </tr>
-                                  </table>
-                                  <!--[if mso | IE]></td><td><![endif]-->
-                                  <table align="left" border="0" cellpadding="0" cellspacing="0" role="presentation" style="float:none;display:inline-table;">
-                                    <tr>
-                                      <td style="padding:4px;vertical-align:middle;">
-                                        <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-radius:3px;width:25px;">
-                                          <tr>
-                                            <td style="font-size:0;height:25px;vertical-align:middle;width:25px;">
-                                              <a href="https://traderapp.finance/#" target="_blank">
-                                                <img height="25" src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/tiktok22.png" style="border-radius:3px;display:block;" width="25" />
-                                              </a>
-                                            </td>
-                                          </tr>
-                                        </table>
-                                      </td>
-                                    </tr>
-                                  </table>
-                                  <!--[if mso | IE]></td><td><![endif]-->
-                                  <table align="left" border="0" cellpadding="0" cellspacing="0" role="presentation" style="float:none;display:inline-table;">
-                                    <tr>
-                                      <td style="padding:4px;vertical-align:middle;">
-                                        <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-radius:3px;width:25px;">
-                                          <tr>
-                                            <td style="font-size:0;height:25px;vertical-align:middle;width:25px;">
-                                              <a href="https://chat.whatsapp.com/IXrOLV0xWra8DHNqVCmHrj" target="_blank">
-                                                <img height="25" src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/wa22.png" style="border-radius:3px;display:block;" width="25" />
-                                              </a>
-                                            </td>
-                                          </tr>
-                                        </table>
-                                      </td>
-                                    </tr>
-                                  </table>
-                                  <!--[if mso | IE]></td></tr></table><![endif]-->
-                                </td>
-                              </tr>
-                              <tr>
-                                <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                                  <div style="font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:14px;font-weight:200;line-height:1;text-align:left;color:#000000;">Copyright \xA9 2024 Trader App, All rights reserved.</div>
-                                </td>
-                              </tr>
-                            </tbody>
-                          </table>
-                        </div>
-                        <!--[if mso | IE]></td></tr></table><![endif]-->
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-              <!--[if mso | IE]></td></tr></table></td></tr></table><![endif]-->
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <!--[if mso | IE]></td></tr></table><![endif]-->
-  </div>
-</body>
-
-</html>`;
-var general_default = generalTemplate;
-
-// src/templates/email-templates/get-started-template.ts
-var getStartedTemplate = `
-<!doctype html>
-<html xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
-
-<head>
-  <title> TraderApp </title>
-  <!--[if !mso]><!-->
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <!--<![endif]-->
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style type="text/css">
-    #outlook a {
-      padding: 0;
-    }
-
-    body {
-      margin: 0;
-      padding: 0;
-      -webkit-text-size-adjust: 100%;
-      -ms-text-size-adjust: 100%;
-    }
-
-    table,
-    td {
-      border-collapse: collapse;
-      mso-table-lspace: 0pt;
-      mso-table-rspace: 0pt;
-    }
-
-    img {
-      border: 0;
-      height: auto;
-      line-height: 100%;
-      outline: none;
-      text-decoration: none;
-      -ms-interpolation-mode: bicubic;
-    }
-
-    p {
-      display: block;
-      margin: 13px 0;
-    }
-  </style>
-  <!--[if mso]>
-        <noscript>
-        <xml>
-        <o:OfficeDocumentSettings>
-          <o:AllowPNG/>
-          <o:PixelsPerInch>96</o:PixelsPerInch>
-        </o:OfficeDocumentSettings>
-        </xml>
-        </noscript>
-        <![endif]-->
-  <!--[if lte mso 11]>
-        <style type="text/css">
-          .mj-outlook-group-fix { width:100% !important; }
-        </style>
-        <![endif]-->
-  <!--[if !mso]><!-->
-  <link href="https://fonts.googleapis.com/css?family=Ubuntu:300,400,500,700" rel="stylesheet" type="text/css">
-  <style type="text/css">
-    @import url(https://fonts.googleapis.com/css?family=Ubuntu:300,400,500,700);
-  </style>
-  <!--<![endif]-->
-  <style type="text/css">
-    @media only screen and (min-width:480px) {
-      .mj-column-per-100 {
-        width: 100% !important;
-        max-width: 100%;
-      }
-    }
-  </style>
-  <style media="screen and (min-width:480px)">
-    .moz-text-html .mj-column-per-100 {
-      width: 100% !important;
-      max-width: 100%;
-    }
-  </style>
-  <style type="text/css">
-    @media only screen and (max-width:480px) {
-      table.mj-full-width-mobile {
-        width: 100% !important;
-      }
-
-      td.mj-full-width-mobile {
-        width: auto !important;
-      }
-    }
-  </style>
-  <style type="text/css">
-    .br_20 {
-      border: 1px solid #D1D7F0;
-      border-radius: 10px !important;
-    }
-
-    .otp {
-      width: 500px !important;
-      background: red;
-    }
-  </style>
-</head>
-
-<body style="word-spacing:normal;background-color:white;">
-  <div style="background-color:white;">
-    <!--[if mso | IE]><table align="center" border="0" cellpadding="0" cellspacing="0" class="" style="width:600px;" width="600" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
-    <div style="margin:0px auto;max-width:600px;">
-      <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:100%;">
-        <tbody>
-          <tr>
-            <td style="direction:ltr;font-size:0px;padding:20px 0;text-align:center;">
-              <!--[if mso | IE]><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr></tr></table><![endif]-->
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <!--[if mso | IE]></td></tr></table><table align="center" border="0" cellpadding="0" cellspacing="0" class="br_20-outlook" style="width:600px;" width="600" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
-    <div class="br_20" style="margin:0px auto;max-width:600px;">
-      <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:100%;">
-        <tbody>
-          <tr>
-            <td style="direction:ltr;font-size:0px;padding:20px 0;text-align:center;">
-              <!--[if mso | IE]><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr><td class="" width="600px" ><table align="center" border="0" cellpadding="0" cellspacing="0" class="" style="width:600px;" width="600" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
-              <div style="margin:0px auto;max-width:600px;">
-                <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:100%;">
-                  <tbody>
-                    <tr>
-                      <td style="direction:ltr;font-size:0px;padding:20px 0;text-align:center;">
-                        <!--[if mso | IE]><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr><td class="" style="vertical-align:top;width:600px;" ><![endif]-->
-                        <div class="mj-column-per-100 mj-outlook-group-fix" style="font-size:0px;text-align:left;direction:ltr;display:inline-block;vertical-align:top;width:100%;">
-                          <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="vertical-align:top;" width="100%">
-                            <tbody>
-                              <tr>
-                                <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                                  <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:collapse;border-spacing:0px;">
-                                    <tbody>
-                                      <tr>
-                                        <td style="width:150px;">
-                                          <img height="auto" src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/traderapp-logo.png" style="border:0;display:block;outline:none;text-decoration:none;height:auto;width:100%;font-size:13px;" width="150" />
-                                        </td>
-                                      </tr>
-                                    </tbody>
-                                  </table>
-                                </td>
-                              </tr>
-                              <tr>
-                                <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                                  <div style="font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:16px;font-weight:300;line-height:1;text-align:left;color:#000000;">Hi {USER_NAME}</div>
-                                </td>
-                              </tr>
-                              <tr>
-                                <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                                  <div style="font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:16px;font-weight:200;line-height:1.5;text-align:left;color:#000000;">We&apos;re excited to welcome you to Trader App and we&apos;re even more excited about what we&apos;ve got planned. You&apos;re already on your way to building a well structured finance.</div>
-                                </td>
-                              </tr>
-                              <tr>
-                                <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                                  <div style="font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:16px;font-weight:200;line-height:1.5;text-align:left;color:#000000;">Whether you\u2019re here for your brand, for a cause, or just for fun \u2014 welcome! If there\u2019s anything you need, we\u2019ll be here every step of the way.</div>
-                                </td>
-                              </tr>
-                              <tr>
-                                <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                                  <div style="font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:16px;font-weight:200;line-height:1.5;text-align:left;color:#000000;">Thanks for signing up. If you have any questions, send us a message at support@traderapp.finance or on any of our social media platforms. We\u2019d love to hear from you.</div>
-                                </td>
-                              </tr>
-                              <tr>
-                                <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                                  <div style="font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:16px;font-weight:300;line-height:1;text-align:left;color:#000000;">Thanks,</div>
-                                </td>
-                              </tr>
-                              <tr>
-                                <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                                  <div style="font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:16px;font-weight:400;line-height:0;text-align:left;color:#000000;">TraderApp Team.</div>
-                                </td>
-                              </tr>
-                              <tr>
-                                <td style="font-size:0px;word-break:break-word;">
-                                  <div style="height:20px;line-height:20px;">&#8202;</div>
-                                </td>
-                              </tr>
-                              <tr>
-                                <td align="left" vertical-align="middle" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                                  <!--[if mso | IE]><table align="left" border="0" cellpadding="0" cellspacing="0" role="presentation" ><tr><td><![endif]-->
-                                  <table align="left" border="0" cellpadding="0" cellspacing="0" role="presentation" style="float:none;display:inline-table;">
-                                    <tr>
-                                      <td style="padding:4px;vertical-align:middle;">
-                                        <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-radius:3px;width:25px;">
-                                          <tr>
-                                            <td style="font-size:0;height:25px;vertical-align:middle;width:25px;">
-                                              <a href="https://x.com/traderapp" target="_blank">
-                                                <img height="25" src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/twitter22.png" style="border-radius:3px;display:block;" width="25" />
-                                              </a>
-                                            </td>
-                                          </tr>
-                                        </table>
-                                      </td>
-                                    </tr>
-                                  </table>
-                                  <!--[if mso | IE]></td><td><![endif]-->
-                                  <table align="left" border="0" cellpadding="0" cellspacing="0" role="presentation" style="float:none;display:inline-table;">
-                                    <tr>
-                                      <td style="padding:4px;vertical-align:middle;">
-                                        <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-radius:3px;width:25px;">
-                                          <tr>
-                                            <td style="font-size:0;height:25px;vertical-align:middle;width:25px;">
-                                              <a href="https://www.facebook.com/traderappofficial?mibextid=ZbWKwL" target="_blank">
-                                                <img height="25" src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/facebook22.png" style="border-radius:3px;display:block;" width="25" />
-                                              </a>
-                                            </td>
-                                          </tr>
-                                        </table>
-                                      </td>
-                                    </tr>
-                                  </table>
-                                  <!--[if mso | IE]></td><td><![endif]-->
-                                  <table align="left" border="0" cellpadding="0" cellspacing="0" role="presentation" style="float:none;display:inline-table;">
-                                    <tr>
-                                      <td style="padding:4px;vertical-align:middle;">
-                                        <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-radius:3px;width:25px;">
-                                          <tr>
-                                            <td style="font-size:0;height:25px;vertical-align:middle;width:25px;">
-                                              <a href="https://instagram.com/traderapphq" target="_blank">
-                                                <img height="25" src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/ig22.png" style="border-radius:3px;display:block;" width="25" />
-                                              </a>
-                                            </td>
-                                          </tr>
-                                        </table>
-                                      </td>
-                                    </tr>
-                                  </table>
-                                  <!--[if mso | IE]></td><td><![endif]-->
-                                  <table align="left" border="0" cellpadding="0" cellspacing="0" role="presentation" style="float:none;display:inline-table;">
-                                    <tr>
-                                      <td style="padding:4px;vertical-align:middle;">
-                                        <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-radius:3px;width:25px;">
-                                          <tr>
-                                            <td style="font-size:0;height:25px;vertical-align:middle;width:25px;">
-                                              <a href="https://traderapp.finance/#" target="_blank">
-                                                <img height="25" src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/tiktok22.png" style="border-radius:3px;display:block;" width="25" />
-                                              </a>
-                                            </td>
-                                          </tr>
-                                        </table>
-                                      </td>
-                                    </tr>
-                                  </table>
-                                  <!--[if mso | IE]></td><td><![endif]-->
-                                  <table align="left" border="0" cellpadding="0" cellspacing="0" role="presentation" style="float:none;display:inline-table;">
-                                    <tr>
-                                      <td style="padding:4px;vertical-align:middle;">
-                                        <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-radius:3px;width:25px;">
-                                          <tr>
-                                            <td style="font-size:0;height:25px;vertical-align:middle;width:25px;">
-                                              <a href="https://chat.whatsapp.com/IXrOLV0xWra8DHNqVCmHrj" target="_blank">
-                                                <img height="25" src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/wa22.png" style="border-radius:3px;display:block;" width="25" />
-                                              </a>
-                                            </td>
-                                          </tr>
-                                        </table>
-                                      </td>
-                                    </tr>
-                                  </table>
-                                  <!--[if mso | IE]></td></tr></table><![endif]-->
-                                </td>
-                              </tr>
-                              <tr>
-                                <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                                  <div style="font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:14px;font-weight:200;line-height:1;text-align:left;color:#000000;">Copyright \xA9 2024 Trader App, All rights reserved.</div>
-                                </td>
-                              </tr>
-                            </tbody>
-                          </table>
-                        </div>
-                        <!--[if mso | IE]></td></tr></table><![endif]-->
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-              <!--[if mso | IE]></td></tr></table></td></tr></table><![endif]-->
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <!--[if mso | IE]></td></tr></table><![endif]-->
-  </div>
-</body>
-
-</html>
-`;
-var get_started_template_default = getStartedTemplate;
-
-// src/templates/email-templates/otp.ts
-var otpTemplate = `<!doctype html>
-<html xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
-
-<head>
-  <title> TraderApp </title>
-  <!--[if !mso]><!-->
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <!--<![endif]-->
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style type="text/css">
-    #outlook a {
-      padding: 0;
-    }
-
-    body {
-      margin: 0;
-      padding: 0;
-      -webkit-text-size-adjust: 100%;
-      -ms-text-size-adjust: 100%;
-    }
-
-    table,
-    td {
-      border-collapse: collapse;
-      mso-table-lspace: 0pt;
-      mso-table-rspace: 0pt;
-    }
-
-    img {
-      border: 0;
-      height: auto;
-      line-height: 100%;
-      outline: none;
-      text-decoration: none;
-      -ms-interpolation-mode: bicubic;
-    }
-
-    p {
-      display: block;
-      margin: 13px 0;
-    }
-  </style>
-  <!--[if mso]>
-        <noscript>
-        <xml>
-        <o:OfficeDocumentSettings>
-          <o:AllowPNG/>
-          <o:PixelsPerInch>96</o:PixelsPerInch>
-        </o:OfficeDocumentSettings>
-        </xml>
-        </noscript>
-        <![endif]-->
-  <!--[if lte mso 11]>
-        <style type="text/css">
-          .mj-outlook-group-fix { width:100% !important; }
-        </style>
-        <![endif]-->
-  <!--[if !mso]><!-->
-  <link href="https://fonts.googleapis.com/css?family=Ubuntu:300,400,500,700" rel="stylesheet" type="text/css">
-  <style type="text/css">
-    @import url(https://fonts.googleapis.com/css?family=Ubuntu:300,400,500,700);
-  </style>
-  <!--<![endif]-->
-  <style type="text/css">
-    @media only screen and (min-width:480px) {
-      .mj-column-per-100 {
-        width: 100% !important;
-        max-width: 100%;
-      }
-    }
-  </style>
-  <style media="screen and (min-width:480px)">
-    .moz-text-html .mj-column-per-100 {
-      width: 100% !important;
-      max-width: 100%;
-    }
-  </style>
-  <style type="text/css">
-    @media only screen and (max-width:480px) {
-      table.mj-full-width-mobile {
-        width: 100% !important;
-      }
-
-      td.mj-full-width-mobile {
-        width: auto !important;
-      }
-    }
-  </style>
-  <style type="text/css">
-    .br_20 {
-      border: 1px solid #D1D7F0;
-      border-radius: 10px !important;
-    }
-
-    .otp {
-      width: 500px !important;
-      background: red;
-    }
-  </style>
-</head>
-
-<body style="word-spacing:normal;background-color:white;">
-  <div style="background-color:white;">
-    <!--[if mso | IE]><table align="center" border="0" cellpadding="0" cellspacing="0" class="" style="width:600px;" width="600" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
-    <div style="margin:0px auto;max-width:600px;">
-      <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:100%;">
-        <tbody>
-          <tr>
-            <td style="direction:ltr;font-size:0px;padding:20px 0;text-align:center;">
-              <!--[if mso | IE]><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr></tr></table><![endif]-->
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <!--[if mso | IE]></td></tr></table><table align="center" border="0" cellpadding="0" cellspacing="0" class="br_20-outlook" style="width:600px;" width="600" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
-    <div class="br_20" style="margin:0px auto;max-width:600px;">
-      <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:100%;">
-        <tbody>
-          <tr>
-            <td style="direction:ltr;font-size:0px;padding:20px 0;text-align:center;">
-              <!--[if mso | IE]><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr><td class="" width="600px" ><table align="center" border="0" cellpadding="0" cellspacing="0" class="" style="width:600px;" width="600" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
-              <div style="margin:0px auto;max-width:600px;">
-                <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:100%;">
-                  <tbody>
-                    <tr>
-                      <td style="direction:ltr;font-size:0px;padding:20px 0;text-align:center;">
-                        <!--[if mso | IE]><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr><td class="" style="vertical-align:top;width:600px;" ><![endif]-->
-                        <div class="mj-column-per-100 mj-outlook-group-fix" style="font-size:0px;text-align:left;direction:ltr;display:inline-block;vertical-align:top;width:100%;">
-                          <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="vertical-align:top;" width="100%">
-                            <tbody>
-                              <tr>
-                                <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                                  <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:collapse;border-spacing:0px;">
-                                    <tbody>
-                                      <tr>
-                                        <td style="width:150px;">
-                                          <img height="auto" src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/traderapp-logo.png" style="border:0;display:block;outline:none;text-decoration:none;height:auto;width:100%;font-size:13px;" width="150" />
-                                        </td>
-                                      </tr>
-                                    </tbody>
-                                  </table>
-                                </td>
-                              </tr>
-                              <tr>
-                                <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                                  <table cellpadding="0" cellspacing="0" width="100%" border="0" style="color:#000000;font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:13px;line-height:22px;table-layout:auto;width:100%;border:none;">
-                                    <tr style="text-align:left;padding:15px 0;">
-                                      <th style="padding: 5px 5px; font-size: 24px; letter-spacing: 5px;background: #F1F4FF; border-radius: 10px; color: #102477; width: 120px; text-align: center;">{OTP}</th>
-                                      <th style="padding: 0 15px 0 0;background: #ffffff; opacity: 0"></th>
-                                      <th style="padding: 0 15px 0 0;background: #ffffff; opacity: 0"></th>
-                                      <th style="padding: 0 15px 0 0;background: #ffffff; opacity: 0"></th>
-                                      <th style="padding: 0 15px 0 0;background: #ffffff; opacity: 0"></th>
-                                      <th style="padding: 0 15px 0 0;background: #ffffff; opacity: 0"></th>
-                                      <th style="padding: 0 15px 0 0;background: #ffffff; opacity: 0"></th>
-                                    </tr>
-                                  </table>
-                                </td>
-                              </tr>
-                              <tr>
-                                <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                                  <div style="font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:16px;font-weight:300;line-height:1;text-align:left;color:#000000;">Hi {USER_NAME}</div>
-                                </td>
-                              </tr>
-                              <tr>
-                                <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                                  <div style="font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:16px;font-weight:200;line-height:1.5;text-align:left;color:#000000;">A new action was taken on your TraderApp account. To authorise this action, please use the OTP code above. This code expires after 10 minutes.</div>
-                                </td>
-                              </tr>
-                              <tr>
-                                <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                                  <div style="font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:16px;font-weight:300;line-height:1;text-align:left;color:#000000;">Thanks,</div>
-                                </td>
-                              </tr>
-                              <tr>
-                                <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                                  <div style="font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:16px;font-weight:400;line-height:0;text-align:left;color:#000000;">TraderApp Team.</div>
-                                </td>
-                              </tr>
-                              <tr>
-                                <td style="font-size:0px;word-break:break-word;">
-                                  <div style="height:20px;line-height:20px;">&#8202;</div>
-                                </td>
-                              </tr>
-                              <tr>
-                                <td align="left" vertical-align="middle" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                                  <!--[if mso | IE]><table align="left" border="0" cellpadding="0" cellspacing="0" role="presentation" ><tr><td><![endif]-->
-                                  <table align="left" border="0" cellpadding="0" cellspacing="0" role="presentation" style="float:none;display:inline-table;">
-                                    <tr>
-                                      <td style="padding:4px;vertical-align:middle;">
-                                        <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-radius:3px;width:25px;">
-                                          <tr>
-                                            <td style="font-size:0;height:25px;vertical-align:middle;width:25px;">
-                                              <a href="https://x.com/traderapp" target="_blank">
-                                                <img height="25" src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/twitter22.png" style="border-radius:3px;display:block;" width="25" />
-                                              </a>
-                                            </td>
-                                          </tr>
-                                        </table>
-                                      </td>
-                                    </tr>
-                                  </table>
-                                  <!--[if mso | IE]></td><td><![endif]-->
-                                  <table align="left" border="0" cellpadding="0" cellspacing="0" role="presentation" style="float:none;display:inline-table;">
-                                    <tr>
-                                      <td style="padding:4px;vertical-align:middle;">
-                                        <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-radius:3px;width:25px;">
-                                          <tr>
-                                            <td style="font-size:0;height:25px;vertical-align:middle;width:25px;">
-                                              <a href="https://www.facebook.com/traderappofficial?mibextid=ZbWKwL" target="_blank">
-                                                <img height="25" src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/facebook22.png" style="border-radius:3px;display:block;" width="25" />
-                                              </a>
-                                            </td>
-                                          </tr>
-                                        </table>
-                                      </td>
-                                    </tr>
-                                  </table>
-                                  <!--[if mso | IE]></td><td><![endif]-->
-                                  <table align="left" border="0" cellpadding="0" cellspacing="0" role="presentation" style="float:none;display:inline-table;">
-                                    <tr>
-                                      <td style="padding:4px;vertical-align:middle;">
-                                        <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-radius:3px;width:25px;">
-                                          <tr>
-                                            <td style="font-size:0;height:25px;vertical-align:middle;width:25px;">
-                                              <a href="https://instagram.com/traderapphq" target="_blank">
-                                                <img height="25" src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/ig22.png" style="border-radius:3px;display:block;" width="25" />
-                                              </a>
-                                            </td>
-                                          </tr>
-                                        </table>
-                                      </td>
-                                    </tr>
-                                  </table>
-                                  <!--[if mso | IE]></td><td><![endif]-->
-                                  <table align="left" border="0" cellpadding="0" cellspacing="0" role="presentation" style="float:none;display:inline-table;">
-                                    <tr>
-                                      <td style="padding:4px;vertical-align:middle;">
-                                        <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-radius:3px;width:25px;">
-                                          <tr>
-                                            <td style="font-size:0;height:25px;vertical-align:middle;width:25px;">
-                                              <a href="https://traderapp.finance/#" target="_blank">
-                                                <img height="25" src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/tiktok22.png" style="border-radius:3px;display:block;" width="25" />
-                                              </a>
-                                            </td>
-                                          </tr>
-                                        </table>
-                                      </td>
-                                    </tr>
-                                  </table>
-                                  <!--[if mso | IE]></td><td><![endif]-->
-                                  <table align="left" border="0" cellpadding="0" cellspacing="0" role="presentation" style="float:none;display:inline-table;">
-                                    <tr>
-                                      <td style="padding:4px;vertical-align:middle;">
-                                        <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-radius:3px;width:25px;">
-                                          <tr>
-                                            <td style="font-size:0;height:25px;vertical-align:middle;width:25px;">
-                                              <a href="https://chat.whatsapp.com/IXrOLV0xWra8DHNqVCmHrj" target="_blank">
-                                                <img height="25" src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/wa22.png" style="border-radius:3px;display:block;" width="25" />
-                                              </a>
-                                            </td>
-                                          </tr>
-                                        </table>
-                                      </td>
-                                    </tr>
-                                  </table>
-                                  <!--[if mso | IE]></td></tr></table><![endif]-->
-                                </td>
-                              </tr>
-                              <tr>
-                                <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                                  <div style="font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:14px;font-weight:200;line-height:1;text-align:left;color:#000000;">Copyright \xA9 2024 Trader App, All rights reserved.</div>
-                                </td>
-                              </tr>
-                            </tbody>
-                          </table>
-                        </div>
-                        <!--[if mso | IE]></td></tr></table><![endif]-->
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-              <!--[if mso | IE]></td></tr></table></td></tr></table><![endif]-->
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <!--[if mso | IE]></td></tr></table><![endif]-->
-  </div>
-</body>
-
-</html>`;
-var otp_default = otpTemplate;
-
-// src/templates/email-templates/password-reseet-template.ts
-var passwordResetTemplate = `<!doctype html>
-<html xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
-
-<head>
-  <title> TraderApp </title>
-  <!--[if !mso]><!-->
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <!--<![endif]-->
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style type="text/css">
-    #outlook a {
-      padding: 0;
-    }
-
-    body {
-      margin: 0;
-      padding: 0;
-      -webkit-text-size-adjust: 100%;
-      -ms-text-size-adjust: 100%;
-    }
-
-    table,
-    td {
-      border-collapse: collapse;
-      mso-table-lspace: 0pt;
-      mso-table-rspace: 0pt;
-    }
-
-    img {
-      border: 0;
-      height: auto;
-      line-height: 100%;
-      outline: none;
-      text-decoration: none;
-      -ms-interpolation-mode: bicubic;
-    }
-
-    p {
-      display: block;
-      margin: 13px 0;
-    }
-  </style>
-  <!--[if mso]>
-        <noscript>
-        <xml>
-        <o:OfficeDocumentSettings>
-          <o:AllowPNG/>
-          <o:PixelsPerInch>96</o:PixelsPerInch>
-        </o:OfficeDocumentSettings>
-        </xml>
-        </noscript>
-        <![endif]-->
-  <!--[if lte mso 11]>
-        <style type="text/css">
-          .mj-outlook-group-fix { width:100% !important; }
-        </style>
-        <![endif]-->
-  <!--[if !mso]><!-->
-  <link href="https://fonts.googleapis.com/css?family=Ubuntu:300,400,500,700" rel="stylesheet" type="text/css">
-  <style type="text/css">
-    @import url(https://fonts.googleapis.com/css?family=Ubuntu:300,400,500,700);
-  </style>
-  <!--<![endif]-->
-  <style type="text/css">
-    @media only screen and (min-width:480px) {
-      .mj-column-per-100 {
-        width: 100% !important;
-        max-width: 100%;
-      }
-    }
-  </style>
-  <style media="screen and (min-width:480px)">
-    .moz-text-html .mj-column-per-100 {
-      width: 100% !important;
-      max-width: 100%;
-    }
-  </style>
-  <style type="text/css">
-    @media only screen and (max-width:480px) {
-      table.mj-full-width-mobile {
-        width: 100% !important;
-      }
-
-      td.mj-full-width-mobile {
-        width: auto !important;
-      }
-    }
-  </style>
-  <style type="text/css">
-    .br_20 {
-      border: 1px solid #D1D7F0;
-      border-radius: 10px !important;
-    }
-
-    .otp {
-      width: 500px !important;
-      background: red;
-    }
-  </style>
-</head>
-
-<body style="word-spacing:normal;background-color:white;">
-  <div style="background-color:white;">
-    <!--[if mso | IE]><table align="center" border="0" cellpadding="0" cellspacing="0" class="" style="width:600px;" width="600" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
-    <div style="margin:0px auto;max-width:600px;">
-      <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:100%;">
-        <tbody>
-          <tr>
-            <td style="direction:ltr;font-size:0px;padding:20px 0;text-align:center;">
-              <!--[if mso | IE]><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr></tr></table><![endif]-->
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <!--[if mso | IE]></td></tr></table><table align="center" border="0" cellpadding="0" cellspacing="0" class="br_20-outlook" style="width:600px;" width="600" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
-    <div class="br_20" style="margin:0px auto;max-width:600px;">
-      <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:100%;">
-        <tbody>
-          <tr>
-            <td style="direction:ltr;font-size:0px;padding:20px 0;text-align:center;">
-              <!--[if mso | IE]><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr><td class="" width="600px" ><table align="center" border="0" cellpadding="0" cellspacing="0" class="" style="width:600px;" width="600" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
-              <div style="margin:0px auto;max-width:600px;">
-                <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:100%;">
-                  <tbody>
-                    <tr>
-                      <td style="direction:ltr;font-size:0px;padding:20px 0;text-align:center;">
-                        <!--[if mso | IE]><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr><td class="" style="vertical-align:top;width:600px;" ><![endif]-->
-                        <div class="mj-column-per-100 mj-outlook-group-fix" style="font-size:0px;text-align:left;direction:ltr;display:inline-block;vertical-align:top;width:100%;">
-                          <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="vertical-align:top;" width="100%">
-                            <tbody>
-                              <tr>
-                                <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                                  <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:collapse;border-spacing:0px;">
-                                    <tbody>
-                                      <tr>
-                                        <td style="width:150px;">
-                                          <img height="auto" src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/traderapp-logo.png" style="border:0;display:block;outline:none;text-decoration:none;height:auto;width:100%;font-size:13px;" width="150" />
-                                        </td>
-                                      </tr>
-                                    </tbody>
-                                  </table>
-                                </td>
-                              </tr>
-                              <tr>
-                                <td align="center" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                                  <div style="font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:16px;font-weight:400;line-height:1;text-align:center;color:#000000;">Let\u2019s reset your password</div>
-                                </td>
-                              </tr>
-                              <tr>
-                                <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                                  <div style="font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:16px;font-weight:300;line-height:1;text-align:left;color:#000000;">Hi {USER_NAME}</div>
-                                </td>
-                              </tr>
-                              <tr>
-                                <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                                  <div style="font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:16px;font-weight:200;line-height:1.5;text-align:left;color:#000000;">Looks likes you forgot your password, No Worries, it happens. click the button below to quickly reset your password</div>
-                                </td>
-                              </tr>
-                              <tr>
-                                <td align="center" vertical-align="middle" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                                  <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:separate;line-height:100%;">
-                                    <tr>
-                                      <td align="center" bgcolor="#1836B2" role="presentation" style="border:none;border-radius:6px;cursor:auto;mso-padding-alt:10px 25px;background:#1836B2;" valign="middle">
-                                        <a href="{RESET_LINK}" style="display:inline-block;background:#1836B2;color:#ffffff;font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:13px;font-weight:normal;line-height:120%;margin:0;text-decoration:none;text-transform:none;padding:10px 25px;mso-padding-alt:0px;border-radius:6px;" target="_blank"> Reset Password </a>
-                                      </td>
-                                    </tr>
-                                  </table>
-                                </td>
-                              </tr>
-                              <tr>
-                                <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                                  <div style="font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:16px;font-weight:200;line-height:1.5;text-align:left;color:#000000;">If you didn&apos;t request a password reset please just ignore this email.</div>
-                                </td>
-                              </tr>
-                              <tr>
-                                <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                                  <div style="font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:16px;font-weight:200;line-height:0;text-align:left;color:#000000;">Have any question? Reach out to us on <mj-text href="#">here.</mj-text>
-                                  </div>
-                                </td>
-                              </tr>
-                              <tr>
-                                <td style="font-size:0px;word-break:break-word;">
-                                  <div style="height:20px;line-height:20px;">&#8202;</div>
-                                </td>
-                              </tr>
-                              <tr>
-                                <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                                  <div style="font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:16px;font-weight:300;line-height:1;text-align:left;color:#000000;">Thanks,</div>
-                                </td>
-                              </tr>
-                              <tr>
-                                <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                                  <div style="font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:16px;font-weight:400;line-height:0;text-align:left;color:#000000;">TraderApp Team.</div>
-                                </td>
-                              </tr>
-                              <tr>
-                                <td style="font-size:0px;word-break:break-word;">
-                                  <div style="height:20px;line-height:20px;">&#8202;</div>
-                                </td>
-                              </tr>
-                              <tr>
-                                <td align="left" vertical-align="middle" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                                  <!--[if mso | IE]><table align="left" border="0" cellpadding="0" cellspacing="0" role="presentation" ><tr><td><![endif]-->
-                                  <table align="left" border="0" cellpadding="0" cellspacing="0" role="presentation" style="float:none;display:inline-table;">
-                                    <tr>
-                                      <td style="padding:4px;vertical-align:middle;">
-                                        <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-radius:3px;width:25px;">
-                                          <tr>
-                                            <td style="font-size:0;height:25px;vertical-align:middle;width:25px;">
-                                              <a href="https://x.com/traderapp" target="_blank">
-                                                <img height="25" src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/twitter22.png" style="border-radius:3px;display:block;" width="25" />
-                                              </a>
-                                            </td>
-                                          </tr>
-                                        </table>
-                                      </td>
-                                    </tr>
-                                  </table>
-                                  <!--[if mso | IE]></td><td><![endif]-->
-                                  <table align="left" border="0" cellpadding="0" cellspacing="0" role="presentation" style="float:none;display:inline-table;">
-                                    <tr>
-                                      <td style="padding:4px;vertical-align:middle;">
-                                        <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-radius:3px;width:25px;">
-                                          <tr>
-                                            <td style="font-size:0;height:25px;vertical-align:middle;width:25px;">
-                                              <a href="https://www.facebook.com/traderappofficial?mibextid=ZbWKwL" target="_blank">
-                                                <img height="25" src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/facebook22.png" style="border-radius:3px;display:block;" width="25" />
-                                              </a>
-                                            </td>
-                                          </tr>
-                                        </table>
-                                      </td>
-                                    </tr>
-                                  </table>
-                                  <!--[if mso | IE]></td><td><![endif]-->
-                                  <table align="left" border="0" cellpadding="0" cellspacing="0" role="presentation" style="float:none;display:inline-table;">
-                                    <tr>
-                                      <td style="padding:4px;vertical-align:middle;">
-                                        <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-radius:3px;width:25px;">
-                                          <tr>
-                                            <td style="font-size:0;height:25px;vertical-align:middle;width:25px;">
-                                              <a href="https://instagram.com/traderapphq" target="_blank">
-                                                <img height="25" src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/ig22.png" style="border-radius:3px;display:block;" width="25" />
-                                              </a>
-                                            </td>
-                                          </tr>
-                                        </table>
-                                      </td>
-                                    </tr>
-                                  </table>
-                                  <!--[if mso | IE]></td><td><![endif]-->
-                                  <table align="left" border="0" cellpadding="0" cellspacing="0" role="presentation" style="float:none;display:inline-table;">
-                                    <tr>
-                                      <td style="padding:4px;vertical-align:middle;">
-                                        <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-radius:3px;width:25px;">
-                                          <tr>
-                                            <td style="font-size:0;height:25px;vertical-align:middle;width:25px;">
-                                              <a href="https://traderapp.finance/#" target="_blank">
-                                                <img height="25" src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/tiktok22.png" style="border-radius:3px;display:block;" width="25" />
-                                              </a>
-                                            </td>
-                                          </tr>
-                                        </table>
-                                      </td>
-                                    </tr>
-                                  </table>
-                                  <!--[if mso | IE]></td><td><![endif]-->
-                                  <table align="left" border="0" cellpadding="0" cellspacing="0" role="presentation" style="float:none;display:inline-table;">
-                                    <tr>
-                                      <td style="padding:4px;vertical-align:middle;">
-                                        <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-radius:3px;width:25px;">
-                                          <tr>
-                                            <td style="font-size:0;height:25px;vertical-align:middle;width:25px;">
-                                              <a href="https://chat.whatsapp.com/IXrOLV0xWra8DHNqVCmHrj" target="_blank">
-                                                <img height="25" src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/wa22.png" style="border-radius:3px;display:block;" width="25" />
-                                              </a>
-                                            </td>
-                                          </tr>
-                                        </table>
-                                      </td>
-                                    </tr>
-                                  </table>
-                                  <!--[if mso | IE]></td></tr></table><![endif]-->
-                                </td>
-                              </tr>
-                              <tr>
-                                <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                                  <div style="font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:14px;font-weight:200;line-height:1;text-align:left;color:#000000;">Copyright \xA9 2024 Trader App, All rights reserved.</div>
-                                </td>
-                              </tr>
-                            </tbody>
-                          </table>
-                        </div>
-                        <!--[if mso | IE]></td></tr></table><![endif]-->
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-              <!--[if mso | IE]></td></tr></table></td></tr></table><![endif]-->
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <!--[if mso | IE]></td></tr></table><![endif]-->
-  </div>
-</body>
-
-</html>`;
-var password_reseet_template_default = passwordResetTemplate;
-
-// src/helpers/email-helpers.ts
-var formatEmailMessageBody = ({
-  recipient,
-  message,
-  event
-}) => {
-  let templateBody = "";
-  switch (event) {
-    case "GENERAL" /* GENERAL */: {
-      templateBody = general_default;
-      templateBody = templateBody.replace(
-        /{USER_NAME}/g,
-        recipient.firstName
-      );
-      templateBody = templateBody.replace(/{BODY}/g, message);
-      break;
-    }
-    case "OTP" /* OTP */: {
-      templateBody = otp_default;
-      templateBody = templateBody.replace(
-        /{USER_NAME}/g,
-        recipient.firstName
-      );
-      templateBody = templateBody.replace(/{OTP}/g, message);
-      break;
-    }
-    case "RESET_PASSWORD" /* RESET_PASSWORD */: {
-      templateBody = password_reseet_template_default;
-      templateBody = templateBody.replace(
-        /{USER_NAME}/g,
-        recipient.firstName
-      );
-      templateBody = templateBody.replace(/{RESET_LINK}/g, message);
-      break;
-    }
-    case "CREATE_USER" /* CREATE_USER */: {
-      templateBody = create_user_template_default;
-      templateBody = templateBody.replace(
-        /{USER_NAME}/g,
-        recipient.firstName
-      );
-      templateBody = templateBody.replace(/{RESET_LINK}/g, message);
-      break;
-    }
-    case "WELCOME" /* WELCOME */: {
-      templateBody = get_started_template_default;
-      templateBody = templateBody.replace(
-        /{USER_NAME}/g,
-        recipient.firstName
-      );
-      break;
-    }
-    default:
-      throw new Error(`No email event with name ${event}`);
-  }
-  return templateBody;
-};
-
-// src/utils/send-pulse.ts
-var import_sendpulse_api = __toESM(require_sendpulse_api());
-
-// src/config/secrets/helpers.ts
-var import_client_secrets_manager = __toESM(require_dist_cjs53());
-var import_lambda_powertools_logger = __toESM(require_lambda_powertools_logger());
-var client = new import_client_secrets_manager.SecretsManagerClient({
-  region: process.env.AWS_REGION || "eu-west-1"
-});
-var getSecrets = async (secretName) => {
-  const command = new import_client_secrets_manager.GetSecretValueCommand({ SecretId: secretName });
-  const response = await client.send(command);
-  import_lambda_powertools_logger.default.info("Secret name fetched", { secretName });
-  return JSON.parse(response.SecretString || "{}");
-};
-
-// src/utils/send-pulse.ts
-var SendpulseEmailService = class _SendpulseEmailService {
-  // Make the constructor private to prevent direct instantiation
-  constructor() {
-  }
-  // Static async factory method to handle async initialization
-  static async create() {
-    const instance = new _SendpulseEmailService();
-    const notificationsServiceSecrets = await getSecrets(
-      `${"notifications-service" /* notificationsServiceSecrets */}/${process.env.ENV}`
-    );
-    instance.API_USER_ID = notificationsServiceSecrets.SENDPULSE_API_USER_ID;
-    instance.API_SECRET = notificationsServiceSecrets.SENDPULSE_API_SECRET;
-    instance.TOKEN_STORAGE = notificationsServiceSecrets.SENDPULSE_TOKEN_STORAGE;
-    instance.initSendpulse();
-    return instance;
-  }
-  initSendpulse() {
-    import_sendpulse_api.default.init(
-      this.API_USER_ID,
-      this.API_SECRET,
-      this.TOKEN_STORAGE,
-      (token) => {
-        if (token && token.is_error) {
-          throw new Error("Sendpulse keys not found.");
-        }
-      }
-    );
-  }
-  async sendEmail({
-    recipient,
-    subject,
-    body,
-    from
-  }) {
-    const email = {
-      html: body,
-      subject,
-      from: {
-        name: from?.name ?? "TraderApp",
-        email: from?.email ?? "noreply@traderapp.finance"
-      },
-      to: [
-        {
-          email: recipient
-        }
-      ]
-    };
-    return new Promise((resolve, reject) => {
-      import_sendpulse_api.default.smtpSendMail((data) => {
-        if (data && data.result === true) {
-          resolve(data);
-        } else {
-          reject(new Error("Failed to send email"));
-        }
-      }, email);
+    var __toCommonJS2 = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
+    var src_exports = {};
+    __export2(src_exports, {
+      getQueueUrlPlugin: () => getQueueUrlPlugin,
+      getReceiveMessagePlugin: () => getReceiveMessagePlugin,
+      getSendMessageBatchPlugin: () => getSendMessageBatchPlugin,
+      getSendMessagePlugin: () => getSendMessagePlugin,
+      queueUrlMiddleware: () => queueUrlMiddleware,
+      queueUrlMiddlewareOptions: () => queueUrlMiddlewareOptions,
+      receiveMessageMiddleware: () => receiveMessageMiddleware,
+      receiveMessageMiddlewareOptions: () => receiveMessageMiddlewareOptions,
+      resolveQueueUrlConfig: () => resolveQueueUrlConfig,
+      sendMessageBatchMiddleware: () => sendMessageBatchMiddleware,
+      sendMessageBatchMiddlewareOptions: () => sendMessageBatchMiddlewareOptions,
+      sendMessageMiddleware: () => sendMessageMiddleware,
+      sendMessageMiddlewareOptions: () => sendMessageMiddlewareOptions
     });
-  }
-  sendBulkEmail({
-    recipients,
-    subject,
-    body,
-    from
-  }) {
-    const email = {
-      html: body,
-      subject,
-      from: {
-        name: from?.name ?? "TraderApp",
-        email: from?.email ?? "noreply@traderapp.finance"
-      },
-      to: recipients
+    module2.exports = __toCommonJS2(src_exports);
+    var import_smithy_client5 = require_dist_cjs27();
+    var resolveQueueUrlConfig = /* @__PURE__ */ __name((config) => {
+      return {
+        ...config,
+        useQueueUrlAsEndpoint: config.useQueueUrlAsEndpoint ?? true
+      };
+    }, "resolveQueueUrlConfig");
+    function queueUrlMiddleware({ useQueueUrlAsEndpoint, endpoint }) {
+      return (next, context) => {
+        return async (args2) => {
+          var _a;
+          const { input } = args2;
+          const resolvedEndpoint = context.endpointV2;
+          if (!endpoint && input.QueueUrl && resolvedEndpoint && useQueueUrlAsEndpoint) {
+            const logger = context.logger instanceof import_smithy_client5.NoOpLogger || !((_a = context.logger) == null ? void 0 : _a.warn) ? console : context.logger;
+            try {
+              const queueUrl = new URL(input.QueueUrl);
+              const queueUrlOrigin = new URL(queueUrl.origin);
+              if (resolvedEndpoint.url.origin !== queueUrlOrigin.origin) {
+                logger.warn(
+                  `QueueUrl=${input.QueueUrl} differs from SQSClient resolved endpoint=${resolvedEndpoint.url.toString()}, using QueueUrl host as endpoint.
+Set [endpoint=string] or [useQueueUrlAsEndpoint=false] on the SQSClient.`
+                );
+                context.endpointV2 = {
+                  ...resolvedEndpoint,
+                  url: queueUrlOrigin
+                };
+              }
+            } catch (e) {
+              logger.warn(e);
+            }
+          }
+          return next(args2);
+        };
+      };
+    }
+    __name(queueUrlMiddleware, "queueUrlMiddleware");
+    var queueUrlMiddlewareOptions = {
+      name: "queueUrlMiddleware",
+      relation: "after",
+      toMiddleware: "endpointV2Middleware",
+      override: true
     };
-    return new Promise((resolve, reject) => {
-      import_sendpulse_api.default.smtpSendMail((data) => {
-        if (data && data.result === true) {
-          resolve(data);
-        } else {
-          reject(new Error("Failed to send email"));
+    var getQueueUrlPlugin = /* @__PURE__ */ __name((config) => ({
+      applyToStack: (clientStack) => {
+        clientStack.addRelativeTo(queueUrlMiddleware(config), queueUrlMiddlewareOptions);
+      }
+    }), "getQueueUrlPlugin");
+    var import_util_hex_encoding = require_dist_cjs25();
+    var import_util_utf8 = require_dist_cjs19();
+    function receiveMessageMiddleware(options) {
+      return (next) => async (args2) => {
+        const resp = await next({ ...args2 });
+        if (options.md5 === false) {
+          return resp;
         }
-      }, email);
-    });
+        const output = resp.output;
+        const messageIds = [];
+        if (output.Messages !== void 0) {
+          for (const message of output.Messages) {
+            const md52 = message.MD5OfBody;
+            const hash = new options.md5();
+            hash.update((0, import_util_utf8.toUint8Array)(message.Body || ""));
+            if (md52 !== (0, import_util_hex_encoding.toHex)(await hash.digest())) {
+              messageIds.push(message.MessageId);
+            }
+          }
+        }
+        if (messageIds.length > 0) {
+          throw new Error("Invalid MD5 checksum on messages: " + messageIds.join(", "));
+        }
+        return resp;
+      };
+    }
+    __name(receiveMessageMiddleware, "receiveMessageMiddleware");
+    var receiveMessageMiddlewareOptions = {
+      step: "initialize",
+      tags: ["VALIDATE_BODY_MD5"],
+      name: "receiveMessageMiddleware",
+      override: true
+    };
+    var getReceiveMessagePlugin = /* @__PURE__ */ __name((config) => ({
+      applyToStack: (clientStack) => {
+        clientStack.add(receiveMessageMiddleware(config), receiveMessageMiddlewareOptions);
+      }
+    }), "getReceiveMessagePlugin");
+    var import_util_utf82 = require_dist_cjs19();
+    var sendMessageMiddleware = /* @__PURE__ */ __name((options) => (next) => async (args2) => {
+      const resp = await next({ ...args2 });
+      if (options.md5 === false) {
+        return resp;
+      }
+      const output = resp.output;
+      const hash = new options.md5();
+      hash.update((0, import_util_utf82.toUint8Array)(args2.input.MessageBody || ""));
+      if (output.MD5OfMessageBody !== (0, import_util_hex_encoding.toHex)(await hash.digest())) {
+        throw new Error("InvalidChecksumError");
+      }
+      return resp;
+    }, "sendMessageMiddleware");
+    var sendMessageMiddlewareOptions = {
+      step: "initialize",
+      tags: ["VALIDATE_BODY_MD5"],
+      name: "sendMessageMiddleware",
+      override: true
+    };
+    var getSendMessagePlugin = /* @__PURE__ */ __name((config) => ({
+      applyToStack: (clientStack) => {
+        clientStack.add(sendMessageMiddleware(config), sendMessageMiddlewareOptions);
+      }
+    }), "getSendMessagePlugin");
+    var import_util_utf83 = require_dist_cjs19();
+    var sendMessageBatchMiddleware = /* @__PURE__ */ __name((options) => (next) => async (args2) => {
+      const resp = await next({ ...args2 });
+      if (options.md5 === false) {
+        return resp;
+      }
+      const output = resp.output;
+      const messageIds = [];
+      const entries = {};
+      if (output.Successful !== void 0) {
+        for (const entry of output.Successful) {
+          if (entry.Id !== void 0) {
+            entries[entry.Id] = entry;
+          }
+        }
+      }
+      for (const entry of args2.input.Entries) {
+        if (entries[entry.Id]) {
+          const md52 = entries[entry.Id].MD5OfMessageBody;
+          const hash = new options.md5();
+          hash.update((0, import_util_utf83.toUint8Array)(entry.MessageBody || ""));
+          if (md52 !== (0, import_util_hex_encoding.toHex)(await hash.digest())) {
+            messageIds.push(entries[entry.Id].MessageId);
+          }
+        }
+      }
+      if (messageIds.length > 0) {
+        throw new Error("Invalid MD5 checksum on messages: " + messageIds.join(", "));
+      }
+      return resp;
+    }, "sendMessageBatchMiddleware");
+    var sendMessageBatchMiddlewareOptions = {
+      step: "initialize",
+      tags: ["VALIDATE_BODY_MD5"],
+      name: "sendMessageBatchMiddleware",
+      override: true
+    };
+    var getSendMessageBatchPlugin = /* @__PURE__ */ __name((config) => ({
+      applyToStack: (clientStack) => {
+        clientStack.add(sendMessageBatchMiddleware(config), sendMessageBatchMiddlewareOptions);
+      }
+    }), "getSendMessageBatchPlugin");
   }
-};
-var send_pulse_default = SendpulseEmailService;
+});
 
-// src/services/NotificationsService/index.ts
-var NotificationsService = class {
-  constructor() {
+// node_modules/@aws-sdk/client-sqs/dist-cjs/auth/httpAuthSchemeProvider.js
+var require_httpAuthSchemeProvider5 = __commonJS({
+  "node_modules/@aws-sdk/client-sqs/dist-cjs/auth/httpAuthSchemeProvider.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.resolveHttpAuthSchemeConfig = exports2.defaultSQSHttpAuthSchemeProvider = exports2.defaultSQSHttpAuthSchemeParametersProvider = void 0;
+    var core_1 = (init_dist_es2(), __toCommonJS(dist_es_exports2));
+    var util_middleware_1 = require_dist_cjs6();
+    var defaultSQSHttpAuthSchemeParametersProvider = async (config, context, input) => {
+      return {
+        operation: (0, util_middleware_1.getSmithyContext)(context).operation,
+        region: await (0, util_middleware_1.normalizeProvider)(config.region)() || (() => {
+          throw new Error("expected `region` to be configured for `aws.auth#sigv4`");
+        })()
+      };
+    };
+    exports2.defaultSQSHttpAuthSchemeParametersProvider = defaultSQSHttpAuthSchemeParametersProvider;
+    function createAwsAuthSigv4HttpAuthOption(authParameters) {
+      return {
+        schemeId: "aws.auth#sigv4",
+        signingProperties: {
+          name: "sqs",
+          region: authParameters.region
+        },
+        propertiesExtractor: (config, context) => ({
+          signingProperties: {
+            config,
+            context
+          }
+        })
+      };
+    }
+    var defaultSQSHttpAuthSchemeProvider = (authParameters) => {
+      const options = [];
+      switch (authParameters.operation) {
+        default: {
+          options.push(createAwsAuthSigv4HttpAuthOption(authParameters));
+        }
+      }
+      return options;
+    };
+    exports2.defaultSQSHttpAuthSchemeProvider = defaultSQSHttpAuthSchemeProvider;
+    var resolveHttpAuthSchemeConfig = (config) => {
+      const config_0 = (0, core_1.resolveAwsSdkSigV4Config)(config);
+      return {
+        ...config_0
+      };
+    };
+    exports2.resolveHttpAuthSchemeConfig = resolveHttpAuthSchemeConfig;
   }
-  async processMessagesAndSendEmails(queueMessages) {
-    const sendpulseEmailService = await send_pulse_default.create();
-    const promises = [];
-    queueMessages.forEach((message) => {
-      const body = formatEmailMessageBody({
-        recipient: message.body.recipients[0],
-        message: message.body.message,
-        event: message.body.event
+});
+
+// node_modules/@aws-sdk/client-sqs/package.json
+var require_package5 = __commonJS({
+  "node_modules/@aws-sdk/client-sqs/package.json"(exports2, module2) {
+    module2.exports = {
+      name: "@aws-sdk/client-sqs",
+      description: "AWS SDK for JavaScript Sqs Client for Node.js, Browser and React Native",
+      version: "3.675.0",
+      scripts: {
+        build: "concurrently 'yarn:build:cjs' 'yarn:build:es' 'yarn:build:types'",
+        "build:cjs": "node ../../scripts/compilation/inline client-sqs",
+        "build:es": "tsc -p tsconfig.es.json",
+        "build:include:deps": "lerna run --scope $npm_package_name --include-dependencies build",
+        "build:types": "tsc -p tsconfig.types.json",
+        "build:types:downlevel": "downlevel-dts dist-types dist-types/ts3.4",
+        clean: "rimraf ./dist-* && rimraf *.tsbuildinfo",
+        "extract:docs": "api-extractor run --local",
+        "generate:client": "node ../../scripts/generate-clients/single-service --solo sqs"
+      },
+      main: "./dist-cjs/index.js",
+      types: "./dist-types/index.d.ts",
+      module: "./dist-es/index.js",
+      sideEffects: false,
+      dependencies: {
+        "@aws-crypto/sha256-browser": "5.2.0",
+        "@aws-crypto/sha256-js": "5.2.0",
+        "@aws-sdk/client-sso-oidc": "3.675.0",
+        "@aws-sdk/client-sts": "3.675.0",
+        "@aws-sdk/core": "3.667.0",
+        "@aws-sdk/credential-provider-node": "3.675.0",
+        "@aws-sdk/middleware-host-header": "3.667.0",
+        "@aws-sdk/middleware-logger": "3.667.0",
+        "@aws-sdk/middleware-recursion-detection": "3.667.0",
+        "@aws-sdk/middleware-sdk-sqs": "3.667.0",
+        "@aws-sdk/middleware-user-agent": "3.669.0",
+        "@aws-sdk/region-config-resolver": "3.667.0",
+        "@aws-sdk/types": "3.667.0",
+        "@aws-sdk/util-endpoints": "3.667.0",
+        "@aws-sdk/util-user-agent-browser": "3.675.0",
+        "@aws-sdk/util-user-agent-node": "3.669.0",
+        "@smithy/config-resolver": "^3.0.9",
+        "@smithy/core": "^2.4.8",
+        "@smithy/fetch-http-handler": "^3.2.9",
+        "@smithy/hash-node": "^3.0.7",
+        "@smithy/invalid-dependency": "^3.0.7",
+        "@smithy/md5-js": "^3.0.7",
+        "@smithy/middleware-content-length": "^3.0.9",
+        "@smithy/middleware-endpoint": "^3.1.4",
+        "@smithy/middleware-retry": "^3.0.23",
+        "@smithy/middleware-serde": "^3.0.7",
+        "@smithy/middleware-stack": "^3.0.7",
+        "@smithy/node-config-provider": "^3.1.8",
+        "@smithy/node-http-handler": "^3.2.4",
+        "@smithy/protocol-http": "^4.1.4",
+        "@smithy/smithy-client": "^3.4.0",
+        "@smithy/types": "^3.5.0",
+        "@smithy/url-parser": "^3.0.7",
+        "@smithy/util-base64": "^3.0.0",
+        "@smithy/util-body-length-browser": "^3.0.0",
+        "@smithy/util-body-length-node": "^3.0.0",
+        "@smithy/util-defaults-mode-browser": "^3.0.23",
+        "@smithy/util-defaults-mode-node": "^3.0.23",
+        "@smithy/util-endpoints": "^2.1.3",
+        "@smithy/util-middleware": "^3.0.7",
+        "@smithy/util-retry": "^3.0.7",
+        "@smithy/util-utf8": "^3.0.0",
+        tslib: "^2.6.2"
+      },
+      devDependencies: {
+        "@tsconfig/node16": "16.1.3",
+        "@types/node": "^16.18.96",
+        concurrently: "7.0.0",
+        "downlevel-dts": "0.10.1",
+        rimraf: "3.0.2",
+        typescript: "~4.9.5"
+      },
+      engines: {
+        node: ">=16.0.0"
+      },
+      typesVersions: {
+        "<4.0": {
+          "dist-types/*": [
+            "dist-types/ts3.4/*"
+          ]
+        }
+      },
+      files: [
+        "dist-*/**"
+      ],
+      author: {
+        name: "AWS SDK for JavaScript Team",
+        url: "https://aws.amazon.com/javascript/"
+      },
+      license: "Apache-2.0",
+      browser: {
+        "./dist-es/runtimeConfig": "./dist-es/runtimeConfig.browser"
+      },
+      "react-native": {
+        "./dist-es/runtimeConfig": "./dist-es/runtimeConfig.native"
+      },
+      homepage: "https://github.com/aws/aws-sdk-js-v3/tree/main/clients/client-sqs",
+      repository: {
+        type: "git",
+        url: "https://github.com/aws/aws-sdk-js-v3.git",
+        directory: "clients/client-sqs"
+      }
+    };
+  }
+});
+
+// node_modules/@aws-sdk/client-sqs/node_modules/@aws-sdk/client-sso/dist-cjs/auth/httpAuthSchemeProvider.js
+var require_httpAuthSchemeProvider6 = __commonJS({
+  "node_modules/@aws-sdk/client-sqs/node_modules/@aws-sdk/client-sso/dist-cjs/auth/httpAuthSchemeProvider.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.resolveHttpAuthSchemeConfig = exports2.defaultSSOHttpAuthSchemeProvider = exports2.defaultSSOHttpAuthSchemeParametersProvider = void 0;
+    var core_1 = (init_dist_es2(), __toCommonJS(dist_es_exports2));
+    var util_middleware_1 = require_dist_cjs6();
+    var defaultSSOHttpAuthSchemeParametersProvider = async (config, context, input) => {
+      return {
+        operation: (0, util_middleware_1.getSmithyContext)(context).operation,
+        region: await (0, util_middleware_1.normalizeProvider)(config.region)() || (() => {
+          throw new Error("expected `region` to be configured for `aws.auth#sigv4`");
+        })()
+      };
+    };
+    exports2.defaultSSOHttpAuthSchemeParametersProvider = defaultSSOHttpAuthSchemeParametersProvider;
+    function createAwsAuthSigv4HttpAuthOption(authParameters) {
+      return {
+        schemeId: "aws.auth#sigv4",
+        signingProperties: {
+          name: "awsssoportal",
+          region: authParameters.region
+        },
+        propertiesExtractor: (config, context) => ({
+          signingProperties: {
+            config,
+            context
+          }
+        })
+      };
+    }
+    function createSmithyApiNoAuthHttpAuthOption(authParameters) {
+      return {
+        schemeId: "smithy.api#noAuth"
+      };
+    }
+    var defaultSSOHttpAuthSchemeProvider = (authParameters) => {
+      const options = [];
+      switch (authParameters.operation) {
+        case "GetRoleCredentials": {
+          options.push(createSmithyApiNoAuthHttpAuthOption(authParameters));
+          break;
+        }
+        case "ListAccountRoles": {
+          options.push(createSmithyApiNoAuthHttpAuthOption(authParameters));
+          break;
+        }
+        case "ListAccounts": {
+          options.push(createSmithyApiNoAuthHttpAuthOption(authParameters));
+          break;
+        }
+        case "Logout": {
+          options.push(createSmithyApiNoAuthHttpAuthOption(authParameters));
+          break;
+        }
+        default: {
+          options.push(createAwsAuthSigv4HttpAuthOption(authParameters));
+        }
+      }
+      return options;
+    };
+    exports2.defaultSSOHttpAuthSchemeProvider = defaultSSOHttpAuthSchemeProvider;
+    var resolveHttpAuthSchemeConfig = (config) => {
+      const config_0 = (0, core_1.resolveAwsSdkSigV4Config)(config);
+      return {
+        ...config_0
+      };
+    };
+    exports2.resolveHttpAuthSchemeConfig = resolveHttpAuthSchemeConfig;
+  }
+});
+
+// node_modules/@aws-sdk/client-sqs/node_modules/@aws-sdk/client-sso/package.json
+var require_package6 = __commonJS({
+  "node_modules/@aws-sdk/client-sqs/node_modules/@aws-sdk/client-sso/package.json"(exports2, module2) {
+    module2.exports = {
+      name: "@aws-sdk/client-sso",
+      description: "AWS SDK for JavaScript Sso Client for Node.js, Browser and React Native",
+      version: "3.675.0",
+      scripts: {
+        build: "concurrently 'yarn:build:cjs' 'yarn:build:es' 'yarn:build:types'",
+        "build:cjs": "node ../../scripts/compilation/inline client-sso",
+        "build:es": "tsc -p tsconfig.es.json",
+        "build:include:deps": "lerna run --scope $npm_package_name --include-dependencies build",
+        "build:types": "tsc -p tsconfig.types.json",
+        "build:types:downlevel": "downlevel-dts dist-types dist-types/ts3.4",
+        clean: "rimraf ./dist-* && rimraf *.tsbuildinfo",
+        "extract:docs": "api-extractor run --local",
+        "generate:client": "node ../../scripts/generate-clients/single-service --solo sso"
+      },
+      main: "./dist-cjs/index.js",
+      types: "./dist-types/index.d.ts",
+      module: "./dist-es/index.js",
+      sideEffects: false,
+      dependencies: {
+        "@aws-crypto/sha256-browser": "5.2.0",
+        "@aws-crypto/sha256-js": "5.2.0",
+        "@aws-sdk/core": "3.667.0",
+        "@aws-sdk/middleware-host-header": "3.667.0",
+        "@aws-sdk/middleware-logger": "3.667.0",
+        "@aws-sdk/middleware-recursion-detection": "3.667.0",
+        "@aws-sdk/middleware-user-agent": "3.669.0",
+        "@aws-sdk/region-config-resolver": "3.667.0",
+        "@aws-sdk/types": "3.667.0",
+        "@aws-sdk/util-endpoints": "3.667.0",
+        "@aws-sdk/util-user-agent-browser": "3.675.0",
+        "@aws-sdk/util-user-agent-node": "3.669.0",
+        "@smithy/config-resolver": "^3.0.9",
+        "@smithy/core": "^2.4.8",
+        "@smithy/fetch-http-handler": "^3.2.9",
+        "@smithy/hash-node": "^3.0.7",
+        "@smithy/invalid-dependency": "^3.0.7",
+        "@smithy/middleware-content-length": "^3.0.9",
+        "@smithy/middleware-endpoint": "^3.1.4",
+        "@smithy/middleware-retry": "^3.0.23",
+        "@smithy/middleware-serde": "^3.0.7",
+        "@smithy/middleware-stack": "^3.0.7",
+        "@smithy/node-config-provider": "^3.1.8",
+        "@smithy/node-http-handler": "^3.2.4",
+        "@smithy/protocol-http": "^4.1.4",
+        "@smithy/smithy-client": "^3.4.0",
+        "@smithy/types": "^3.5.0",
+        "@smithy/url-parser": "^3.0.7",
+        "@smithy/util-base64": "^3.0.0",
+        "@smithy/util-body-length-browser": "^3.0.0",
+        "@smithy/util-body-length-node": "^3.0.0",
+        "@smithy/util-defaults-mode-browser": "^3.0.23",
+        "@smithy/util-defaults-mode-node": "^3.0.23",
+        "@smithy/util-endpoints": "^2.1.3",
+        "@smithy/util-middleware": "^3.0.7",
+        "@smithy/util-retry": "^3.0.7",
+        "@smithy/util-utf8": "^3.0.0",
+        tslib: "^2.6.2"
+      },
+      devDependencies: {
+        "@tsconfig/node16": "16.1.3",
+        "@types/node": "^16.18.96",
+        concurrently: "7.0.0",
+        "downlevel-dts": "0.10.1",
+        rimraf: "3.0.2",
+        typescript: "~4.9.5"
+      },
+      engines: {
+        node: ">=16.0.0"
+      },
+      typesVersions: {
+        "<4.0": {
+          "dist-types/*": [
+            "dist-types/ts3.4/*"
+          ]
+        }
+      },
+      files: [
+        "dist-*/**"
+      ],
+      author: {
+        name: "AWS SDK for JavaScript Team",
+        url: "https://aws.amazon.com/javascript/"
+      },
+      license: "Apache-2.0",
+      browser: {
+        "./dist-es/runtimeConfig": "./dist-es/runtimeConfig.browser"
+      },
+      "react-native": {
+        "./dist-es/runtimeConfig": "./dist-es/runtimeConfig.native"
+      },
+      homepage: "https://github.com/aws/aws-sdk-js-v3/tree/main/clients/client-sso",
+      repository: {
+        type: "git",
+        url: "https://github.com/aws/aws-sdk-js-v3.git",
+        directory: "clients/client-sso"
+      }
+    };
+  }
+});
+
+// node_modules/@aws-sdk/client-sqs/node_modules/@aws-sdk/client-sso/dist-cjs/endpoint/ruleset.js
+var require_ruleset5 = __commonJS({
+  "node_modules/@aws-sdk/client-sqs/node_modules/@aws-sdk/client-sso/dist-cjs/endpoint/ruleset.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.ruleSet = void 0;
+    var u = "required";
+    var v = "fn";
+    var w = "argv";
+    var x = "ref";
+    var a = true;
+    var b = "isSet";
+    var c = "booleanEquals";
+    var d = "error";
+    var e = "endpoint";
+    var f = "tree";
+    var g = "PartitionResult";
+    var h = "getAttr";
+    var i = { [u]: false, "type": "String" };
+    var j = { [u]: true, "default": false, "type": "Boolean" };
+    var k = { [x]: "Endpoint" };
+    var l = { [v]: c, [w]: [{ [x]: "UseFIPS" }, true] };
+    var m = { [v]: c, [w]: [{ [x]: "UseDualStack" }, true] };
+    var n = {};
+    var o = { [v]: h, [w]: [{ [x]: g }, "supportsFIPS"] };
+    var p = { [x]: g };
+    var q = { [v]: c, [w]: [true, { [v]: h, [w]: [p, "supportsDualStack"] }] };
+    var r = [l];
+    var s = [m];
+    var t = [{ [x]: "Region" }];
+    var _data = { version: "1.0", parameters: { Region: i, UseDualStack: j, UseFIPS: j, Endpoint: i }, rules: [{ conditions: [{ [v]: b, [w]: [k] }], rules: [{ conditions: r, error: "Invalid Configuration: FIPS and custom endpoint are not supported", type: d }, { conditions: s, error: "Invalid Configuration: Dualstack and custom endpoint are not supported", type: d }, { endpoint: { url: k, properties: n, headers: n }, type: e }], type: f }, { conditions: [{ [v]: b, [w]: t }], rules: [{ conditions: [{ [v]: "aws.partition", [w]: t, assign: g }], rules: [{ conditions: [l, m], rules: [{ conditions: [{ [v]: c, [w]: [a, o] }, q], rules: [{ endpoint: { url: "https://portal.sso-fips.{Region}.{PartitionResult#dualStackDnsSuffix}", properties: n, headers: n }, type: e }], type: f }, { error: "FIPS and DualStack are enabled, but this partition does not support one or both", type: d }], type: f }, { conditions: r, rules: [{ conditions: [{ [v]: c, [w]: [o, a] }], rules: [{ conditions: [{ [v]: "stringEquals", [w]: [{ [v]: h, [w]: [p, "name"] }, "aws-us-gov"] }], endpoint: { url: "https://portal.sso.{Region}.amazonaws.com", properties: n, headers: n }, type: e }, { endpoint: { url: "https://portal.sso-fips.{Region}.{PartitionResult#dnsSuffix}", properties: n, headers: n }, type: e }], type: f }, { error: "FIPS is enabled but this partition does not support FIPS", type: d }], type: f }, { conditions: s, rules: [{ conditions: [q], rules: [{ endpoint: { url: "https://portal.sso.{Region}.{PartitionResult#dualStackDnsSuffix}", properties: n, headers: n }, type: e }], type: f }, { error: "DualStack is enabled but this partition does not support DualStack", type: d }], type: f }, { endpoint: { url: "https://portal.sso.{Region}.{PartitionResult#dnsSuffix}", properties: n, headers: n }, type: e }], type: f }], type: f }, { error: "Invalid Configuration: Missing Region", type: d }] };
+    exports2.ruleSet = _data;
+  }
+});
+
+// node_modules/@aws-sdk/client-sqs/node_modules/@aws-sdk/client-sso/dist-cjs/endpoint/endpointResolver.js
+var require_endpointResolver5 = __commonJS({
+  "node_modules/@aws-sdk/client-sqs/node_modules/@aws-sdk/client-sso/dist-cjs/endpoint/endpointResolver.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.defaultEndpointResolver = void 0;
+    var util_endpoints_1 = require_dist_cjs30();
+    var util_endpoints_2 = require_dist_cjs29();
+    var ruleset_1 = require_ruleset5();
+    var cache = new util_endpoints_2.EndpointCache({
+      size: 50,
+      params: ["Endpoint", "Region", "UseDualStack", "UseFIPS"]
+    });
+    var defaultEndpointResolver = (endpointParams, context = {}) => {
+      return cache.get(endpointParams, () => (0, util_endpoints_2.resolveEndpoint)(ruleset_1.ruleSet, {
+        endpointParams,
+        logger: context.logger
+      }));
+    };
+    exports2.defaultEndpointResolver = defaultEndpointResolver;
+    util_endpoints_2.customEndpointFunctions.aws = util_endpoints_1.awsEndpointFunctions;
+  }
+});
+
+// node_modules/@aws-sdk/client-sqs/node_modules/@aws-sdk/client-sso/dist-cjs/runtimeConfig.shared.js
+var require_runtimeConfig_shared5 = __commonJS({
+  "node_modules/@aws-sdk/client-sqs/node_modules/@aws-sdk/client-sso/dist-cjs/runtimeConfig.shared.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.getRuntimeConfig = void 0;
+    var core_1 = (init_dist_es2(), __toCommonJS(dist_es_exports2));
+    var core_2 = (init_dist_es(), __toCommonJS(dist_es_exports));
+    var smithy_client_1 = require_dist_cjs27();
+    var url_parser_1 = require_dist_cjs11();
+    var util_base64_1 = require_dist_cjs20();
+    var util_utf8_1 = require_dist_cjs19();
+    var httpAuthSchemeProvider_1 = require_httpAuthSchemeProvider6();
+    var endpointResolver_1 = require_endpointResolver5();
+    var getRuntimeConfig = (config) => {
+      return {
+        apiVersion: "2019-06-10",
+        base64Decoder: config?.base64Decoder ?? util_base64_1.fromBase64,
+        base64Encoder: config?.base64Encoder ?? util_base64_1.toBase64,
+        disableHostPrefix: config?.disableHostPrefix ?? false,
+        endpointProvider: config?.endpointProvider ?? endpointResolver_1.defaultEndpointResolver,
+        extensions: config?.extensions ?? [],
+        httpAuthSchemeProvider: config?.httpAuthSchemeProvider ?? httpAuthSchemeProvider_1.defaultSSOHttpAuthSchemeProvider,
+        httpAuthSchemes: config?.httpAuthSchemes ?? [
+          {
+            schemeId: "aws.auth#sigv4",
+            identityProvider: (ipc) => ipc.getIdentityProvider("aws.auth#sigv4"),
+            signer: new core_1.AwsSdkSigV4Signer()
+          },
+          {
+            schemeId: "smithy.api#noAuth",
+            identityProvider: (ipc) => ipc.getIdentityProvider("smithy.api#noAuth") || (async () => ({})),
+            signer: new core_2.NoAuthSigner()
+          }
+        ],
+        logger: config?.logger ?? new smithy_client_1.NoOpLogger(),
+        serviceId: config?.serviceId ?? "SSO",
+        urlParser: config?.urlParser ?? url_parser_1.parseUrl,
+        utf8Decoder: config?.utf8Decoder ?? util_utf8_1.fromUtf8,
+        utf8Encoder: config?.utf8Encoder ?? util_utf8_1.toUtf8
+      };
+    };
+    exports2.getRuntimeConfig = getRuntimeConfig;
+  }
+});
+
+// node_modules/@aws-sdk/client-sqs/node_modules/@aws-sdk/client-sso/dist-cjs/runtimeConfig.js
+var require_runtimeConfig5 = __commonJS({
+  "node_modules/@aws-sdk/client-sqs/node_modules/@aws-sdk/client-sso/dist-cjs/runtimeConfig.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.getRuntimeConfig = void 0;
+    var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
+    var package_json_1 = tslib_1.__importDefault(require_package6());
+    var core_1 = (init_dist_es2(), __toCommonJS(dist_es_exports2));
+    var util_user_agent_node_1 = require_dist_cjs39();
+    var config_resolver_1 = require_dist_cjs34();
+    var hash_node_1 = require_dist_cjs40();
+    var middleware_retry_1 = require_dist_cjs28();
+    var node_config_provider_1 = require_dist_cjs9();
+    var node_http_handler_1 = require_dist_cjs23();
+    var util_body_length_node_1 = require_dist_cjs41();
+    var util_retry_1 = require_dist_cjs15();
+    var runtimeConfig_shared_1 = require_runtimeConfig_shared5();
+    var smithy_client_1 = require_dist_cjs27();
+    var util_defaults_mode_node_1 = require_dist_cjs42();
+    var smithy_client_2 = require_dist_cjs27();
+    var getRuntimeConfig = (config) => {
+      (0, smithy_client_2.emitWarningIfUnsupportedVersion)(process.version);
+      const defaultsMode = (0, util_defaults_mode_node_1.resolveDefaultsModeConfig)(config);
+      const defaultConfigProvider = () => defaultsMode().then(smithy_client_1.loadConfigsForDefaultMode);
+      const clientSharedValues = (0, runtimeConfig_shared_1.getRuntimeConfig)(config);
+      (0, core_1.emitWarningIfUnsupportedVersion)(process.version);
+      return {
+        ...clientSharedValues,
+        ...config,
+        runtime: "node",
+        defaultsMode,
+        bodyLengthChecker: config?.bodyLengthChecker ?? util_body_length_node_1.calculateBodyLength,
+        defaultUserAgentProvider: config?.defaultUserAgentProvider ?? (0, util_user_agent_node_1.createDefaultUserAgentProvider)({ serviceId: clientSharedValues.serviceId, clientVersion: package_json_1.default.version }),
+        maxAttempts: config?.maxAttempts ?? (0, node_config_provider_1.loadConfig)(middleware_retry_1.NODE_MAX_ATTEMPT_CONFIG_OPTIONS),
+        region: config?.region ?? (0, node_config_provider_1.loadConfig)(config_resolver_1.NODE_REGION_CONFIG_OPTIONS, config_resolver_1.NODE_REGION_CONFIG_FILE_OPTIONS),
+        requestHandler: node_http_handler_1.NodeHttpHandler.create(config?.requestHandler ?? defaultConfigProvider),
+        retryMode: config?.retryMode ?? (0, node_config_provider_1.loadConfig)({
+          ...middleware_retry_1.NODE_RETRY_MODE_CONFIG_OPTIONS,
+          default: async () => (await defaultConfigProvider()).retryMode || util_retry_1.DEFAULT_RETRY_MODE
+        }),
+        sha256: config?.sha256 ?? hash_node_1.Hash.bind(null, "sha256"),
+        streamCollector: config?.streamCollector ?? node_http_handler_1.streamCollector,
+        useDualstackEndpoint: config?.useDualstackEndpoint ?? (0, node_config_provider_1.loadConfig)(config_resolver_1.NODE_USE_DUALSTACK_ENDPOINT_CONFIG_OPTIONS),
+        useFipsEndpoint: config?.useFipsEndpoint ?? (0, node_config_provider_1.loadConfig)(config_resolver_1.NODE_USE_FIPS_ENDPOINT_CONFIG_OPTIONS),
+        userAgentAppId: config?.userAgentAppId ?? (0, node_config_provider_1.loadConfig)(util_user_agent_node_1.NODE_APP_ID_CONFIG_OPTIONS)
+      };
+    };
+    exports2.getRuntimeConfig = getRuntimeConfig;
+  }
+});
+
+// node_modules/@aws-sdk/client-sqs/node_modules/@aws-sdk/client-sso/dist-cjs/index.js
+var require_dist_cjs55 = __commonJS({
+  "node_modules/@aws-sdk/client-sqs/node_modules/@aws-sdk/client-sso/dist-cjs/index.js"(exports2, module2) {
+    "use strict";
+    var __defProp2 = Object.defineProperty;
+    var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
+    var __getOwnPropNames2 = Object.getOwnPropertyNames;
+    var __hasOwnProp2 = Object.prototype.hasOwnProperty;
+    var __name = (target, value) => __defProp2(target, "name", { value, configurable: true });
+    var __export2 = (target, all) => {
+      for (var name in all)
+        __defProp2(target, name, { get: all[name], enumerable: true });
+    };
+    var __copyProps2 = (to, from, except, desc) => {
+      if (from && typeof from === "object" || typeof from === "function") {
+        for (let key of __getOwnPropNames2(from))
+          if (!__hasOwnProp2.call(to, key) && key !== except)
+            __defProp2(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc2(from, key)) || desc.enumerable });
+      }
+      return to;
+    };
+    var __toCommonJS2 = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
+    var src_exports = {};
+    __export2(src_exports, {
+      GetRoleCredentialsCommand: () => GetRoleCredentialsCommand,
+      GetRoleCredentialsRequestFilterSensitiveLog: () => GetRoleCredentialsRequestFilterSensitiveLog,
+      GetRoleCredentialsResponseFilterSensitiveLog: () => GetRoleCredentialsResponseFilterSensitiveLog,
+      InvalidRequestException: () => InvalidRequestException,
+      ListAccountRolesCommand: () => ListAccountRolesCommand,
+      ListAccountRolesRequestFilterSensitiveLog: () => ListAccountRolesRequestFilterSensitiveLog,
+      ListAccountsCommand: () => ListAccountsCommand,
+      ListAccountsRequestFilterSensitiveLog: () => ListAccountsRequestFilterSensitiveLog,
+      LogoutCommand: () => LogoutCommand,
+      LogoutRequestFilterSensitiveLog: () => LogoutRequestFilterSensitiveLog,
+      ResourceNotFoundException: () => ResourceNotFoundException,
+      RoleCredentialsFilterSensitiveLog: () => RoleCredentialsFilterSensitiveLog,
+      SSO: () => SSO,
+      SSOClient: () => SSOClient,
+      SSOServiceException: () => SSOServiceException,
+      TooManyRequestsException: () => TooManyRequestsException,
+      UnauthorizedException: () => UnauthorizedException,
+      __Client: () => import_smithy_client5.Client,
+      paginateListAccountRoles: () => paginateListAccountRoles,
+      paginateListAccounts: () => paginateListAccounts
+    });
+    module2.exports = __toCommonJS2(src_exports);
+    var import_middleware_host_header = require_dist_cjs3();
+    var import_middleware_logger = require_dist_cjs4();
+    var import_middleware_recursion_detection = require_dist_cjs5();
+    var import_middleware_user_agent = require_dist_cjs32();
+    var import_config_resolver = require_dist_cjs34();
+    var import_core3 = (init_dist_es(), __toCommonJS(dist_es_exports));
+    var import_middleware_content_length = require_dist_cjs35();
+    var import_middleware_endpoint2 = require_dist_cjs13();
+    var import_middleware_retry2 = require_dist_cjs28();
+    var import_httpAuthSchemeProvider = require_httpAuthSchemeProvider6();
+    var resolveClientEndpointParameters = /* @__PURE__ */ __name((options) => {
+      return {
+        ...options,
+        useDualstackEndpoint: options.useDualstackEndpoint ?? false,
+        useFipsEndpoint: options.useFipsEndpoint ?? false,
+        defaultSigningName: "awsssoportal"
+      };
+    }, "resolveClientEndpointParameters");
+    var commonParams = {
+      UseFIPS: { type: "builtInParams", name: "useFipsEndpoint" },
+      Endpoint: { type: "builtInParams", name: "endpoint" },
+      Region: { type: "builtInParams", name: "region" },
+      UseDualStack: { type: "builtInParams", name: "useDualstackEndpoint" }
+    };
+    var import_runtimeConfig = require_runtimeConfig5();
+    var import_region_config_resolver = require_dist_cjs43();
+    var import_protocol_http8 = require_dist_cjs2();
+    var import_smithy_client5 = require_dist_cjs27();
+    var getHttpAuthExtensionConfiguration = /* @__PURE__ */ __name((runtimeConfig) => {
+      const _httpAuthSchemes = runtimeConfig.httpAuthSchemes;
+      let _httpAuthSchemeProvider = runtimeConfig.httpAuthSchemeProvider;
+      let _credentials = runtimeConfig.credentials;
+      return {
+        setHttpAuthScheme(httpAuthScheme) {
+          const index = _httpAuthSchemes.findIndex((scheme) => scheme.schemeId === httpAuthScheme.schemeId);
+          if (index === -1) {
+            _httpAuthSchemes.push(httpAuthScheme);
+          } else {
+            _httpAuthSchemes.splice(index, 1, httpAuthScheme);
+          }
+        },
+        httpAuthSchemes() {
+          return _httpAuthSchemes;
+        },
+        setHttpAuthSchemeProvider(httpAuthSchemeProvider) {
+          _httpAuthSchemeProvider = httpAuthSchemeProvider;
+        },
+        httpAuthSchemeProvider() {
+          return _httpAuthSchemeProvider;
+        },
+        setCredentials(credentials) {
+          _credentials = credentials;
+        },
+        credentials() {
+          return _credentials;
+        }
+      };
+    }, "getHttpAuthExtensionConfiguration");
+    var resolveHttpAuthRuntimeConfig = /* @__PURE__ */ __name((config) => {
+      return {
+        httpAuthSchemes: config.httpAuthSchemes(),
+        httpAuthSchemeProvider: config.httpAuthSchemeProvider(),
+        credentials: config.credentials()
+      };
+    }, "resolveHttpAuthRuntimeConfig");
+    var asPartial = /* @__PURE__ */ __name((t) => t, "asPartial");
+    var resolveRuntimeExtensions = /* @__PURE__ */ __name((runtimeConfig, extensions) => {
+      const extensionConfiguration = {
+        ...asPartial((0, import_region_config_resolver.getAwsRegionExtensionConfiguration)(runtimeConfig)),
+        ...asPartial((0, import_smithy_client5.getDefaultExtensionConfiguration)(runtimeConfig)),
+        ...asPartial((0, import_protocol_http8.getHttpHandlerExtensionConfiguration)(runtimeConfig)),
+        ...asPartial(getHttpAuthExtensionConfiguration(runtimeConfig))
+      };
+      extensions.forEach((extension) => extension.configure(extensionConfiguration));
+      return {
+        ...runtimeConfig,
+        ...(0, import_region_config_resolver.resolveAwsRegionExtensionConfiguration)(extensionConfiguration),
+        ...(0, import_smithy_client5.resolveDefaultRuntimeConfig)(extensionConfiguration),
+        ...(0, import_protocol_http8.resolveHttpHandlerRuntimeConfig)(extensionConfiguration),
+        ...resolveHttpAuthRuntimeConfig(extensionConfiguration)
+      };
+    }, "resolveRuntimeExtensions");
+    var _SSOClient = class _SSOClient extends import_smithy_client5.Client {
+      constructor(...[configuration]) {
+        const _config_0 = (0, import_runtimeConfig.getRuntimeConfig)(configuration || {});
+        const _config_1 = resolveClientEndpointParameters(_config_0);
+        const _config_2 = (0, import_middleware_user_agent.resolveUserAgentConfig)(_config_1);
+        const _config_3 = (0, import_middleware_retry2.resolveRetryConfig)(_config_2);
+        const _config_4 = (0, import_config_resolver.resolveRegionConfig)(_config_3);
+        const _config_5 = (0, import_middleware_host_header.resolveHostHeaderConfig)(_config_4);
+        const _config_6 = (0, import_middleware_endpoint2.resolveEndpointConfig)(_config_5);
+        const _config_7 = (0, import_httpAuthSchemeProvider.resolveHttpAuthSchemeConfig)(_config_6);
+        const _config_8 = resolveRuntimeExtensions(_config_7, (configuration == null ? void 0 : configuration.extensions) || []);
+        super(_config_8);
+        this.config = _config_8;
+        this.middlewareStack.use((0, import_middleware_user_agent.getUserAgentPlugin)(this.config));
+        this.middlewareStack.use((0, import_middleware_retry2.getRetryPlugin)(this.config));
+        this.middlewareStack.use((0, import_middleware_content_length.getContentLengthPlugin)(this.config));
+        this.middlewareStack.use((0, import_middleware_host_header.getHostHeaderPlugin)(this.config));
+        this.middlewareStack.use((0, import_middleware_logger.getLoggerPlugin)(this.config));
+        this.middlewareStack.use((0, import_middleware_recursion_detection.getRecursionDetectionPlugin)(this.config));
+        this.middlewareStack.use(
+          (0, import_core3.getHttpAuthSchemeEndpointRuleSetPlugin)(this.config, {
+            httpAuthSchemeParametersProvider: import_httpAuthSchemeProvider.defaultSSOHttpAuthSchemeParametersProvider,
+            identityProviderConfigProvider: async (config) => new import_core3.DefaultIdentityProviderConfig({
+              "aws.auth#sigv4": config.credentials
+            })
+          })
+        );
+        this.middlewareStack.use((0, import_core3.getHttpSigningPlugin)(this.config));
+      }
+      /**
+       * Destroy underlying resources, like sockets. It's usually not necessary to do this.
+       * However in Node.js, it's best to explicitly shut down the client's agent when it is no longer needed.
+       * Otherwise, sockets might stay open for quite a long time before the server terminates them.
+       */
+      destroy() {
+        super.destroy();
+      }
+    };
+    __name(_SSOClient, "SSOClient");
+    var SSOClient = _SSOClient;
+    var import_middleware_serde2 = require_dist_cjs12();
+    var _SSOServiceException = class _SSOServiceException2 extends import_smithy_client5.ServiceException {
+      /**
+       * @internal
+       */
+      constructor(options) {
+        super(options);
+        Object.setPrototypeOf(this, _SSOServiceException2.prototype);
+      }
+    };
+    __name(_SSOServiceException, "SSOServiceException");
+    var SSOServiceException = _SSOServiceException;
+    var _InvalidRequestException = class _InvalidRequestException2 extends SSOServiceException {
+      /**
+       * @internal
+       */
+      constructor(opts) {
+        super({
+          name: "InvalidRequestException",
+          $fault: "client",
+          ...opts
+        });
+        this.name = "InvalidRequestException";
+        this.$fault = "client";
+        Object.setPrototypeOf(this, _InvalidRequestException2.prototype);
+      }
+    };
+    __name(_InvalidRequestException, "InvalidRequestException");
+    var InvalidRequestException = _InvalidRequestException;
+    var _ResourceNotFoundException = class _ResourceNotFoundException2 extends SSOServiceException {
+      /**
+       * @internal
+       */
+      constructor(opts) {
+        super({
+          name: "ResourceNotFoundException",
+          $fault: "client",
+          ...opts
+        });
+        this.name = "ResourceNotFoundException";
+        this.$fault = "client";
+        Object.setPrototypeOf(this, _ResourceNotFoundException2.prototype);
+      }
+    };
+    __name(_ResourceNotFoundException, "ResourceNotFoundException");
+    var ResourceNotFoundException = _ResourceNotFoundException;
+    var _TooManyRequestsException = class _TooManyRequestsException2 extends SSOServiceException {
+      /**
+       * @internal
+       */
+      constructor(opts) {
+        super({
+          name: "TooManyRequestsException",
+          $fault: "client",
+          ...opts
+        });
+        this.name = "TooManyRequestsException";
+        this.$fault = "client";
+        Object.setPrototypeOf(this, _TooManyRequestsException2.prototype);
+      }
+    };
+    __name(_TooManyRequestsException, "TooManyRequestsException");
+    var TooManyRequestsException = _TooManyRequestsException;
+    var _UnauthorizedException = class _UnauthorizedException2 extends SSOServiceException {
+      /**
+       * @internal
+       */
+      constructor(opts) {
+        super({
+          name: "UnauthorizedException",
+          $fault: "client",
+          ...opts
+        });
+        this.name = "UnauthorizedException";
+        this.$fault = "client";
+        Object.setPrototypeOf(this, _UnauthorizedException2.prototype);
+      }
+    };
+    __name(_UnauthorizedException, "UnauthorizedException");
+    var UnauthorizedException = _UnauthorizedException;
+    var GetRoleCredentialsRequestFilterSensitiveLog = /* @__PURE__ */ __name((obj) => ({
+      ...obj,
+      ...obj.accessToken && { accessToken: import_smithy_client5.SENSITIVE_STRING }
+    }), "GetRoleCredentialsRequestFilterSensitiveLog");
+    var RoleCredentialsFilterSensitiveLog = /* @__PURE__ */ __name((obj) => ({
+      ...obj,
+      ...obj.secretAccessKey && { secretAccessKey: import_smithy_client5.SENSITIVE_STRING },
+      ...obj.sessionToken && { sessionToken: import_smithy_client5.SENSITIVE_STRING }
+    }), "RoleCredentialsFilterSensitiveLog");
+    var GetRoleCredentialsResponseFilterSensitiveLog = /* @__PURE__ */ __name((obj) => ({
+      ...obj,
+      ...obj.roleCredentials && { roleCredentials: RoleCredentialsFilterSensitiveLog(obj.roleCredentials) }
+    }), "GetRoleCredentialsResponseFilterSensitiveLog");
+    var ListAccountRolesRequestFilterSensitiveLog = /* @__PURE__ */ __name((obj) => ({
+      ...obj,
+      ...obj.accessToken && { accessToken: import_smithy_client5.SENSITIVE_STRING }
+    }), "ListAccountRolesRequestFilterSensitiveLog");
+    var ListAccountsRequestFilterSensitiveLog = /* @__PURE__ */ __name((obj) => ({
+      ...obj,
+      ...obj.accessToken && { accessToken: import_smithy_client5.SENSITIVE_STRING }
+    }), "ListAccountsRequestFilterSensitiveLog");
+    var LogoutRequestFilterSensitiveLog = /* @__PURE__ */ __name((obj) => ({
+      ...obj,
+      ...obj.accessToken && { accessToken: import_smithy_client5.SENSITIVE_STRING }
+    }), "LogoutRequestFilterSensitiveLog");
+    var import_core22 = (init_dist_es2(), __toCommonJS(dist_es_exports2));
+    var se_GetRoleCredentialsCommand = /* @__PURE__ */ __name(async (input, context) => {
+      const b = (0, import_core3.requestBuilder)(input, context);
+      const headers = (0, import_smithy_client5.map)({}, import_smithy_client5.isSerializableHeaderValue, {
+        [_xasbt]: input[_aT]
       });
-      const subject = message.body.subject ?? "TraderApp Notification";
-      const recipient = message.body.recipients[0].emailAddress ?? "";
-      promises.push(
-        sendpulseEmailService.sendEmail({ recipient, subject, body })
-      );
-    });
-    await Promise.all(promises);
+      b.bp("/federation/credentials");
+      const query = (0, import_smithy_client5.map)({
+        [_rn]: [, (0, import_smithy_client5.expectNonNull)(input[_rN], `roleName`)],
+        [_ai]: [, (0, import_smithy_client5.expectNonNull)(input[_aI], `accountId`)]
+      });
+      let body;
+      b.m("GET").h(headers).q(query).b(body);
+      return b.build();
+    }, "se_GetRoleCredentialsCommand");
+    var se_ListAccountRolesCommand = /* @__PURE__ */ __name(async (input, context) => {
+      const b = (0, import_core3.requestBuilder)(input, context);
+      const headers = (0, import_smithy_client5.map)({}, import_smithy_client5.isSerializableHeaderValue, {
+        [_xasbt]: input[_aT]
+      });
+      b.bp("/assignment/roles");
+      const query = (0, import_smithy_client5.map)({
+        [_nt]: [, input[_nT]],
+        [_mr]: [() => input.maxResults !== void 0, () => input[_mR].toString()],
+        [_ai]: [, (0, import_smithy_client5.expectNonNull)(input[_aI], `accountId`)]
+      });
+      let body;
+      b.m("GET").h(headers).q(query).b(body);
+      return b.build();
+    }, "se_ListAccountRolesCommand");
+    var se_ListAccountsCommand = /* @__PURE__ */ __name(async (input, context) => {
+      const b = (0, import_core3.requestBuilder)(input, context);
+      const headers = (0, import_smithy_client5.map)({}, import_smithy_client5.isSerializableHeaderValue, {
+        [_xasbt]: input[_aT]
+      });
+      b.bp("/assignment/accounts");
+      const query = (0, import_smithy_client5.map)({
+        [_nt]: [, input[_nT]],
+        [_mr]: [() => input.maxResults !== void 0, () => input[_mR].toString()]
+      });
+      let body;
+      b.m("GET").h(headers).q(query).b(body);
+      return b.build();
+    }, "se_ListAccountsCommand");
+    var se_LogoutCommand = /* @__PURE__ */ __name(async (input, context) => {
+      const b = (0, import_core3.requestBuilder)(input, context);
+      const headers = (0, import_smithy_client5.map)({}, import_smithy_client5.isSerializableHeaderValue, {
+        [_xasbt]: input[_aT]
+      });
+      b.bp("/logout");
+      let body;
+      b.m("POST").h(headers).b(body);
+      return b.build();
+    }, "se_LogoutCommand");
+    var de_GetRoleCredentialsCommand = /* @__PURE__ */ __name(async (output, context) => {
+      if (output.statusCode !== 200 && output.statusCode >= 300) {
+        return de_CommandError(output, context);
+      }
+      const contents = (0, import_smithy_client5.map)({
+        $metadata: deserializeMetadata(output)
+      });
+      const data = (0, import_smithy_client5.expectNonNull)((0, import_smithy_client5.expectObject)(await (0, import_core22.parseJsonBody)(output.body, context)), "body");
+      const doc = (0, import_smithy_client5.take)(data, {
+        roleCredentials: import_smithy_client5._json
+      });
+      Object.assign(contents, doc);
+      return contents;
+    }, "de_GetRoleCredentialsCommand");
+    var de_ListAccountRolesCommand = /* @__PURE__ */ __name(async (output, context) => {
+      if (output.statusCode !== 200 && output.statusCode >= 300) {
+        return de_CommandError(output, context);
+      }
+      const contents = (0, import_smithy_client5.map)({
+        $metadata: deserializeMetadata(output)
+      });
+      const data = (0, import_smithy_client5.expectNonNull)((0, import_smithy_client5.expectObject)(await (0, import_core22.parseJsonBody)(output.body, context)), "body");
+      const doc = (0, import_smithy_client5.take)(data, {
+        nextToken: import_smithy_client5.expectString,
+        roleList: import_smithy_client5._json
+      });
+      Object.assign(contents, doc);
+      return contents;
+    }, "de_ListAccountRolesCommand");
+    var de_ListAccountsCommand = /* @__PURE__ */ __name(async (output, context) => {
+      if (output.statusCode !== 200 && output.statusCode >= 300) {
+        return de_CommandError(output, context);
+      }
+      const contents = (0, import_smithy_client5.map)({
+        $metadata: deserializeMetadata(output)
+      });
+      const data = (0, import_smithy_client5.expectNonNull)((0, import_smithy_client5.expectObject)(await (0, import_core22.parseJsonBody)(output.body, context)), "body");
+      const doc = (0, import_smithy_client5.take)(data, {
+        accountList: import_smithy_client5._json,
+        nextToken: import_smithy_client5.expectString
+      });
+      Object.assign(contents, doc);
+      return contents;
+    }, "de_ListAccountsCommand");
+    var de_LogoutCommand = /* @__PURE__ */ __name(async (output, context) => {
+      if (output.statusCode !== 200 && output.statusCode >= 300) {
+        return de_CommandError(output, context);
+      }
+      const contents = (0, import_smithy_client5.map)({
+        $metadata: deserializeMetadata(output)
+      });
+      await (0, import_smithy_client5.collectBody)(output.body, context);
+      return contents;
+    }, "de_LogoutCommand");
+    var de_CommandError = /* @__PURE__ */ __name(async (output, context) => {
+      const parsedOutput = {
+        ...output,
+        body: await (0, import_core22.parseJsonErrorBody)(output.body, context)
+      };
+      const errorCode = (0, import_core22.loadRestJsonErrorCode)(output, parsedOutput.body);
+      switch (errorCode) {
+        case "InvalidRequestException":
+        case "com.amazonaws.sso#InvalidRequestException":
+          throw await de_InvalidRequestExceptionRes(parsedOutput, context);
+        case "ResourceNotFoundException":
+        case "com.amazonaws.sso#ResourceNotFoundException":
+          throw await de_ResourceNotFoundExceptionRes(parsedOutput, context);
+        case "TooManyRequestsException":
+        case "com.amazonaws.sso#TooManyRequestsException":
+          throw await de_TooManyRequestsExceptionRes(parsedOutput, context);
+        case "UnauthorizedException":
+        case "com.amazonaws.sso#UnauthorizedException":
+          throw await de_UnauthorizedExceptionRes(parsedOutput, context);
+        default:
+          const parsedBody = parsedOutput.body;
+          return throwDefaultError({
+            output,
+            parsedBody,
+            errorCode
+          });
+      }
+    }, "de_CommandError");
+    var throwDefaultError = (0, import_smithy_client5.withBaseException)(SSOServiceException);
+    var de_InvalidRequestExceptionRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
+      const contents = (0, import_smithy_client5.map)({});
+      const data = parsedOutput.body;
+      const doc = (0, import_smithy_client5.take)(data, {
+        message: import_smithy_client5.expectString
+      });
+      Object.assign(contents, doc);
+      const exception2 = new InvalidRequestException({
+        $metadata: deserializeMetadata(parsedOutput),
+        ...contents
+      });
+      return (0, import_smithy_client5.decorateServiceException)(exception2, parsedOutput.body);
+    }, "de_InvalidRequestExceptionRes");
+    var de_ResourceNotFoundExceptionRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
+      const contents = (0, import_smithy_client5.map)({});
+      const data = parsedOutput.body;
+      const doc = (0, import_smithy_client5.take)(data, {
+        message: import_smithy_client5.expectString
+      });
+      Object.assign(contents, doc);
+      const exception2 = new ResourceNotFoundException({
+        $metadata: deserializeMetadata(parsedOutput),
+        ...contents
+      });
+      return (0, import_smithy_client5.decorateServiceException)(exception2, parsedOutput.body);
+    }, "de_ResourceNotFoundExceptionRes");
+    var de_TooManyRequestsExceptionRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
+      const contents = (0, import_smithy_client5.map)({});
+      const data = parsedOutput.body;
+      const doc = (0, import_smithy_client5.take)(data, {
+        message: import_smithy_client5.expectString
+      });
+      Object.assign(contents, doc);
+      const exception2 = new TooManyRequestsException({
+        $metadata: deserializeMetadata(parsedOutput),
+        ...contents
+      });
+      return (0, import_smithy_client5.decorateServiceException)(exception2, parsedOutput.body);
+    }, "de_TooManyRequestsExceptionRes");
+    var de_UnauthorizedExceptionRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
+      const contents = (0, import_smithy_client5.map)({});
+      const data = parsedOutput.body;
+      const doc = (0, import_smithy_client5.take)(data, {
+        message: import_smithy_client5.expectString
+      });
+      Object.assign(contents, doc);
+      const exception2 = new UnauthorizedException({
+        $metadata: deserializeMetadata(parsedOutput),
+        ...contents
+      });
+      return (0, import_smithy_client5.decorateServiceException)(exception2, parsedOutput.body);
+    }, "de_UnauthorizedExceptionRes");
+    var deserializeMetadata = /* @__PURE__ */ __name((output) => ({
+      httpStatusCode: output.statusCode,
+      requestId: output.headers["x-amzn-requestid"] ?? output.headers["x-amzn-request-id"] ?? output.headers["x-amz-request-id"],
+      extendedRequestId: output.headers["x-amz-id-2"],
+      cfId: output.headers["x-amz-cf-id"]
+    }), "deserializeMetadata");
+    var _aI = "accountId";
+    var _aT = "accessToken";
+    var _ai = "account_id";
+    var _mR = "maxResults";
+    var _mr = "max_result";
+    var _nT = "nextToken";
+    var _nt = "next_token";
+    var _rN = "roleName";
+    var _rn = "role_name";
+    var _xasbt = "x-amz-sso_bearer_token";
+    var _GetRoleCredentialsCommand = class _GetRoleCredentialsCommand extends import_smithy_client5.Command.classBuilder().ep(commonParams).m(function(Command, cs, config, o) {
+      return [
+        (0, import_middleware_serde2.getSerdePlugin)(config, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint2.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+      ];
+    }).s("SWBPortalService", "GetRoleCredentials", {}).n("SSOClient", "GetRoleCredentialsCommand").f(GetRoleCredentialsRequestFilterSensitiveLog, GetRoleCredentialsResponseFilterSensitiveLog).ser(se_GetRoleCredentialsCommand).de(de_GetRoleCredentialsCommand).build() {
+    };
+    __name(_GetRoleCredentialsCommand, "GetRoleCredentialsCommand");
+    var GetRoleCredentialsCommand = _GetRoleCredentialsCommand;
+    var _ListAccountRolesCommand = class _ListAccountRolesCommand extends import_smithy_client5.Command.classBuilder().ep(commonParams).m(function(Command, cs, config, o) {
+      return [
+        (0, import_middleware_serde2.getSerdePlugin)(config, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint2.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+      ];
+    }).s("SWBPortalService", "ListAccountRoles", {}).n("SSOClient", "ListAccountRolesCommand").f(ListAccountRolesRequestFilterSensitiveLog, void 0).ser(se_ListAccountRolesCommand).de(de_ListAccountRolesCommand).build() {
+    };
+    __name(_ListAccountRolesCommand, "ListAccountRolesCommand");
+    var ListAccountRolesCommand = _ListAccountRolesCommand;
+    var _ListAccountsCommand = class _ListAccountsCommand extends import_smithy_client5.Command.classBuilder().ep(commonParams).m(function(Command, cs, config, o) {
+      return [
+        (0, import_middleware_serde2.getSerdePlugin)(config, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint2.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+      ];
+    }).s("SWBPortalService", "ListAccounts", {}).n("SSOClient", "ListAccountsCommand").f(ListAccountsRequestFilterSensitiveLog, void 0).ser(se_ListAccountsCommand).de(de_ListAccountsCommand).build() {
+    };
+    __name(_ListAccountsCommand, "ListAccountsCommand");
+    var ListAccountsCommand = _ListAccountsCommand;
+    var _LogoutCommand = class _LogoutCommand extends import_smithy_client5.Command.classBuilder().ep(commonParams).m(function(Command, cs, config, o) {
+      return [
+        (0, import_middleware_serde2.getSerdePlugin)(config, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint2.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+      ];
+    }).s("SWBPortalService", "Logout", {}).n("SSOClient", "LogoutCommand").f(LogoutRequestFilterSensitiveLog, void 0).ser(se_LogoutCommand).de(de_LogoutCommand).build() {
+    };
+    __name(_LogoutCommand, "LogoutCommand");
+    var LogoutCommand = _LogoutCommand;
+    var commands = {
+      GetRoleCredentialsCommand,
+      ListAccountRolesCommand,
+      ListAccountsCommand,
+      LogoutCommand
+    };
+    var _SSO = class _SSO extends SSOClient {
+    };
+    __name(_SSO, "SSO");
+    var SSO = _SSO;
+    (0, import_smithy_client5.createAggregatedClient)(commands, SSO);
+    var paginateListAccountRoles = (0, import_core3.createPaginator)(SSOClient, ListAccountRolesCommand, "nextToken", "nextToken", "maxResults");
+    var paginateListAccounts = (0, import_core3.createPaginator)(SSOClient, ListAccountsCommand, "nextToken", "nextToken", "maxResults");
   }
-  // public async sendBulkEmailWithSendpulse(
-  //     queueMessages: IQueueEmailMessageBody[]
-  // ): Promise<void> {
-  //     const sendpulseEmailService = await SendpulseEmailService.create();
-  //     sendpulseEmailService.sendBulkEmail({ recipients, subject, body, from });
-  // }
-};
-var NotificationsService_default = new NotificationsService();
-// Annotate the CommonJS export names for ESM import in node:
-0 && (module.exports = {
-  NotificationsService
 });
+
+// node_modules/@aws-sdk/client-sqs/node_modules/@aws-sdk/credential-provider-sso/dist-cjs/index.js
+var require_dist_cjs56 = __commonJS({
+  "node_modules/@aws-sdk/client-sqs/node_modules/@aws-sdk/credential-provider-sso/dist-cjs/index.js"(exports2, module2) {
+    "use strict";
+    var __defProp2 = Object.defineProperty;
+    var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
+    var __getOwnPropNames2 = Object.getOwnPropertyNames;
+    var __hasOwnProp2 = Object.prototype.hasOwnProperty;
+    var __name = (target, value) => __defProp2(target, "name", { value, configurable: true });
+    var __esm2 = (fn, res) => function __init() {
+      return fn && (res = (0, fn[__getOwnPropNames2(fn)[0]])(fn = 0)), res;
+    };
+    var __export2 = (target, all) => {
+      for (var name in all)
+        __defProp2(target, name, { get: all[name], enumerable: true });
+    };
+    var __copyProps2 = (to, from, except, desc) => {
+      if (from && typeof from === "object" || typeof from === "function") {
+        for (let key of __getOwnPropNames2(from))
+          if (!__hasOwnProp2.call(to, key) && key !== except)
+            __defProp2(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc2(from, key)) || desc.enumerable });
+      }
+      return to;
+    };
+    var __toCommonJS2 = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
+    var loadSso_exports = {};
+    __export2(loadSso_exports, {
+      GetRoleCredentialsCommand: () => import_client_sso.GetRoleCredentialsCommand,
+      SSOClient: () => import_client_sso.SSOClient
+    });
+    var import_client_sso;
+    var init_loadSso = __esm2({
+      "src/loadSso.ts"() {
+        "use strict";
+        import_client_sso = require_dist_cjs55();
+      }
+    });
+    var src_exports = {};
+    __export2(src_exports, {
+      fromSSO: () => fromSSO,
+      isSsoProfile: () => isSsoProfile,
+      validateSsoProfile: () => validateSsoProfile
+    });
+    module2.exports = __toCommonJS2(src_exports);
+    var isSsoProfile = /* @__PURE__ */ __name((arg) => arg && (typeof arg.sso_start_url === "string" || typeof arg.sso_account_id === "string" || typeof arg.sso_session === "string" || typeof arg.sso_region === "string" || typeof arg.sso_role_name === "string"), "isSsoProfile");
+    var import_client2 = (init_client(), __toCommonJS(client_exports));
+    var import_token_providers = require_dist_cjs46();
+    var import_property_provider2 = require_dist_cjs7();
+    var import_shared_ini_file_loader = require_dist_cjs8();
+    var SHOULD_FAIL_CREDENTIAL_CHAIN = false;
+    var resolveSSOCredentials = /* @__PURE__ */ __name(async ({
+      ssoStartUrl,
+      ssoSession,
+      ssoAccountId,
+      ssoRegion,
+      ssoRoleName,
+      ssoClient,
+      clientConfig,
+      profile,
+      logger
+    }) => {
+      let token;
+      const refreshMessage = `To refresh this SSO session run aws sso login with the corresponding profile.`;
+      if (ssoSession) {
+        try {
+          const _token = await (0, import_token_providers.fromSso)({ profile })();
+          token = {
+            accessToken: _token.token,
+            expiresAt: new Date(_token.expiration).toISOString()
+          };
+        } catch (e) {
+          throw new import_property_provider2.CredentialsProviderError(e.message, {
+            tryNextLink: SHOULD_FAIL_CREDENTIAL_CHAIN,
+            logger
+          });
+        }
+      } else {
+        try {
+          token = await (0, import_shared_ini_file_loader.getSSOTokenFromFile)(ssoStartUrl);
+        } catch (e) {
+          throw new import_property_provider2.CredentialsProviderError(`The SSO session associated with this profile is invalid. ${refreshMessage}`, {
+            tryNextLink: SHOULD_FAIL_CREDENTIAL_CHAIN,
+            logger
+          });
+        }
+      }
+      if (new Date(token.expiresAt).getTime() - Date.now() <= 0) {
+        throw new import_property_provider2.CredentialsProviderError(`The SSO session associated with this profile has expired. ${refreshMessage}`, {
+          tryNextLink: SHOULD_FAIL_CREDENTIAL_CHAIN,
+          logger
+        });
+      }
+      const { accessToken } = token;
+      const { SSOClient: SSOClient2, GetRoleCredentialsCommand: GetRoleCredentialsCommand2 } = await Promise.resolve().then(() => (init_loadSso(), loadSso_exports));
+      const sso = ssoClient || new SSOClient2(
+        Object.assign({}, clientConfig ?? {}, {
+          region: (clientConfig == null ? void 0 : clientConfig.region) ?? ssoRegion
+        })
+      );
+      let ssoResp;
+      try {
+        ssoResp = await sso.send(
+          new GetRoleCredentialsCommand2({
+            accountId: ssoAccountId,
+            roleName: ssoRoleName,
+            accessToken
+          })
+        );
+      } catch (e) {
+        throw new import_property_provider2.CredentialsProviderError(e, {
+          tryNextLink: SHOULD_FAIL_CREDENTIAL_CHAIN,
+          logger
+        });
+      }
+      const {
+        roleCredentials: { accessKeyId, secretAccessKey, sessionToken, expiration, credentialScope, accountId } = {}
+      } = ssoResp;
+      if (!accessKeyId || !secretAccessKey || !sessionToken || !expiration) {
+        throw new import_property_provider2.CredentialsProviderError("SSO returns an invalid temporary credential.", {
+          tryNextLink: SHOULD_FAIL_CREDENTIAL_CHAIN,
+          logger
+        });
+      }
+      const credentials = {
+        accessKeyId,
+        secretAccessKey,
+        sessionToken,
+        expiration: new Date(expiration),
+        ...credentialScope && { credentialScope },
+        ...accountId && { accountId }
+      };
+      if (ssoSession) {
+        (0, import_client2.setCredentialFeature)(credentials, "CREDENTIALS_SSO", "s");
+      } else {
+        (0, import_client2.setCredentialFeature)(credentials, "CREDENTIALS_SSO_LEGACY", "u");
+      }
+      return credentials;
+    }, "resolveSSOCredentials");
+    var validateSsoProfile = /* @__PURE__ */ __name((profile, logger) => {
+      const { sso_start_url, sso_account_id, sso_region, sso_role_name } = profile;
+      if (!sso_start_url || !sso_account_id || !sso_region || !sso_role_name) {
+        throw new import_property_provider2.CredentialsProviderError(
+          `Profile is configured with invalid SSO credentials. Required parameters "sso_account_id", "sso_region", "sso_role_name", "sso_start_url". Got ${Object.keys(profile).join(
+            ", "
+          )}
+Reference: https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-sso.html`,
+          { tryNextLink: false, logger }
+        );
+      }
+      return profile;
+    }, "validateSsoProfile");
+    var fromSSO = /* @__PURE__ */ __name((init = {}) => async () => {
+      var _a;
+      (_a = init.logger) == null ? void 0 : _a.debug("@aws-sdk/credential-provider-sso - fromSSO");
+      const { ssoStartUrl, ssoAccountId, ssoRegion, ssoRoleName, ssoSession } = init;
+      const { ssoClient } = init;
+      const profileName = (0, import_shared_ini_file_loader.getProfileName)(init);
+      if (!ssoStartUrl && !ssoAccountId && !ssoRegion && !ssoRoleName && !ssoSession) {
+        const profiles = await (0, import_shared_ini_file_loader.parseKnownFiles)(init);
+        const profile = profiles[profileName];
+        if (!profile) {
+          throw new import_property_provider2.CredentialsProviderError(`Profile ${profileName} was not found.`, { logger: init.logger });
+        }
+        if (!isSsoProfile(profile)) {
+          throw new import_property_provider2.CredentialsProviderError(`Profile ${profileName} is not configured with SSO credentials.`, {
+            logger: init.logger
+          });
+        }
+        if (profile == null ? void 0 : profile.sso_session) {
+          const ssoSessions = await (0, import_shared_ini_file_loader.loadSsoSessionData)(init);
+          const session = ssoSessions[profile.sso_session];
+          const conflictMsg = ` configurations in profile ${profileName} and sso-session ${profile.sso_session}`;
+          if (ssoRegion && ssoRegion !== session.sso_region) {
+            throw new import_property_provider2.CredentialsProviderError(`Conflicting SSO region` + conflictMsg, {
+              tryNextLink: false,
+              logger: init.logger
+            });
+          }
+          if (ssoStartUrl && ssoStartUrl !== session.sso_start_url) {
+            throw new import_property_provider2.CredentialsProviderError(`Conflicting SSO start_url` + conflictMsg, {
+              tryNextLink: false,
+              logger: init.logger
+            });
+          }
+          profile.sso_region = session.sso_region;
+          profile.sso_start_url = session.sso_start_url;
+        }
+        const { sso_start_url, sso_account_id, sso_region, sso_role_name, sso_session } = validateSsoProfile(
+          profile,
+          init.logger
+        );
+        return resolveSSOCredentials({
+          ssoStartUrl: sso_start_url,
+          ssoSession: sso_session,
+          ssoAccountId: sso_account_id,
+          ssoRegion: sso_region,
+          ssoRoleName: sso_role_name,
+          ssoClient,
+          clientConfig: init.clientConfig,
+          profile: profileName
+        });
+      } else if (!ssoStartUrl || !ssoAccountId || !ssoRegion || !ssoRoleName) {
+        throw new import_property_provider2.CredentialsProviderError(
+          'Incomplete configuration. The fromSSO() argument hash must include "ssoStartUrl", "ssoAccountId", "ssoRegion", "ssoRoleName"',
+          { tryNextLink: false, logger: init.logger }
+        );
+      } else {
+        return resolveSSOCredentials({
+          ssoStartUrl,
+          ssoSession,
+          ssoAccountId,
+          ssoRegion,
+          ssoRoleName,
+          ssoClient,
+          clientConfig: init.clientConfig,
+          profile: profileName
+        });
+      }
+    }, "fromSSO");
+  }
+});
+
+// node_modules/@aws-sdk/client-sqs/node_modules/@aws-sdk/client-sts/dist-cjs/auth/httpAuthSchemeProvider.js
+var require_httpAuthSchemeProvider7 = __commonJS({
+  "node_modules/@aws-sdk/client-sqs/node_modules/@aws-sdk/client-sts/dist-cjs/auth/httpAuthSchemeProvider.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.resolveHttpAuthSchemeConfig = exports2.resolveStsAuthConfig = exports2.defaultSTSHttpAuthSchemeProvider = exports2.defaultSTSHttpAuthSchemeParametersProvider = void 0;
+    var core_1 = (init_dist_es2(), __toCommonJS(dist_es_exports2));
+    var util_middleware_1 = require_dist_cjs6();
+    var STSClient_1 = require_STSClient2();
+    var defaultSTSHttpAuthSchemeParametersProvider = async (config, context, input) => {
+      return {
+        operation: (0, util_middleware_1.getSmithyContext)(context).operation,
+        region: await (0, util_middleware_1.normalizeProvider)(config.region)() || (() => {
+          throw new Error("expected `region` to be configured for `aws.auth#sigv4`");
+        })()
+      };
+    };
+    exports2.defaultSTSHttpAuthSchemeParametersProvider = defaultSTSHttpAuthSchemeParametersProvider;
+    function createAwsAuthSigv4HttpAuthOption(authParameters) {
+      return {
+        schemeId: "aws.auth#sigv4",
+        signingProperties: {
+          name: "sts",
+          region: authParameters.region
+        },
+        propertiesExtractor: (config, context) => ({
+          signingProperties: {
+            config,
+            context
+          }
+        })
+      };
+    }
+    function createSmithyApiNoAuthHttpAuthOption(authParameters) {
+      return {
+        schemeId: "smithy.api#noAuth"
+      };
+    }
+    var defaultSTSHttpAuthSchemeProvider = (authParameters) => {
+      const options = [];
+      switch (authParameters.operation) {
+        case "AssumeRoleWithSAML": {
+          options.push(createSmithyApiNoAuthHttpAuthOption(authParameters));
+          break;
+        }
+        case "AssumeRoleWithWebIdentity": {
+          options.push(createSmithyApiNoAuthHttpAuthOption(authParameters));
+          break;
+        }
+        default: {
+          options.push(createAwsAuthSigv4HttpAuthOption(authParameters));
+        }
+      }
+      return options;
+    };
+    exports2.defaultSTSHttpAuthSchemeProvider = defaultSTSHttpAuthSchemeProvider;
+    var resolveStsAuthConfig = (input) => ({
+      ...input,
+      stsClientCtor: STSClient_1.STSClient
+    });
+    exports2.resolveStsAuthConfig = resolveStsAuthConfig;
+    var resolveHttpAuthSchemeConfig = (config) => {
+      const config_0 = (0, exports2.resolveStsAuthConfig)(config);
+      const config_1 = (0, core_1.resolveAwsSdkSigV4Config)(config_0);
+      return {
+        ...config_1
+      };
+    };
+    exports2.resolveHttpAuthSchemeConfig = resolveHttpAuthSchemeConfig;
+  }
+});
+
+// node_modules/@aws-sdk/client-sqs/node_modules/@aws-sdk/client-sts/dist-cjs/endpoint/EndpointParameters.js
+var require_EndpointParameters2 = __commonJS({
+  "node_modules/@aws-sdk/client-sqs/node_modules/@aws-sdk/client-sts/dist-cjs/endpoint/EndpointParameters.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.commonParams = exports2.resolveClientEndpointParameters = void 0;
+    var resolveClientEndpointParameters = (options) => {
+      return {
+        ...options,
+        useDualstackEndpoint: options.useDualstackEndpoint ?? false,
+        useFipsEndpoint: options.useFipsEndpoint ?? false,
+        useGlobalEndpoint: options.useGlobalEndpoint ?? false,
+        defaultSigningName: "sts"
+      };
+    };
+    exports2.resolveClientEndpointParameters = resolveClientEndpointParameters;
+    exports2.commonParams = {
+      UseGlobalEndpoint: { type: "builtInParams", name: "useGlobalEndpoint" },
+      UseFIPS: { type: "builtInParams", name: "useFipsEndpoint" },
+      Endpoint: { type: "builtInParams", name: "endpoint" },
+      Region: { type: "builtInParams", name: "region" },
+      UseDualStack: { type: "builtInParams", name: "useDualstackEndpoint" }
+    };
+  }
+});
+
+// node_modules/@aws-sdk/client-sqs/node_modules/@aws-sdk/client-sts/package.json
+var require_package7 = __commonJS({
+  "node_modules/@aws-sdk/client-sqs/node_modules/@aws-sdk/client-sts/package.json"(exports2, module2) {
+    module2.exports = {
+      name: "@aws-sdk/client-sts",
+      description: "AWS SDK for JavaScript Sts Client for Node.js, Browser and React Native",
+      version: "3.675.0",
+      scripts: {
+        build: "concurrently 'yarn:build:cjs' 'yarn:build:es' 'yarn:build:types'",
+        "build:cjs": "node ../../scripts/compilation/inline client-sts",
+        "build:es": "tsc -p tsconfig.es.json",
+        "build:include:deps": "lerna run --scope $npm_package_name --include-dependencies build",
+        "build:types": "rimraf ./dist-types tsconfig.types.tsbuildinfo && tsc -p tsconfig.types.json",
+        "build:types:downlevel": "downlevel-dts dist-types dist-types/ts3.4",
+        clean: "rimraf ./dist-* && rimraf *.tsbuildinfo",
+        "extract:docs": "api-extractor run --local",
+        "generate:client": "node ../../scripts/generate-clients/single-service --solo sts",
+        test: "yarn test:unit",
+        "test:unit": "jest"
+      },
+      main: "./dist-cjs/index.js",
+      types: "./dist-types/index.d.ts",
+      module: "./dist-es/index.js",
+      sideEffects: false,
+      dependencies: {
+        "@aws-crypto/sha256-browser": "5.2.0",
+        "@aws-crypto/sha256-js": "5.2.0",
+        "@aws-sdk/client-sso-oidc": "3.675.0",
+        "@aws-sdk/core": "3.667.0",
+        "@aws-sdk/credential-provider-node": "3.675.0",
+        "@aws-sdk/middleware-host-header": "3.667.0",
+        "@aws-sdk/middleware-logger": "3.667.0",
+        "@aws-sdk/middleware-recursion-detection": "3.667.0",
+        "@aws-sdk/middleware-user-agent": "3.669.0",
+        "@aws-sdk/region-config-resolver": "3.667.0",
+        "@aws-sdk/types": "3.667.0",
+        "@aws-sdk/util-endpoints": "3.667.0",
+        "@aws-sdk/util-user-agent-browser": "3.675.0",
+        "@aws-sdk/util-user-agent-node": "3.669.0",
+        "@smithy/config-resolver": "^3.0.9",
+        "@smithy/core": "^2.4.8",
+        "@smithy/fetch-http-handler": "^3.2.9",
+        "@smithy/hash-node": "^3.0.7",
+        "@smithy/invalid-dependency": "^3.0.7",
+        "@smithy/middleware-content-length": "^3.0.9",
+        "@smithy/middleware-endpoint": "^3.1.4",
+        "@smithy/middleware-retry": "^3.0.23",
+        "@smithy/middleware-serde": "^3.0.7",
+        "@smithy/middleware-stack": "^3.0.7",
+        "@smithy/node-config-provider": "^3.1.8",
+        "@smithy/node-http-handler": "^3.2.4",
+        "@smithy/protocol-http": "^4.1.4",
+        "@smithy/smithy-client": "^3.4.0",
+        "@smithy/types": "^3.5.0",
+        "@smithy/url-parser": "^3.0.7",
+        "@smithy/util-base64": "^3.0.0",
+        "@smithy/util-body-length-browser": "^3.0.0",
+        "@smithy/util-body-length-node": "^3.0.0",
+        "@smithy/util-defaults-mode-browser": "^3.0.23",
+        "@smithy/util-defaults-mode-node": "^3.0.23",
+        "@smithy/util-endpoints": "^2.1.3",
+        "@smithy/util-middleware": "^3.0.7",
+        "@smithy/util-retry": "^3.0.7",
+        "@smithy/util-utf8": "^3.0.0",
+        tslib: "^2.6.2"
+      },
+      devDependencies: {
+        "@tsconfig/node16": "16.1.3",
+        "@types/node": "^16.18.96",
+        concurrently: "7.0.0",
+        "downlevel-dts": "0.10.1",
+        rimraf: "3.0.2",
+        typescript: "~4.9.5"
+      },
+      engines: {
+        node: ">=16.0.0"
+      },
+      typesVersions: {
+        "<4.0": {
+          "dist-types/*": [
+            "dist-types/ts3.4/*"
+          ]
+        }
+      },
+      files: [
+        "dist-*/**"
+      ],
+      author: {
+        name: "AWS SDK for JavaScript Team",
+        url: "https://aws.amazon.com/javascript/"
+      },
+      license: "Apache-2.0",
+      browser: {
+        "./dist-es/runtimeConfig": "./dist-es/runtimeConfig.browser"
+      },
+      "react-native": {
+        "./dist-es/runtimeConfig": "./dist-es/runtimeConfig.native"
+      },
+      homepage: "https://github.com/aws/aws-sdk-js-v3/tree/main/clients/client-sts",
+      repository: {
+        type: "git",
+        url: "https://github.com/aws/aws-sdk-js-v3.git",
+        directory: "clients/client-sts"
+      }
+    };
+  }
+});
+
+// node_modules/@aws-sdk/client-sqs/node_modules/@aws-sdk/client-sts/dist-cjs/endpoint/ruleset.js
+var require_ruleset6 = __commonJS({
+  "node_modules/@aws-sdk/client-sqs/node_modules/@aws-sdk/client-sts/dist-cjs/endpoint/ruleset.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.ruleSet = void 0;
+    var F = "required";
+    var G = "type";
+    var H = "fn";
+    var I = "argv";
+    var J = "ref";
+    var a = false;
+    var b = true;
+    var c = "booleanEquals";
+    var d = "stringEquals";
+    var e = "sigv4";
+    var f = "sts";
+    var g = "us-east-1";
+    var h = "endpoint";
+    var i = "https://sts.{Region}.{PartitionResult#dnsSuffix}";
+    var j = "tree";
+    var k = "error";
+    var l = "getAttr";
+    var m = { [F]: false, [G]: "String" };
+    var n = { [F]: true, "default": false, [G]: "Boolean" };
+    var o = { [J]: "Endpoint" };
+    var p = { [H]: "isSet", [I]: [{ [J]: "Region" }] };
+    var q = { [J]: "Region" };
+    var r = { [H]: "aws.partition", [I]: [q], "assign": "PartitionResult" };
+    var s = { [J]: "UseFIPS" };
+    var t = { [J]: "UseDualStack" };
+    var u = { "url": "https://sts.amazonaws.com", "properties": { "authSchemes": [{ "name": e, "signingName": f, "signingRegion": g }] }, "headers": {} };
+    var v = {};
+    var w = { "conditions": [{ [H]: d, [I]: [q, "aws-global"] }], [h]: u, [G]: h };
+    var x = { [H]: c, [I]: [s, true] };
+    var y = { [H]: c, [I]: [t, true] };
+    var z = { [H]: l, [I]: [{ [J]: "PartitionResult" }, "supportsFIPS"] };
+    var A = { [J]: "PartitionResult" };
+    var B = { [H]: c, [I]: [true, { [H]: l, [I]: [A, "supportsDualStack"] }] };
+    var C = [{ [H]: "isSet", [I]: [o] }];
+    var D = [x];
+    var E = [y];
+    var _data = { version: "1.0", parameters: { Region: m, UseDualStack: n, UseFIPS: n, Endpoint: m, UseGlobalEndpoint: n }, rules: [{ conditions: [{ [H]: c, [I]: [{ [J]: "UseGlobalEndpoint" }, b] }, { [H]: "not", [I]: C }, p, r, { [H]: c, [I]: [s, a] }, { [H]: c, [I]: [t, a] }], rules: [{ conditions: [{ [H]: d, [I]: [q, "ap-northeast-1"] }], endpoint: u, [G]: h }, { conditions: [{ [H]: d, [I]: [q, "ap-south-1"] }], endpoint: u, [G]: h }, { conditions: [{ [H]: d, [I]: [q, "ap-southeast-1"] }], endpoint: u, [G]: h }, { conditions: [{ [H]: d, [I]: [q, "ap-southeast-2"] }], endpoint: u, [G]: h }, w, { conditions: [{ [H]: d, [I]: [q, "ca-central-1"] }], endpoint: u, [G]: h }, { conditions: [{ [H]: d, [I]: [q, "eu-central-1"] }], endpoint: u, [G]: h }, { conditions: [{ [H]: d, [I]: [q, "eu-north-1"] }], endpoint: u, [G]: h }, { conditions: [{ [H]: d, [I]: [q, "eu-west-1"] }], endpoint: u, [G]: h }, { conditions: [{ [H]: d, [I]: [q, "eu-west-2"] }], endpoint: u, [G]: h }, { conditions: [{ [H]: d, [I]: [q, "eu-west-3"] }], endpoint: u, [G]: h }, { conditions: [{ [H]: d, [I]: [q, "sa-east-1"] }], endpoint: u, [G]: h }, { conditions: [{ [H]: d, [I]: [q, g] }], endpoint: u, [G]: h }, { conditions: [{ [H]: d, [I]: [q, "us-east-2"] }], endpoint: u, [G]: h }, { conditions: [{ [H]: d, [I]: [q, "us-west-1"] }], endpoint: u, [G]: h }, { conditions: [{ [H]: d, [I]: [q, "us-west-2"] }], endpoint: u, [G]: h }, { endpoint: { url: i, properties: { authSchemes: [{ name: e, signingName: f, signingRegion: "{Region}" }] }, headers: v }, [G]: h }], [G]: j }, { conditions: C, rules: [{ conditions: D, error: "Invalid Configuration: FIPS and custom endpoint are not supported", [G]: k }, { conditions: E, error: "Invalid Configuration: Dualstack and custom endpoint are not supported", [G]: k }, { endpoint: { url: o, properties: v, headers: v }, [G]: h }], [G]: j }, { conditions: [p], rules: [{ conditions: [r], rules: [{ conditions: [x, y], rules: [{ conditions: [{ [H]: c, [I]: [b, z] }, B], rules: [{ endpoint: { url: "https://sts-fips.{Region}.{PartitionResult#dualStackDnsSuffix}", properties: v, headers: v }, [G]: h }], [G]: j }, { error: "FIPS and DualStack are enabled, but this partition does not support one or both", [G]: k }], [G]: j }, { conditions: D, rules: [{ conditions: [{ [H]: c, [I]: [z, b] }], rules: [{ conditions: [{ [H]: d, [I]: [{ [H]: l, [I]: [A, "name"] }, "aws-us-gov"] }], endpoint: { url: "https://sts.{Region}.amazonaws.com", properties: v, headers: v }, [G]: h }, { endpoint: { url: "https://sts-fips.{Region}.{PartitionResult#dnsSuffix}", properties: v, headers: v }, [G]: h }], [G]: j }, { error: "FIPS is enabled but this partition does not support FIPS", [G]: k }], [G]: j }, { conditions: E, rules: [{ conditions: [B], rules: [{ endpoint: { url: "https://sts.{Region}.{PartitionResult#dualStackDnsSuffix}", properties: v, headers: v }, [G]: h }], [G]: j }, { error: "DualStack is enabled but this partition does not support DualStack", [G]: k }], [G]: j }, w, { endpoint: { url: i, properties: v, headers: v }, [G]: h }], [G]: j }], [G]: j }, { error: "Invalid Configuration: Missing Region", [G]: k }] };
+    exports2.ruleSet = _data;
+  }
+});
+
+// node_modules/@aws-sdk/client-sqs/node_modules/@aws-sdk/client-sts/dist-cjs/endpoint/endpointResolver.js
+var require_endpointResolver6 = __commonJS({
+  "node_modules/@aws-sdk/client-sqs/node_modules/@aws-sdk/client-sts/dist-cjs/endpoint/endpointResolver.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.defaultEndpointResolver = void 0;
+    var util_endpoints_1 = require_dist_cjs30();
+    var util_endpoints_2 = require_dist_cjs29();
+    var ruleset_1 = require_ruleset6();
+    var cache = new util_endpoints_2.EndpointCache({
+      size: 50,
+      params: ["Endpoint", "Region", "UseDualStack", "UseFIPS", "UseGlobalEndpoint"]
+    });
+    var defaultEndpointResolver = (endpointParams, context = {}) => {
+      return cache.get(endpointParams, () => (0, util_endpoints_2.resolveEndpoint)(ruleset_1.ruleSet, {
+        endpointParams,
+        logger: context.logger
+      }));
+    };
+    exports2.defaultEndpointResolver = defaultEndpointResolver;
+    util_endpoints_2.customEndpointFunctions.aws = util_endpoints_1.awsEndpointFunctions;
+  }
+});
+
+// node_modules/@aws-sdk/client-sqs/node_modules/@aws-sdk/client-sts/dist-cjs/runtimeConfig.shared.js
+var require_runtimeConfig_shared6 = __commonJS({
+  "node_modules/@aws-sdk/client-sqs/node_modules/@aws-sdk/client-sts/dist-cjs/runtimeConfig.shared.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.getRuntimeConfig = void 0;
+    var core_1 = (init_dist_es2(), __toCommonJS(dist_es_exports2));
+    var core_2 = (init_dist_es(), __toCommonJS(dist_es_exports));
+    var smithy_client_1 = require_dist_cjs27();
+    var url_parser_1 = require_dist_cjs11();
+    var util_base64_1 = require_dist_cjs20();
+    var util_utf8_1 = require_dist_cjs19();
+    var httpAuthSchemeProvider_1 = require_httpAuthSchemeProvider7();
+    var endpointResolver_1 = require_endpointResolver6();
+    var getRuntimeConfig = (config) => {
+      return {
+        apiVersion: "2011-06-15",
+        base64Decoder: config?.base64Decoder ?? util_base64_1.fromBase64,
+        base64Encoder: config?.base64Encoder ?? util_base64_1.toBase64,
+        disableHostPrefix: config?.disableHostPrefix ?? false,
+        endpointProvider: config?.endpointProvider ?? endpointResolver_1.defaultEndpointResolver,
+        extensions: config?.extensions ?? [],
+        httpAuthSchemeProvider: config?.httpAuthSchemeProvider ?? httpAuthSchemeProvider_1.defaultSTSHttpAuthSchemeProvider,
+        httpAuthSchemes: config?.httpAuthSchemes ?? [
+          {
+            schemeId: "aws.auth#sigv4",
+            identityProvider: (ipc) => ipc.getIdentityProvider("aws.auth#sigv4"),
+            signer: new core_1.AwsSdkSigV4Signer()
+          },
+          {
+            schemeId: "smithy.api#noAuth",
+            identityProvider: (ipc) => ipc.getIdentityProvider("smithy.api#noAuth") || (async () => ({})),
+            signer: new core_2.NoAuthSigner()
+          }
+        ],
+        logger: config?.logger ?? new smithy_client_1.NoOpLogger(),
+        serviceId: config?.serviceId ?? "STS",
+        urlParser: config?.urlParser ?? url_parser_1.parseUrl,
+        utf8Decoder: config?.utf8Decoder ?? util_utf8_1.fromUtf8,
+        utf8Encoder: config?.utf8Encoder ?? util_utf8_1.toUtf8
+      };
+    };
+    exports2.getRuntimeConfig = getRuntimeConfig;
+  }
+});
+
+// node_modules/@aws-sdk/client-sqs/node_modules/@aws-sdk/client-sts/dist-cjs/runtimeConfig.js
+var require_runtimeConfig6 = __commonJS({
+  "node_modules/@aws-sdk/client-sqs/node_modules/@aws-sdk/client-sts/dist-cjs/runtimeConfig.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.getRuntimeConfig = void 0;
+    var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
+    var package_json_1 = tslib_1.__importDefault(require_package7());
+    var core_1 = (init_dist_es2(), __toCommonJS(dist_es_exports2));
+    var credential_provider_node_1 = require_dist_cjs59();
+    var util_user_agent_node_1 = require_dist_cjs39();
+    var config_resolver_1 = require_dist_cjs34();
+    var core_2 = (init_dist_es(), __toCommonJS(dist_es_exports));
+    var hash_node_1 = require_dist_cjs40();
+    var middleware_retry_1 = require_dist_cjs28();
+    var node_config_provider_1 = require_dist_cjs9();
+    var node_http_handler_1 = require_dist_cjs23();
+    var util_body_length_node_1 = require_dist_cjs41();
+    var util_retry_1 = require_dist_cjs15();
+    var runtimeConfig_shared_1 = require_runtimeConfig_shared6();
+    var smithy_client_1 = require_dist_cjs27();
+    var util_defaults_mode_node_1 = require_dist_cjs42();
+    var smithy_client_2 = require_dist_cjs27();
+    var getRuntimeConfig = (config) => {
+      (0, smithy_client_2.emitWarningIfUnsupportedVersion)(process.version);
+      const defaultsMode = (0, util_defaults_mode_node_1.resolveDefaultsModeConfig)(config);
+      const defaultConfigProvider = () => defaultsMode().then(smithy_client_1.loadConfigsForDefaultMode);
+      const clientSharedValues = (0, runtimeConfig_shared_1.getRuntimeConfig)(config);
+      (0, core_1.emitWarningIfUnsupportedVersion)(process.version);
+      return {
+        ...clientSharedValues,
+        ...config,
+        runtime: "node",
+        defaultsMode,
+        bodyLengthChecker: config?.bodyLengthChecker ?? util_body_length_node_1.calculateBodyLength,
+        credentialDefaultProvider: config?.credentialDefaultProvider ?? credential_provider_node_1.defaultProvider,
+        defaultUserAgentProvider: config?.defaultUserAgentProvider ?? (0, util_user_agent_node_1.createDefaultUserAgentProvider)({ serviceId: clientSharedValues.serviceId, clientVersion: package_json_1.default.version }),
+        httpAuthSchemes: config?.httpAuthSchemes ?? [
+          {
+            schemeId: "aws.auth#sigv4",
+            identityProvider: (ipc) => ipc.getIdentityProvider("aws.auth#sigv4") || (async (idProps) => await (0, credential_provider_node_1.defaultProvider)(idProps?.__config || {})()),
+            signer: new core_1.AwsSdkSigV4Signer()
+          },
+          {
+            schemeId: "smithy.api#noAuth",
+            identityProvider: (ipc) => ipc.getIdentityProvider("smithy.api#noAuth") || (async () => ({})),
+            signer: new core_2.NoAuthSigner()
+          }
+        ],
+        maxAttempts: config?.maxAttempts ?? (0, node_config_provider_1.loadConfig)(middleware_retry_1.NODE_MAX_ATTEMPT_CONFIG_OPTIONS),
+        region: config?.region ?? (0, node_config_provider_1.loadConfig)(config_resolver_1.NODE_REGION_CONFIG_OPTIONS, config_resolver_1.NODE_REGION_CONFIG_FILE_OPTIONS),
+        requestHandler: node_http_handler_1.NodeHttpHandler.create(config?.requestHandler ?? defaultConfigProvider),
+        retryMode: config?.retryMode ?? (0, node_config_provider_1.loadConfig)({
+          ...middleware_retry_1.NODE_RETRY_MODE_CONFIG_OPTIONS,
+          default: async () => (await defaultConfigProvider()).retryMode || util_retry_1.DEFAULT_RETRY_MODE
+        }),
+        sha256: config?.sha256 ?? hash_node_1.Hash.bind(null, "sha256"),
+        streamCollector: config?.streamCollector ?? node_http_handler_1.streamCollector,
+        useDualstackEndpoint: config?.useDualstackEndpoint ?? (0, node_config_provider_1.loadConfig)(config_resolver_1.NODE_USE_DUALSTACK_ENDPOINT_CONFIG_OPTIONS),
+        useFipsEndpoint: config?.useFipsEndpoint ?? (0, node_config_provider_1.loadConfig)(config_resolver_1.NODE_USE_FIPS_ENDPOINT_CONFIG_OPTIONS),
+        userAgentAppId: config?.userAgentAppId ?? (0, node_config_provider_1.loadConfig)(util_user_agent_node_1.NODE_APP_ID_CONFIG_OPTIONS)
+      };
+    };
+    exports2.getRuntimeConfig = getRuntimeConfig;
+  }
+});
+
+// node_modules/@aws-sdk/client-sqs/node_modules/@aws-sdk/client-sts/dist-cjs/auth/httpAuthExtensionConfiguration.js
+var require_httpAuthExtensionConfiguration2 = __commonJS({
+  "node_modules/@aws-sdk/client-sqs/node_modules/@aws-sdk/client-sts/dist-cjs/auth/httpAuthExtensionConfiguration.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.resolveHttpAuthRuntimeConfig = exports2.getHttpAuthExtensionConfiguration = void 0;
+    var getHttpAuthExtensionConfiguration = (runtimeConfig) => {
+      const _httpAuthSchemes = runtimeConfig.httpAuthSchemes;
+      let _httpAuthSchemeProvider = runtimeConfig.httpAuthSchemeProvider;
+      let _credentials = runtimeConfig.credentials;
+      return {
+        setHttpAuthScheme(httpAuthScheme) {
+          const index = _httpAuthSchemes.findIndex((scheme) => scheme.schemeId === httpAuthScheme.schemeId);
+          if (index === -1) {
+            _httpAuthSchemes.push(httpAuthScheme);
+          } else {
+            _httpAuthSchemes.splice(index, 1, httpAuthScheme);
+          }
+        },
+        httpAuthSchemes() {
+          return _httpAuthSchemes;
+        },
+        setHttpAuthSchemeProvider(httpAuthSchemeProvider) {
+          _httpAuthSchemeProvider = httpAuthSchemeProvider;
+        },
+        httpAuthSchemeProvider() {
+          return _httpAuthSchemeProvider;
+        },
+        setCredentials(credentials) {
+          _credentials = credentials;
+        },
+        credentials() {
+          return _credentials;
+        }
+      };
+    };
+    exports2.getHttpAuthExtensionConfiguration = getHttpAuthExtensionConfiguration;
+    var resolveHttpAuthRuntimeConfig = (config) => {
+      return {
+        httpAuthSchemes: config.httpAuthSchemes(),
+        httpAuthSchemeProvider: config.httpAuthSchemeProvider(),
+        credentials: config.credentials()
+      };
+    };
+    exports2.resolveHttpAuthRuntimeConfig = resolveHttpAuthRuntimeConfig;
+  }
+});
+
+// node_modules/@aws-sdk/client-sqs/node_modules/@aws-sdk/client-sts/dist-cjs/runtimeExtensions.js
+var require_runtimeExtensions2 = __commonJS({
+  "node_modules/@aws-sdk/client-sqs/node_modules/@aws-sdk/client-sts/dist-cjs/runtimeExtensions.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.resolveRuntimeExtensions = void 0;
+    var region_config_resolver_1 = require_dist_cjs43();
+    var protocol_http_1 = require_dist_cjs2();
+    var smithy_client_1 = require_dist_cjs27();
+    var httpAuthExtensionConfiguration_1 = require_httpAuthExtensionConfiguration2();
+    var asPartial = (t) => t;
+    var resolveRuntimeExtensions = (runtimeConfig, extensions) => {
+      const extensionConfiguration = {
+        ...asPartial((0, region_config_resolver_1.getAwsRegionExtensionConfiguration)(runtimeConfig)),
+        ...asPartial((0, smithy_client_1.getDefaultExtensionConfiguration)(runtimeConfig)),
+        ...asPartial((0, protocol_http_1.getHttpHandlerExtensionConfiguration)(runtimeConfig)),
+        ...asPartial((0, httpAuthExtensionConfiguration_1.getHttpAuthExtensionConfiguration)(runtimeConfig))
+      };
+      extensions.forEach((extension) => extension.configure(extensionConfiguration));
+      return {
+        ...runtimeConfig,
+        ...(0, region_config_resolver_1.resolveAwsRegionExtensionConfiguration)(extensionConfiguration),
+        ...(0, smithy_client_1.resolveDefaultRuntimeConfig)(extensionConfiguration),
+        ...(0, protocol_http_1.resolveHttpHandlerRuntimeConfig)(extensionConfiguration),
+        ...(0, httpAuthExtensionConfiguration_1.resolveHttpAuthRuntimeConfig)(extensionConfiguration)
+      };
+    };
+    exports2.resolveRuntimeExtensions = resolveRuntimeExtensions;
+  }
+});
+
+// node_modules/@aws-sdk/client-sqs/node_modules/@aws-sdk/client-sts/dist-cjs/STSClient.js
+var require_STSClient2 = __commonJS({
+  "node_modules/@aws-sdk/client-sqs/node_modules/@aws-sdk/client-sts/dist-cjs/STSClient.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.STSClient = exports2.__Client = void 0;
+    var middleware_host_header_1 = require_dist_cjs3();
+    var middleware_logger_1 = require_dist_cjs4();
+    var middleware_recursion_detection_1 = require_dist_cjs5();
+    var middleware_user_agent_1 = require_dist_cjs32();
+    var config_resolver_1 = require_dist_cjs34();
+    var core_1 = (init_dist_es(), __toCommonJS(dist_es_exports));
+    var middleware_content_length_1 = require_dist_cjs35();
+    var middleware_endpoint_1 = require_dist_cjs13();
+    var middleware_retry_1 = require_dist_cjs28();
+    var smithy_client_1 = require_dist_cjs27();
+    Object.defineProperty(exports2, "__Client", { enumerable: true, get: function() {
+      return smithy_client_1.Client;
+    } });
+    var httpAuthSchemeProvider_1 = require_httpAuthSchemeProvider7();
+    var EndpointParameters_1 = require_EndpointParameters2();
+    var runtimeConfig_1 = require_runtimeConfig6();
+    var runtimeExtensions_1 = require_runtimeExtensions2();
+    var STSClient2 = class extends smithy_client_1.Client {
+      constructor(...[configuration]) {
+        const _config_0 = (0, runtimeConfig_1.getRuntimeConfig)(configuration || {});
+        const _config_1 = (0, EndpointParameters_1.resolveClientEndpointParameters)(_config_0);
+        const _config_2 = (0, middleware_user_agent_1.resolveUserAgentConfig)(_config_1);
+        const _config_3 = (0, middleware_retry_1.resolveRetryConfig)(_config_2);
+        const _config_4 = (0, config_resolver_1.resolveRegionConfig)(_config_3);
+        const _config_5 = (0, middleware_host_header_1.resolveHostHeaderConfig)(_config_4);
+        const _config_6 = (0, middleware_endpoint_1.resolveEndpointConfig)(_config_5);
+        const _config_7 = (0, httpAuthSchemeProvider_1.resolveHttpAuthSchemeConfig)(_config_6);
+        const _config_8 = (0, runtimeExtensions_1.resolveRuntimeExtensions)(_config_7, configuration?.extensions || []);
+        super(_config_8);
+        this.config = _config_8;
+        this.middlewareStack.use((0, middleware_user_agent_1.getUserAgentPlugin)(this.config));
+        this.middlewareStack.use((0, middleware_retry_1.getRetryPlugin)(this.config));
+        this.middlewareStack.use((0, middleware_content_length_1.getContentLengthPlugin)(this.config));
+        this.middlewareStack.use((0, middleware_host_header_1.getHostHeaderPlugin)(this.config));
+        this.middlewareStack.use((0, middleware_logger_1.getLoggerPlugin)(this.config));
+        this.middlewareStack.use((0, middleware_recursion_detection_1.getRecursionDetectionPlugin)(this.config));
+        this.middlewareStack.use((0, core_1.getHttpAuthSchemeEndpointRuleSetPlugin)(this.config, {
+          httpAuthSchemeParametersProvider: httpAuthSchemeProvider_1.defaultSTSHttpAuthSchemeParametersProvider,
+          identityProviderConfigProvider: async (config) => new core_1.DefaultIdentityProviderConfig({
+            "aws.auth#sigv4": config.credentials
+          })
+        }));
+        this.middlewareStack.use((0, core_1.getHttpSigningPlugin)(this.config));
+      }
+      destroy() {
+        super.destroy();
+      }
+    };
+    exports2.STSClient = STSClient2;
+  }
+});
+
+// node_modules/@aws-sdk/client-sqs/node_modules/@aws-sdk/client-sts/dist-cjs/index.js
+var require_dist_cjs57 = __commonJS({
+  "node_modules/@aws-sdk/client-sqs/node_modules/@aws-sdk/client-sts/dist-cjs/index.js"(exports2, module2) {
+    "use strict";
+    var __defProp2 = Object.defineProperty;
+    var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
+    var __getOwnPropNames2 = Object.getOwnPropertyNames;
+    var __hasOwnProp2 = Object.prototype.hasOwnProperty;
+    var __name = (target, value) => __defProp2(target, "name", { value, configurable: true });
+    var __export2 = (target, all) => {
+      for (var name in all)
+        __defProp2(target, name, { get: all[name], enumerable: true });
+    };
+    var __copyProps2 = (to, from, except, desc) => {
+      if (from && typeof from === "object" || typeof from === "function") {
+        for (let key of __getOwnPropNames2(from))
+          if (!__hasOwnProp2.call(to, key) && key !== except)
+            __defProp2(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc2(from, key)) || desc.enumerable });
+      }
+      return to;
+    };
+    var __reExport = (target, mod, secondTarget) => (__copyProps2(target, mod, "default"), secondTarget && __copyProps2(secondTarget, mod, "default"));
+    var __toCommonJS2 = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
+    var src_exports = {};
+    __export2(src_exports, {
+      AssumeRoleCommand: () => AssumeRoleCommand,
+      AssumeRoleResponseFilterSensitiveLog: () => AssumeRoleResponseFilterSensitiveLog,
+      AssumeRoleWithSAMLCommand: () => AssumeRoleWithSAMLCommand,
+      AssumeRoleWithSAMLRequestFilterSensitiveLog: () => AssumeRoleWithSAMLRequestFilterSensitiveLog,
+      AssumeRoleWithSAMLResponseFilterSensitiveLog: () => AssumeRoleWithSAMLResponseFilterSensitiveLog,
+      AssumeRoleWithWebIdentityCommand: () => AssumeRoleWithWebIdentityCommand,
+      AssumeRoleWithWebIdentityRequestFilterSensitiveLog: () => AssumeRoleWithWebIdentityRequestFilterSensitiveLog,
+      AssumeRoleWithWebIdentityResponseFilterSensitiveLog: () => AssumeRoleWithWebIdentityResponseFilterSensitiveLog,
+      ClientInputEndpointParameters: () => import_EndpointParameters9.ClientInputEndpointParameters,
+      CredentialsFilterSensitiveLog: () => CredentialsFilterSensitiveLog,
+      DecodeAuthorizationMessageCommand: () => DecodeAuthorizationMessageCommand,
+      ExpiredTokenException: () => ExpiredTokenException,
+      GetAccessKeyInfoCommand: () => GetAccessKeyInfoCommand,
+      GetCallerIdentityCommand: () => GetCallerIdentityCommand,
+      GetFederationTokenCommand: () => GetFederationTokenCommand,
+      GetFederationTokenResponseFilterSensitiveLog: () => GetFederationTokenResponseFilterSensitiveLog,
+      GetSessionTokenCommand: () => GetSessionTokenCommand,
+      GetSessionTokenResponseFilterSensitiveLog: () => GetSessionTokenResponseFilterSensitiveLog,
+      IDPCommunicationErrorException: () => IDPCommunicationErrorException,
+      IDPRejectedClaimException: () => IDPRejectedClaimException,
+      InvalidAuthorizationMessageException: () => InvalidAuthorizationMessageException,
+      InvalidIdentityTokenException: () => InvalidIdentityTokenException,
+      MalformedPolicyDocumentException: () => MalformedPolicyDocumentException,
+      PackedPolicyTooLargeException: () => PackedPolicyTooLargeException,
+      RegionDisabledException: () => RegionDisabledException,
+      STS: () => STS,
+      STSServiceException: () => STSServiceException,
+      decorateDefaultCredentialProvider: () => decorateDefaultCredentialProvider,
+      getDefaultRoleAssumer: () => getDefaultRoleAssumer2,
+      getDefaultRoleAssumerWithWebIdentity: () => getDefaultRoleAssumerWithWebIdentity2
+    });
+    module2.exports = __toCommonJS2(src_exports);
+    __reExport(src_exports, require_STSClient2(), module2.exports);
+    var import_middleware_endpoint2 = require_dist_cjs13();
+    var import_middleware_serde2 = require_dist_cjs12();
+    var import_EndpointParameters = require_EndpointParameters2();
+    var import_smithy_client5 = require_dist_cjs27();
+    var _STSServiceException = class _STSServiceException2 extends import_smithy_client5.ServiceException {
+      /**
+       * @internal
+       */
+      constructor(options) {
+        super(options);
+        Object.setPrototypeOf(this, _STSServiceException2.prototype);
+      }
+    };
+    __name(_STSServiceException, "STSServiceException");
+    var STSServiceException = _STSServiceException;
+    var _ExpiredTokenException = class _ExpiredTokenException2 extends STSServiceException {
+      /**
+       * @internal
+       */
+      constructor(opts) {
+        super({
+          name: "ExpiredTokenException",
+          $fault: "client",
+          ...opts
+        });
+        this.name = "ExpiredTokenException";
+        this.$fault = "client";
+        Object.setPrototypeOf(this, _ExpiredTokenException2.prototype);
+      }
+    };
+    __name(_ExpiredTokenException, "ExpiredTokenException");
+    var ExpiredTokenException = _ExpiredTokenException;
+    var _MalformedPolicyDocumentException = class _MalformedPolicyDocumentException2 extends STSServiceException {
+      /**
+       * @internal
+       */
+      constructor(opts) {
+        super({
+          name: "MalformedPolicyDocumentException",
+          $fault: "client",
+          ...opts
+        });
+        this.name = "MalformedPolicyDocumentException";
+        this.$fault = "client";
+        Object.setPrototypeOf(this, _MalformedPolicyDocumentException2.prototype);
+      }
+    };
+    __name(_MalformedPolicyDocumentException, "MalformedPolicyDocumentException");
+    var MalformedPolicyDocumentException = _MalformedPolicyDocumentException;
+    var _PackedPolicyTooLargeException = class _PackedPolicyTooLargeException2 extends STSServiceException {
+      /**
+       * @internal
+       */
+      constructor(opts) {
+        super({
+          name: "PackedPolicyTooLargeException",
+          $fault: "client",
+          ...opts
+        });
+        this.name = "PackedPolicyTooLargeException";
+        this.$fault = "client";
+        Object.setPrototypeOf(this, _PackedPolicyTooLargeException2.prototype);
+      }
+    };
+    __name(_PackedPolicyTooLargeException, "PackedPolicyTooLargeException");
+    var PackedPolicyTooLargeException = _PackedPolicyTooLargeException;
+    var _RegionDisabledException = class _RegionDisabledException2 extends STSServiceException {
+      /**
+       * @internal
+       */
+      constructor(opts) {
+        super({
+          name: "RegionDisabledException",
+          $fault: "client",
+          ...opts
+        });
+        this.name = "RegionDisabledException";
+        this.$fault = "client";
+        Object.setPrototypeOf(this, _RegionDisabledException2.prototype);
+      }
+    };
+    __name(_RegionDisabledException, "RegionDisabledException");
+    var RegionDisabledException = _RegionDisabledException;
+    var _IDPRejectedClaimException = class _IDPRejectedClaimException2 extends STSServiceException {
+      /**
+       * @internal
+       */
+      constructor(opts) {
+        super({
+          name: "IDPRejectedClaimException",
+          $fault: "client",
+          ...opts
+        });
+        this.name = "IDPRejectedClaimException";
+        this.$fault = "client";
+        Object.setPrototypeOf(this, _IDPRejectedClaimException2.prototype);
+      }
+    };
+    __name(_IDPRejectedClaimException, "IDPRejectedClaimException");
+    var IDPRejectedClaimException = _IDPRejectedClaimException;
+    var _InvalidIdentityTokenException = class _InvalidIdentityTokenException2 extends STSServiceException {
+      /**
+       * @internal
+       */
+      constructor(opts) {
+        super({
+          name: "InvalidIdentityTokenException",
+          $fault: "client",
+          ...opts
+        });
+        this.name = "InvalidIdentityTokenException";
+        this.$fault = "client";
+        Object.setPrototypeOf(this, _InvalidIdentityTokenException2.prototype);
+      }
+    };
+    __name(_InvalidIdentityTokenException, "InvalidIdentityTokenException");
+    var InvalidIdentityTokenException = _InvalidIdentityTokenException;
+    var _IDPCommunicationErrorException = class _IDPCommunicationErrorException2 extends STSServiceException {
+      /**
+       * @internal
+       */
+      constructor(opts) {
+        super({
+          name: "IDPCommunicationErrorException",
+          $fault: "client",
+          ...opts
+        });
+        this.name = "IDPCommunicationErrorException";
+        this.$fault = "client";
+        Object.setPrototypeOf(this, _IDPCommunicationErrorException2.prototype);
+      }
+    };
+    __name(_IDPCommunicationErrorException, "IDPCommunicationErrorException");
+    var IDPCommunicationErrorException = _IDPCommunicationErrorException;
+    var _InvalidAuthorizationMessageException = class _InvalidAuthorizationMessageException2 extends STSServiceException {
+      /**
+       * @internal
+       */
+      constructor(opts) {
+        super({
+          name: "InvalidAuthorizationMessageException",
+          $fault: "client",
+          ...opts
+        });
+        this.name = "InvalidAuthorizationMessageException";
+        this.$fault = "client";
+        Object.setPrototypeOf(this, _InvalidAuthorizationMessageException2.prototype);
+      }
+    };
+    __name(_InvalidAuthorizationMessageException, "InvalidAuthorizationMessageException");
+    var InvalidAuthorizationMessageException = _InvalidAuthorizationMessageException;
+    var CredentialsFilterSensitiveLog = /* @__PURE__ */ __name((obj) => ({
+      ...obj,
+      ...obj.SecretAccessKey && { SecretAccessKey: import_smithy_client5.SENSITIVE_STRING }
+    }), "CredentialsFilterSensitiveLog");
+    var AssumeRoleResponseFilterSensitiveLog = /* @__PURE__ */ __name((obj) => ({
+      ...obj,
+      ...obj.Credentials && { Credentials: CredentialsFilterSensitiveLog(obj.Credentials) }
+    }), "AssumeRoleResponseFilterSensitiveLog");
+    var AssumeRoleWithSAMLRequestFilterSensitiveLog = /* @__PURE__ */ __name((obj) => ({
+      ...obj,
+      ...obj.SAMLAssertion && { SAMLAssertion: import_smithy_client5.SENSITIVE_STRING }
+    }), "AssumeRoleWithSAMLRequestFilterSensitiveLog");
+    var AssumeRoleWithSAMLResponseFilterSensitiveLog = /* @__PURE__ */ __name((obj) => ({
+      ...obj,
+      ...obj.Credentials && { Credentials: CredentialsFilterSensitiveLog(obj.Credentials) }
+    }), "AssumeRoleWithSAMLResponseFilterSensitiveLog");
+    var AssumeRoleWithWebIdentityRequestFilterSensitiveLog = /* @__PURE__ */ __name((obj) => ({
+      ...obj,
+      ...obj.WebIdentityToken && { WebIdentityToken: import_smithy_client5.SENSITIVE_STRING }
+    }), "AssumeRoleWithWebIdentityRequestFilterSensitiveLog");
+    var AssumeRoleWithWebIdentityResponseFilterSensitiveLog = /* @__PURE__ */ __name((obj) => ({
+      ...obj,
+      ...obj.Credentials && { Credentials: CredentialsFilterSensitiveLog(obj.Credentials) }
+    }), "AssumeRoleWithWebIdentityResponseFilterSensitiveLog");
+    var GetFederationTokenResponseFilterSensitiveLog = /* @__PURE__ */ __name((obj) => ({
+      ...obj,
+      ...obj.Credentials && { Credentials: CredentialsFilterSensitiveLog(obj.Credentials) }
+    }), "GetFederationTokenResponseFilterSensitiveLog");
+    var GetSessionTokenResponseFilterSensitiveLog = /* @__PURE__ */ __name((obj) => ({
+      ...obj,
+      ...obj.Credentials && { Credentials: CredentialsFilterSensitiveLog(obj.Credentials) }
+    }), "GetSessionTokenResponseFilterSensitiveLog");
+    var import_core3 = (init_dist_es2(), __toCommonJS(dist_es_exports2));
+    var import_protocol_http8 = require_dist_cjs2();
+    var se_AssumeRoleCommand = /* @__PURE__ */ __name(async (input, context) => {
+      const headers = SHARED_HEADERS;
+      let body;
+      body = buildFormUrlencodedString({
+        ...se_AssumeRoleRequest(input, context),
+        [_A]: _AR,
+        [_V]: _
+      });
+      return buildHttpRpcRequest(context, headers, "/", void 0, body);
+    }, "se_AssumeRoleCommand");
+    var se_AssumeRoleWithSAMLCommand = /* @__PURE__ */ __name(async (input, context) => {
+      const headers = SHARED_HEADERS;
+      let body;
+      body = buildFormUrlencodedString({
+        ...se_AssumeRoleWithSAMLRequest(input, context),
+        [_A]: _ARWSAML,
+        [_V]: _
+      });
+      return buildHttpRpcRequest(context, headers, "/", void 0, body);
+    }, "se_AssumeRoleWithSAMLCommand");
+    var se_AssumeRoleWithWebIdentityCommand = /* @__PURE__ */ __name(async (input, context) => {
+      const headers = SHARED_HEADERS;
+      let body;
+      body = buildFormUrlencodedString({
+        ...se_AssumeRoleWithWebIdentityRequest(input, context),
+        [_A]: _ARWWI,
+        [_V]: _
+      });
+      return buildHttpRpcRequest(context, headers, "/", void 0, body);
+    }, "se_AssumeRoleWithWebIdentityCommand");
+    var se_DecodeAuthorizationMessageCommand = /* @__PURE__ */ __name(async (input, context) => {
+      const headers = SHARED_HEADERS;
+      let body;
+      body = buildFormUrlencodedString({
+        ...se_DecodeAuthorizationMessageRequest(input, context),
+        [_A]: _DAM,
+        [_V]: _
+      });
+      return buildHttpRpcRequest(context, headers, "/", void 0, body);
+    }, "se_DecodeAuthorizationMessageCommand");
+    var se_GetAccessKeyInfoCommand = /* @__PURE__ */ __name(async (input, context) => {
+      const headers = SHARED_HEADERS;
+      let body;
+      body = buildFormUrlencodedString({
+        ...se_GetAccessKeyInfoRequest(input, context),
+        [_A]: _GAKI,
+        [_V]: _
+      });
+      return buildHttpRpcRequest(context, headers, "/", void 0, body);
+    }, "se_GetAccessKeyInfoCommand");
+    var se_GetCallerIdentityCommand = /* @__PURE__ */ __name(async (input, context) => {
+      const headers = SHARED_HEADERS;
+      let body;
+      body = buildFormUrlencodedString({
+        ...se_GetCallerIdentityRequest(input, context),
+        [_A]: _GCI,
+        [_V]: _
+      });
+      return buildHttpRpcRequest(context, headers, "/", void 0, body);
+    }, "se_GetCallerIdentityCommand");
+    var se_GetFederationTokenCommand = /* @__PURE__ */ __name(async (input, context) => {
+      const headers = SHARED_HEADERS;
+      let body;
+      body = buildFormUrlencodedString({
+        ...se_GetFederationTokenRequest(input, context),
+        [_A]: _GFT,
+        [_V]: _
+      });
+      return buildHttpRpcRequest(context, headers, "/", void 0, body);
+    }, "se_GetFederationTokenCommand");
+    var se_GetSessionTokenCommand = /* @__PURE__ */ __name(async (input, context) => {
+      const headers = SHARED_HEADERS;
+      let body;
+      body = buildFormUrlencodedString({
+        ...se_GetSessionTokenRequest(input, context),
+        [_A]: _GST,
+        [_V]: _
+      });
+      return buildHttpRpcRequest(context, headers, "/", void 0, body);
+    }, "se_GetSessionTokenCommand");
+    var de_AssumeRoleCommand = /* @__PURE__ */ __name(async (output, context) => {
+      if (output.statusCode >= 300) {
+        return de_CommandError(output, context);
+      }
+      const data = await (0, import_core3.parseXmlBody)(output.body, context);
+      let contents = {};
+      contents = de_AssumeRoleResponse(data.AssumeRoleResult, context);
+      const response = {
+        $metadata: deserializeMetadata(output),
+        ...contents
+      };
+      return response;
+    }, "de_AssumeRoleCommand");
+    var de_AssumeRoleWithSAMLCommand = /* @__PURE__ */ __name(async (output, context) => {
+      if (output.statusCode >= 300) {
+        return de_CommandError(output, context);
+      }
+      const data = await (0, import_core3.parseXmlBody)(output.body, context);
+      let contents = {};
+      contents = de_AssumeRoleWithSAMLResponse(data.AssumeRoleWithSAMLResult, context);
+      const response = {
+        $metadata: deserializeMetadata(output),
+        ...contents
+      };
+      return response;
+    }, "de_AssumeRoleWithSAMLCommand");
+    var de_AssumeRoleWithWebIdentityCommand = /* @__PURE__ */ __name(async (output, context) => {
+      if (output.statusCode >= 300) {
+        return de_CommandError(output, context);
+      }
+      const data = await (0, import_core3.parseXmlBody)(output.body, context);
+      let contents = {};
+      contents = de_AssumeRoleWithWebIdentityResponse(data.AssumeRoleWithWebIdentityResult, context);
+      const response = {
+        $metadata: deserializeMetadata(output),
+        ...contents
+      };
+      return response;
+    }, "de_AssumeRoleWithWebIdentityCommand");
+    var de_DecodeAuthorizationMessageCommand = /* @__PURE__ */ __name(async (output, context) => {
+      if (output.statusCode >= 300) {
+        return de_CommandError(output, context);
+      }
+      const data = await (0, import_core3.parseXmlBody)(output.body, context);
+      let contents = {};
+      contents = de_DecodeAuthorizationMessageResponse(data.DecodeAuthorizationMessageResult, context);
+      const response = {
+        $metadata: deserializeMetadata(output),
+        ...contents
+      };
+      return response;
+    }, "de_DecodeAuthorizationMessageCommand");
+    var de_GetAccessKeyInfoCommand = /* @__PURE__ */ __name(async (output, context) => {
+      if (output.statusCode >= 300) {
+        return de_CommandError(output, context);
+      }
+      const data = await (0, import_core3.parseXmlBody)(output.body, context);
+      let contents = {};
+      contents = de_GetAccessKeyInfoResponse(data.GetAccessKeyInfoResult, context);
+      const response = {
+        $metadata: deserializeMetadata(output),
+        ...contents
+      };
+      return response;
+    }, "de_GetAccessKeyInfoCommand");
+    var de_GetCallerIdentityCommand = /* @__PURE__ */ __name(async (output, context) => {
+      if (output.statusCode >= 300) {
+        return de_CommandError(output, context);
+      }
+      const data = await (0, import_core3.parseXmlBody)(output.body, context);
+      let contents = {};
+      contents = de_GetCallerIdentityResponse(data.GetCallerIdentityResult, context);
+      const response = {
+        $metadata: deserializeMetadata(output),
+        ...contents
+      };
+      return response;
+    }, "de_GetCallerIdentityCommand");
+    var de_GetFederationTokenCommand = /* @__PURE__ */ __name(async (output, context) => {
+      if (output.statusCode >= 300) {
+        return de_CommandError(output, context);
+      }
+      const data = await (0, import_core3.parseXmlBody)(output.body, context);
+      let contents = {};
+      contents = de_GetFederationTokenResponse(data.GetFederationTokenResult, context);
+      const response = {
+        $metadata: deserializeMetadata(output),
+        ...contents
+      };
+      return response;
+    }, "de_GetFederationTokenCommand");
+    var de_GetSessionTokenCommand = /* @__PURE__ */ __name(async (output, context) => {
+      if (output.statusCode >= 300) {
+        return de_CommandError(output, context);
+      }
+      const data = await (0, import_core3.parseXmlBody)(output.body, context);
+      let contents = {};
+      contents = de_GetSessionTokenResponse(data.GetSessionTokenResult, context);
+      const response = {
+        $metadata: deserializeMetadata(output),
+        ...contents
+      };
+      return response;
+    }, "de_GetSessionTokenCommand");
+    var de_CommandError = /* @__PURE__ */ __name(async (output, context) => {
+      const parsedOutput = {
+        ...output,
+        body: await (0, import_core3.parseXmlErrorBody)(output.body, context)
+      };
+      const errorCode = loadQueryErrorCode(output, parsedOutput.body);
+      switch (errorCode) {
+        case "ExpiredTokenException":
+        case "com.amazonaws.sts#ExpiredTokenException":
+          throw await de_ExpiredTokenExceptionRes(parsedOutput, context);
+        case "MalformedPolicyDocument":
+        case "com.amazonaws.sts#MalformedPolicyDocumentException":
+          throw await de_MalformedPolicyDocumentExceptionRes(parsedOutput, context);
+        case "PackedPolicyTooLarge":
+        case "com.amazonaws.sts#PackedPolicyTooLargeException":
+          throw await de_PackedPolicyTooLargeExceptionRes(parsedOutput, context);
+        case "RegionDisabledException":
+        case "com.amazonaws.sts#RegionDisabledException":
+          throw await de_RegionDisabledExceptionRes(parsedOutput, context);
+        case "IDPRejectedClaim":
+        case "com.amazonaws.sts#IDPRejectedClaimException":
+          throw await de_IDPRejectedClaimExceptionRes(parsedOutput, context);
+        case "InvalidIdentityToken":
+        case "com.amazonaws.sts#InvalidIdentityTokenException":
+          throw await de_InvalidIdentityTokenExceptionRes(parsedOutput, context);
+        case "IDPCommunicationError":
+        case "com.amazonaws.sts#IDPCommunicationErrorException":
+          throw await de_IDPCommunicationErrorExceptionRes(parsedOutput, context);
+        case "InvalidAuthorizationMessageException":
+        case "com.amazonaws.sts#InvalidAuthorizationMessageException":
+          throw await de_InvalidAuthorizationMessageExceptionRes(parsedOutput, context);
+        default:
+          const parsedBody = parsedOutput.body;
+          return throwDefaultError({
+            output,
+            parsedBody: parsedBody.Error,
+            errorCode
+          });
+      }
+    }, "de_CommandError");
+    var de_ExpiredTokenExceptionRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
+      const body = parsedOutput.body;
+      const deserialized = de_ExpiredTokenException(body.Error, context);
+      const exception2 = new ExpiredTokenException({
+        $metadata: deserializeMetadata(parsedOutput),
+        ...deserialized
+      });
+      return (0, import_smithy_client5.decorateServiceException)(exception2, body);
+    }, "de_ExpiredTokenExceptionRes");
+    var de_IDPCommunicationErrorExceptionRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
+      const body = parsedOutput.body;
+      const deserialized = de_IDPCommunicationErrorException(body.Error, context);
+      const exception2 = new IDPCommunicationErrorException({
+        $metadata: deserializeMetadata(parsedOutput),
+        ...deserialized
+      });
+      return (0, import_smithy_client5.decorateServiceException)(exception2, body);
+    }, "de_IDPCommunicationErrorExceptionRes");
+    var de_IDPRejectedClaimExceptionRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
+      const body = parsedOutput.body;
+      const deserialized = de_IDPRejectedClaimException(body.Error, context);
+      const exception2 = new IDPRejectedClaimException({
+        $metadata: deserializeMetadata(parsedOutput),
+        ...deserialized
+      });
+      return (0, import_smithy_client5.decorateServiceException)(exception2, body);
+    }, "de_IDPRejectedClaimExceptionRes");
+    var de_InvalidAuthorizationMessageExceptionRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
+      const body = parsedOutput.body;
+      const deserialized = de_InvalidAuthorizationMessageException(body.Error, context);
+      const exception2 = new InvalidAuthorizationMessageException({
+        $metadata: deserializeMetadata(parsedOutput),
+        ...deserialized
+      });
+      return (0, import_smithy_client5.decorateServiceException)(exception2, body);
+    }, "de_InvalidAuthorizationMessageExceptionRes");
+    var de_InvalidIdentityTokenExceptionRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
+      const body = parsedOutput.body;
+      const deserialized = de_InvalidIdentityTokenException(body.Error, context);
+      const exception2 = new InvalidIdentityTokenException({
+        $metadata: deserializeMetadata(parsedOutput),
+        ...deserialized
+      });
+      return (0, import_smithy_client5.decorateServiceException)(exception2, body);
+    }, "de_InvalidIdentityTokenExceptionRes");
+    var de_MalformedPolicyDocumentExceptionRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
+      const body = parsedOutput.body;
+      const deserialized = de_MalformedPolicyDocumentException(body.Error, context);
+      const exception2 = new MalformedPolicyDocumentException({
+        $metadata: deserializeMetadata(parsedOutput),
+        ...deserialized
+      });
+      return (0, import_smithy_client5.decorateServiceException)(exception2, body);
+    }, "de_MalformedPolicyDocumentExceptionRes");
+    var de_PackedPolicyTooLargeExceptionRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
+      const body = parsedOutput.body;
+      const deserialized = de_PackedPolicyTooLargeException(body.Error, context);
+      const exception2 = new PackedPolicyTooLargeException({
+        $metadata: deserializeMetadata(parsedOutput),
+        ...deserialized
+      });
+      return (0, import_smithy_client5.decorateServiceException)(exception2, body);
+    }, "de_PackedPolicyTooLargeExceptionRes");
+    var de_RegionDisabledExceptionRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
+      const body = parsedOutput.body;
+      const deserialized = de_RegionDisabledException(body.Error, context);
+      const exception2 = new RegionDisabledException({
+        $metadata: deserializeMetadata(parsedOutput),
+        ...deserialized
+      });
+      return (0, import_smithy_client5.decorateServiceException)(exception2, body);
+    }, "de_RegionDisabledExceptionRes");
+    var se_AssumeRoleRequest = /* @__PURE__ */ __name((input, context) => {
+      var _a2, _b, _c, _d;
+      const entries = {};
+      if (input[_RA] != null) {
+        entries[_RA] = input[_RA];
+      }
+      if (input[_RSN] != null) {
+        entries[_RSN] = input[_RSN];
+      }
+      if (input[_PA] != null) {
+        const memberEntries = se_policyDescriptorListType(input[_PA], context);
+        if (((_a2 = input[_PA]) == null ? void 0 : _a2.length) === 0) {
+          entries.PolicyArns = [];
+        }
+        Object.entries(memberEntries).forEach(([key, value]) => {
+          const loc = `PolicyArns.${key}`;
+          entries[loc] = value;
+        });
+      }
+      if (input[_P] != null) {
+        entries[_P] = input[_P];
+      }
+      if (input[_DS] != null) {
+        entries[_DS] = input[_DS];
+      }
+      if (input[_T] != null) {
+        const memberEntries = se_tagListType(input[_T], context);
+        if (((_b = input[_T]) == null ? void 0 : _b.length) === 0) {
+          entries.Tags = [];
+        }
+        Object.entries(memberEntries).forEach(([key, value]) => {
+          const loc = `Tags.${key}`;
+          entries[loc] = value;
+        });
+      }
+      if (input[_TTK] != null) {
+        const memberEntries = se_tagKeyListType(input[_TTK], context);
+        if (((_c = input[_TTK]) == null ? void 0 : _c.length) === 0) {
+          entries.TransitiveTagKeys = [];
+        }
+        Object.entries(memberEntries).forEach(([key, value]) => {
+          const loc = `TransitiveTagKeys.${key}`;
+          entries[loc] = value;
+        });
+      }
+      if (input[_EI] != null) {
+        entries[_EI] = input[_EI];
+      }
+      if (input[_SN] != null) {
+        entries[_SN] = input[_SN];
+      }
+      if (input[_TC] != null) {
+        entries[_TC] = input[_TC];
+      }
+      if (input[_SI] != null) {
+        entries[_SI] = input[_SI];
+      }
+      if (input[_PC] != null) {
+        const memberEntries = se_ProvidedContextsListType(input[_PC], context);
+        if (((_d = input[_PC]) == null ? void 0 : _d.length) === 0) {
+          entries.ProvidedContexts = [];
+        }
+        Object.entries(memberEntries).forEach(([key, value]) => {
+          const loc = `ProvidedContexts.${key}`;
+          entries[loc] = value;
+        });
+      }
+      return entries;
+    }, "se_AssumeRoleRequest");
+    var se_AssumeRoleWithSAMLRequest = /* @__PURE__ */ __name((input, context) => {
+      var _a2;
+      const entries = {};
+      if (input[_RA] != null) {
+        entries[_RA] = input[_RA];
+      }
+      if (input[_PAr] != null) {
+        entries[_PAr] = input[_PAr];
+      }
+      if (input[_SAMLA] != null) {
+        entries[_SAMLA] = input[_SAMLA];
+      }
+      if (input[_PA] != null) {
+        const memberEntries = se_policyDescriptorListType(input[_PA], context);
+        if (((_a2 = input[_PA]) == null ? void 0 : _a2.length) === 0) {
+          entries.PolicyArns = [];
+        }
+        Object.entries(memberEntries).forEach(([key, value]) => {
+          const loc = `PolicyArns.${key}`;
+          entries[loc] = value;
+        });
+      }
+      if (input[_P] != null) {
+        entries[_P] = input[_P];
+      }
+      if (input[_DS] != null) {
+        entries[_DS] = input[_DS];
+      }
+      return entries;
+    }, "se_AssumeRoleWithSAMLRequest");
+    var se_AssumeRoleWithWebIdentityRequest = /* @__PURE__ */ __name((input, context) => {
+      var _a2;
+      const entries = {};
+      if (input[_RA] != null) {
+        entries[_RA] = input[_RA];
+      }
+      if (input[_RSN] != null) {
+        entries[_RSN] = input[_RSN];
+      }
+      if (input[_WIT] != null) {
+        entries[_WIT] = input[_WIT];
+      }
+      if (input[_PI] != null) {
+        entries[_PI] = input[_PI];
+      }
+      if (input[_PA] != null) {
+        const memberEntries = se_policyDescriptorListType(input[_PA], context);
+        if (((_a2 = input[_PA]) == null ? void 0 : _a2.length) === 0) {
+          entries.PolicyArns = [];
+        }
+        Object.entries(memberEntries).forEach(([key, value]) => {
+          const loc = `PolicyArns.${key}`;
+          entries[loc] = value;
+        });
+      }
+      if (input[_P] != null) {
+        entries[_P] = input[_P];
+      }
+      if (input[_DS] != null) {
+        entries[_DS] = input[_DS];
+      }
+      return entries;
+    }, "se_AssumeRoleWithWebIdentityRequest");
+    var se_DecodeAuthorizationMessageRequest = /* @__PURE__ */ __name((input, context) => {
+      const entries = {};
+      if (input[_EM] != null) {
+        entries[_EM] = input[_EM];
+      }
+      return entries;
+    }, "se_DecodeAuthorizationMessageRequest");
+    var se_GetAccessKeyInfoRequest = /* @__PURE__ */ __name((input, context) => {
+      const entries = {};
+      if (input[_AKI] != null) {
+        entries[_AKI] = input[_AKI];
+      }
+      return entries;
+    }, "se_GetAccessKeyInfoRequest");
+    var se_GetCallerIdentityRequest = /* @__PURE__ */ __name((input, context) => {
+      const entries = {};
+      return entries;
+    }, "se_GetCallerIdentityRequest");
+    var se_GetFederationTokenRequest = /* @__PURE__ */ __name((input, context) => {
+      var _a2, _b;
+      const entries = {};
+      if (input[_N] != null) {
+        entries[_N] = input[_N];
+      }
+      if (input[_P] != null) {
+        entries[_P] = input[_P];
+      }
+      if (input[_PA] != null) {
+        const memberEntries = se_policyDescriptorListType(input[_PA], context);
+        if (((_a2 = input[_PA]) == null ? void 0 : _a2.length) === 0) {
+          entries.PolicyArns = [];
+        }
+        Object.entries(memberEntries).forEach(([key, value]) => {
+          const loc = `PolicyArns.${key}`;
+          entries[loc] = value;
+        });
+      }
+      if (input[_DS] != null) {
+        entries[_DS] = input[_DS];
+      }
+      if (input[_T] != null) {
+        const memberEntries = se_tagListType(input[_T], context);
+        if (((_b = input[_T]) == null ? void 0 : _b.length) === 0) {
+          entries.Tags = [];
+        }
+        Object.entries(memberEntries).forEach(([key, value]) => {
+          const loc = `Tags.${key}`;
+          entries[loc] = value;
+        });
+      }
+      return entries;
+    }, "se_GetFederationTokenRequest");
+    var se_GetSessionTokenRequest = /* @__PURE__ */ __name((input, context) => {
+      const entries = {};
+      if (input[_DS] != null) {
+        entries[_DS] = input[_DS];
+      }
+      if (input[_SN] != null) {
+        entries[_SN] = input[_SN];
+      }
+      if (input[_TC] != null) {
+        entries[_TC] = input[_TC];
+      }
+      return entries;
+    }, "se_GetSessionTokenRequest");
+    var se_policyDescriptorListType = /* @__PURE__ */ __name((input, context) => {
+      const entries = {};
+      let counter = 1;
+      for (const entry of input) {
+        if (entry === null) {
+          continue;
+        }
+        const memberEntries = se_PolicyDescriptorType(entry, context);
+        Object.entries(memberEntries).forEach(([key, value]) => {
+          entries[`member.${counter}.${key}`] = value;
+        });
+        counter++;
+      }
+      return entries;
+    }, "se_policyDescriptorListType");
+    var se_PolicyDescriptorType = /* @__PURE__ */ __name((input, context) => {
+      const entries = {};
+      if (input[_a] != null) {
+        entries[_a] = input[_a];
+      }
+      return entries;
+    }, "se_PolicyDescriptorType");
+    var se_ProvidedContext = /* @__PURE__ */ __name((input, context) => {
+      const entries = {};
+      if (input[_PAro] != null) {
+        entries[_PAro] = input[_PAro];
+      }
+      if (input[_CA] != null) {
+        entries[_CA] = input[_CA];
+      }
+      return entries;
+    }, "se_ProvidedContext");
+    var se_ProvidedContextsListType = /* @__PURE__ */ __name((input, context) => {
+      const entries = {};
+      let counter = 1;
+      for (const entry of input) {
+        if (entry === null) {
+          continue;
+        }
+        const memberEntries = se_ProvidedContext(entry, context);
+        Object.entries(memberEntries).forEach(([key, value]) => {
+          entries[`member.${counter}.${key}`] = value;
+        });
+        counter++;
+      }
+      return entries;
+    }, "se_ProvidedContextsListType");
+    var se_Tag = /* @__PURE__ */ __name((input, context) => {
+      const entries = {};
+      if (input[_K] != null) {
+        entries[_K] = input[_K];
+      }
+      if (input[_Va] != null) {
+        entries[_Va] = input[_Va];
+      }
+      return entries;
+    }, "se_Tag");
+    var se_tagKeyListType = /* @__PURE__ */ __name((input, context) => {
+      const entries = {};
+      let counter = 1;
+      for (const entry of input) {
+        if (entry === null) {
+          continue;
+        }
+        entries[`member.${counter}`] = entry;
+        counter++;
+      }
+      return entries;
+    }, "se_tagKeyListType");
+    var se_tagListType = /* @__PURE__ */ __name((input, context) => {
+      const entries = {};
+      let counter = 1;
+      for (const entry of input) {
+        if (entry === null) {
+          continue;
+        }
+        const memberEntries = se_Tag(entry, context);
+        Object.entries(memberEntries).forEach(([key, value]) => {
+          entries[`member.${counter}.${key}`] = value;
+        });
+        counter++;
+      }
+      return entries;
+    }, "se_tagListType");
+    var de_AssumedRoleUser = /* @__PURE__ */ __name((output, context) => {
+      const contents = {};
+      if (output[_ARI] != null) {
+        contents[_ARI] = (0, import_smithy_client5.expectString)(output[_ARI]);
+      }
+      if (output[_Ar] != null) {
+        contents[_Ar] = (0, import_smithy_client5.expectString)(output[_Ar]);
+      }
+      return contents;
+    }, "de_AssumedRoleUser");
+    var de_AssumeRoleResponse = /* @__PURE__ */ __name((output, context) => {
+      const contents = {};
+      if (output[_C] != null) {
+        contents[_C] = de_Credentials(output[_C], context);
+      }
+      if (output[_ARU] != null) {
+        contents[_ARU] = de_AssumedRoleUser(output[_ARU], context);
+      }
+      if (output[_PPS] != null) {
+        contents[_PPS] = (0, import_smithy_client5.strictParseInt32)(output[_PPS]);
+      }
+      if (output[_SI] != null) {
+        contents[_SI] = (0, import_smithy_client5.expectString)(output[_SI]);
+      }
+      return contents;
+    }, "de_AssumeRoleResponse");
+    var de_AssumeRoleWithSAMLResponse = /* @__PURE__ */ __name((output, context) => {
+      const contents = {};
+      if (output[_C] != null) {
+        contents[_C] = de_Credentials(output[_C], context);
+      }
+      if (output[_ARU] != null) {
+        contents[_ARU] = de_AssumedRoleUser(output[_ARU], context);
+      }
+      if (output[_PPS] != null) {
+        contents[_PPS] = (0, import_smithy_client5.strictParseInt32)(output[_PPS]);
+      }
+      if (output[_S] != null) {
+        contents[_S] = (0, import_smithy_client5.expectString)(output[_S]);
+      }
+      if (output[_ST] != null) {
+        contents[_ST] = (0, import_smithy_client5.expectString)(output[_ST]);
+      }
+      if (output[_I] != null) {
+        contents[_I] = (0, import_smithy_client5.expectString)(output[_I]);
+      }
+      if (output[_Au] != null) {
+        contents[_Au] = (0, import_smithy_client5.expectString)(output[_Au]);
+      }
+      if (output[_NQ] != null) {
+        contents[_NQ] = (0, import_smithy_client5.expectString)(output[_NQ]);
+      }
+      if (output[_SI] != null) {
+        contents[_SI] = (0, import_smithy_client5.expectString)(output[_SI]);
+      }
+      return contents;
+    }, "de_AssumeRoleWithSAMLResponse");
+    var de_AssumeRoleWithWebIdentityResponse = /* @__PURE__ */ __name((output, context) => {
+      const contents = {};
+      if (output[_C] != null) {
+        contents[_C] = de_Credentials(output[_C], context);
+      }
+      if (output[_SFWIT] != null) {
+        contents[_SFWIT] = (0, import_smithy_client5.expectString)(output[_SFWIT]);
+      }
+      if (output[_ARU] != null) {
+        contents[_ARU] = de_AssumedRoleUser(output[_ARU], context);
+      }
+      if (output[_PPS] != null) {
+        contents[_PPS] = (0, import_smithy_client5.strictParseInt32)(output[_PPS]);
+      }
+      if (output[_Pr] != null) {
+        contents[_Pr] = (0, import_smithy_client5.expectString)(output[_Pr]);
+      }
+      if (output[_Au] != null) {
+        contents[_Au] = (0, import_smithy_client5.expectString)(output[_Au]);
+      }
+      if (output[_SI] != null) {
+        contents[_SI] = (0, import_smithy_client5.expectString)(output[_SI]);
+      }
+      return contents;
+    }, "de_AssumeRoleWithWebIdentityResponse");
+    var de_Credentials = /* @__PURE__ */ __name((output, context) => {
+      const contents = {};
+      if (output[_AKI] != null) {
+        contents[_AKI] = (0, import_smithy_client5.expectString)(output[_AKI]);
+      }
+      if (output[_SAK] != null) {
+        contents[_SAK] = (0, import_smithy_client5.expectString)(output[_SAK]);
+      }
+      if (output[_STe] != null) {
+        contents[_STe] = (0, import_smithy_client5.expectString)(output[_STe]);
+      }
+      if (output[_E] != null) {
+        contents[_E] = (0, import_smithy_client5.expectNonNull)((0, import_smithy_client5.parseRfc3339DateTimeWithOffset)(output[_E]));
+      }
+      return contents;
+    }, "de_Credentials");
+    var de_DecodeAuthorizationMessageResponse = /* @__PURE__ */ __name((output, context) => {
+      const contents = {};
+      if (output[_DM] != null) {
+        contents[_DM] = (0, import_smithy_client5.expectString)(output[_DM]);
+      }
+      return contents;
+    }, "de_DecodeAuthorizationMessageResponse");
+    var de_ExpiredTokenException = /* @__PURE__ */ __name((output, context) => {
+      const contents = {};
+      if (output[_m] != null) {
+        contents[_m] = (0, import_smithy_client5.expectString)(output[_m]);
+      }
+      return contents;
+    }, "de_ExpiredTokenException");
+    var de_FederatedUser = /* @__PURE__ */ __name((output, context) => {
+      const contents = {};
+      if (output[_FUI] != null) {
+        contents[_FUI] = (0, import_smithy_client5.expectString)(output[_FUI]);
+      }
+      if (output[_Ar] != null) {
+        contents[_Ar] = (0, import_smithy_client5.expectString)(output[_Ar]);
+      }
+      return contents;
+    }, "de_FederatedUser");
+    var de_GetAccessKeyInfoResponse = /* @__PURE__ */ __name((output, context) => {
+      const contents = {};
+      if (output[_Ac] != null) {
+        contents[_Ac] = (0, import_smithy_client5.expectString)(output[_Ac]);
+      }
+      return contents;
+    }, "de_GetAccessKeyInfoResponse");
+    var de_GetCallerIdentityResponse = /* @__PURE__ */ __name((output, context) => {
+      const contents = {};
+      if (output[_UI] != null) {
+        contents[_UI] = (0, import_smithy_client5.expectString)(output[_UI]);
+      }
+      if (output[_Ac] != null) {
+        contents[_Ac] = (0, import_smithy_client5.expectString)(output[_Ac]);
+      }
+      if (output[_Ar] != null) {
+        contents[_Ar] = (0, import_smithy_client5.expectString)(output[_Ar]);
+      }
+      return contents;
+    }, "de_GetCallerIdentityResponse");
+    var de_GetFederationTokenResponse = /* @__PURE__ */ __name((output, context) => {
+      const contents = {};
+      if (output[_C] != null) {
+        contents[_C] = de_Credentials(output[_C], context);
+      }
+      if (output[_FU] != null) {
+        contents[_FU] = de_FederatedUser(output[_FU], context);
+      }
+      if (output[_PPS] != null) {
+        contents[_PPS] = (0, import_smithy_client5.strictParseInt32)(output[_PPS]);
+      }
+      return contents;
+    }, "de_GetFederationTokenResponse");
+    var de_GetSessionTokenResponse = /* @__PURE__ */ __name((output, context) => {
+      const contents = {};
+      if (output[_C] != null) {
+        contents[_C] = de_Credentials(output[_C], context);
+      }
+      return contents;
+    }, "de_GetSessionTokenResponse");
+    var de_IDPCommunicationErrorException = /* @__PURE__ */ __name((output, context) => {
+      const contents = {};
+      if (output[_m] != null) {
+        contents[_m] = (0, import_smithy_client5.expectString)(output[_m]);
+      }
+      return contents;
+    }, "de_IDPCommunicationErrorException");
+    var de_IDPRejectedClaimException = /* @__PURE__ */ __name((output, context) => {
+      const contents = {};
+      if (output[_m] != null) {
+        contents[_m] = (0, import_smithy_client5.expectString)(output[_m]);
+      }
+      return contents;
+    }, "de_IDPRejectedClaimException");
+    var de_InvalidAuthorizationMessageException = /* @__PURE__ */ __name((output, context) => {
+      const contents = {};
+      if (output[_m] != null) {
+        contents[_m] = (0, import_smithy_client5.expectString)(output[_m]);
+      }
+      return contents;
+    }, "de_InvalidAuthorizationMessageException");
+    var de_InvalidIdentityTokenException = /* @__PURE__ */ __name((output, context) => {
+      const contents = {};
+      if (output[_m] != null) {
+        contents[_m] = (0, import_smithy_client5.expectString)(output[_m]);
+      }
+      return contents;
+    }, "de_InvalidIdentityTokenException");
+    var de_MalformedPolicyDocumentException = /* @__PURE__ */ __name((output, context) => {
+      const contents = {};
+      if (output[_m] != null) {
+        contents[_m] = (0, import_smithy_client5.expectString)(output[_m]);
+      }
+      return contents;
+    }, "de_MalformedPolicyDocumentException");
+    var de_PackedPolicyTooLargeException = /* @__PURE__ */ __name((output, context) => {
+      const contents = {};
+      if (output[_m] != null) {
+        contents[_m] = (0, import_smithy_client5.expectString)(output[_m]);
+      }
+      return contents;
+    }, "de_PackedPolicyTooLargeException");
+    var de_RegionDisabledException = /* @__PURE__ */ __name((output, context) => {
+      const contents = {};
+      if (output[_m] != null) {
+        contents[_m] = (0, import_smithy_client5.expectString)(output[_m]);
+      }
+      return contents;
+    }, "de_RegionDisabledException");
+    var deserializeMetadata = /* @__PURE__ */ __name((output) => ({
+      httpStatusCode: output.statusCode,
+      requestId: output.headers["x-amzn-requestid"] ?? output.headers["x-amzn-request-id"] ?? output.headers["x-amz-request-id"],
+      extendedRequestId: output.headers["x-amz-id-2"],
+      cfId: output.headers["x-amz-cf-id"]
+    }), "deserializeMetadata");
+    var throwDefaultError = (0, import_smithy_client5.withBaseException)(STSServiceException);
+    var buildHttpRpcRequest = /* @__PURE__ */ __name(async (context, headers, path, resolvedHostname, body) => {
+      const { hostname, protocol = "https", port, path: basePath } = await context.endpoint();
+      const contents = {
+        protocol,
+        hostname,
+        port,
+        method: "POST",
+        path: basePath.endsWith("/") ? basePath.slice(0, -1) + path : basePath + path,
+        headers
+      };
+      if (resolvedHostname !== void 0) {
+        contents.hostname = resolvedHostname;
+      }
+      if (body !== void 0) {
+        contents.body = body;
+      }
+      return new import_protocol_http8.HttpRequest(contents);
+    }, "buildHttpRpcRequest");
+    var SHARED_HEADERS = {
+      "content-type": "application/x-www-form-urlencoded"
+    };
+    var _ = "2011-06-15";
+    var _A = "Action";
+    var _AKI = "AccessKeyId";
+    var _AR = "AssumeRole";
+    var _ARI = "AssumedRoleId";
+    var _ARU = "AssumedRoleUser";
+    var _ARWSAML = "AssumeRoleWithSAML";
+    var _ARWWI = "AssumeRoleWithWebIdentity";
+    var _Ac = "Account";
+    var _Ar = "Arn";
+    var _Au = "Audience";
+    var _C = "Credentials";
+    var _CA = "ContextAssertion";
+    var _DAM = "DecodeAuthorizationMessage";
+    var _DM = "DecodedMessage";
+    var _DS = "DurationSeconds";
+    var _E = "Expiration";
+    var _EI = "ExternalId";
+    var _EM = "EncodedMessage";
+    var _FU = "FederatedUser";
+    var _FUI = "FederatedUserId";
+    var _GAKI = "GetAccessKeyInfo";
+    var _GCI = "GetCallerIdentity";
+    var _GFT = "GetFederationToken";
+    var _GST = "GetSessionToken";
+    var _I = "Issuer";
+    var _K = "Key";
+    var _N = "Name";
+    var _NQ = "NameQualifier";
+    var _P = "Policy";
+    var _PA = "PolicyArns";
+    var _PAr = "PrincipalArn";
+    var _PAro = "ProviderArn";
+    var _PC = "ProvidedContexts";
+    var _PI = "ProviderId";
+    var _PPS = "PackedPolicySize";
+    var _Pr = "Provider";
+    var _RA = "RoleArn";
+    var _RSN = "RoleSessionName";
+    var _S = "Subject";
+    var _SAK = "SecretAccessKey";
+    var _SAMLA = "SAMLAssertion";
+    var _SFWIT = "SubjectFromWebIdentityToken";
+    var _SI = "SourceIdentity";
+    var _SN = "SerialNumber";
+    var _ST = "SubjectType";
+    var _STe = "SessionToken";
+    var _T = "Tags";
+    var _TC = "TokenCode";
+    var _TTK = "TransitiveTagKeys";
+    var _UI = "UserId";
+    var _V = "Version";
+    var _Va = "Value";
+    var _WIT = "WebIdentityToken";
+    var _a = "arn";
+    var _m = "message";
+    var buildFormUrlencodedString = /* @__PURE__ */ __name((formEntries) => Object.entries(formEntries).map(([key, value]) => (0, import_smithy_client5.extendedEncodeURIComponent)(key) + "=" + (0, import_smithy_client5.extendedEncodeURIComponent)(value)).join("&"), "buildFormUrlencodedString");
+    var loadQueryErrorCode = /* @__PURE__ */ __name((output, data) => {
+      var _a2;
+      if (((_a2 = data.Error) == null ? void 0 : _a2.Code) !== void 0) {
+        return data.Error.Code;
+      }
+      if (output.statusCode == 404) {
+        return "NotFound";
+      }
+    }, "loadQueryErrorCode");
+    var _AssumeRoleCommand = class _AssumeRoleCommand extends import_smithy_client5.Command.classBuilder().ep(import_EndpointParameters.commonParams).m(function(Command, cs, config, o) {
+      return [
+        (0, import_middleware_serde2.getSerdePlugin)(config, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint2.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+      ];
+    }).s("AWSSecurityTokenServiceV20110615", "AssumeRole", {}).n("STSClient", "AssumeRoleCommand").f(void 0, AssumeRoleResponseFilterSensitiveLog).ser(se_AssumeRoleCommand).de(de_AssumeRoleCommand).build() {
+    };
+    __name(_AssumeRoleCommand, "AssumeRoleCommand");
+    var AssumeRoleCommand = _AssumeRoleCommand;
+    var import_EndpointParameters2 = require_EndpointParameters2();
+    var _AssumeRoleWithSAMLCommand = class _AssumeRoleWithSAMLCommand extends import_smithy_client5.Command.classBuilder().ep(import_EndpointParameters2.commonParams).m(function(Command, cs, config, o) {
+      return [
+        (0, import_middleware_serde2.getSerdePlugin)(config, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint2.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+      ];
+    }).s("AWSSecurityTokenServiceV20110615", "AssumeRoleWithSAML", {}).n("STSClient", "AssumeRoleWithSAMLCommand").f(AssumeRoleWithSAMLRequestFilterSensitiveLog, AssumeRoleWithSAMLResponseFilterSensitiveLog).ser(se_AssumeRoleWithSAMLCommand).de(de_AssumeRoleWithSAMLCommand).build() {
+    };
+    __name(_AssumeRoleWithSAMLCommand, "AssumeRoleWithSAMLCommand");
+    var AssumeRoleWithSAMLCommand = _AssumeRoleWithSAMLCommand;
+    var import_EndpointParameters3 = require_EndpointParameters2();
+    var _AssumeRoleWithWebIdentityCommand = class _AssumeRoleWithWebIdentityCommand extends import_smithy_client5.Command.classBuilder().ep(import_EndpointParameters3.commonParams).m(function(Command, cs, config, o) {
+      return [
+        (0, import_middleware_serde2.getSerdePlugin)(config, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint2.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+      ];
+    }).s("AWSSecurityTokenServiceV20110615", "AssumeRoleWithWebIdentity", {}).n("STSClient", "AssumeRoleWithWebIdentityCommand").f(AssumeRoleWithWebIdentityRequestFilterSensitiveLog, AssumeRoleWithWebIdentityResponseFilterSensitiveLog).ser(se_AssumeRoleWithWebIdentityCommand).de(de_AssumeRoleWithWebIdentityCommand).build() {
+    };
+    __name(_AssumeRoleWithWebIdentityCommand, "AssumeRoleWithWebIdentityCommand");
+    var AssumeRoleWithWebIdentityCommand = _AssumeRoleWithWebIdentityCommand;
+    var import_EndpointParameters4 = require_EndpointParameters2();
+    var _DecodeAuthorizationMessageCommand = class _DecodeAuthorizationMessageCommand extends import_smithy_client5.Command.classBuilder().ep(import_EndpointParameters4.commonParams).m(function(Command, cs, config, o) {
+      return [
+        (0, import_middleware_serde2.getSerdePlugin)(config, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint2.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+      ];
+    }).s("AWSSecurityTokenServiceV20110615", "DecodeAuthorizationMessage", {}).n("STSClient", "DecodeAuthorizationMessageCommand").f(void 0, void 0).ser(se_DecodeAuthorizationMessageCommand).de(de_DecodeAuthorizationMessageCommand).build() {
+    };
+    __name(_DecodeAuthorizationMessageCommand, "DecodeAuthorizationMessageCommand");
+    var DecodeAuthorizationMessageCommand = _DecodeAuthorizationMessageCommand;
+    var import_EndpointParameters5 = require_EndpointParameters2();
+    var _GetAccessKeyInfoCommand = class _GetAccessKeyInfoCommand extends import_smithy_client5.Command.classBuilder().ep(import_EndpointParameters5.commonParams).m(function(Command, cs, config, o) {
+      return [
+        (0, import_middleware_serde2.getSerdePlugin)(config, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint2.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+      ];
+    }).s("AWSSecurityTokenServiceV20110615", "GetAccessKeyInfo", {}).n("STSClient", "GetAccessKeyInfoCommand").f(void 0, void 0).ser(se_GetAccessKeyInfoCommand).de(de_GetAccessKeyInfoCommand).build() {
+    };
+    __name(_GetAccessKeyInfoCommand, "GetAccessKeyInfoCommand");
+    var GetAccessKeyInfoCommand = _GetAccessKeyInfoCommand;
+    var import_EndpointParameters6 = require_EndpointParameters2();
+    var _GetCallerIdentityCommand = class _GetCallerIdentityCommand extends import_smithy_client5.Command.classBuilder().ep(import_EndpointParameters6.commonParams).m(function(Command, cs, config, o) {
+      return [
+        (0, import_middleware_serde2.getSerdePlugin)(config, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint2.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+      ];
+    }).s("AWSSecurityTokenServiceV20110615", "GetCallerIdentity", {}).n("STSClient", "GetCallerIdentityCommand").f(void 0, void 0).ser(se_GetCallerIdentityCommand).de(de_GetCallerIdentityCommand).build() {
+    };
+    __name(_GetCallerIdentityCommand, "GetCallerIdentityCommand");
+    var GetCallerIdentityCommand = _GetCallerIdentityCommand;
+    var import_EndpointParameters7 = require_EndpointParameters2();
+    var _GetFederationTokenCommand = class _GetFederationTokenCommand extends import_smithy_client5.Command.classBuilder().ep(import_EndpointParameters7.commonParams).m(function(Command, cs, config, o) {
+      return [
+        (0, import_middleware_serde2.getSerdePlugin)(config, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint2.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+      ];
+    }).s("AWSSecurityTokenServiceV20110615", "GetFederationToken", {}).n("STSClient", "GetFederationTokenCommand").f(void 0, GetFederationTokenResponseFilterSensitiveLog).ser(se_GetFederationTokenCommand).de(de_GetFederationTokenCommand).build() {
+    };
+    __name(_GetFederationTokenCommand, "GetFederationTokenCommand");
+    var GetFederationTokenCommand = _GetFederationTokenCommand;
+    var import_EndpointParameters8 = require_EndpointParameters2();
+    var _GetSessionTokenCommand = class _GetSessionTokenCommand extends import_smithy_client5.Command.classBuilder().ep(import_EndpointParameters8.commonParams).m(function(Command, cs, config, o) {
+      return [
+        (0, import_middleware_serde2.getSerdePlugin)(config, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint2.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+      ];
+    }).s("AWSSecurityTokenServiceV20110615", "GetSessionToken", {}).n("STSClient", "GetSessionTokenCommand").f(void 0, GetSessionTokenResponseFilterSensitiveLog).ser(se_GetSessionTokenCommand).de(de_GetSessionTokenCommand).build() {
+    };
+    __name(_GetSessionTokenCommand, "GetSessionTokenCommand");
+    var GetSessionTokenCommand = _GetSessionTokenCommand;
+    var import_STSClient = require_STSClient2();
+    var commands = {
+      AssumeRoleCommand,
+      AssumeRoleWithSAMLCommand,
+      AssumeRoleWithWebIdentityCommand,
+      DecodeAuthorizationMessageCommand,
+      GetAccessKeyInfoCommand,
+      GetCallerIdentityCommand,
+      GetFederationTokenCommand,
+      GetSessionTokenCommand
+    };
+    var _STS = class _STS extends import_STSClient.STSClient {
+    };
+    __name(_STS, "STS");
+    var STS = _STS;
+    (0, import_smithy_client5.createAggregatedClient)(commands, STS);
+    var import_EndpointParameters9 = require_EndpointParameters2();
+    var import_client2 = (init_client(), __toCommonJS(client_exports));
+    var ASSUME_ROLE_DEFAULT_REGION = "us-east-1";
+    var getAccountIdFromAssumedRoleUser = /* @__PURE__ */ __name((assumedRoleUser) => {
+      if (typeof (assumedRoleUser == null ? void 0 : assumedRoleUser.Arn) === "string") {
+        const arnComponents = assumedRoleUser.Arn.split(":");
+        if (arnComponents.length > 4 && arnComponents[4] !== "") {
+          return arnComponents[4];
+        }
+      }
+      return void 0;
+    }, "getAccountIdFromAssumedRoleUser");
+    var resolveRegion = /* @__PURE__ */ __name(async (_region, _parentRegion, credentialProviderLogger) => {
+      var _a2;
+      const region = typeof _region === "function" ? await _region() : _region;
+      const parentRegion = typeof _parentRegion === "function" ? await _parentRegion() : _parentRegion;
+      (_a2 = credentialProviderLogger == null ? void 0 : credentialProviderLogger.debug) == null ? void 0 : _a2.call(
+        credentialProviderLogger,
+        "@aws-sdk/client-sts::resolveRegion",
+        "accepting first of:",
+        `${region} (provider)`,
+        `${parentRegion} (parent client)`,
+        `${ASSUME_ROLE_DEFAULT_REGION} (STS default)`
+      );
+      return region ?? parentRegion ?? ASSUME_ROLE_DEFAULT_REGION;
+    }, "resolveRegion");
+    var getDefaultRoleAssumer = /* @__PURE__ */ __name((stsOptions, stsClientCtor) => {
+      let stsClient;
+      let closureSourceCreds;
+      return async (sourceCreds, params) => {
+        var _a2, _b, _c;
+        closureSourceCreds = sourceCreds;
+        if (!stsClient) {
+          const {
+            logger = (_a2 = stsOptions == null ? void 0 : stsOptions.parentClientConfig) == null ? void 0 : _a2.logger,
+            region,
+            requestHandler = (_b = stsOptions == null ? void 0 : stsOptions.parentClientConfig) == null ? void 0 : _b.requestHandler,
+            credentialProviderLogger
+          } = stsOptions;
+          const resolvedRegion = await resolveRegion(
+            region,
+            (_c = stsOptions == null ? void 0 : stsOptions.parentClientConfig) == null ? void 0 : _c.region,
+            credentialProviderLogger
+          );
+          const isCompatibleRequestHandler = !isH2(requestHandler);
+          stsClient = new stsClientCtor({
+            // A hack to make sts client uses the credential in current closure.
+            credentialDefaultProvider: () => async () => closureSourceCreds,
+            region: resolvedRegion,
+            requestHandler: isCompatibleRequestHandler ? requestHandler : void 0,
+            logger
+          });
+        }
+        const { Credentials: Credentials2, AssumedRoleUser: AssumedRoleUser2 } = await stsClient.send(new AssumeRoleCommand(params));
+        if (!Credentials2 || !Credentials2.AccessKeyId || !Credentials2.SecretAccessKey) {
+          throw new Error(`Invalid response from STS.assumeRole call with role ${params.RoleArn}`);
+        }
+        const accountId = getAccountIdFromAssumedRoleUser(AssumedRoleUser2);
+        const credentials = {
+          accessKeyId: Credentials2.AccessKeyId,
+          secretAccessKey: Credentials2.SecretAccessKey,
+          sessionToken: Credentials2.SessionToken,
+          expiration: Credentials2.Expiration,
+          // TODO(credentialScope): access normally when shape is updated.
+          ...Credentials2.CredentialScope && { credentialScope: Credentials2.CredentialScope },
+          ...accountId && { accountId }
+        };
+        (0, import_client2.setCredentialFeature)(credentials, "CREDENTIALS_STS_ASSUME_ROLE", "i");
+        return credentials;
+      };
+    }, "getDefaultRoleAssumer");
+    var getDefaultRoleAssumerWithWebIdentity = /* @__PURE__ */ __name((stsOptions, stsClientCtor) => {
+      let stsClient;
+      return async (params) => {
+        var _a2, _b, _c;
+        if (!stsClient) {
+          const {
+            logger = (_a2 = stsOptions == null ? void 0 : stsOptions.parentClientConfig) == null ? void 0 : _a2.logger,
+            region,
+            requestHandler = (_b = stsOptions == null ? void 0 : stsOptions.parentClientConfig) == null ? void 0 : _b.requestHandler,
+            credentialProviderLogger
+          } = stsOptions;
+          const resolvedRegion = await resolveRegion(
+            region,
+            (_c = stsOptions == null ? void 0 : stsOptions.parentClientConfig) == null ? void 0 : _c.region,
+            credentialProviderLogger
+          );
+          const isCompatibleRequestHandler = !isH2(requestHandler);
+          stsClient = new stsClientCtor({
+            region: resolvedRegion,
+            requestHandler: isCompatibleRequestHandler ? requestHandler : void 0,
+            logger
+          });
+        }
+        const { Credentials: Credentials2, AssumedRoleUser: AssumedRoleUser2 } = await stsClient.send(new AssumeRoleWithWebIdentityCommand(params));
+        if (!Credentials2 || !Credentials2.AccessKeyId || !Credentials2.SecretAccessKey) {
+          throw new Error(`Invalid response from STS.assumeRoleWithWebIdentity call with role ${params.RoleArn}`);
+        }
+        const accountId = getAccountIdFromAssumedRoleUser(AssumedRoleUser2);
+        const credentials = {
+          accessKeyId: Credentials2.AccessKeyId,
+          secretAccessKey: Credentials2.SecretAccessKey,
+          sessionToken: Credentials2.SessionToken,
+          expiration: Credentials2.Expiration,
+          // TODO(credentialScope): access normally when shape is updated.
+          ...Credentials2.CredentialScope && { credentialScope: Credentials2.CredentialScope },
+          ...accountId && { accountId }
+        };
+        if (accountId) {
+          (0, import_client2.setCredentialFeature)(credentials, "RESOLVED_ACCOUNT_ID", "T");
+        }
+        (0, import_client2.setCredentialFeature)(credentials, "CREDENTIALS_STS_ASSUME_ROLE_WEB_ID", "k");
+        return credentials;
+      };
+    }, "getDefaultRoleAssumerWithWebIdentity");
+    var isH2 = /* @__PURE__ */ __name((requestHandler) => {
+      var _a2;
+      return ((_a2 = requestHandler == null ? void 0 : requestHandler.metadata) == null ? void 0 : _a2.handlerProtocol) === "h2";
+    }, "isH2");
+    var import_STSClient2 = require_STSClient2();
+    var getCustomizableStsClientCtor = /* @__PURE__ */ __name((baseCtor, customizations) => {
+      var _a2;
+      if (!customizations)
+        return baseCtor;
+      else
+        return _a2 = class extends baseCtor {
+          constructor(config) {
+            super(config);
+            for (const customization of customizations) {
+              this.middlewareStack.use(customization);
+            }
+          }
+        }, __name(_a2, "CustomizableSTSClient"), _a2;
+    }, "getCustomizableStsClientCtor");
+    var getDefaultRoleAssumer2 = /* @__PURE__ */ __name((stsOptions = {}, stsPlugins) => getDefaultRoleAssumer(stsOptions, getCustomizableStsClientCtor(import_STSClient2.STSClient, stsPlugins)), "getDefaultRoleAssumer");
+    var getDefaultRoleAssumerWithWebIdentity2 = /* @__PURE__ */ __name((stsOptions = {}, stsPlugins) => getDefaultRoleAssumerWithWebIdentity(stsOptions, getCustomizableStsClientCtor(import_STSClient2.STSClient, stsPlugins)), "getDefaultRoleAssumerWithWebIdentity");
+    var decorateDefaultCredentialProvider = /* @__PURE__ */ __name((provider) => (input) => provider({
+      roleAssumer: getDefaultRoleAssumer2(input),
+      roleAssumerWithWebIdentity: getDefaultRoleAssumerWithWebIdentity2(input),
+      ...input
+    }), "decorateDefaultCredentialProvider");
+  }
+});
+
+// node_modules/@aws-sdk/client-sqs/node_modules/@aws-sdk/credential-provider-ini/dist-cjs/index.js
+var require_dist_cjs58 = __commonJS({
+  "node_modules/@aws-sdk/client-sqs/node_modules/@aws-sdk/credential-provider-ini/dist-cjs/index.js"(exports2, module2) {
+    "use strict";
+    var __create2 = Object.create;
+    var __defProp2 = Object.defineProperty;
+    var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
+    var __getOwnPropNames2 = Object.getOwnPropertyNames;
+    var __getProtoOf2 = Object.getPrototypeOf;
+    var __hasOwnProp2 = Object.prototype.hasOwnProperty;
+    var __name = (target, value) => __defProp2(target, "name", { value, configurable: true });
+    var __export2 = (target, all) => {
+      for (var name in all)
+        __defProp2(target, name, { get: all[name], enumerable: true });
+    };
+    var __copyProps2 = (to, from, except, desc) => {
+      if (from && typeof from === "object" || typeof from === "function") {
+        for (let key of __getOwnPropNames2(from))
+          if (!__hasOwnProp2.call(to, key) && key !== except)
+            __defProp2(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc2(from, key)) || desc.enumerable });
+      }
+      return to;
+    };
+    var __toESM2 = (mod, isNodeMode, target) => (target = mod != null ? __create2(__getProtoOf2(mod)) : {}, __copyProps2(
+      // If the importer is in node compatibility mode or this is not an ESM
+      // file that has been converted to a CommonJS file using a Babel-
+      // compatible transform (i.e. "__esModule" has not been set), then set
+      // "default" to the CommonJS "module.exports" for node compatibility.
+      isNodeMode || !mod || !mod.__esModule ? __defProp2(target, "default", { value: mod, enumerable: true }) : target,
+      mod
+    ));
+    var __toCommonJS2 = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
+    var src_exports = {};
+    __export2(src_exports, {
+      fromIni: () => fromIni
+    });
+    module2.exports = __toCommonJS2(src_exports);
+    var import_shared_ini_file_loader = require_dist_cjs8();
+    var import_client2 = (init_client(), __toCommonJS(client_exports));
+    var import_property_provider2 = require_dist_cjs7();
+    var resolveCredentialSource = /* @__PURE__ */ __name((credentialSource, profileName, logger) => {
+      const sourceProvidersMap = {
+        EcsContainer: async (options) => {
+          const { fromHttp } = await Promise.resolve().then(() => __toESM2(require_dist_cjs38()));
+          const { fromContainerMetadata } = await Promise.resolve().then(() => __toESM2(require_dist_cjs37()));
+          logger == null ? void 0 : logger.debug("@aws-sdk/credential-provider-ini - credential_source is EcsContainer");
+          return async () => (0, import_property_provider2.chain)(fromHttp(options ?? {}), fromContainerMetadata(options))().then(setNamedProvider);
+        },
+        Ec2InstanceMetadata: async (options) => {
+          logger == null ? void 0 : logger.debug("@aws-sdk/credential-provider-ini - credential_source is Ec2InstanceMetadata");
+          const { fromInstanceMetadata } = await Promise.resolve().then(() => __toESM2(require_dist_cjs37()));
+          return async () => fromInstanceMetadata(options)().then(setNamedProvider);
+        },
+        Environment: async (options) => {
+          logger == null ? void 0 : logger.debug("@aws-sdk/credential-provider-ini - credential_source is Environment");
+          const { fromEnv } = await Promise.resolve().then(() => __toESM2(require_dist_cjs36()));
+          return async () => fromEnv(options)().then(setNamedProvider);
+        }
+      };
+      if (credentialSource in sourceProvidersMap) {
+        return sourceProvidersMap[credentialSource];
+      } else {
+        throw new import_property_provider2.CredentialsProviderError(
+          `Unsupported credential source in profile ${profileName}. Got ${credentialSource}, expected EcsContainer or Ec2InstanceMetadata or Environment.`,
+          { logger }
+        );
+      }
+    }, "resolveCredentialSource");
+    var setNamedProvider = /* @__PURE__ */ __name((creds) => (0, import_client2.setCredentialFeature)(creds, "CREDENTIALS_PROFILE_NAMED_PROVIDER", "p"), "setNamedProvider");
+    var isAssumeRoleProfile = /* @__PURE__ */ __name((arg, { profile = "default", logger } = {}) => {
+      return Boolean(arg) && typeof arg === "object" && typeof arg.role_arn === "string" && ["undefined", "string"].indexOf(typeof arg.role_session_name) > -1 && ["undefined", "string"].indexOf(typeof arg.external_id) > -1 && ["undefined", "string"].indexOf(typeof arg.mfa_serial) > -1 && (isAssumeRoleWithSourceProfile(arg, { profile, logger }) || isCredentialSourceProfile(arg, { profile, logger }));
+    }, "isAssumeRoleProfile");
+    var isAssumeRoleWithSourceProfile = /* @__PURE__ */ __name((arg, { profile, logger }) => {
+      var _a;
+      const withSourceProfile = typeof arg.source_profile === "string" && typeof arg.credential_source === "undefined";
+      if (withSourceProfile) {
+        (_a = logger == null ? void 0 : logger.debug) == null ? void 0 : _a.call(logger, `    ${profile} isAssumeRoleWithSourceProfile source_profile=${arg.source_profile}`);
+      }
+      return withSourceProfile;
+    }, "isAssumeRoleWithSourceProfile");
+    var isCredentialSourceProfile = /* @__PURE__ */ __name((arg, { profile, logger }) => {
+      var _a;
+      const withProviderProfile = typeof arg.credential_source === "string" && typeof arg.source_profile === "undefined";
+      if (withProviderProfile) {
+        (_a = logger == null ? void 0 : logger.debug) == null ? void 0 : _a.call(logger, `    ${profile} isCredentialSourceProfile credential_source=${arg.credential_source}`);
+      }
+      return withProviderProfile;
+    }, "isCredentialSourceProfile");
+    var resolveAssumeRoleCredentials = /* @__PURE__ */ __name(async (profileName, profiles, options, visitedProfiles = {}) => {
+      var _a, _b;
+      (_a = options.logger) == null ? void 0 : _a.debug("@aws-sdk/credential-provider-ini - resolveAssumeRoleCredentials (STS)");
+      const data = profiles[profileName];
+      if (!options.roleAssumer) {
+        const { getDefaultRoleAssumer } = await Promise.resolve().then(() => __toESM2(require_dist_cjs57()));
+        options.roleAssumer = getDefaultRoleAssumer(
+          {
+            ...options.clientConfig,
+            credentialProviderLogger: options.logger,
+            parentClientConfig: options == null ? void 0 : options.parentClientConfig
+          },
+          options.clientPlugins
+        );
+      }
+      const { source_profile } = data;
+      if (source_profile && source_profile in visitedProfiles) {
+        throw new import_property_provider2.CredentialsProviderError(
+          `Detected a cycle attempting to resolve credentials for profile ${(0, import_shared_ini_file_loader.getProfileName)(options)}. Profiles visited: ` + Object.keys(visitedProfiles).join(", "),
+          { logger: options.logger }
+        );
+      }
+      (_b = options.logger) == null ? void 0 : _b.debug(
+        `@aws-sdk/credential-provider-ini - finding credential resolver using ${source_profile ? `source_profile=[${source_profile}]` : `profile=[${profileName}]`}`
+      );
+      const sourceCredsProvider = source_profile ? resolveProfileData(
+        source_profile,
+        profiles,
+        options,
+        {
+          ...visitedProfiles,
+          [source_profile]: true
+        },
+        isCredentialSourceWithoutRoleArn(profiles[source_profile] ?? {})
+      ) : (await resolveCredentialSource(data.credential_source, profileName, options.logger)(options))();
+      if (isCredentialSourceWithoutRoleArn(data)) {
+        return sourceCredsProvider.then((creds) => (0, import_client2.setCredentialFeature)(creds, "CREDENTIALS_PROFILE_SOURCE_PROFILE", "o"));
+      } else {
+        const params = {
+          RoleArn: data.role_arn,
+          RoleSessionName: data.role_session_name || `aws-sdk-js-${Date.now()}`,
+          ExternalId: data.external_id,
+          DurationSeconds: parseInt(data.duration_seconds || "3600", 10)
+        };
+        const { mfa_serial } = data;
+        if (mfa_serial) {
+          if (!options.mfaCodeProvider) {
+            throw new import_property_provider2.CredentialsProviderError(
+              `Profile ${profileName} requires multi-factor authentication, but no MFA code callback was provided.`,
+              { logger: options.logger, tryNextLink: false }
+            );
+          }
+          params.SerialNumber = mfa_serial;
+          params.TokenCode = await options.mfaCodeProvider(mfa_serial);
+        }
+        const sourceCreds = await sourceCredsProvider;
+        return options.roleAssumer(sourceCreds, params).then(
+          (creds) => (0, import_client2.setCredentialFeature)(creds, "CREDENTIALS_PROFILE_SOURCE_PROFILE", "o")
+        );
+      }
+    }, "resolveAssumeRoleCredentials");
+    var isCredentialSourceWithoutRoleArn = /* @__PURE__ */ __name((section) => {
+      return !section.role_arn && !!section.credential_source;
+    }, "isCredentialSourceWithoutRoleArn");
+    var isProcessProfile = /* @__PURE__ */ __name((arg) => Boolean(arg) && typeof arg === "object" && typeof arg.credential_process === "string", "isProcessProfile");
+    var resolveProcessCredentials = /* @__PURE__ */ __name(async (options, profile) => Promise.resolve().then(() => __toESM2(require_dist_cjs49())).then(
+      ({ fromProcess }) => fromProcess({
+        ...options,
+        profile
+      })().then((creds) => (0, import_client2.setCredentialFeature)(creds, "CREDENTIALS_PROFILE_PROCESS", "v"))
+    ), "resolveProcessCredentials");
+    var resolveSsoCredentials = /* @__PURE__ */ __name(async (profile, profileData, options = {}) => {
+      const { fromSSO } = await Promise.resolve().then(() => __toESM2(require_dist_cjs56()));
+      return fromSSO({
+        profile,
+        logger: options.logger
+      })().then((creds) => {
+        if (profileData.sso_session) {
+          return (0, import_client2.setCredentialFeature)(creds, "CREDENTIALS_PROFILE_SSO", "r");
+        } else {
+          return (0, import_client2.setCredentialFeature)(creds, "CREDENTIALS_PROFILE_SSO_LEGACY", "t");
+        }
+      });
+    }, "resolveSsoCredentials");
+    var isSsoProfile = /* @__PURE__ */ __name((arg) => arg && (typeof arg.sso_start_url === "string" || typeof arg.sso_account_id === "string" || typeof arg.sso_session === "string" || typeof arg.sso_region === "string" || typeof arg.sso_role_name === "string"), "isSsoProfile");
+    var isStaticCredsProfile = /* @__PURE__ */ __name((arg) => Boolean(arg) && typeof arg === "object" && typeof arg.aws_access_key_id === "string" && typeof arg.aws_secret_access_key === "string" && ["undefined", "string"].indexOf(typeof arg.aws_session_token) > -1 && ["undefined", "string"].indexOf(typeof arg.aws_account_id) > -1, "isStaticCredsProfile");
+    var resolveStaticCredentials = /* @__PURE__ */ __name(async (profile, options) => {
+      var _a;
+      (_a = options == null ? void 0 : options.logger) == null ? void 0 : _a.debug("@aws-sdk/credential-provider-ini - resolveStaticCredentials");
+      const credentials = {
+        accessKeyId: profile.aws_access_key_id,
+        secretAccessKey: profile.aws_secret_access_key,
+        sessionToken: profile.aws_session_token,
+        ...profile.aws_credential_scope && { credentialScope: profile.aws_credential_scope },
+        ...profile.aws_account_id && { accountId: profile.aws_account_id }
+      };
+      return (0, import_client2.setCredentialFeature)(credentials, "CREDENTIALS_PROFILE", "n");
+    }, "resolveStaticCredentials");
+    var isWebIdentityProfile = /* @__PURE__ */ __name((arg) => Boolean(arg) && typeof arg === "object" && typeof arg.web_identity_token_file === "string" && typeof arg.role_arn === "string" && ["undefined", "string"].indexOf(typeof arg.role_session_name) > -1, "isWebIdentityProfile");
+    var resolveWebIdentityCredentials = /* @__PURE__ */ __name(async (profile, options) => Promise.resolve().then(() => __toESM2(require_dist_cjs50())).then(
+      ({ fromTokenFile: fromTokenFile2 }) => fromTokenFile2({
+        webIdentityTokenFile: profile.web_identity_token_file,
+        roleArn: profile.role_arn,
+        roleSessionName: profile.role_session_name,
+        roleAssumerWithWebIdentity: options.roleAssumerWithWebIdentity,
+        logger: options.logger,
+        parentClientConfig: options.parentClientConfig
+      })().then((creds) => (0, import_client2.setCredentialFeature)(creds, "CREDENTIALS_PROFILE_STS_WEB_ID_TOKEN", "q"))
+    ), "resolveWebIdentityCredentials");
+    var resolveProfileData = /* @__PURE__ */ __name(async (profileName, profiles, options, visitedProfiles = {}, isAssumeRoleRecursiveCall = false) => {
+      const data = profiles[profileName];
+      if (Object.keys(visitedProfiles).length > 0 && isStaticCredsProfile(data)) {
+        return resolveStaticCredentials(data, options);
+      }
+      if (isAssumeRoleRecursiveCall || isAssumeRoleProfile(data, { profile: profileName, logger: options.logger })) {
+        return resolveAssumeRoleCredentials(profileName, profiles, options, visitedProfiles);
+      }
+      if (isStaticCredsProfile(data)) {
+        return resolveStaticCredentials(data, options);
+      }
+      if (isWebIdentityProfile(data)) {
+        return resolveWebIdentityCredentials(data, options);
+      }
+      if (isProcessProfile(data)) {
+        return resolveProcessCredentials(options, profileName);
+      }
+      if (isSsoProfile(data)) {
+        return await resolveSsoCredentials(profileName, data, options);
+      }
+      throw new import_property_provider2.CredentialsProviderError(
+        `Could not resolve credentials using profile: [${profileName}] in configuration/credentials file(s).`,
+        { logger: options.logger }
+      );
+    }, "resolveProfileData");
+    var fromIni = /* @__PURE__ */ __name((init = {}) => async () => {
+      var _a;
+      (_a = init.logger) == null ? void 0 : _a.debug("@aws-sdk/credential-provider-ini - fromIni");
+      const profiles = await (0, import_shared_ini_file_loader.parseKnownFiles)(init);
+      return resolveProfileData((0, import_shared_ini_file_loader.getProfileName)(init), profiles, init);
+    }, "fromIni");
+  }
+});
+
+// node_modules/@aws-sdk/client-sqs/node_modules/@aws-sdk/credential-provider-node/dist-cjs/index.js
+var require_dist_cjs59 = __commonJS({
+  "node_modules/@aws-sdk/client-sqs/node_modules/@aws-sdk/credential-provider-node/dist-cjs/index.js"(exports2, module2) {
+    "use strict";
+    var __create2 = Object.create;
+    var __defProp2 = Object.defineProperty;
+    var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
+    var __getOwnPropNames2 = Object.getOwnPropertyNames;
+    var __getProtoOf2 = Object.getPrototypeOf;
+    var __hasOwnProp2 = Object.prototype.hasOwnProperty;
+    var __name = (target, value) => __defProp2(target, "name", { value, configurable: true });
+    var __export2 = (target, all) => {
+      for (var name in all)
+        __defProp2(target, name, { get: all[name], enumerable: true });
+    };
+    var __copyProps2 = (to, from, except, desc) => {
+      if (from && typeof from === "object" || typeof from === "function") {
+        for (let key of __getOwnPropNames2(from))
+          if (!__hasOwnProp2.call(to, key) && key !== except)
+            __defProp2(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc2(from, key)) || desc.enumerable });
+      }
+      return to;
+    };
+    var __toESM2 = (mod, isNodeMode, target) => (target = mod != null ? __create2(__getProtoOf2(mod)) : {}, __copyProps2(
+      // If the importer is in node compatibility mode or this is not an ESM
+      // file that has been converted to a CommonJS file using a Babel-
+      // compatible transform (i.e. "__esModule" has not been set), then set
+      // "default" to the CommonJS "module.exports" for node compatibility.
+      isNodeMode || !mod || !mod.__esModule ? __defProp2(target, "default", { value: mod, enumerable: true }) : target,
+      mod
+    ));
+    var __toCommonJS2 = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
+    var src_exports = {};
+    __export2(src_exports, {
+      credentialsTreatedAsExpired: () => credentialsTreatedAsExpired,
+      credentialsWillNeedRefresh: () => credentialsWillNeedRefresh,
+      defaultProvider: () => defaultProvider
+    });
+    module2.exports = __toCommonJS2(src_exports);
+    var import_credential_provider_env = require_dist_cjs36();
+    var import_shared_ini_file_loader = require_dist_cjs8();
+    var import_property_provider2 = require_dist_cjs7();
+    var ENV_IMDS_DISABLED = "AWS_EC2_METADATA_DISABLED";
+    var remoteProvider = /* @__PURE__ */ __name(async (init) => {
+      var _a, _b;
+      const { ENV_CMDS_FULL_URI, ENV_CMDS_RELATIVE_URI, fromContainerMetadata, fromInstanceMetadata } = await Promise.resolve().then(() => __toESM2(require_dist_cjs37()));
+      if (process.env[ENV_CMDS_RELATIVE_URI] || process.env[ENV_CMDS_FULL_URI]) {
+        (_a = init.logger) == null ? void 0 : _a.debug("@aws-sdk/credential-provider-node - remoteProvider::fromHttp/fromContainerMetadata");
+        const { fromHttp } = await Promise.resolve().then(() => __toESM2(require_dist_cjs38()));
+        return (0, import_property_provider2.chain)(fromHttp(init), fromContainerMetadata(init));
+      }
+      if (process.env[ENV_IMDS_DISABLED]) {
+        return async () => {
+          throw new import_property_provider2.CredentialsProviderError("EC2 Instance Metadata Service access disabled", { logger: init.logger });
+        };
+      }
+      (_b = init.logger) == null ? void 0 : _b.debug("@aws-sdk/credential-provider-node - remoteProvider::fromInstanceMetadata");
+      return fromInstanceMetadata(init);
+    }, "remoteProvider");
+    var multipleCredentialSourceWarningEmitted = false;
+    var defaultProvider = /* @__PURE__ */ __name((init = {}) => (0, import_property_provider2.memoize)(
+      (0, import_property_provider2.chain)(
+        async () => {
+          var _a, _b, _c, _d;
+          const profile = init.profile ?? process.env[import_shared_ini_file_loader.ENV_PROFILE];
+          if (profile) {
+            const envStaticCredentialsAreSet = process.env[import_credential_provider_env.ENV_KEY] && process.env[import_credential_provider_env.ENV_SECRET];
+            if (envStaticCredentialsAreSet) {
+              if (!multipleCredentialSourceWarningEmitted) {
+                const warnFn = ((_a = init.logger) == null ? void 0 : _a.warn) && ((_c = (_b = init.logger) == null ? void 0 : _b.constructor) == null ? void 0 : _c.name) !== "NoOpLogger" ? init.logger.warn : console.warn;
+                warnFn(
+                  `@aws-sdk/credential-provider-node - defaultProvider::fromEnv WARNING:
+    Multiple credential sources detected: 
+    Both AWS_PROFILE and the pair AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY static credentials are set.
+    This SDK will proceed with the AWS_PROFILE value.
+    
+    However, a future version may change this behavior to prefer the ENV static credentials.
+    Please ensure that your environment only sets either the AWS_PROFILE or the
+    AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY pair.
+`
+                );
+                multipleCredentialSourceWarningEmitted = true;
+              }
+            }
+            throw new import_property_provider2.CredentialsProviderError("AWS_PROFILE is set, skipping fromEnv provider.", {
+              logger: init.logger,
+              tryNextLink: true
+            });
+          }
+          (_d = init.logger) == null ? void 0 : _d.debug("@aws-sdk/credential-provider-node - defaultProvider::fromEnv");
+          return (0, import_credential_provider_env.fromEnv)(init)();
+        },
+        async () => {
+          var _a;
+          (_a = init.logger) == null ? void 0 : _a.debug("@aws-sdk/credential-provider-node - defaultProvider::fromSSO");
+          const { ssoStartUrl, ssoAccountId, ssoRegion, ssoRoleName, ssoSession } = init;
+          if (!ssoStartUrl && !ssoAccountId && !ssoRegion && !ssoRoleName && !ssoSession) {
+            throw new import_property_provider2.CredentialsProviderError(
+              "Skipping SSO provider in default chain (inputs do not include SSO fields).",
+              { logger: init.logger }
+            );
+          }
+          const { fromSSO } = await Promise.resolve().then(() => __toESM2(require_dist_cjs56()));
+          return fromSSO(init)();
+        },
+        async () => {
+          var _a;
+          (_a = init.logger) == null ? void 0 : _a.debug("@aws-sdk/credential-provider-node - defaultProvider::fromIni");
+          const { fromIni } = await Promise.resolve().then(() => __toESM2(require_dist_cjs58()));
+          return fromIni(init)();
+        },
+        async () => {
+          var _a;
+          (_a = init.logger) == null ? void 0 : _a.debug("@aws-sdk/credential-provider-node - defaultProvider::fromProcess");
+          const { fromProcess } = await Promise.resolve().then(() => __toESM2(require_dist_cjs49()));
+          return fromProcess(init)();
+        },
+        async () => {
+          var _a;
+          (_a = init.logger) == null ? void 0 : _a.debug("@aws-sdk/credential-provider-node - defaultProvider::fromTokenFile");
+          const { fromTokenFile: fromTokenFile2 } = await Promise.resolve().then(() => __toESM2(require_dist_cjs50()));
+          return fromTokenFile2(init)();
+        },
+        async () => {
+          var _a;
+          (_a = init.logger) == null ? void 0 : _a.debug("@aws-sdk/credential-provider-node - defaultProvider::remoteProvider");
+          return (await remoteProvider(init))();
+        },
+        async () => {
+          throw new import_property_provider2.CredentialsProviderError("Could not load credentials from any providers", {
+            tryNextLink: false,
+            logger: init.logger
+          });
+        }
+      ),
+      credentialsTreatedAsExpired,
+      credentialsWillNeedRefresh
+    ), "defaultProvider");
+    var credentialsWillNeedRefresh = /* @__PURE__ */ __name((credentials) => (credentials == null ? void 0 : credentials.expiration) !== void 0, "credentialsWillNeedRefresh");
+    var credentialsTreatedAsExpired = /* @__PURE__ */ __name((credentials) => (credentials == null ? void 0 : credentials.expiration) !== void 0 && credentials.expiration.getTime() - Date.now() < 3e5, "credentialsTreatedAsExpired");
+  }
+});
+
+// node_modules/@aws-sdk/client-sqs/dist-cjs/endpoint/ruleset.js
+var require_ruleset7 = __commonJS({
+  "node_modules/@aws-sdk/client-sqs/dist-cjs/endpoint/ruleset.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.ruleSet = void 0;
+    var u = "required";
+    var v = "fn";
+    var w = "argv";
+    var x = "ref";
+    var a = true;
+    var b = "isSet";
+    var c = "booleanEquals";
+    var d = "error";
+    var e = "endpoint";
+    var f = "tree";
+    var g = "PartitionResult";
+    var h = "getAttr";
+    var i = { [u]: false, "type": "String" };
+    var j = { [u]: true, "default": false, "type": "Boolean" };
+    var k = { [x]: "Endpoint" };
+    var l = { [v]: c, [w]: [{ [x]: "UseFIPS" }, true] };
+    var m = { [v]: c, [w]: [{ [x]: "UseDualStack" }, true] };
+    var n = {};
+    var o = { [v]: h, [w]: [{ [x]: g }, "supportsFIPS"] };
+    var p = { [x]: g };
+    var q = { [v]: c, [w]: [true, { [v]: h, [w]: [p, "supportsDualStack"] }] };
+    var r = [l];
+    var s = [m];
+    var t = [{ [x]: "Region" }];
+    var _data = { version: "1.0", parameters: { Region: i, UseDualStack: j, UseFIPS: j, Endpoint: i }, rules: [{ conditions: [{ [v]: b, [w]: [k] }], rules: [{ conditions: r, error: "Invalid Configuration: FIPS and custom endpoint are not supported", type: d }, { conditions: s, error: "Invalid Configuration: Dualstack and custom endpoint are not supported", type: d }, { endpoint: { url: k, properties: n, headers: n }, type: e }], type: f }, { conditions: [{ [v]: b, [w]: t }], rules: [{ conditions: [{ [v]: "aws.partition", [w]: t, assign: g }], rules: [{ conditions: [l, m], rules: [{ conditions: [{ [v]: c, [w]: [a, o] }, q], rules: [{ endpoint: { url: "https://sqs-fips.{Region}.{PartitionResult#dualStackDnsSuffix}", properties: n, headers: n }, type: e }], type: f }, { error: "FIPS and DualStack are enabled, but this partition does not support one or both", type: d }], type: f }, { conditions: r, rules: [{ conditions: [{ [v]: c, [w]: [o, a] }], rules: [{ conditions: [{ [v]: "stringEquals", [w]: [{ [v]: h, [w]: [p, "name"] }, "aws-us-gov"] }], endpoint: { url: "https://sqs.{Region}.amazonaws.com", properties: n, headers: n }, type: e }, { endpoint: { url: "https://sqs-fips.{Region}.{PartitionResult#dnsSuffix}", properties: n, headers: n }, type: e }], type: f }, { error: "FIPS is enabled but this partition does not support FIPS", type: d }], type: f }, { conditions: s, rules: [{ conditions: [q], rules: [{ endpoint: { url: "https://sqs.{Region}.{PartitionResult#dualStackDnsSuffix}", properties: n, headers: n }, type: e }], type: f }, { error: "DualStack is enabled but this partition does not support DualStack", type: d }], type: f }, { endpoint: { url: "https://sqs.{Region}.{PartitionResult#dnsSuffix}", properties: n, headers: n }, type: e }], type: f }], type: f }, { error: "Invalid Configuration: Missing Region", type: d }] };
+    exports2.ruleSet = _data;
+  }
+});
+
+// node_modules/@aws-sdk/client-sqs/dist-cjs/endpoint/endpointResolver.js
+var require_endpointResolver7 = __commonJS({
+  "node_modules/@aws-sdk/client-sqs/dist-cjs/endpoint/endpointResolver.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.defaultEndpointResolver = void 0;
+    var util_endpoints_1 = require_dist_cjs30();
+    var util_endpoints_2 = require_dist_cjs29();
+    var ruleset_1 = require_ruleset7();
+    var cache = new util_endpoints_2.EndpointCache({
+      size: 50,
+      params: ["Endpoint", "Region", "UseDualStack", "UseFIPS"]
+    });
+    var defaultEndpointResolver = (endpointParams, context = {}) => {
+      return cache.get(endpointParams, () => (0, util_endpoints_2.resolveEndpoint)(ruleset_1.ruleSet, {
+        endpointParams,
+        logger: context.logger
+      }));
+    };
+    exports2.defaultEndpointResolver = defaultEndpointResolver;
+    util_endpoints_2.customEndpointFunctions.aws = util_endpoints_1.awsEndpointFunctions;
+  }
+});
+
+// node_modules/@aws-sdk/client-sqs/dist-cjs/runtimeConfig.shared.js
+var require_runtimeConfig_shared7 = __commonJS({
+  "node_modules/@aws-sdk/client-sqs/dist-cjs/runtimeConfig.shared.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.getRuntimeConfig = void 0;
+    var core_1 = (init_dist_es2(), __toCommonJS(dist_es_exports2));
+    var smithy_client_1 = require_dist_cjs27();
+    var url_parser_1 = require_dist_cjs11();
+    var util_base64_1 = require_dist_cjs20();
+    var util_utf8_1 = require_dist_cjs19();
+    var httpAuthSchemeProvider_1 = require_httpAuthSchemeProvider5();
+    var endpointResolver_1 = require_endpointResolver7();
+    var getRuntimeConfig = (config) => {
+      return {
+        apiVersion: "2012-11-05",
+        base64Decoder: config?.base64Decoder ?? util_base64_1.fromBase64,
+        base64Encoder: config?.base64Encoder ?? util_base64_1.toBase64,
+        disableHostPrefix: config?.disableHostPrefix ?? false,
+        endpointProvider: config?.endpointProvider ?? endpointResolver_1.defaultEndpointResolver,
+        extensions: config?.extensions ?? [],
+        httpAuthSchemeProvider: config?.httpAuthSchemeProvider ?? httpAuthSchemeProvider_1.defaultSQSHttpAuthSchemeProvider,
+        httpAuthSchemes: config?.httpAuthSchemes ?? [
+          {
+            schemeId: "aws.auth#sigv4",
+            identityProvider: (ipc) => ipc.getIdentityProvider("aws.auth#sigv4"),
+            signer: new core_1.AwsSdkSigV4Signer()
+          }
+        ],
+        logger: config?.logger ?? new smithy_client_1.NoOpLogger(),
+        serviceId: config?.serviceId ?? "SQS",
+        urlParser: config?.urlParser ?? url_parser_1.parseUrl,
+        utf8Decoder: config?.utf8Decoder ?? util_utf8_1.fromUtf8,
+        utf8Encoder: config?.utf8Encoder ?? util_utf8_1.toUtf8
+      };
+    };
+    exports2.getRuntimeConfig = getRuntimeConfig;
+  }
+});
+
+// node_modules/@aws-sdk/client-sqs/dist-cjs/runtimeConfig.js
+var require_runtimeConfig7 = __commonJS({
+  "node_modules/@aws-sdk/client-sqs/dist-cjs/runtimeConfig.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.getRuntimeConfig = void 0;
+    var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
+    var package_json_1 = tslib_1.__importDefault(require_package5());
+    var core_1 = (init_dist_es2(), __toCommonJS(dist_es_exports2));
+    var credential_provider_node_1 = require_dist_cjs59();
+    var util_user_agent_node_1 = require_dist_cjs39();
+    var config_resolver_1 = require_dist_cjs34();
+    var hash_node_1 = require_dist_cjs40();
+    var middleware_retry_1 = require_dist_cjs28();
+    var node_config_provider_1 = require_dist_cjs9();
+    var node_http_handler_1 = require_dist_cjs23();
+    var util_body_length_node_1 = require_dist_cjs41();
+    var util_retry_1 = require_dist_cjs15();
+    var runtimeConfig_shared_1 = require_runtimeConfig_shared7();
+    var smithy_client_1 = require_dist_cjs27();
+    var util_defaults_mode_node_1 = require_dist_cjs42();
+    var smithy_client_2 = require_dist_cjs27();
+    var getRuntimeConfig = (config) => {
+      (0, smithy_client_2.emitWarningIfUnsupportedVersion)(process.version);
+      const defaultsMode = (0, util_defaults_mode_node_1.resolveDefaultsModeConfig)(config);
+      const defaultConfigProvider = () => defaultsMode().then(smithy_client_1.loadConfigsForDefaultMode);
+      const clientSharedValues = (0, runtimeConfig_shared_1.getRuntimeConfig)(config);
+      (0, core_1.emitWarningIfUnsupportedVersion)(process.version);
+      return {
+        ...clientSharedValues,
+        ...config,
+        runtime: "node",
+        defaultsMode,
+        bodyLengthChecker: config?.bodyLengthChecker ?? util_body_length_node_1.calculateBodyLength,
+        credentialDefaultProvider: config?.credentialDefaultProvider ?? credential_provider_node_1.defaultProvider,
+        defaultUserAgentProvider: config?.defaultUserAgentProvider ?? (0, util_user_agent_node_1.createDefaultUserAgentProvider)({ serviceId: clientSharedValues.serviceId, clientVersion: package_json_1.default.version }),
+        maxAttempts: config?.maxAttempts ?? (0, node_config_provider_1.loadConfig)(middleware_retry_1.NODE_MAX_ATTEMPT_CONFIG_OPTIONS),
+        md5: config?.md5 ?? hash_node_1.Hash.bind(null, "md5"),
+        region: config?.region ?? (0, node_config_provider_1.loadConfig)(config_resolver_1.NODE_REGION_CONFIG_OPTIONS, config_resolver_1.NODE_REGION_CONFIG_FILE_OPTIONS),
+        requestHandler: node_http_handler_1.NodeHttpHandler.create(config?.requestHandler ?? defaultConfigProvider),
+        retryMode: config?.retryMode ?? (0, node_config_provider_1.loadConfig)({
+          ...middleware_retry_1.NODE_RETRY_MODE_CONFIG_OPTIONS,
+          default: async () => (await defaultConfigProvider()).retryMode || util_retry_1.DEFAULT_RETRY_MODE
+        }),
+        sha256: config?.sha256 ?? hash_node_1.Hash.bind(null, "sha256"),
+        streamCollector: config?.streamCollector ?? node_http_handler_1.streamCollector,
+        useDualstackEndpoint: config?.useDualstackEndpoint ?? (0, node_config_provider_1.loadConfig)(config_resolver_1.NODE_USE_DUALSTACK_ENDPOINT_CONFIG_OPTIONS),
+        useFipsEndpoint: config?.useFipsEndpoint ?? (0, node_config_provider_1.loadConfig)(config_resolver_1.NODE_USE_FIPS_ENDPOINT_CONFIG_OPTIONS),
+        userAgentAppId: config?.userAgentAppId ?? (0, node_config_provider_1.loadConfig)(util_user_agent_node_1.NODE_APP_ID_CONFIG_OPTIONS)
+      };
+    };
+    exports2.getRuntimeConfig = getRuntimeConfig;
+  }
+});
+
+// node_modules/@aws-sdk/client-sqs/dist-cjs/index.js
+var require_dist_cjs60 = __commonJS({
+  "node_modules/@aws-sdk/client-sqs/dist-cjs/index.js"(exports2, module2) {
+    "use strict";
+    var __defProp2 = Object.defineProperty;
+    var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
+    var __getOwnPropNames2 = Object.getOwnPropertyNames;
+    var __hasOwnProp2 = Object.prototype.hasOwnProperty;
+    var __name = (target, value) => __defProp2(target, "name", { value, configurable: true });
+    var __export2 = (target, all) => {
+      for (var name in all)
+        __defProp2(target, name, { get: all[name], enumerable: true });
+    };
+    var __copyProps2 = (to, from, except, desc) => {
+      if (from && typeof from === "object" || typeof from === "function") {
+        for (let key of __getOwnPropNames2(from))
+          if (!__hasOwnProp2.call(to, key) && key !== except)
+            __defProp2(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc2(from, key)) || desc.enumerable });
+      }
+      return to;
+    };
+    var __toCommonJS2 = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
+    var src_exports = {};
+    __export2(src_exports, {
+      AddPermissionCommand: () => AddPermissionCommand,
+      BatchEntryIdsNotDistinct: () => BatchEntryIdsNotDistinct,
+      BatchRequestTooLong: () => BatchRequestTooLong,
+      CancelMessageMoveTaskCommand: () => CancelMessageMoveTaskCommand,
+      ChangeMessageVisibilityBatchCommand: () => ChangeMessageVisibilityBatchCommand,
+      ChangeMessageVisibilityCommand: () => ChangeMessageVisibilityCommand,
+      CreateQueueCommand: () => CreateQueueCommand,
+      DeleteMessageBatchCommand: () => DeleteMessageBatchCommand,
+      DeleteMessageCommand: () => DeleteMessageCommand,
+      DeleteQueueCommand: () => DeleteQueueCommand,
+      EmptyBatchRequest: () => EmptyBatchRequest,
+      GetQueueAttributesCommand: () => GetQueueAttributesCommand,
+      GetQueueUrlCommand: () => GetQueueUrlCommand2,
+      InvalidAddress: () => InvalidAddress,
+      InvalidAttributeName: () => InvalidAttributeName,
+      InvalidAttributeValue: () => InvalidAttributeValue,
+      InvalidBatchEntryId: () => InvalidBatchEntryId,
+      InvalidIdFormat: () => InvalidIdFormat,
+      InvalidMessageContents: () => InvalidMessageContents,
+      InvalidSecurity: () => InvalidSecurity,
+      KmsAccessDenied: () => KmsAccessDenied,
+      KmsDisabled: () => KmsDisabled,
+      KmsInvalidKeyUsage: () => KmsInvalidKeyUsage,
+      KmsInvalidState: () => KmsInvalidState,
+      KmsNotFound: () => KmsNotFound,
+      KmsOptInRequired: () => KmsOptInRequired,
+      KmsThrottled: () => KmsThrottled,
+      ListDeadLetterSourceQueuesCommand: () => ListDeadLetterSourceQueuesCommand,
+      ListMessageMoveTasksCommand: () => ListMessageMoveTasksCommand,
+      ListQueueTagsCommand: () => ListQueueTagsCommand,
+      ListQueuesCommand: () => ListQueuesCommand,
+      MessageNotInflight: () => MessageNotInflight,
+      MessageSystemAttributeName: () => MessageSystemAttributeName,
+      MessageSystemAttributeNameForSends: () => MessageSystemAttributeNameForSends,
+      OverLimit: () => OverLimit,
+      PurgeQueueCommand: () => PurgeQueueCommand,
+      PurgeQueueInProgress: () => PurgeQueueInProgress,
+      QueueAttributeName: () => QueueAttributeName,
+      QueueDeletedRecently: () => QueueDeletedRecently,
+      QueueDoesNotExist: () => QueueDoesNotExist,
+      QueueNameExists: () => QueueNameExists,
+      ReceiptHandleIsInvalid: () => ReceiptHandleIsInvalid,
+      ReceiveMessageCommand: () => ReceiveMessageCommand,
+      RemovePermissionCommand: () => RemovePermissionCommand,
+      RequestThrottled: () => RequestThrottled,
+      ResourceNotFoundException: () => ResourceNotFoundException,
+      SQS: () => SQS,
+      SQSClient: () => SQSClient2,
+      SQSServiceException: () => SQSServiceException,
+      SendMessageBatchCommand: () => SendMessageBatchCommand,
+      SendMessageCommand: () => SendMessageCommand,
+      SetQueueAttributesCommand: () => SetQueueAttributesCommand,
+      StartMessageMoveTaskCommand: () => StartMessageMoveTaskCommand,
+      TagQueueCommand: () => TagQueueCommand,
+      TooManyEntriesInBatchRequest: () => TooManyEntriesInBatchRequest,
+      UnsupportedOperation: () => UnsupportedOperation,
+      UntagQueueCommand: () => UntagQueueCommand,
+      __Client: () => import_smithy_client5.Client,
+      paginateListDeadLetterSourceQueues: () => paginateListDeadLetterSourceQueues,
+      paginateListQueues: () => paginateListQueues
+    });
+    module2.exports = __toCommonJS2(src_exports);
+    var import_middleware_host_header = require_dist_cjs3();
+    var import_middleware_logger = require_dist_cjs4();
+    var import_middleware_recursion_detection = require_dist_cjs5();
+    var import_middleware_sdk_sqs = require_dist_cjs54();
+    var import_middleware_user_agent = require_dist_cjs32();
+    var import_config_resolver = require_dist_cjs34();
+    var import_core3 = (init_dist_es(), __toCommonJS(dist_es_exports));
+    var import_middleware_content_length = require_dist_cjs35();
+    var import_middleware_endpoint2 = require_dist_cjs13();
+    var import_middleware_retry2 = require_dist_cjs28();
+    var import_httpAuthSchemeProvider = require_httpAuthSchemeProvider5();
+    var resolveClientEndpointParameters = /* @__PURE__ */ __name((options) => {
+      return {
+        ...options,
+        useDualstackEndpoint: options.useDualstackEndpoint ?? false,
+        useFipsEndpoint: options.useFipsEndpoint ?? false,
+        defaultSigningName: "sqs"
+      };
+    }, "resolveClientEndpointParameters");
+    var commonParams = {
+      UseFIPS: { type: "builtInParams", name: "useFipsEndpoint" },
+      Endpoint: { type: "builtInParams", name: "endpoint" },
+      Region: { type: "builtInParams", name: "region" },
+      UseDualStack: { type: "builtInParams", name: "useDualstackEndpoint" }
+    };
+    var import_runtimeConfig = require_runtimeConfig7();
+    var import_region_config_resolver = require_dist_cjs43();
+    var import_protocol_http8 = require_dist_cjs2();
+    var import_smithy_client5 = require_dist_cjs27();
+    var getHttpAuthExtensionConfiguration = /* @__PURE__ */ __name((runtimeConfig) => {
+      const _httpAuthSchemes = runtimeConfig.httpAuthSchemes;
+      let _httpAuthSchemeProvider = runtimeConfig.httpAuthSchemeProvider;
+      let _credentials = runtimeConfig.credentials;
+      return {
+        setHttpAuthScheme(httpAuthScheme) {
+          const index = _httpAuthSchemes.findIndex((scheme) => scheme.schemeId === httpAuthScheme.schemeId);
+          if (index === -1) {
+            _httpAuthSchemes.push(httpAuthScheme);
+          } else {
+            _httpAuthSchemes.splice(index, 1, httpAuthScheme);
+          }
+        },
+        httpAuthSchemes() {
+          return _httpAuthSchemes;
+        },
+        setHttpAuthSchemeProvider(httpAuthSchemeProvider) {
+          _httpAuthSchemeProvider = httpAuthSchemeProvider;
+        },
+        httpAuthSchemeProvider() {
+          return _httpAuthSchemeProvider;
+        },
+        setCredentials(credentials) {
+          _credentials = credentials;
+        },
+        credentials() {
+          return _credentials;
+        }
+      };
+    }, "getHttpAuthExtensionConfiguration");
+    var resolveHttpAuthRuntimeConfig = /* @__PURE__ */ __name((config) => {
+      return {
+        httpAuthSchemes: config.httpAuthSchemes(),
+        httpAuthSchemeProvider: config.httpAuthSchemeProvider(),
+        credentials: config.credentials()
+      };
+    }, "resolveHttpAuthRuntimeConfig");
+    var asPartial = /* @__PURE__ */ __name((t) => t, "asPartial");
+    var resolveRuntimeExtensions = /* @__PURE__ */ __name((runtimeConfig, extensions) => {
+      const extensionConfiguration = {
+        ...asPartial((0, import_region_config_resolver.getAwsRegionExtensionConfiguration)(runtimeConfig)),
+        ...asPartial((0, import_smithy_client5.getDefaultExtensionConfiguration)(runtimeConfig)),
+        ...asPartial((0, import_protocol_http8.getHttpHandlerExtensionConfiguration)(runtimeConfig)),
+        ...asPartial(getHttpAuthExtensionConfiguration(runtimeConfig))
+      };
+      extensions.forEach((extension) => extension.configure(extensionConfiguration));
+      return {
+        ...runtimeConfig,
+        ...(0, import_region_config_resolver.resolveAwsRegionExtensionConfiguration)(extensionConfiguration),
+        ...(0, import_smithy_client5.resolveDefaultRuntimeConfig)(extensionConfiguration),
+        ...(0, import_protocol_http8.resolveHttpHandlerRuntimeConfig)(extensionConfiguration),
+        ...resolveHttpAuthRuntimeConfig(extensionConfiguration)
+      };
+    }, "resolveRuntimeExtensions");
+    var _SQSClient = class _SQSClient extends import_smithy_client5.Client {
+      constructor(...[configuration]) {
+        const _config_0 = (0, import_runtimeConfig.getRuntimeConfig)(configuration || {});
+        const _config_1 = resolveClientEndpointParameters(_config_0);
+        const _config_2 = (0, import_middleware_user_agent.resolveUserAgentConfig)(_config_1);
+        const _config_3 = (0, import_middleware_retry2.resolveRetryConfig)(_config_2);
+        const _config_4 = (0, import_config_resolver.resolveRegionConfig)(_config_3);
+        const _config_5 = (0, import_middleware_host_header.resolveHostHeaderConfig)(_config_4);
+        const _config_6 = (0, import_middleware_endpoint2.resolveEndpointConfig)(_config_5);
+        const _config_7 = (0, import_middleware_sdk_sqs.resolveQueueUrlConfig)(_config_6);
+        const _config_8 = (0, import_httpAuthSchemeProvider.resolveHttpAuthSchemeConfig)(_config_7);
+        const _config_9 = resolveRuntimeExtensions(_config_8, (configuration == null ? void 0 : configuration.extensions) || []);
+        super(_config_9);
+        this.config = _config_9;
+        this.middlewareStack.use((0, import_middleware_user_agent.getUserAgentPlugin)(this.config));
+        this.middlewareStack.use((0, import_middleware_retry2.getRetryPlugin)(this.config));
+        this.middlewareStack.use((0, import_middleware_content_length.getContentLengthPlugin)(this.config));
+        this.middlewareStack.use((0, import_middleware_host_header.getHostHeaderPlugin)(this.config));
+        this.middlewareStack.use((0, import_middleware_logger.getLoggerPlugin)(this.config));
+        this.middlewareStack.use((0, import_middleware_recursion_detection.getRecursionDetectionPlugin)(this.config));
+        this.middlewareStack.use((0, import_middleware_sdk_sqs.getQueueUrlPlugin)(this.config));
+        this.middlewareStack.use(
+          (0, import_core3.getHttpAuthSchemeEndpointRuleSetPlugin)(this.config, {
+            httpAuthSchemeParametersProvider: import_httpAuthSchemeProvider.defaultSQSHttpAuthSchemeParametersProvider,
+            identityProviderConfigProvider: async (config) => new import_core3.DefaultIdentityProviderConfig({
+              "aws.auth#sigv4": config.credentials
+            })
+          })
+        );
+        this.middlewareStack.use((0, import_core3.getHttpSigningPlugin)(this.config));
+      }
+      /**
+       * Destroy underlying resources, like sockets. It's usually not necessary to do this.
+       * However in Node.js, it's best to explicitly shut down the client's agent when it is no longer needed.
+       * Otherwise, sockets might stay open for quite a long time before the server terminates them.
+       */
+      destroy() {
+        super.destroy();
+      }
+    };
+    __name(_SQSClient, "SQSClient");
+    var SQSClient2 = _SQSClient;
+    var import_middleware_serde2 = require_dist_cjs12();
+    var import_core22 = (init_dist_es2(), __toCommonJS(dist_es_exports2));
+    var _SQSServiceException = class _SQSServiceException2 extends import_smithy_client5.ServiceException {
+      /**
+       * @internal
+       */
+      constructor(options) {
+        super(options);
+        Object.setPrototypeOf(this, _SQSServiceException2.prototype);
+      }
+    };
+    __name(_SQSServiceException, "SQSServiceException");
+    var SQSServiceException = _SQSServiceException;
+    var _InvalidAddress = class _InvalidAddress2 extends SQSServiceException {
+      /**
+       * @internal
+       */
+      constructor(opts) {
+        super({
+          name: "InvalidAddress",
+          $fault: "client",
+          ...opts
+        });
+        this.name = "InvalidAddress";
+        this.$fault = "client";
+        Object.setPrototypeOf(this, _InvalidAddress2.prototype);
+      }
+    };
+    __name(_InvalidAddress, "InvalidAddress");
+    var InvalidAddress = _InvalidAddress;
+    var _InvalidSecurity = class _InvalidSecurity2 extends SQSServiceException {
+      /**
+       * @internal
+       */
+      constructor(opts) {
+        super({
+          name: "InvalidSecurity",
+          $fault: "client",
+          ...opts
+        });
+        this.name = "InvalidSecurity";
+        this.$fault = "client";
+        Object.setPrototypeOf(this, _InvalidSecurity2.prototype);
+      }
+    };
+    __name(_InvalidSecurity, "InvalidSecurity");
+    var InvalidSecurity = _InvalidSecurity;
+    var _OverLimit = class _OverLimit2 extends SQSServiceException {
+      /**
+       * @internal
+       */
+      constructor(opts) {
+        super({
+          name: "OverLimit",
+          $fault: "client",
+          ...opts
+        });
+        this.name = "OverLimit";
+        this.$fault = "client";
+        Object.setPrototypeOf(this, _OverLimit2.prototype);
+      }
+    };
+    __name(_OverLimit, "OverLimit");
+    var OverLimit = _OverLimit;
+    var _QueueDoesNotExist = class _QueueDoesNotExist2 extends SQSServiceException {
+      /**
+       * @internal
+       */
+      constructor(opts) {
+        super({
+          name: "QueueDoesNotExist",
+          $fault: "client",
+          ...opts
+        });
+        this.name = "QueueDoesNotExist";
+        this.$fault = "client";
+        Object.setPrototypeOf(this, _QueueDoesNotExist2.prototype);
+      }
+    };
+    __name(_QueueDoesNotExist, "QueueDoesNotExist");
+    var QueueDoesNotExist = _QueueDoesNotExist;
+    var _RequestThrottled = class _RequestThrottled2 extends SQSServiceException {
+      /**
+       * @internal
+       */
+      constructor(opts) {
+        super({
+          name: "RequestThrottled",
+          $fault: "client",
+          ...opts
+        });
+        this.name = "RequestThrottled";
+        this.$fault = "client";
+        Object.setPrototypeOf(this, _RequestThrottled2.prototype);
+      }
+    };
+    __name(_RequestThrottled, "RequestThrottled");
+    var RequestThrottled = _RequestThrottled;
+    var _UnsupportedOperation = class _UnsupportedOperation2 extends SQSServiceException {
+      /**
+       * @internal
+       */
+      constructor(opts) {
+        super({
+          name: "UnsupportedOperation",
+          $fault: "client",
+          ...opts
+        });
+        this.name = "UnsupportedOperation";
+        this.$fault = "client";
+        Object.setPrototypeOf(this, _UnsupportedOperation2.prototype);
+      }
+    };
+    __name(_UnsupportedOperation, "UnsupportedOperation");
+    var UnsupportedOperation = _UnsupportedOperation;
+    var _ResourceNotFoundException = class _ResourceNotFoundException2 extends SQSServiceException {
+      /**
+       * @internal
+       */
+      constructor(opts) {
+        super({
+          name: "ResourceNotFoundException",
+          $fault: "client",
+          ...opts
+        });
+        this.name = "ResourceNotFoundException";
+        this.$fault = "client";
+        Object.setPrototypeOf(this, _ResourceNotFoundException2.prototype);
+      }
+    };
+    __name(_ResourceNotFoundException, "ResourceNotFoundException");
+    var ResourceNotFoundException = _ResourceNotFoundException;
+    var _MessageNotInflight = class _MessageNotInflight2 extends SQSServiceException {
+      /**
+       * @internal
+       */
+      constructor(opts) {
+        super({
+          name: "MessageNotInflight",
+          $fault: "client",
+          ...opts
+        });
+        this.name = "MessageNotInflight";
+        this.$fault = "client";
+        Object.setPrototypeOf(this, _MessageNotInflight2.prototype);
+      }
+    };
+    __name(_MessageNotInflight, "MessageNotInflight");
+    var MessageNotInflight = _MessageNotInflight;
+    var _ReceiptHandleIsInvalid = class _ReceiptHandleIsInvalid2 extends SQSServiceException {
+      /**
+       * @internal
+       */
+      constructor(opts) {
+        super({
+          name: "ReceiptHandleIsInvalid",
+          $fault: "client",
+          ...opts
+        });
+        this.name = "ReceiptHandleIsInvalid";
+        this.$fault = "client";
+        Object.setPrototypeOf(this, _ReceiptHandleIsInvalid2.prototype);
+      }
+    };
+    __name(_ReceiptHandleIsInvalid, "ReceiptHandleIsInvalid");
+    var ReceiptHandleIsInvalid = _ReceiptHandleIsInvalid;
+    var _BatchEntryIdsNotDistinct = class _BatchEntryIdsNotDistinct2 extends SQSServiceException {
+      /**
+       * @internal
+       */
+      constructor(opts) {
+        super({
+          name: "BatchEntryIdsNotDistinct",
+          $fault: "client",
+          ...opts
+        });
+        this.name = "BatchEntryIdsNotDistinct";
+        this.$fault = "client";
+        Object.setPrototypeOf(this, _BatchEntryIdsNotDistinct2.prototype);
+      }
+    };
+    __name(_BatchEntryIdsNotDistinct, "BatchEntryIdsNotDistinct");
+    var BatchEntryIdsNotDistinct = _BatchEntryIdsNotDistinct;
+    var _EmptyBatchRequest = class _EmptyBatchRequest2 extends SQSServiceException {
+      /**
+       * @internal
+       */
+      constructor(opts) {
+        super({
+          name: "EmptyBatchRequest",
+          $fault: "client",
+          ...opts
+        });
+        this.name = "EmptyBatchRequest";
+        this.$fault = "client";
+        Object.setPrototypeOf(this, _EmptyBatchRequest2.prototype);
+      }
+    };
+    __name(_EmptyBatchRequest, "EmptyBatchRequest");
+    var EmptyBatchRequest = _EmptyBatchRequest;
+    var _InvalidBatchEntryId = class _InvalidBatchEntryId2 extends SQSServiceException {
+      /**
+       * @internal
+       */
+      constructor(opts) {
+        super({
+          name: "InvalidBatchEntryId",
+          $fault: "client",
+          ...opts
+        });
+        this.name = "InvalidBatchEntryId";
+        this.$fault = "client";
+        Object.setPrototypeOf(this, _InvalidBatchEntryId2.prototype);
+      }
+    };
+    __name(_InvalidBatchEntryId, "InvalidBatchEntryId");
+    var InvalidBatchEntryId = _InvalidBatchEntryId;
+    var _TooManyEntriesInBatchRequest = class _TooManyEntriesInBatchRequest2 extends SQSServiceException {
+      /**
+       * @internal
+       */
+      constructor(opts) {
+        super({
+          name: "TooManyEntriesInBatchRequest",
+          $fault: "client",
+          ...opts
+        });
+        this.name = "TooManyEntriesInBatchRequest";
+        this.$fault = "client";
+        Object.setPrototypeOf(this, _TooManyEntriesInBatchRequest2.prototype);
+      }
+    };
+    __name(_TooManyEntriesInBatchRequest, "TooManyEntriesInBatchRequest");
+    var TooManyEntriesInBatchRequest = _TooManyEntriesInBatchRequest;
+    var QueueAttributeName = {
+      All: "All",
+      ApproximateNumberOfMessages: "ApproximateNumberOfMessages",
+      ApproximateNumberOfMessagesDelayed: "ApproximateNumberOfMessagesDelayed",
+      ApproximateNumberOfMessagesNotVisible: "ApproximateNumberOfMessagesNotVisible",
+      ContentBasedDeduplication: "ContentBasedDeduplication",
+      CreatedTimestamp: "CreatedTimestamp",
+      DeduplicationScope: "DeduplicationScope",
+      DelaySeconds: "DelaySeconds",
+      FifoQueue: "FifoQueue",
+      FifoThroughputLimit: "FifoThroughputLimit",
+      KmsDataKeyReusePeriodSeconds: "KmsDataKeyReusePeriodSeconds",
+      KmsMasterKeyId: "KmsMasterKeyId",
+      LastModifiedTimestamp: "LastModifiedTimestamp",
+      MaximumMessageSize: "MaximumMessageSize",
+      MessageRetentionPeriod: "MessageRetentionPeriod",
+      Policy: "Policy",
+      QueueArn: "QueueArn",
+      ReceiveMessageWaitTimeSeconds: "ReceiveMessageWaitTimeSeconds",
+      RedriveAllowPolicy: "RedriveAllowPolicy",
+      RedrivePolicy: "RedrivePolicy",
+      SqsManagedSseEnabled: "SqsManagedSseEnabled",
+      VisibilityTimeout: "VisibilityTimeout"
+    };
+    var _InvalidAttributeName = class _InvalidAttributeName2 extends SQSServiceException {
+      /**
+       * @internal
+       */
+      constructor(opts) {
+        super({
+          name: "InvalidAttributeName",
+          $fault: "client",
+          ...opts
+        });
+        this.name = "InvalidAttributeName";
+        this.$fault = "client";
+        Object.setPrototypeOf(this, _InvalidAttributeName2.prototype);
+      }
+    };
+    __name(_InvalidAttributeName, "InvalidAttributeName");
+    var InvalidAttributeName = _InvalidAttributeName;
+    var _InvalidAttributeValue = class _InvalidAttributeValue2 extends SQSServiceException {
+      /**
+       * @internal
+       */
+      constructor(opts) {
+        super({
+          name: "InvalidAttributeValue",
+          $fault: "client",
+          ...opts
+        });
+        this.name = "InvalidAttributeValue";
+        this.$fault = "client";
+        Object.setPrototypeOf(this, _InvalidAttributeValue2.prototype);
+      }
+    };
+    __name(_InvalidAttributeValue, "InvalidAttributeValue");
+    var InvalidAttributeValue = _InvalidAttributeValue;
+    var _QueueDeletedRecently = class _QueueDeletedRecently2 extends SQSServiceException {
+      /**
+       * @internal
+       */
+      constructor(opts) {
+        super({
+          name: "QueueDeletedRecently",
+          $fault: "client",
+          ...opts
+        });
+        this.name = "QueueDeletedRecently";
+        this.$fault = "client";
+        Object.setPrototypeOf(this, _QueueDeletedRecently2.prototype);
+      }
+    };
+    __name(_QueueDeletedRecently, "QueueDeletedRecently");
+    var QueueDeletedRecently = _QueueDeletedRecently;
+    var _QueueNameExists = class _QueueNameExists2 extends SQSServiceException {
+      /**
+       * @internal
+       */
+      constructor(opts) {
+        super({
+          name: "QueueNameExists",
+          $fault: "client",
+          ...opts
+        });
+        this.name = "QueueNameExists";
+        this.$fault = "client";
+        Object.setPrototypeOf(this, _QueueNameExists2.prototype);
+      }
+    };
+    __name(_QueueNameExists, "QueueNameExists");
+    var QueueNameExists = _QueueNameExists;
+    var _InvalidIdFormat = class _InvalidIdFormat2 extends SQSServiceException {
+      /**
+       * @internal
+       */
+      constructor(opts) {
+        super({
+          name: "InvalidIdFormat",
+          $fault: "client",
+          ...opts
+        });
+        this.name = "InvalidIdFormat";
+        this.$fault = "client";
+        Object.setPrototypeOf(this, _InvalidIdFormat2.prototype);
+      }
+    };
+    __name(_InvalidIdFormat, "InvalidIdFormat");
+    var InvalidIdFormat = _InvalidIdFormat;
+    var _PurgeQueueInProgress = class _PurgeQueueInProgress2 extends SQSServiceException {
+      /**
+       * @internal
+       */
+      constructor(opts) {
+        super({
+          name: "PurgeQueueInProgress",
+          $fault: "client",
+          ...opts
+        });
+        this.name = "PurgeQueueInProgress";
+        this.$fault = "client";
+        Object.setPrototypeOf(this, _PurgeQueueInProgress2.prototype);
+      }
+    };
+    __name(_PurgeQueueInProgress, "PurgeQueueInProgress");
+    var PurgeQueueInProgress = _PurgeQueueInProgress;
+    var _KmsAccessDenied = class _KmsAccessDenied2 extends SQSServiceException {
+      /**
+       * @internal
+       */
+      constructor(opts) {
+        super({
+          name: "KmsAccessDenied",
+          $fault: "client",
+          ...opts
+        });
+        this.name = "KmsAccessDenied";
+        this.$fault = "client";
+        Object.setPrototypeOf(this, _KmsAccessDenied2.prototype);
+      }
+    };
+    __name(_KmsAccessDenied, "KmsAccessDenied");
+    var KmsAccessDenied = _KmsAccessDenied;
+    var _KmsDisabled = class _KmsDisabled2 extends SQSServiceException {
+      /**
+       * @internal
+       */
+      constructor(opts) {
+        super({
+          name: "KmsDisabled",
+          $fault: "client",
+          ...opts
+        });
+        this.name = "KmsDisabled";
+        this.$fault = "client";
+        Object.setPrototypeOf(this, _KmsDisabled2.prototype);
+      }
+    };
+    __name(_KmsDisabled, "KmsDisabled");
+    var KmsDisabled = _KmsDisabled;
+    var _KmsInvalidKeyUsage = class _KmsInvalidKeyUsage2 extends SQSServiceException {
+      /**
+       * @internal
+       */
+      constructor(opts) {
+        super({
+          name: "KmsInvalidKeyUsage",
+          $fault: "client",
+          ...opts
+        });
+        this.name = "KmsInvalidKeyUsage";
+        this.$fault = "client";
+        Object.setPrototypeOf(this, _KmsInvalidKeyUsage2.prototype);
+      }
+    };
+    __name(_KmsInvalidKeyUsage, "KmsInvalidKeyUsage");
+    var KmsInvalidKeyUsage = _KmsInvalidKeyUsage;
+    var _KmsInvalidState = class _KmsInvalidState2 extends SQSServiceException {
+      /**
+       * @internal
+       */
+      constructor(opts) {
+        super({
+          name: "KmsInvalidState",
+          $fault: "client",
+          ...opts
+        });
+        this.name = "KmsInvalidState";
+        this.$fault = "client";
+        Object.setPrototypeOf(this, _KmsInvalidState2.prototype);
+      }
+    };
+    __name(_KmsInvalidState, "KmsInvalidState");
+    var KmsInvalidState = _KmsInvalidState;
+    var _KmsNotFound = class _KmsNotFound2 extends SQSServiceException {
+      /**
+       * @internal
+       */
+      constructor(opts) {
+        super({
+          name: "KmsNotFound",
+          $fault: "client",
+          ...opts
+        });
+        this.name = "KmsNotFound";
+        this.$fault = "client";
+        Object.setPrototypeOf(this, _KmsNotFound2.prototype);
+      }
+    };
+    __name(_KmsNotFound, "KmsNotFound");
+    var KmsNotFound = _KmsNotFound;
+    var _KmsOptInRequired = class _KmsOptInRequired2 extends SQSServiceException {
+      /**
+       * @internal
+       */
+      constructor(opts) {
+        super({
+          name: "KmsOptInRequired",
+          $fault: "client",
+          ...opts
+        });
+        this.name = "KmsOptInRequired";
+        this.$fault = "client";
+        Object.setPrototypeOf(this, _KmsOptInRequired2.prototype);
+      }
+    };
+    __name(_KmsOptInRequired, "KmsOptInRequired");
+    var KmsOptInRequired = _KmsOptInRequired;
+    var _KmsThrottled = class _KmsThrottled2 extends SQSServiceException {
+      /**
+       * @internal
+       */
+      constructor(opts) {
+        super({
+          name: "KmsThrottled",
+          $fault: "client",
+          ...opts
+        });
+        this.name = "KmsThrottled";
+        this.$fault = "client";
+        Object.setPrototypeOf(this, _KmsThrottled2.prototype);
+      }
+    };
+    __name(_KmsThrottled, "KmsThrottled");
+    var KmsThrottled = _KmsThrottled;
+    var MessageSystemAttributeName = {
+      AWSTraceHeader: "AWSTraceHeader",
+      All: "All",
+      ApproximateFirstReceiveTimestamp: "ApproximateFirstReceiveTimestamp",
+      ApproximateReceiveCount: "ApproximateReceiveCount",
+      DeadLetterQueueSourceArn: "DeadLetterQueueSourceArn",
+      MessageDeduplicationId: "MessageDeduplicationId",
+      MessageGroupId: "MessageGroupId",
+      SenderId: "SenderId",
+      SentTimestamp: "SentTimestamp",
+      SequenceNumber: "SequenceNumber"
+    };
+    var _InvalidMessageContents = class _InvalidMessageContents2 extends SQSServiceException {
+      /**
+       * @internal
+       */
+      constructor(opts) {
+        super({
+          name: "InvalidMessageContents",
+          $fault: "client",
+          ...opts
+        });
+        this.name = "InvalidMessageContents";
+        this.$fault = "client";
+        Object.setPrototypeOf(this, _InvalidMessageContents2.prototype);
+      }
+    };
+    __name(_InvalidMessageContents, "InvalidMessageContents");
+    var InvalidMessageContents = _InvalidMessageContents;
+    var MessageSystemAttributeNameForSends = {
+      AWSTraceHeader: "AWSTraceHeader"
+    };
+    var _BatchRequestTooLong = class _BatchRequestTooLong2 extends SQSServiceException {
+      /**
+       * @internal
+       */
+      constructor(opts) {
+        super({
+          name: "BatchRequestTooLong",
+          $fault: "client",
+          ...opts
+        });
+        this.name = "BatchRequestTooLong";
+        this.$fault = "client";
+        Object.setPrototypeOf(this, _BatchRequestTooLong2.prototype);
+      }
+    };
+    __name(_BatchRequestTooLong, "BatchRequestTooLong");
+    var BatchRequestTooLong = _BatchRequestTooLong;
+    var se_AddPermissionCommand = /* @__PURE__ */ __name(async (input, context) => {
+      const headers = sharedHeaders("AddPermission");
+      let body;
+      body = JSON.stringify(se_AddPermissionRequest(input, context));
+      return buildHttpRpcRequest(context, headers, "/", void 0, body);
+    }, "se_AddPermissionCommand");
+    var se_CancelMessageMoveTaskCommand = /* @__PURE__ */ __name(async (input, context) => {
+      const headers = sharedHeaders("CancelMessageMoveTask");
+      let body;
+      body = JSON.stringify(se_CancelMessageMoveTaskRequest(input, context));
+      return buildHttpRpcRequest(context, headers, "/", void 0, body);
+    }, "se_CancelMessageMoveTaskCommand");
+    var se_ChangeMessageVisibilityCommand = /* @__PURE__ */ __name(async (input, context) => {
+      const headers = sharedHeaders("ChangeMessageVisibility");
+      let body;
+      body = JSON.stringify(se_ChangeMessageVisibilityRequest(input, context));
+      return buildHttpRpcRequest(context, headers, "/", void 0, body);
+    }, "se_ChangeMessageVisibilityCommand");
+    var se_ChangeMessageVisibilityBatchCommand = /* @__PURE__ */ __name(async (input, context) => {
+      const headers = sharedHeaders("ChangeMessageVisibilityBatch");
+      let body;
+      body = JSON.stringify(se_ChangeMessageVisibilityBatchRequest(input, context));
+      return buildHttpRpcRequest(context, headers, "/", void 0, body);
+    }, "se_ChangeMessageVisibilityBatchCommand");
+    var se_CreateQueueCommand = /* @__PURE__ */ __name(async (input, context) => {
+      const headers = sharedHeaders("CreateQueue");
+      let body;
+      body = JSON.stringify(se_CreateQueueRequest(input, context));
+      return buildHttpRpcRequest(context, headers, "/", void 0, body);
+    }, "se_CreateQueueCommand");
+    var se_DeleteMessageCommand = /* @__PURE__ */ __name(async (input, context) => {
+      const headers = sharedHeaders("DeleteMessage");
+      let body;
+      body = JSON.stringify(se_DeleteMessageRequest(input, context));
+      return buildHttpRpcRequest(context, headers, "/", void 0, body);
+    }, "se_DeleteMessageCommand");
+    var se_DeleteMessageBatchCommand = /* @__PURE__ */ __name(async (input, context) => {
+      const headers = sharedHeaders("DeleteMessageBatch");
+      let body;
+      body = JSON.stringify(se_DeleteMessageBatchRequest(input, context));
+      return buildHttpRpcRequest(context, headers, "/", void 0, body);
+    }, "se_DeleteMessageBatchCommand");
+    var se_DeleteQueueCommand = /* @__PURE__ */ __name(async (input, context) => {
+      const headers = sharedHeaders("DeleteQueue");
+      let body;
+      body = JSON.stringify(se_DeleteQueueRequest(input, context));
+      return buildHttpRpcRequest(context, headers, "/", void 0, body);
+    }, "se_DeleteQueueCommand");
+    var se_GetQueueAttributesCommand = /* @__PURE__ */ __name(async (input, context) => {
+      const headers = sharedHeaders("GetQueueAttributes");
+      let body;
+      body = JSON.stringify(se_GetQueueAttributesRequest(input, context));
+      return buildHttpRpcRequest(context, headers, "/", void 0, body);
+    }, "se_GetQueueAttributesCommand");
+    var se_GetQueueUrlCommand = /* @__PURE__ */ __name(async (input, context) => {
+      const headers = sharedHeaders("GetQueueUrl");
+      let body;
+      body = JSON.stringify(se_GetQueueUrlRequest(input, context));
+      return buildHttpRpcRequest(context, headers, "/", void 0, body);
+    }, "se_GetQueueUrlCommand");
+    var se_ListDeadLetterSourceQueuesCommand = /* @__PURE__ */ __name(async (input, context) => {
+      const headers = sharedHeaders("ListDeadLetterSourceQueues");
+      let body;
+      body = JSON.stringify(se_ListDeadLetterSourceQueuesRequest(input, context));
+      return buildHttpRpcRequest(context, headers, "/", void 0, body);
+    }, "se_ListDeadLetterSourceQueuesCommand");
+    var se_ListMessageMoveTasksCommand = /* @__PURE__ */ __name(async (input, context) => {
+      const headers = sharedHeaders("ListMessageMoveTasks");
+      let body;
+      body = JSON.stringify(se_ListMessageMoveTasksRequest(input, context));
+      return buildHttpRpcRequest(context, headers, "/", void 0, body);
+    }, "se_ListMessageMoveTasksCommand");
+    var se_ListQueuesCommand = /* @__PURE__ */ __name(async (input, context) => {
+      const headers = sharedHeaders("ListQueues");
+      let body;
+      body = JSON.stringify(se_ListQueuesRequest(input, context));
+      return buildHttpRpcRequest(context, headers, "/", void 0, body);
+    }, "se_ListQueuesCommand");
+    var se_ListQueueTagsCommand = /* @__PURE__ */ __name(async (input, context) => {
+      const headers = sharedHeaders("ListQueueTags");
+      let body;
+      body = JSON.stringify(se_ListQueueTagsRequest(input, context));
+      return buildHttpRpcRequest(context, headers, "/", void 0, body);
+    }, "se_ListQueueTagsCommand");
+    var se_PurgeQueueCommand = /* @__PURE__ */ __name(async (input, context) => {
+      const headers = sharedHeaders("PurgeQueue");
+      let body;
+      body = JSON.stringify(se_PurgeQueueRequest(input, context));
+      return buildHttpRpcRequest(context, headers, "/", void 0, body);
+    }, "se_PurgeQueueCommand");
+    var se_ReceiveMessageCommand = /* @__PURE__ */ __name(async (input, context) => {
+      const headers = sharedHeaders("ReceiveMessage");
+      let body;
+      body = JSON.stringify(se_ReceiveMessageRequest(input, context));
+      return buildHttpRpcRequest(context, headers, "/", void 0, body);
+    }, "se_ReceiveMessageCommand");
+    var se_RemovePermissionCommand = /* @__PURE__ */ __name(async (input, context) => {
+      const headers = sharedHeaders("RemovePermission");
+      let body;
+      body = JSON.stringify(se_RemovePermissionRequest(input, context));
+      return buildHttpRpcRequest(context, headers, "/", void 0, body);
+    }, "se_RemovePermissionCommand");
+    var se_SendMessageCommand = /* @__PURE__ */ __name(async (input, context) => {
+      const headers = sharedHeaders("SendMessage");
+      let body;
+      body = JSON.stringify(se_SendMessageRequest(input, context));
+      return buildHttpRpcRequest(context, headers, "/", void 0, body);
+    }, "se_SendMessageCommand");
+    var se_SendMessageBatchCommand = /* @__PURE__ */ __name(async (input, context) => {
+      const headers = sharedHeaders("SendMessageBatch");
+      let body;
+      body = JSON.stringify(se_SendMessageBatchRequest(input, context));
+      return buildHttpRpcRequest(context, headers, "/", void 0, body);
+    }, "se_SendMessageBatchCommand");
+    var se_SetQueueAttributesCommand = /* @__PURE__ */ __name(async (input, context) => {
+      const headers = sharedHeaders("SetQueueAttributes");
+      let body;
+      body = JSON.stringify(se_SetQueueAttributesRequest(input, context));
+      return buildHttpRpcRequest(context, headers, "/", void 0, body);
+    }, "se_SetQueueAttributesCommand");
+    var se_StartMessageMoveTaskCommand = /* @__PURE__ */ __name(async (input, context) => {
+      const headers = sharedHeaders("StartMessageMoveTask");
+      let body;
+      body = JSON.stringify(se_StartMessageMoveTaskRequest(input, context));
+      return buildHttpRpcRequest(context, headers, "/", void 0, body);
+    }, "se_StartMessageMoveTaskCommand");
+    var se_TagQueueCommand = /* @__PURE__ */ __name(async (input, context) => {
+      const headers = sharedHeaders("TagQueue");
+      let body;
+      body = JSON.stringify(se_TagQueueRequest(input, context));
+      return buildHttpRpcRequest(context, headers, "/", void 0, body);
+    }, "se_TagQueueCommand");
+    var se_UntagQueueCommand = /* @__PURE__ */ __name(async (input, context) => {
+      const headers = sharedHeaders("UntagQueue");
+      let body;
+      body = JSON.stringify(se_UntagQueueRequest(input, context));
+      return buildHttpRpcRequest(context, headers, "/", void 0, body);
+    }, "se_UntagQueueCommand");
+    var de_AddPermissionCommand = /* @__PURE__ */ __name(async (output, context) => {
+      if (output.statusCode >= 300) {
+        return de_CommandError(output, context);
+      }
+      await (0, import_smithy_client5.collectBody)(output.body, context);
+      const response = {
+        $metadata: deserializeMetadata(output)
+      };
+      return response;
+    }, "de_AddPermissionCommand");
+    var de_CancelMessageMoveTaskCommand = /* @__PURE__ */ __name(async (output, context) => {
+      if (output.statusCode >= 300) {
+        return de_CommandError(output, context);
+      }
+      const data = await (0, import_core22.parseJsonBody)(output.body, context);
+      let contents = {};
+      contents = (0, import_smithy_client5._json)(data);
+      const response = {
+        $metadata: deserializeMetadata(output),
+        ...contents
+      };
+      return response;
+    }, "de_CancelMessageMoveTaskCommand");
+    var de_ChangeMessageVisibilityCommand = /* @__PURE__ */ __name(async (output, context) => {
+      if (output.statusCode >= 300) {
+        return de_CommandError(output, context);
+      }
+      await (0, import_smithy_client5.collectBody)(output.body, context);
+      const response = {
+        $metadata: deserializeMetadata(output)
+      };
+      return response;
+    }, "de_ChangeMessageVisibilityCommand");
+    var de_ChangeMessageVisibilityBatchCommand = /* @__PURE__ */ __name(async (output, context) => {
+      if (output.statusCode >= 300) {
+        return de_CommandError(output, context);
+      }
+      const data = await (0, import_core22.parseJsonBody)(output.body, context);
+      let contents = {};
+      contents = (0, import_smithy_client5._json)(data);
+      const response = {
+        $metadata: deserializeMetadata(output),
+        ...contents
+      };
+      return response;
+    }, "de_ChangeMessageVisibilityBatchCommand");
+    var de_CreateQueueCommand = /* @__PURE__ */ __name(async (output, context) => {
+      if (output.statusCode >= 300) {
+        return de_CommandError(output, context);
+      }
+      const data = await (0, import_core22.parseJsonBody)(output.body, context);
+      let contents = {};
+      contents = (0, import_smithy_client5._json)(data);
+      const response = {
+        $metadata: deserializeMetadata(output),
+        ...contents
+      };
+      return response;
+    }, "de_CreateQueueCommand");
+    var de_DeleteMessageCommand = /* @__PURE__ */ __name(async (output, context) => {
+      if (output.statusCode >= 300) {
+        return de_CommandError(output, context);
+      }
+      await (0, import_smithy_client5.collectBody)(output.body, context);
+      const response = {
+        $metadata: deserializeMetadata(output)
+      };
+      return response;
+    }, "de_DeleteMessageCommand");
+    var de_DeleteMessageBatchCommand = /* @__PURE__ */ __name(async (output, context) => {
+      if (output.statusCode >= 300) {
+        return de_CommandError(output, context);
+      }
+      const data = await (0, import_core22.parseJsonBody)(output.body, context);
+      let contents = {};
+      contents = (0, import_smithy_client5._json)(data);
+      const response = {
+        $metadata: deserializeMetadata(output),
+        ...contents
+      };
+      return response;
+    }, "de_DeleteMessageBatchCommand");
+    var de_DeleteQueueCommand = /* @__PURE__ */ __name(async (output, context) => {
+      if (output.statusCode >= 300) {
+        return de_CommandError(output, context);
+      }
+      await (0, import_smithy_client5.collectBody)(output.body, context);
+      const response = {
+        $metadata: deserializeMetadata(output)
+      };
+      return response;
+    }, "de_DeleteQueueCommand");
+    var de_GetQueueAttributesCommand = /* @__PURE__ */ __name(async (output, context) => {
+      if (output.statusCode >= 300) {
+        return de_CommandError(output, context);
+      }
+      const data = await (0, import_core22.parseJsonBody)(output.body, context);
+      let contents = {};
+      contents = (0, import_smithy_client5._json)(data);
+      const response = {
+        $metadata: deserializeMetadata(output),
+        ...contents
+      };
+      return response;
+    }, "de_GetQueueAttributesCommand");
+    var de_GetQueueUrlCommand = /* @__PURE__ */ __name(async (output, context) => {
+      if (output.statusCode >= 300) {
+        return de_CommandError(output, context);
+      }
+      const data = await (0, import_core22.parseJsonBody)(output.body, context);
+      let contents = {};
+      contents = (0, import_smithy_client5._json)(data);
+      const response = {
+        $metadata: deserializeMetadata(output),
+        ...contents
+      };
+      return response;
+    }, "de_GetQueueUrlCommand");
+    var de_ListDeadLetterSourceQueuesCommand = /* @__PURE__ */ __name(async (output, context) => {
+      if (output.statusCode >= 300) {
+        return de_CommandError(output, context);
+      }
+      const data = await (0, import_core22.parseJsonBody)(output.body, context);
+      let contents = {};
+      contents = (0, import_smithy_client5._json)(data);
+      const response = {
+        $metadata: deserializeMetadata(output),
+        ...contents
+      };
+      return response;
+    }, "de_ListDeadLetterSourceQueuesCommand");
+    var de_ListMessageMoveTasksCommand = /* @__PURE__ */ __name(async (output, context) => {
+      if (output.statusCode >= 300) {
+        return de_CommandError(output, context);
+      }
+      const data = await (0, import_core22.parseJsonBody)(output.body, context);
+      let contents = {};
+      contents = (0, import_smithy_client5._json)(data);
+      const response = {
+        $metadata: deserializeMetadata(output),
+        ...contents
+      };
+      return response;
+    }, "de_ListMessageMoveTasksCommand");
+    var de_ListQueuesCommand = /* @__PURE__ */ __name(async (output, context) => {
+      if (output.statusCode >= 300) {
+        return de_CommandError(output, context);
+      }
+      const data = await (0, import_core22.parseJsonBody)(output.body, context);
+      let contents = {};
+      contents = (0, import_smithy_client5._json)(data);
+      const response = {
+        $metadata: deserializeMetadata(output),
+        ...contents
+      };
+      return response;
+    }, "de_ListQueuesCommand");
+    var de_ListQueueTagsCommand = /* @__PURE__ */ __name(async (output, context) => {
+      if (output.statusCode >= 300) {
+        return de_CommandError(output, context);
+      }
+      const data = await (0, import_core22.parseJsonBody)(output.body, context);
+      let contents = {};
+      contents = (0, import_smithy_client5._json)(data);
+      const response = {
+        $metadata: deserializeMetadata(output),
+        ...contents
+      };
+      return response;
+    }, "de_ListQueueTagsCommand");
+    var de_PurgeQueueCommand = /* @__PURE__ */ __name(async (output, context) => {
+      if (output.statusCode >= 300) {
+        return de_CommandError(output, context);
+      }
+      await (0, import_smithy_client5.collectBody)(output.body, context);
+      const response = {
+        $metadata: deserializeMetadata(output)
+      };
+      return response;
+    }, "de_PurgeQueueCommand");
+    var de_ReceiveMessageCommand = /* @__PURE__ */ __name(async (output, context) => {
+      if (output.statusCode >= 300) {
+        return de_CommandError(output, context);
+      }
+      const data = await (0, import_core22.parseJsonBody)(output.body, context);
+      let contents = {};
+      contents = de_ReceiveMessageResult(data, context);
+      const response = {
+        $metadata: deserializeMetadata(output),
+        ...contents
+      };
+      return response;
+    }, "de_ReceiveMessageCommand");
+    var de_RemovePermissionCommand = /* @__PURE__ */ __name(async (output, context) => {
+      if (output.statusCode >= 300) {
+        return de_CommandError(output, context);
+      }
+      await (0, import_smithy_client5.collectBody)(output.body, context);
+      const response = {
+        $metadata: deserializeMetadata(output)
+      };
+      return response;
+    }, "de_RemovePermissionCommand");
+    var de_SendMessageCommand = /* @__PURE__ */ __name(async (output, context) => {
+      if (output.statusCode >= 300) {
+        return de_CommandError(output, context);
+      }
+      const data = await (0, import_core22.parseJsonBody)(output.body, context);
+      let contents = {};
+      contents = (0, import_smithy_client5._json)(data);
+      const response = {
+        $metadata: deserializeMetadata(output),
+        ...contents
+      };
+      return response;
+    }, "de_SendMessageCommand");
+    var de_SendMessageBatchCommand = /* @__PURE__ */ __name(async (output, context) => {
+      if (output.statusCode >= 300) {
+        return de_CommandError(output, context);
+      }
+      const data = await (0, import_core22.parseJsonBody)(output.body, context);
+      let contents = {};
+      contents = (0, import_smithy_client5._json)(data);
+      const response = {
+        $metadata: deserializeMetadata(output),
+        ...contents
+      };
+      return response;
+    }, "de_SendMessageBatchCommand");
+    var de_SetQueueAttributesCommand = /* @__PURE__ */ __name(async (output, context) => {
+      if (output.statusCode >= 300) {
+        return de_CommandError(output, context);
+      }
+      await (0, import_smithy_client5.collectBody)(output.body, context);
+      const response = {
+        $metadata: deserializeMetadata(output)
+      };
+      return response;
+    }, "de_SetQueueAttributesCommand");
+    var de_StartMessageMoveTaskCommand = /* @__PURE__ */ __name(async (output, context) => {
+      if (output.statusCode >= 300) {
+        return de_CommandError(output, context);
+      }
+      const data = await (0, import_core22.parseJsonBody)(output.body, context);
+      let contents = {};
+      contents = (0, import_smithy_client5._json)(data);
+      const response = {
+        $metadata: deserializeMetadata(output),
+        ...contents
+      };
+      return response;
+    }, "de_StartMessageMoveTaskCommand");
+    var de_TagQueueCommand = /* @__PURE__ */ __name(async (output, context) => {
+      if (output.statusCode >= 300) {
+        return de_CommandError(output, context);
+      }
+      await (0, import_smithy_client5.collectBody)(output.body, context);
+      const response = {
+        $metadata: deserializeMetadata(output)
+      };
+      return response;
+    }, "de_TagQueueCommand");
+    var de_UntagQueueCommand = /* @__PURE__ */ __name(async (output, context) => {
+      if (output.statusCode >= 300) {
+        return de_CommandError(output, context);
+      }
+      await (0, import_smithy_client5.collectBody)(output.body, context);
+      const response = {
+        $metadata: deserializeMetadata(output)
+      };
+      return response;
+    }, "de_UntagQueueCommand");
+    var de_CommandError = /* @__PURE__ */ __name(async (output, context) => {
+      const parsedOutput = {
+        ...output,
+        body: await (0, import_core22.parseJsonErrorBody)(output.body, context)
+      };
+      populateBodyWithQueryCompatibility(parsedOutput, output.headers);
+      const errorCode = (0, import_core22.loadRestJsonErrorCode)(output, parsedOutput.body);
+      switch (errorCode) {
+        case "InvalidAddress":
+        case "com.amazonaws.sqs#InvalidAddress":
+          throw await de_InvalidAddressRes(parsedOutput, context);
+        case "InvalidSecurity":
+        case "com.amazonaws.sqs#InvalidSecurity":
+          throw await de_InvalidSecurityRes(parsedOutput, context);
+        case "OverLimit":
+        case "com.amazonaws.sqs#OverLimit":
+          throw await de_OverLimitRes(parsedOutput, context);
+        case "QueueDoesNotExist":
+        case "com.amazonaws.sqs#QueueDoesNotExist":
+          throw await de_QueueDoesNotExistRes(parsedOutput, context);
+        case "RequestThrottled":
+        case "com.amazonaws.sqs#RequestThrottled":
+          throw await de_RequestThrottledRes(parsedOutput, context);
+        case "UnsupportedOperation":
+        case "com.amazonaws.sqs#UnsupportedOperation":
+          throw await de_UnsupportedOperationRes(parsedOutput, context);
+        case "ResourceNotFoundException":
+        case "com.amazonaws.sqs#ResourceNotFoundException":
+          throw await de_ResourceNotFoundExceptionRes(parsedOutput, context);
+        case "MessageNotInflight":
+        case "com.amazonaws.sqs#MessageNotInflight":
+          throw await de_MessageNotInflightRes(parsedOutput, context);
+        case "ReceiptHandleIsInvalid":
+        case "com.amazonaws.sqs#ReceiptHandleIsInvalid":
+          throw await de_ReceiptHandleIsInvalidRes(parsedOutput, context);
+        case "BatchEntryIdsNotDistinct":
+        case "com.amazonaws.sqs#BatchEntryIdsNotDistinct":
+          throw await de_BatchEntryIdsNotDistinctRes(parsedOutput, context);
+        case "EmptyBatchRequest":
+        case "com.amazonaws.sqs#EmptyBatchRequest":
+          throw await de_EmptyBatchRequestRes(parsedOutput, context);
+        case "InvalidBatchEntryId":
+        case "com.amazonaws.sqs#InvalidBatchEntryId":
+          throw await de_InvalidBatchEntryIdRes(parsedOutput, context);
+        case "TooManyEntriesInBatchRequest":
+        case "com.amazonaws.sqs#TooManyEntriesInBatchRequest":
+          throw await de_TooManyEntriesInBatchRequestRes(parsedOutput, context);
+        case "InvalidAttributeName":
+        case "com.amazonaws.sqs#InvalidAttributeName":
+          throw await de_InvalidAttributeNameRes(parsedOutput, context);
+        case "InvalidAttributeValue":
+        case "com.amazonaws.sqs#InvalidAttributeValue":
+          throw await de_InvalidAttributeValueRes(parsedOutput, context);
+        case "QueueDeletedRecently":
+        case "com.amazonaws.sqs#QueueDeletedRecently":
+          throw await de_QueueDeletedRecentlyRes(parsedOutput, context);
+        case "QueueNameExists":
+        case "com.amazonaws.sqs#QueueNameExists":
+          throw await de_QueueNameExistsRes(parsedOutput, context);
+        case "InvalidIdFormat":
+        case "com.amazonaws.sqs#InvalidIdFormat":
+          throw await de_InvalidIdFormatRes(parsedOutput, context);
+        case "PurgeQueueInProgress":
+        case "com.amazonaws.sqs#PurgeQueueInProgress":
+          throw await de_PurgeQueueInProgressRes(parsedOutput, context);
+        case "KmsAccessDenied":
+        case "com.amazonaws.sqs#KmsAccessDenied":
+          throw await de_KmsAccessDeniedRes(parsedOutput, context);
+        case "KmsDisabled":
+        case "com.amazonaws.sqs#KmsDisabled":
+          throw await de_KmsDisabledRes(parsedOutput, context);
+        case "KmsInvalidKeyUsage":
+        case "com.amazonaws.sqs#KmsInvalidKeyUsage":
+          throw await de_KmsInvalidKeyUsageRes(parsedOutput, context);
+        case "KmsInvalidState":
+        case "com.amazonaws.sqs#KmsInvalidState":
+          throw await de_KmsInvalidStateRes(parsedOutput, context);
+        case "KmsNotFound":
+        case "com.amazonaws.sqs#KmsNotFound":
+          throw await de_KmsNotFoundRes(parsedOutput, context);
+        case "KmsOptInRequired":
+        case "com.amazonaws.sqs#KmsOptInRequired":
+          throw await de_KmsOptInRequiredRes(parsedOutput, context);
+        case "KmsThrottled":
+        case "com.amazonaws.sqs#KmsThrottled":
+          throw await de_KmsThrottledRes(parsedOutput, context);
+        case "InvalidMessageContents":
+        case "com.amazonaws.sqs#InvalidMessageContents":
+          throw await de_InvalidMessageContentsRes(parsedOutput, context);
+        case "BatchRequestTooLong":
+        case "com.amazonaws.sqs#BatchRequestTooLong":
+          throw await de_BatchRequestTooLongRes(parsedOutput, context);
+        default:
+          const parsedBody = parsedOutput.body;
+          return throwDefaultError({
+            output,
+            parsedBody,
+            errorCode
+          });
+      }
+    }, "de_CommandError");
+    var de_BatchEntryIdsNotDistinctRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
+      const body = parsedOutput.body;
+      const deserialized = (0, import_smithy_client5._json)(body);
+      const exception2 = new BatchEntryIdsNotDistinct({
+        $metadata: deserializeMetadata(parsedOutput),
+        ...deserialized
+      });
+      return (0, import_smithy_client5.decorateServiceException)(exception2, body);
+    }, "de_BatchEntryIdsNotDistinctRes");
+    var de_BatchRequestTooLongRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
+      const body = parsedOutput.body;
+      const deserialized = (0, import_smithy_client5._json)(body);
+      const exception2 = new BatchRequestTooLong({
+        $metadata: deserializeMetadata(parsedOutput),
+        ...deserialized
+      });
+      return (0, import_smithy_client5.decorateServiceException)(exception2, body);
+    }, "de_BatchRequestTooLongRes");
+    var de_EmptyBatchRequestRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
+      const body = parsedOutput.body;
+      const deserialized = (0, import_smithy_client5._json)(body);
+      const exception2 = new EmptyBatchRequest({
+        $metadata: deserializeMetadata(parsedOutput),
+        ...deserialized
+      });
+      return (0, import_smithy_client5.decorateServiceException)(exception2, body);
+    }, "de_EmptyBatchRequestRes");
+    var de_InvalidAddressRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
+      const body = parsedOutput.body;
+      const deserialized = (0, import_smithy_client5._json)(body);
+      const exception2 = new InvalidAddress({
+        $metadata: deserializeMetadata(parsedOutput),
+        ...deserialized
+      });
+      return (0, import_smithy_client5.decorateServiceException)(exception2, body);
+    }, "de_InvalidAddressRes");
+    var de_InvalidAttributeNameRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
+      const body = parsedOutput.body;
+      const deserialized = (0, import_smithy_client5._json)(body);
+      const exception2 = new InvalidAttributeName({
+        $metadata: deserializeMetadata(parsedOutput),
+        ...deserialized
+      });
+      return (0, import_smithy_client5.decorateServiceException)(exception2, body);
+    }, "de_InvalidAttributeNameRes");
+    var de_InvalidAttributeValueRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
+      const body = parsedOutput.body;
+      const deserialized = (0, import_smithy_client5._json)(body);
+      const exception2 = new InvalidAttributeValue({
+        $metadata: deserializeMetadata(parsedOutput),
+        ...deserialized
+      });
+      return (0, import_smithy_client5.decorateServiceException)(exception2, body);
+    }, "de_InvalidAttributeValueRes");
+    var de_InvalidBatchEntryIdRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
+      const body = parsedOutput.body;
+      const deserialized = (0, import_smithy_client5._json)(body);
+      const exception2 = new InvalidBatchEntryId({
+        $metadata: deserializeMetadata(parsedOutput),
+        ...deserialized
+      });
+      return (0, import_smithy_client5.decorateServiceException)(exception2, body);
+    }, "de_InvalidBatchEntryIdRes");
+    var de_InvalidIdFormatRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
+      const body = parsedOutput.body;
+      const deserialized = (0, import_smithy_client5._json)(body);
+      const exception2 = new InvalidIdFormat({
+        $metadata: deserializeMetadata(parsedOutput),
+        ...deserialized
+      });
+      return (0, import_smithy_client5.decorateServiceException)(exception2, body);
+    }, "de_InvalidIdFormatRes");
+    var de_InvalidMessageContentsRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
+      const body = parsedOutput.body;
+      const deserialized = (0, import_smithy_client5._json)(body);
+      const exception2 = new InvalidMessageContents({
+        $metadata: deserializeMetadata(parsedOutput),
+        ...deserialized
+      });
+      return (0, import_smithy_client5.decorateServiceException)(exception2, body);
+    }, "de_InvalidMessageContentsRes");
+    var de_InvalidSecurityRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
+      const body = parsedOutput.body;
+      const deserialized = (0, import_smithy_client5._json)(body);
+      const exception2 = new InvalidSecurity({
+        $metadata: deserializeMetadata(parsedOutput),
+        ...deserialized
+      });
+      return (0, import_smithy_client5.decorateServiceException)(exception2, body);
+    }, "de_InvalidSecurityRes");
+    var de_KmsAccessDeniedRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
+      const body = parsedOutput.body;
+      const deserialized = (0, import_smithy_client5._json)(body);
+      const exception2 = new KmsAccessDenied({
+        $metadata: deserializeMetadata(parsedOutput),
+        ...deserialized
+      });
+      return (0, import_smithy_client5.decorateServiceException)(exception2, body);
+    }, "de_KmsAccessDeniedRes");
+    var de_KmsDisabledRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
+      const body = parsedOutput.body;
+      const deserialized = (0, import_smithy_client5._json)(body);
+      const exception2 = new KmsDisabled({
+        $metadata: deserializeMetadata(parsedOutput),
+        ...deserialized
+      });
+      return (0, import_smithy_client5.decorateServiceException)(exception2, body);
+    }, "de_KmsDisabledRes");
+    var de_KmsInvalidKeyUsageRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
+      const body = parsedOutput.body;
+      const deserialized = (0, import_smithy_client5._json)(body);
+      const exception2 = new KmsInvalidKeyUsage({
+        $metadata: deserializeMetadata(parsedOutput),
+        ...deserialized
+      });
+      return (0, import_smithy_client5.decorateServiceException)(exception2, body);
+    }, "de_KmsInvalidKeyUsageRes");
+    var de_KmsInvalidStateRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
+      const body = parsedOutput.body;
+      const deserialized = (0, import_smithy_client5._json)(body);
+      const exception2 = new KmsInvalidState({
+        $metadata: deserializeMetadata(parsedOutput),
+        ...deserialized
+      });
+      return (0, import_smithy_client5.decorateServiceException)(exception2, body);
+    }, "de_KmsInvalidStateRes");
+    var de_KmsNotFoundRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
+      const body = parsedOutput.body;
+      const deserialized = (0, import_smithy_client5._json)(body);
+      const exception2 = new KmsNotFound({
+        $metadata: deserializeMetadata(parsedOutput),
+        ...deserialized
+      });
+      return (0, import_smithy_client5.decorateServiceException)(exception2, body);
+    }, "de_KmsNotFoundRes");
+    var de_KmsOptInRequiredRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
+      const body = parsedOutput.body;
+      const deserialized = (0, import_smithy_client5._json)(body);
+      const exception2 = new KmsOptInRequired({
+        $metadata: deserializeMetadata(parsedOutput),
+        ...deserialized
+      });
+      return (0, import_smithy_client5.decorateServiceException)(exception2, body);
+    }, "de_KmsOptInRequiredRes");
+    var de_KmsThrottledRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
+      const body = parsedOutput.body;
+      const deserialized = (0, import_smithy_client5._json)(body);
+      const exception2 = new KmsThrottled({
+        $metadata: deserializeMetadata(parsedOutput),
+        ...deserialized
+      });
+      return (0, import_smithy_client5.decorateServiceException)(exception2, body);
+    }, "de_KmsThrottledRes");
+    var de_MessageNotInflightRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
+      const body = parsedOutput.body;
+      const deserialized = (0, import_smithy_client5._json)(body);
+      const exception2 = new MessageNotInflight({
+        $metadata: deserializeMetadata(parsedOutput),
+        ...deserialized
+      });
+      return (0, import_smithy_client5.decorateServiceException)(exception2, body);
+    }, "de_MessageNotInflightRes");
+    var de_OverLimitRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
+      const body = parsedOutput.body;
+      const deserialized = (0, import_smithy_client5._json)(body);
+      const exception2 = new OverLimit({
+        $metadata: deserializeMetadata(parsedOutput),
+        ...deserialized
+      });
+      return (0, import_smithy_client5.decorateServiceException)(exception2, body);
+    }, "de_OverLimitRes");
+    var de_PurgeQueueInProgressRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
+      const body = parsedOutput.body;
+      const deserialized = (0, import_smithy_client5._json)(body);
+      const exception2 = new PurgeQueueInProgress({
+        $metadata: deserializeMetadata(parsedOutput),
+        ...deserialized
+      });
+      return (0, import_smithy_client5.decorateServiceException)(exception2, body);
+    }, "de_PurgeQueueInProgressRes");
+    var de_QueueDeletedRecentlyRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
+      const body = parsedOutput.body;
+      const deserialized = (0, import_smithy_client5._json)(body);
+      const exception2 = new QueueDeletedRecently({
+        $metadata: deserializeMetadata(parsedOutput),
+        ...deserialized
+      });
+      return (0, import_smithy_client5.decorateServiceException)(exception2, body);
+    }, "de_QueueDeletedRecentlyRes");
+    var de_QueueDoesNotExistRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
+      const body = parsedOutput.body;
+      const deserialized = (0, import_smithy_client5._json)(body);
+      const exception2 = new QueueDoesNotExist({
+        $metadata: deserializeMetadata(parsedOutput),
+        ...deserialized
+      });
+      return (0, import_smithy_client5.decorateServiceException)(exception2, body);
+    }, "de_QueueDoesNotExistRes");
+    var de_QueueNameExistsRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
+      const body = parsedOutput.body;
+      const deserialized = (0, import_smithy_client5._json)(body);
+      const exception2 = new QueueNameExists({
+        $metadata: deserializeMetadata(parsedOutput),
+        ...deserialized
+      });
+      return (0, import_smithy_client5.decorateServiceException)(exception2, body);
+    }, "de_QueueNameExistsRes");
+    var de_ReceiptHandleIsInvalidRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
+      const body = parsedOutput.body;
+      const deserialized = (0, import_smithy_client5._json)(body);
+      const exception2 = new ReceiptHandleIsInvalid({
+        $metadata: deserializeMetadata(parsedOutput),
+        ...deserialized
+      });
+      return (0, import_smithy_client5.decorateServiceException)(exception2, body);
+    }, "de_ReceiptHandleIsInvalidRes");
+    var de_RequestThrottledRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
+      const body = parsedOutput.body;
+      const deserialized = (0, import_smithy_client5._json)(body);
+      const exception2 = new RequestThrottled({
+        $metadata: deserializeMetadata(parsedOutput),
+        ...deserialized
+      });
+      return (0, import_smithy_client5.decorateServiceException)(exception2, body);
+    }, "de_RequestThrottledRes");
+    var de_ResourceNotFoundExceptionRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
+      const body = parsedOutput.body;
+      const deserialized = (0, import_smithy_client5._json)(body);
+      const exception2 = new ResourceNotFoundException({
+        $metadata: deserializeMetadata(parsedOutput),
+        ...deserialized
+      });
+      return (0, import_smithy_client5.decorateServiceException)(exception2, body);
+    }, "de_ResourceNotFoundExceptionRes");
+    var de_TooManyEntriesInBatchRequestRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
+      const body = parsedOutput.body;
+      const deserialized = (0, import_smithy_client5._json)(body);
+      const exception2 = new TooManyEntriesInBatchRequest({
+        $metadata: deserializeMetadata(parsedOutput),
+        ...deserialized
+      });
+      return (0, import_smithy_client5.decorateServiceException)(exception2, body);
+    }, "de_TooManyEntriesInBatchRequestRes");
+    var de_UnsupportedOperationRes = /* @__PURE__ */ __name(async (parsedOutput, context) => {
+      const body = parsedOutput.body;
+      const deserialized = (0, import_smithy_client5._json)(body);
+      const exception2 = new UnsupportedOperation({
+        $metadata: deserializeMetadata(parsedOutput),
+        ...deserialized
+      });
+      return (0, import_smithy_client5.decorateServiceException)(exception2, body);
+    }, "de_UnsupportedOperationRes");
+    var se_ActionNameList = /* @__PURE__ */ __name((input, context) => {
+      return input.filter((e) => e != null).map((entry) => {
+        return (0, import_core22._toStr)(entry);
+      });
+    }, "se_ActionNameList");
+    var se_AddPermissionRequest = /* @__PURE__ */ __name((input, context) => {
+      return (0, import_smithy_client5.take)(input, {
+        AWSAccountIds: (_) => se_AWSAccountIdList(_, context),
+        Actions: (_) => se_ActionNameList(_, context),
+        Label: import_core22._toStr,
+        QueueUrl: import_core22._toStr
+      });
+    }, "se_AddPermissionRequest");
+    var se_AttributeNameList = /* @__PURE__ */ __name((input, context) => {
+      return input.filter((e) => e != null).map((entry) => {
+        return (0, import_core22._toStr)(entry);
+      });
+    }, "se_AttributeNameList");
+    var se_AWSAccountIdList = /* @__PURE__ */ __name((input, context) => {
+      return input.filter((e) => e != null).map((entry) => {
+        return (0, import_core22._toStr)(entry);
+      });
+    }, "se_AWSAccountIdList");
+    var se_BinaryList = /* @__PURE__ */ __name((input, context) => {
+      return input.filter((e) => e != null).map((entry) => {
+        return context.base64Encoder(entry);
+      });
+    }, "se_BinaryList");
+    var se_CancelMessageMoveTaskRequest = /* @__PURE__ */ __name((input, context) => {
+      return (0, import_smithy_client5.take)(input, {
+        TaskHandle: import_core22._toStr
+      });
+    }, "se_CancelMessageMoveTaskRequest");
+    var se_ChangeMessageVisibilityBatchRequest = /* @__PURE__ */ __name((input, context) => {
+      return (0, import_smithy_client5.take)(input, {
+        Entries: (_) => se_ChangeMessageVisibilityBatchRequestEntryList(_, context),
+        QueueUrl: import_core22._toStr
+      });
+    }, "se_ChangeMessageVisibilityBatchRequest");
+    var se_ChangeMessageVisibilityBatchRequestEntry = /* @__PURE__ */ __name((input, context) => {
+      return (0, import_smithy_client5.take)(input, {
+        Id: import_core22._toStr,
+        ReceiptHandle: import_core22._toStr,
+        VisibilityTimeout: import_core22._toNum
+      });
+    }, "se_ChangeMessageVisibilityBatchRequestEntry");
+    var se_ChangeMessageVisibilityBatchRequestEntryList = /* @__PURE__ */ __name((input, context) => {
+      return input.filter((e) => e != null).map((entry) => {
+        return se_ChangeMessageVisibilityBatchRequestEntry(entry, context);
+      });
+    }, "se_ChangeMessageVisibilityBatchRequestEntryList");
+    var se_ChangeMessageVisibilityRequest = /* @__PURE__ */ __name((input, context) => {
+      return (0, import_smithy_client5.take)(input, {
+        QueueUrl: import_core22._toStr,
+        ReceiptHandle: import_core22._toStr,
+        VisibilityTimeout: import_core22._toNum
+      });
+    }, "se_ChangeMessageVisibilityRequest");
+    var se_CreateQueueRequest = /* @__PURE__ */ __name((input, context) => {
+      return (0, import_smithy_client5.take)(input, {
+        Attributes: (_) => se_QueueAttributeMap(_, context),
+        QueueName: import_core22._toStr,
+        tags: (_) => se_TagMap(_, context)
+      });
+    }, "se_CreateQueueRequest");
+    var se_DeleteMessageBatchRequest = /* @__PURE__ */ __name((input, context) => {
+      return (0, import_smithy_client5.take)(input, {
+        Entries: (_) => se_DeleteMessageBatchRequestEntryList(_, context),
+        QueueUrl: import_core22._toStr
+      });
+    }, "se_DeleteMessageBatchRequest");
+    var se_DeleteMessageBatchRequestEntry = /* @__PURE__ */ __name((input, context) => {
+      return (0, import_smithy_client5.take)(input, {
+        Id: import_core22._toStr,
+        ReceiptHandle: import_core22._toStr
+      });
+    }, "se_DeleteMessageBatchRequestEntry");
+    var se_DeleteMessageBatchRequestEntryList = /* @__PURE__ */ __name((input, context) => {
+      return input.filter((e) => e != null).map((entry) => {
+        return se_DeleteMessageBatchRequestEntry(entry, context);
+      });
+    }, "se_DeleteMessageBatchRequestEntryList");
+    var se_DeleteMessageRequest = /* @__PURE__ */ __name((input, context) => {
+      return (0, import_smithy_client5.take)(input, {
+        QueueUrl: import_core22._toStr,
+        ReceiptHandle: import_core22._toStr
+      });
+    }, "se_DeleteMessageRequest");
+    var se_DeleteQueueRequest = /* @__PURE__ */ __name((input, context) => {
+      return (0, import_smithy_client5.take)(input, {
+        QueueUrl: import_core22._toStr
+      });
+    }, "se_DeleteQueueRequest");
+    var se_GetQueueAttributesRequest = /* @__PURE__ */ __name((input, context) => {
+      return (0, import_smithy_client5.take)(input, {
+        AttributeNames: (_) => se_AttributeNameList(_, context),
+        QueueUrl: import_core22._toStr
+      });
+    }, "se_GetQueueAttributesRequest");
+    var se_GetQueueUrlRequest = /* @__PURE__ */ __name((input, context) => {
+      return (0, import_smithy_client5.take)(input, {
+        QueueName: import_core22._toStr,
+        QueueOwnerAWSAccountId: import_core22._toStr
+      });
+    }, "se_GetQueueUrlRequest");
+    var se_ListDeadLetterSourceQueuesRequest = /* @__PURE__ */ __name((input, context) => {
+      return (0, import_smithy_client5.take)(input, {
+        MaxResults: import_core22._toNum,
+        NextToken: import_core22._toStr,
+        QueueUrl: import_core22._toStr
+      });
+    }, "se_ListDeadLetterSourceQueuesRequest");
+    var se_ListMessageMoveTasksRequest = /* @__PURE__ */ __name((input, context) => {
+      return (0, import_smithy_client5.take)(input, {
+        MaxResults: import_core22._toNum,
+        SourceArn: import_core22._toStr
+      });
+    }, "se_ListMessageMoveTasksRequest");
+    var se_ListQueuesRequest = /* @__PURE__ */ __name((input, context) => {
+      return (0, import_smithy_client5.take)(input, {
+        MaxResults: import_core22._toNum,
+        NextToken: import_core22._toStr,
+        QueueNamePrefix: import_core22._toStr
+      });
+    }, "se_ListQueuesRequest");
+    var se_ListQueueTagsRequest = /* @__PURE__ */ __name((input, context) => {
+      return (0, import_smithy_client5.take)(input, {
+        QueueUrl: import_core22._toStr
+      });
+    }, "se_ListQueueTagsRequest");
+    var se_MessageAttributeNameList = /* @__PURE__ */ __name((input, context) => {
+      return input.filter((e) => e != null).map((entry) => {
+        return (0, import_core22._toStr)(entry);
+      });
+    }, "se_MessageAttributeNameList");
+    var se_MessageAttributeValue = /* @__PURE__ */ __name((input, context) => {
+      return (0, import_smithy_client5.take)(input, {
+        BinaryListValues: (_) => se_BinaryList(_, context),
+        BinaryValue: context.base64Encoder,
+        DataType: import_core22._toStr,
+        StringListValues: (_) => se_StringList(_, context),
+        StringValue: import_core22._toStr
+      });
+    }, "se_MessageAttributeValue");
+    var se_MessageBodyAttributeMap = /* @__PURE__ */ __name((input, context) => {
+      return Object.entries(input).reduce((acc, [key, value]) => {
+        if (value === null) {
+          return acc;
+        }
+        acc[key] = se_MessageAttributeValue(value, context);
+        return acc;
+      }, {});
+    }, "se_MessageBodyAttributeMap");
+    var se_MessageBodySystemAttributeMap = /* @__PURE__ */ __name((input, context) => {
+      return Object.entries(input).reduce(
+        (acc, [key, value]) => {
+          if (value === null) {
+            return acc;
+          }
+          acc[key] = se_MessageSystemAttributeValue(value, context);
+          return acc;
+        },
+        {}
+      );
+    }, "se_MessageBodySystemAttributeMap");
+    var se_MessageSystemAttributeList = /* @__PURE__ */ __name((input, context) => {
+      return input.filter((e) => e != null).map((entry) => {
+        return (0, import_core22._toStr)(entry);
+      });
+    }, "se_MessageSystemAttributeList");
+    var se_MessageSystemAttributeValue = /* @__PURE__ */ __name((input, context) => {
+      return (0, import_smithy_client5.take)(input, {
+        BinaryListValues: (_) => se_BinaryList(_, context),
+        BinaryValue: context.base64Encoder,
+        DataType: import_core22._toStr,
+        StringListValues: (_) => se_StringList(_, context),
+        StringValue: import_core22._toStr
+      });
+    }, "se_MessageSystemAttributeValue");
+    var se_PurgeQueueRequest = /* @__PURE__ */ __name((input, context) => {
+      return (0, import_smithy_client5.take)(input, {
+        QueueUrl: import_core22._toStr
+      });
+    }, "se_PurgeQueueRequest");
+    var se_QueueAttributeMap = /* @__PURE__ */ __name((input, context) => {
+      return Object.entries(input).reduce((acc, [key, value]) => {
+        if (value === null) {
+          return acc;
+        }
+        acc[key] = (0, import_core22._toStr)(value);
+        return acc;
+      }, {});
+    }, "se_QueueAttributeMap");
+    var se_ReceiveMessageRequest = /* @__PURE__ */ __name((input, context) => {
+      return (0, import_smithy_client5.take)(input, {
+        AttributeNames: (_) => se_AttributeNameList(_, context),
+        MaxNumberOfMessages: import_core22._toNum,
+        MessageAttributeNames: (_) => se_MessageAttributeNameList(_, context),
+        MessageSystemAttributeNames: (_) => se_MessageSystemAttributeList(_, context),
+        QueueUrl: import_core22._toStr,
+        ReceiveRequestAttemptId: import_core22._toStr,
+        VisibilityTimeout: import_core22._toNum,
+        WaitTimeSeconds: import_core22._toNum
+      });
+    }, "se_ReceiveMessageRequest");
+    var se_RemovePermissionRequest = /* @__PURE__ */ __name((input, context) => {
+      return (0, import_smithy_client5.take)(input, {
+        Label: import_core22._toStr,
+        QueueUrl: import_core22._toStr
+      });
+    }, "se_RemovePermissionRequest");
+    var se_SendMessageBatchRequest = /* @__PURE__ */ __name((input, context) => {
+      return (0, import_smithy_client5.take)(input, {
+        Entries: (_) => se_SendMessageBatchRequestEntryList(_, context),
+        QueueUrl: import_core22._toStr
+      });
+    }, "se_SendMessageBatchRequest");
+    var se_SendMessageBatchRequestEntry = /* @__PURE__ */ __name((input, context) => {
+      return (0, import_smithy_client5.take)(input, {
+        DelaySeconds: import_core22._toNum,
+        Id: import_core22._toStr,
+        MessageAttributes: (_) => se_MessageBodyAttributeMap(_, context),
+        MessageBody: import_core22._toStr,
+        MessageDeduplicationId: import_core22._toStr,
+        MessageGroupId: import_core22._toStr,
+        MessageSystemAttributes: (_) => se_MessageBodySystemAttributeMap(_, context)
+      });
+    }, "se_SendMessageBatchRequestEntry");
+    var se_SendMessageBatchRequestEntryList = /* @__PURE__ */ __name((input, context) => {
+      return input.filter((e) => e != null).map((entry) => {
+        return se_SendMessageBatchRequestEntry(entry, context);
+      });
+    }, "se_SendMessageBatchRequestEntryList");
+    var se_SendMessageRequest = /* @__PURE__ */ __name((input, context) => {
+      return (0, import_smithy_client5.take)(input, {
+        DelaySeconds: import_core22._toNum,
+        MessageAttributes: (_) => se_MessageBodyAttributeMap(_, context),
+        MessageBody: import_core22._toStr,
+        MessageDeduplicationId: import_core22._toStr,
+        MessageGroupId: import_core22._toStr,
+        MessageSystemAttributes: (_) => se_MessageBodySystemAttributeMap(_, context),
+        QueueUrl: import_core22._toStr
+      });
+    }, "se_SendMessageRequest");
+    var se_SetQueueAttributesRequest = /* @__PURE__ */ __name((input, context) => {
+      return (0, import_smithy_client5.take)(input, {
+        Attributes: (_) => se_QueueAttributeMap(_, context),
+        QueueUrl: import_core22._toStr
+      });
+    }, "se_SetQueueAttributesRequest");
+    var se_StartMessageMoveTaskRequest = /* @__PURE__ */ __name((input, context) => {
+      return (0, import_smithy_client5.take)(input, {
+        DestinationArn: import_core22._toStr,
+        MaxNumberOfMessagesPerSecond: import_core22._toNum,
+        SourceArn: import_core22._toStr
+      });
+    }, "se_StartMessageMoveTaskRequest");
+    var se_StringList = /* @__PURE__ */ __name((input, context) => {
+      return input.filter((e) => e != null).map((entry) => {
+        return (0, import_core22._toStr)(entry);
+      });
+    }, "se_StringList");
+    var se_TagKeyList = /* @__PURE__ */ __name((input, context) => {
+      return input.filter((e) => e != null).map((entry) => {
+        return (0, import_core22._toStr)(entry);
+      });
+    }, "se_TagKeyList");
+    var se_TagMap = /* @__PURE__ */ __name((input, context) => {
+      return Object.entries(input).reduce((acc, [key, value]) => {
+        if (value === null) {
+          return acc;
+        }
+        acc[key] = (0, import_core22._toStr)(value);
+        return acc;
+      }, {});
+    }, "se_TagMap");
+    var se_TagQueueRequest = /* @__PURE__ */ __name((input, context) => {
+      return (0, import_smithy_client5.take)(input, {
+        QueueUrl: import_core22._toStr,
+        Tags: (_) => se_TagMap(_, context)
+      });
+    }, "se_TagQueueRequest");
+    var se_UntagQueueRequest = /* @__PURE__ */ __name((input, context) => {
+      return (0, import_smithy_client5.take)(input, {
+        QueueUrl: import_core22._toStr,
+        TagKeys: (_) => se_TagKeyList(_, context)
+      });
+    }, "se_UntagQueueRequest");
+    var de_BinaryList = /* @__PURE__ */ __name((output, context) => {
+      const retVal = (output || []).filter((e) => e != null).map((entry) => {
+        return context.base64Decoder(entry);
+      });
+      return retVal;
+    }, "de_BinaryList");
+    var de_Message = /* @__PURE__ */ __name((output, context) => {
+      return (0, import_smithy_client5.take)(output, {
+        Attributes: import_smithy_client5._json,
+        Body: import_smithy_client5.expectString,
+        MD5OfBody: import_smithy_client5.expectString,
+        MD5OfMessageAttributes: import_smithy_client5.expectString,
+        MessageAttributes: (_) => de_MessageBodyAttributeMap(_, context),
+        MessageId: import_smithy_client5.expectString,
+        ReceiptHandle: import_smithy_client5.expectString
+      });
+    }, "de_Message");
+    var de_MessageAttributeValue = /* @__PURE__ */ __name((output, context) => {
+      return (0, import_smithy_client5.take)(output, {
+        BinaryListValues: (_) => de_BinaryList(_, context),
+        BinaryValue: context.base64Decoder,
+        DataType: import_smithy_client5.expectString,
+        StringListValues: import_smithy_client5._json,
+        StringValue: import_smithy_client5.expectString
+      });
+    }, "de_MessageAttributeValue");
+    var de_MessageBodyAttributeMap = /* @__PURE__ */ __name((output, context) => {
+      return Object.entries(output).reduce((acc, [key, value]) => {
+        if (value === null) {
+          return acc;
+        }
+        acc[key] = de_MessageAttributeValue(value, context);
+        return acc;
+      }, {});
+    }, "de_MessageBodyAttributeMap");
+    var de_MessageList = /* @__PURE__ */ __name((output, context) => {
+      const retVal = (output || []).filter((e) => e != null).map((entry) => {
+        return de_Message(entry, context);
+      });
+      return retVal;
+    }, "de_MessageList");
+    var de_ReceiveMessageResult = /* @__PURE__ */ __name((output, context) => {
+      return (0, import_smithy_client5.take)(output, {
+        Messages: (_) => de_MessageList(_, context)
+      });
+    }, "de_ReceiveMessageResult");
+    var deserializeMetadata = /* @__PURE__ */ __name((output) => ({
+      httpStatusCode: output.statusCode,
+      requestId: output.headers["x-amzn-requestid"] ?? output.headers["x-amzn-request-id"] ?? output.headers["x-amz-request-id"],
+      extendedRequestId: output.headers["x-amz-id-2"],
+      cfId: output.headers["x-amz-cf-id"]
+    }), "deserializeMetadata");
+    var throwDefaultError = (0, import_smithy_client5.withBaseException)(SQSServiceException);
+    var buildHttpRpcRequest = /* @__PURE__ */ __name(async (context, headers, path, resolvedHostname, body) => {
+      const { hostname, protocol = "https", port, path: basePath } = await context.endpoint();
+      const contents = {
+        protocol,
+        hostname,
+        port,
+        method: "POST",
+        path: basePath.endsWith("/") ? basePath.slice(0, -1) + path : basePath + path,
+        headers
+      };
+      if (resolvedHostname !== void 0) {
+        contents.hostname = resolvedHostname;
+      }
+      if (body !== void 0) {
+        contents.body = body;
+      }
+      return new import_protocol_http8.HttpRequest(contents);
+    }, "buildHttpRpcRequest");
+    function sharedHeaders(operation) {
+      return {
+        "content-type": "application/x-amz-json-1.0",
+        "x-amz-target": `AmazonSQS.${operation}`
+      };
+    }
+    __name(sharedHeaders, "sharedHeaders");
+    var populateBodyWithQueryCompatibility = /* @__PURE__ */ __name((parsedOutput, headers) => {
+      const queryErrorHeader = headers["x-amzn-query-error"];
+      if (parsedOutput.body !== void 0 && queryErrorHeader != null) {
+        const codeAndType = queryErrorHeader.split(";");
+        parsedOutput.body.Code = codeAndType[0];
+        parsedOutput.body.Type = codeAndType[1];
+      }
+    }, "populateBodyWithQueryCompatibility");
+    var _AddPermissionCommand = class _AddPermissionCommand extends import_smithy_client5.Command.classBuilder().ep(commonParams).m(function(Command, cs, config, o) {
+      return [
+        (0, import_middleware_serde2.getSerdePlugin)(config, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint2.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+      ];
+    }).s("AmazonSQS", "AddPermission", {}).n("SQSClient", "AddPermissionCommand").f(void 0, void 0).ser(se_AddPermissionCommand).de(de_AddPermissionCommand).build() {
+    };
+    __name(_AddPermissionCommand, "AddPermissionCommand");
+    var AddPermissionCommand = _AddPermissionCommand;
+    var _CancelMessageMoveTaskCommand = class _CancelMessageMoveTaskCommand extends import_smithy_client5.Command.classBuilder().ep(commonParams).m(function(Command, cs, config, o) {
+      return [
+        (0, import_middleware_serde2.getSerdePlugin)(config, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint2.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+      ];
+    }).s("AmazonSQS", "CancelMessageMoveTask", {}).n("SQSClient", "CancelMessageMoveTaskCommand").f(void 0, void 0).ser(se_CancelMessageMoveTaskCommand).de(de_CancelMessageMoveTaskCommand).build() {
+    };
+    __name(_CancelMessageMoveTaskCommand, "CancelMessageMoveTaskCommand");
+    var CancelMessageMoveTaskCommand = _CancelMessageMoveTaskCommand;
+    var _ChangeMessageVisibilityBatchCommand = class _ChangeMessageVisibilityBatchCommand extends import_smithy_client5.Command.classBuilder().ep(commonParams).m(function(Command, cs, config, o) {
+      return [
+        (0, import_middleware_serde2.getSerdePlugin)(config, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint2.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+      ];
+    }).s("AmazonSQS", "ChangeMessageVisibilityBatch", {}).n("SQSClient", "ChangeMessageVisibilityBatchCommand").f(void 0, void 0).ser(se_ChangeMessageVisibilityBatchCommand).de(de_ChangeMessageVisibilityBatchCommand).build() {
+    };
+    __name(_ChangeMessageVisibilityBatchCommand, "ChangeMessageVisibilityBatchCommand");
+    var ChangeMessageVisibilityBatchCommand = _ChangeMessageVisibilityBatchCommand;
+    var _ChangeMessageVisibilityCommand = class _ChangeMessageVisibilityCommand extends import_smithy_client5.Command.classBuilder().ep(commonParams).m(function(Command, cs, config, o) {
+      return [
+        (0, import_middleware_serde2.getSerdePlugin)(config, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint2.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+      ];
+    }).s("AmazonSQS", "ChangeMessageVisibility", {}).n("SQSClient", "ChangeMessageVisibilityCommand").f(void 0, void 0).ser(se_ChangeMessageVisibilityCommand).de(de_ChangeMessageVisibilityCommand).build() {
+    };
+    __name(_ChangeMessageVisibilityCommand, "ChangeMessageVisibilityCommand");
+    var ChangeMessageVisibilityCommand = _ChangeMessageVisibilityCommand;
+    var _CreateQueueCommand = class _CreateQueueCommand extends import_smithy_client5.Command.classBuilder().ep(commonParams).m(function(Command, cs, config, o) {
+      return [
+        (0, import_middleware_serde2.getSerdePlugin)(config, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint2.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+      ];
+    }).s("AmazonSQS", "CreateQueue", {}).n("SQSClient", "CreateQueueCommand").f(void 0, void 0).ser(se_CreateQueueCommand).de(de_CreateQueueCommand).build() {
+    };
+    __name(_CreateQueueCommand, "CreateQueueCommand");
+    var CreateQueueCommand = _CreateQueueCommand;
+    var _DeleteMessageBatchCommand = class _DeleteMessageBatchCommand extends import_smithy_client5.Command.classBuilder().ep(commonParams).m(function(Command, cs, config, o) {
+      return [
+        (0, import_middleware_serde2.getSerdePlugin)(config, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint2.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+      ];
+    }).s("AmazonSQS", "DeleteMessageBatch", {}).n("SQSClient", "DeleteMessageBatchCommand").f(void 0, void 0).ser(se_DeleteMessageBatchCommand).de(de_DeleteMessageBatchCommand).build() {
+    };
+    __name(_DeleteMessageBatchCommand, "DeleteMessageBatchCommand");
+    var DeleteMessageBatchCommand = _DeleteMessageBatchCommand;
+    var _DeleteMessageCommand = class _DeleteMessageCommand extends import_smithy_client5.Command.classBuilder().ep(commonParams).m(function(Command, cs, config, o) {
+      return [
+        (0, import_middleware_serde2.getSerdePlugin)(config, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint2.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+      ];
+    }).s("AmazonSQS", "DeleteMessage", {}).n("SQSClient", "DeleteMessageCommand").f(void 0, void 0).ser(se_DeleteMessageCommand).de(de_DeleteMessageCommand).build() {
+    };
+    __name(_DeleteMessageCommand, "DeleteMessageCommand");
+    var DeleteMessageCommand = _DeleteMessageCommand;
+    var _DeleteQueueCommand = class _DeleteQueueCommand extends import_smithy_client5.Command.classBuilder().ep(commonParams).m(function(Command, cs, config, o) {
+      return [
+        (0, import_middleware_serde2.getSerdePlugin)(config, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint2.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+      ];
+    }).s("AmazonSQS", "DeleteQueue", {}).n("SQSClient", "DeleteQueueCommand").f(void 0, void 0).ser(se_DeleteQueueCommand).de(de_DeleteQueueCommand).build() {
+    };
+    __name(_DeleteQueueCommand, "DeleteQueueCommand");
+    var DeleteQueueCommand = _DeleteQueueCommand;
+    var _GetQueueAttributesCommand = class _GetQueueAttributesCommand extends import_smithy_client5.Command.classBuilder().ep(commonParams).m(function(Command, cs, config, o) {
+      return [
+        (0, import_middleware_serde2.getSerdePlugin)(config, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint2.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+      ];
+    }).s("AmazonSQS", "GetQueueAttributes", {}).n("SQSClient", "GetQueueAttributesCommand").f(void 0, void 0).ser(se_GetQueueAttributesCommand).de(de_GetQueueAttributesCommand).build() {
+    };
+    __name(_GetQueueAttributesCommand, "GetQueueAttributesCommand");
+    var GetQueueAttributesCommand = _GetQueueAttributesCommand;
+    var _GetQueueUrlCommand = class _GetQueueUrlCommand extends import_smithy_client5.Command.classBuilder().ep(commonParams).m(function(Command, cs, config, o) {
+      return [
+        (0, import_middleware_serde2.getSerdePlugin)(config, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint2.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+      ];
+    }).s("AmazonSQS", "GetQueueUrl", {}).n("SQSClient", "GetQueueUrlCommand").f(void 0, void 0).ser(se_GetQueueUrlCommand).de(de_GetQueueUrlCommand).build() {
+    };
+    __name(_GetQueueUrlCommand, "GetQueueUrlCommand");
+    var GetQueueUrlCommand2 = _GetQueueUrlCommand;
+    var _ListDeadLetterSourceQueuesCommand = class _ListDeadLetterSourceQueuesCommand extends import_smithy_client5.Command.classBuilder().ep(commonParams).m(function(Command, cs, config, o) {
+      return [
+        (0, import_middleware_serde2.getSerdePlugin)(config, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint2.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+      ];
+    }).s("AmazonSQS", "ListDeadLetterSourceQueues", {}).n("SQSClient", "ListDeadLetterSourceQueuesCommand").f(void 0, void 0).ser(se_ListDeadLetterSourceQueuesCommand).de(de_ListDeadLetterSourceQueuesCommand).build() {
+    };
+    __name(_ListDeadLetterSourceQueuesCommand, "ListDeadLetterSourceQueuesCommand");
+    var ListDeadLetterSourceQueuesCommand = _ListDeadLetterSourceQueuesCommand;
+    var _ListMessageMoveTasksCommand = class _ListMessageMoveTasksCommand extends import_smithy_client5.Command.classBuilder().ep(commonParams).m(function(Command, cs, config, o) {
+      return [
+        (0, import_middleware_serde2.getSerdePlugin)(config, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint2.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+      ];
+    }).s("AmazonSQS", "ListMessageMoveTasks", {}).n("SQSClient", "ListMessageMoveTasksCommand").f(void 0, void 0).ser(se_ListMessageMoveTasksCommand).de(de_ListMessageMoveTasksCommand).build() {
+    };
+    __name(_ListMessageMoveTasksCommand, "ListMessageMoveTasksCommand");
+    var ListMessageMoveTasksCommand = _ListMessageMoveTasksCommand;
+    var _ListQueuesCommand = class _ListQueuesCommand extends import_smithy_client5.Command.classBuilder().ep(commonParams).m(function(Command, cs, config, o) {
+      return [
+        (0, import_middleware_serde2.getSerdePlugin)(config, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint2.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+      ];
+    }).s("AmazonSQS", "ListQueues", {}).n("SQSClient", "ListQueuesCommand").f(void 0, void 0).ser(se_ListQueuesCommand).de(de_ListQueuesCommand).build() {
+    };
+    __name(_ListQueuesCommand, "ListQueuesCommand");
+    var ListQueuesCommand = _ListQueuesCommand;
+    var _ListQueueTagsCommand = class _ListQueueTagsCommand extends import_smithy_client5.Command.classBuilder().ep(commonParams).m(function(Command, cs, config, o) {
+      return [
+        (0, import_middleware_serde2.getSerdePlugin)(config, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint2.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+      ];
+    }).s("AmazonSQS", "ListQueueTags", {}).n("SQSClient", "ListQueueTagsCommand").f(void 0, void 0).ser(se_ListQueueTagsCommand).de(de_ListQueueTagsCommand).build() {
+    };
+    __name(_ListQueueTagsCommand, "ListQueueTagsCommand");
+    var ListQueueTagsCommand = _ListQueueTagsCommand;
+    var _PurgeQueueCommand = class _PurgeQueueCommand extends import_smithy_client5.Command.classBuilder().ep(commonParams).m(function(Command, cs, config, o) {
+      return [
+        (0, import_middleware_serde2.getSerdePlugin)(config, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint2.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+      ];
+    }).s("AmazonSQS", "PurgeQueue", {}).n("SQSClient", "PurgeQueueCommand").f(void 0, void 0).ser(se_PurgeQueueCommand).de(de_PurgeQueueCommand).build() {
+    };
+    __name(_PurgeQueueCommand, "PurgeQueueCommand");
+    var PurgeQueueCommand = _PurgeQueueCommand;
+    var _ReceiveMessageCommand = class _ReceiveMessageCommand extends import_smithy_client5.Command.classBuilder().ep(commonParams).m(function(Command, cs, config, o) {
+      return [
+        (0, import_middleware_serde2.getSerdePlugin)(config, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint2.getEndpointPlugin)(config, Command.getEndpointParameterInstructions()),
+        (0, import_middleware_sdk_sqs.getReceiveMessagePlugin)(config)
+      ];
+    }).s("AmazonSQS", "ReceiveMessage", {}).n("SQSClient", "ReceiveMessageCommand").f(void 0, void 0).ser(se_ReceiveMessageCommand).de(de_ReceiveMessageCommand).build() {
+    };
+    __name(_ReceiveMessageCommand, "ReceiveMessageCommand");
+    var ReceiveMessageCommand = _ReceiveMessageCommand;
+    var _RemovePermissionCommand = class _RemovePermissionCommand extends import_smithy_client5.Command.classBuilder().ep(commonParams).m(function(Command, cs, config, o) {
+      return [
+        (0, import_middleware_serde2.getSerdePlugin)(config, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint2.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+      ];
+    }).s("AmazonSQS", "RemovePermission", {}).n("SQSClient", "RemovePermissionCommand").f(void 0, void 0).ser(se_RemovePermissionCommand).de(de_RemovePermissionCommand).build() {
+    };
+    __name(_RemovePermissionCommand, "RemovePermissionCommand");
+    var RemovePermissionCommand = _RemovePermissionCommand;
+    var _SendMessageBatchCommand = class _SendMessageBatchCommand extends import_smithy_client5.Command.classBuilder().ep(commonParams).m(function(Command, cs, config, o) {
+      return [
+        (0, import_middleware_serde2.getSerdePlugin)(config, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint2.getEndpointPlugin)(config, Command.getEndpointParameterInstructions()),
+        (0, import_middleware_sdk_sqs.getSendMessageBatchPlugin)(config)
+      ];
+    }).s("AmazonSQS", "SendMessageBatch", {}).n("SQSClient", "SendMessageBatchCommand").f(void 0, void 0).ser(se_SendMessageBatchCommand).de(de_SendMessageBatchCommand).build() {
+    };
+    __name(_SendMessageBatchCommand, "SendMessageBatchCommand");
+    var SendMessageBatchCommand = _SendMessageBatchCommand;
+    var _SendMessageCommand = class _SendMessageCommand extends import_smithy_client5.Command.classBuilder().ep(commonParams).m(function(Command, cs, config, o) {
+      return [
+        (0, import_middleware_serde2.getSerdePlugin)(config, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint2.getEndpointPlugin)(config, Command.getEndpointParameterInstructions()),
+        (0, import_middleware_sdk_sqs.getSendMessagePlugin)(config)
+      ];
+    }).s("AmazonSQS", "SendMessage", {}).n("SQSClient", "SendMessageCommand").f(void 0, void 0).ser(se_SendMessageCommand).de(de_SendMessageCommand).build() {
+    };
+    __name(_SendMessageCommand, "SendMessageCommand");
+    var SendMessageCommand = _SendMessageCommand;
+    var _SetQueueAttributesCommand = class _SetQueueAttributesCommand extends import_smithy_client5.Command.classBuilder().ep(commonParams).m(function(Command, cs, config, o) {
+      return [
+        (0, import_middleware_serde2.getSerdePlugin)(config, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint2.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+      ];
+    }).s("AmazonSQS", "SetQueueAttributes", {}).n("SQSClient", "SetQueueAttributesCommand").f(void 0, void 0).ser(se_SetQueueAttributesCommand).de(de_SetQueueAttributesCommand).build() {
+    };
+    __name(_SetQueueAttributesCommand, "SetQueueAttributesCommand");
+    var SetQueueAttributesCommand = _SetQueueAttributesCommand;
+    var _StartMessageMoveTaskCommand = class _StartMessageMoveTaskCommand extends import_smithy_client5.Command.classBuilder().ep(commonParams).m(function(Command, cs, config, o) {
+      return [
+        (0, import_middleware_serde2.getSerdePlugin)(config, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint2.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+      ];
+    }).s("AmazonSQS", "StartMessageMoveTask", {}).n("SQSClient", "StartMessageMoveTaskCommand").f(void 0, void 0).ser(se_StartMessageMoveTaskCommand).de(de_StartMessageMoveTaskCommand).build() {
+    };
+    __name(_StartMessageMoveTaskCommand, "StartMessageMoveTaskCommand");
+    var StartMessageMoveTaskCommand = _StartMessageMoveTaskCommand;
+    var _TagQueueCommand = class _TagQueueCommand extends import_smithy_client5.Command.classBuilder().ep(commonParams).m(function(Command, cs, config, o) {
+      return [
+        (0, import_middleware_serde2.getSerdePlugin)(config, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint2.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+      ];
+    }).s("AmazonSQS", "TagQueue", {}).n("SQSClient", "TagQueueCommand").f(void 0, void 0).ser(se_TagQueueCommand).de(de_TagQueueCommand).build() {
+    };
+    __name(_TagQueueCommand, "TagQueueCommand");
+    var TagQueueCommand = _TagQueueCommand;
+    var _UntagQueueCommand = class _UntagQueueCommand extends import_smithy_client5.Command.classBuilder().ep(commonParams).m(function(Command, cs, config, o) {
+      return [
+        (0, import_middleware_serde2.getSerdePlugin)(config, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint2.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+      ];
+    }).s("AmazonSQS", "UntagQueue", {}).n("SQSClient", "UntagQueueCommand").f(void 0, void 0).ser(se_UntagQueueCommand).de(de_UntagQueueCommand).build() {
+    };
+    __name(_UntagQueueCommand, "UntagQueueCommand");
+    var UntagQueueCommand = _UntagQueueCommand;
+    var commands = {
+      AddPermissionCommand,
+      CancelMessageMoveTaskCommand,
+      ChangeMessageVisibilityCommand,
+      ChangeMessageVisibilityBatchCommand,
+      CreateQueueCommand,
+      DeleteMessageCommand,
+      DeleteMessageBatchCommand,
+      DeleteQueueCommand,
+      GetQueueAttributesCommand,
+      GetQueueUrlCommand: GetQueueUrlCommand2,
+      ListDeadLetterSourceQueuesCommand,
+      ListMessageMoveTasksCommand,
+      ListQueuesCommand,
+      ListQueueTagsCommand,
+      PurgeQueueCommand,
+      ReceiveMessageCommand,
+      RemovePermissionCommand,
+      SendMessageCommand,
+      SendMessageBatchCommand,
+      SetQueueAttributesCommand,
+      StartMessageMoveTaskCommand,
+      TagQueueCommand,
+      UntagQueueCommand
+    };
+    var _SQS = class _SQS extends SQSClient2 {
+    };
+    __name(_SQS, "SQS");
+    var SQS = _SQS;
+    (0, import_smithy_client5.createAggregatedClient)(commands, SQS);
+    var paginateListDeadLetterSourceQueues = (0, import_core3.createPaginator)(SQSClient2, ListDeadLetterSourceQueuesCommand, "NextToken", "NextToken", "MaxResults");
+    var paginateListQueues = (0, import_core3.createPaginator)(SQSClient2, ListQueuesCommand, "NextToken", "NextToken", "MaxResults");
+  }
+});
+
+// src/config/secrets/deploy-secrets.ts
+var import_client_secrets_manager = __toESM(require_dist_cjs53());
+var import_client_sqs = __toESM(require_dist_cjs60());
+var fs = __toESM(require("fs"));
+
+// node_modules/js-yaml/dist/js-yaml.mjs
+function isNothing(subject) {
+  return typeof subject === "undefined" || subject === null;
+}
+function isObject(subject) {
+  return typeof subject === "object" && subject !== null;
+}
+function toArray(sequence) {
+  if (Array.isArray(sequence)) return sequence;
+  else if (isNothing(sequence)) return [];
+  return [sequence];
+}
+function extend(target, source) {
+  var index, length, key, sourceKeys;
+  if (source) {
+    sourceKeys = Object.keys(source);
+    for (index = 0, length = sourceKeys.length; index < length; index += 1) {
+      key = sourceKeys[index];
+      target[key] = source[key];
+    }
+  }
+  return target;
+}
+function repeat(string, count) {
+  var result = "", cycle;
+  for (cycle = 0; cycle < count; cycle += 1) {
+    result += string;
+  }
+  return result;
+}
+function isNegativeZero(number) {
+  return number === 0 && Number.NEGATIVE_INFINITY === 1 / number;
+}
+var isNothing_1 = isNothing;
+var isObject_1 = isObject;
+var toArray_1 = toArray;
+var repeat_1 = repeat;
+var isNegativeZero_1 = isNegativeZero;
+var extend_1 = extend;
+var common = {
+  isNothing: isNothing_1,
+  isObject: isObject_1,
+  toArray: toArray_1,
+  repeat: repeat_1,
+  isNegativeZero: isNegativeZero_1,
+  extend: extend_1
+};
+function formatError(exception2, compact) {
+  var where = "", message = exception2.reason || "(unknown reason)";
+  if (!exception2.mark) return message;
+  if (exception2.mark.name) {
+    where += 'in "' + exception2.mark.name + '" ';
+  }
+  where += "(" + (exception2.mark.line + 1) + ":" + (exception2.mark.column + 1) + ")";
+  if (!compact && exception2.mark.snippet) {
+    where += "\n\n" + exception2.mark.snippet;
+  }
+  return message + " " + where;
+}
+function YAMLException$1(reason, mark) {
+  Error.call(this);
+  this.name = "YAMLException";
+  this.reason = reason;
+  this.mark = mark;
+  this.message = formatError(this, false);
+  if (Error.captureStackTrace) {
+    Error.captureStackTrace(this, this.constructor);
+  } else {
+    this.stack = new Error().stack || "";
+  }
+}
+YAMLException$1.prototype = Object.create(Error.prototype);
+YAMLException$1.prototype.constructor = YAMLException$1;
+YAMLException$1.prototype.toString = function toString(compact) {
+  return this.name + ": " + formatError(this, compact);
+};
+var exception = YAMLException$1;
+function getLine(buffer, lineStart, lineEnd, position, maxLineLength) {
+  var head = "";
+  var tail = "";
+  var maxHalfLength = Math.floor(maxLineLength / 2) - 1;
+  if (position - lineStart > maxHalfLength) {
+    head = " ... ";
+    lineStart = position - maxHalfLength + head.length;
+  }
+  if (lineEnd - position > maxHalfLength) {
+    tail = " ...";
+    lineEnd = position + maxHalfLength - tail.length;
+  }
+  return {
+    str: head + buffer.slice(lineStart, lineEnd).replace(/\t/g, "\u2192") + tail,
+    pos: position - lineStart + head.length
+    // relative position
+  };
+}
+function padStart(string, max) {
+  return common.repeat(" ", max - string.length) + string;
+}
+function makeSnippet(mark, options) {
+  options = Object.create(options || null);
+  if (!mark.buffer) return null;
+  if (!options.maxLength) options.maxLength = 79;
+  if (typeof options.indent !== "number") options.indent = 1;
+  if (typeof options.linesBefore !== "number") options.linesBefore = 3;
+  if (typeof options.linesAfter !== "number") options.linesAfter = 2;
+  var re = /\r?\n|\r|\0/g;
+  var lineStarts = [0];
+  var lineEnds = [];
+  var match;
+  var foundLineNo = -1;
+  while (match = re.exec(mark.buffer)) {
+    lineEnds.push(match.index);
+    lineStarts.push(match.index + match[0].length);
+    if (mark.position <= match.index && foundLineNo < 0) {
+      foundLineNo = lineStarts.length - 2;
+    }
+  }
+  if (foundLineNo < 0) foundLineNo = lineStarts.length - 1;
+  var result = "", i, line;
+  var lineNoLength = Math.min(mark.line + options.linesAfter, lineEnds.length).toString().length;
+  var maxLineLength = options.maxLength - (options.indent + lineNoLength + 3);
+  for (i = 1; i <= options.linesBefore; i++) {
+    if (foundLineNo - i < 0) break;
+    line = getLine(
+      mark.buffer,
+      lineStarts[foundLineNo - i],
+      lineEnds[foundLineNo - i],
+      mark.position - (lineStarts[foundLineNo] - lineStarts[foundLineNo - i]),
+      maxLineLength
+    );
+    result = common.repeat(" ", options.indent) + padStart((mark.line - i + 1).toString(), lineNoLength) + " | " + line.str + "\n" + result;
+  }
+  line = getLine(mark.buffer, lineStarts[foundLineNo], lineEnds[foundLineNo], mark.position, maxLineLength);
+  result += common.repeat(" ", options.indent) + padStart((mark.line + 1).toString(), lineNoLength) + " | " + line.str + "\n";
+  result += common.repeat("-", options.indent + lineNoLength + 3 + line.pos) + "^\n";
+  for (i = 1; i <= options.linesAfter; i++) {
+    if (foundLineNo + i >= lineEnds.length) break;
+    line = getLine(
+      mark.buffer,
+      lineStarts[foundLineNo + i],
+      lineEnds[foundLineNo + i],
+      mark.position - (lineStarts[foundLineNo] - lineStarts[foundLineNo + i]),
+      maxLineLength
+    );
+    result += common.repeat(" ", options.indent) + padStart((mark.line + i + 1).toString(), lineNoLength) + " | " + line.str + "\n";
+  }
+  return result.replace(/\n$/, "");
+}
+var snippet = makeSnippet;
+var TYPE_CONSTRUCTOR_OPTIONS = [
+  "kind",
+  "multi",
+  "resolve",
+  "construct",
+  "instanceOf",
+  "predicate",
+  "represent",
+  "representName",
+  "defaultStyle",
+  "styleAliases"
+];
+var YAML_NODE_KINDS = [
+  "scalar",
+  "sequence",
+  "mapping"
+];
+function compileStyleAliases(map2) {
+  var result = {};
+  if (map2 !== null) {
+    Object.keys(map2).forEach(function(style) {
+      map2[style].forEach(function(alias) {
+        result[String(alias)] = style;
+      });
+    });
+  }
+  return result;
+}
+function Type$1(tag, options) {
+  options = options || {};
+  Object.keys(options).forEach(function(name) {
+    if (TYPE_CONSTRUCTOR_OPTIONS.indexOf(name) === -1) {
+      throw new exception('Unknown option "' + name + '" is met in definition of "' + tag + '" YAML type.');
+    }
+  });
+  this.options = options;
+  this.tag = tag;
+  this.kind = options["kind"] || null;
+  this.resolve = options["resolve"] || function() {
+    return true;
+  };
+  this.construct = options["construct"] || function(data) {
+    return data;
+  };
+  this.instanceOf = options["instanceOf"] || null;
+  this.predicate = options["predicate"] || null;
+  this.represent = options["represent"] || null;
+  this.representName = options["representName"] || null;
+  this.defaultStyle = options["defaultStyle"] || null;
+  this.multi = options["multi"] || false;
+  this.styleAliases = compileStyleAliases(options["styleAliases"] || null);
+  if (YAML_NODE_KINDS.indexOf(this.kind) === -1) {
+    throw new exception('Unknown kind "' + this.kind + '" is specified for "' + tag + '" YAML type.');
+  }
+}
+var type = Type$1;
+function compileList(schema2, name) {
+  var result = [];
+  schema2[name].forEach(function(currentType) {
+    var newIndex = result.length;
+    result.forEach(function(previousType, previousIndex) {
+      if (previousType.tag === currentType.tag && previousType.kind === currentType.kind && previousType.multi === currentType.multi) {
+        newIndex = previousIndex;
+      }
+    });
+    result[newIndex] = currentType;
+  });
+  return result;
+}
+function compileMap() {
+  var result = {
+    scalar: {},
+    sequence: {},
+    mapping: {},
+    fallback: {},
+    multi: {
+      scalar: [],
+      sequence: [],
+      mapping: [],
+      fallback: []
+    }
+  }, index, length;
+  function collectType(type2) {
+    if (type2.multi) {
+      result.multi[type2.kind].push(type2);
+      result.multi["fallback"].push(type2);
+    } else {
+      result[type2.kind][type2.tag] = result["fallback"][type2.tag] = type2;
+    }
+  }
+  for (index = 0, length = arguments.length; index < length; index += 1) {
+    arguments[index].forEach(collectType);
+  }
+  return result;
+}
+function Schema$1(definition) {
+  return this.extend(definition);
+}
+Schema$1.prototype.extend = function extend2(definition) {
+  var implicit = [];
+  var explicit = [];
+  if (definition instanceof type) {
+    explicit.push(definition);
+  } else if (Array.isArray(definition)) {
+    explicit = explicit.concat(definition);
+  } else if (definition && (Array.isArray(definition.implicit) || Array.isArray(definition.explicit))) {
+    if (definition.implicit) implicit = implicit.concat(definition.implicit);
+    if (definition.explicit) explicit = explicit.concat(definition.explicit);
+  } else {
+    throw new exception("Schema.extend argument should be a Type, [ Type ], or a schema definition ({ implicit: [...], explicit: [...] })");
+  }
+  implicit.forEach(function(type$1) {
+    if (!(type$1 instanceof type)) {
+      throw new exception("Specified list of YAML types (or a single Type object) contains a non-Type object.");
+    }
+    if (type$1.loadKind && type$1.loadKind !== "scalar") {
+      throw new exception("There is a non-scalar type in the implicit list of a schema. Implicit resolving of such types is not supported.");
+    }
+    if (type$1.multi) {
+      throw new exception("There is a multi type in the implicit list of a schema. Multi tags can only be listed as explicit.");
+    }
+  });
+  explicit.forEach(function(type$1) {
+    if (!(type$1 instanceof type)) {
+      throw new exception("Specified list of YAML types (or a single Type object) contains a non-Type object.");
+    }
+  });
+  var result = Object.create(Schema$1.prototype);
+  result.implicit = (this.implicit || []).concat(implicit);
+  result.explicit = (this.explicit || []).concat(explicit);
+  result.compiledImplicit = compileList(result, "implicit");
+  result.compiledExplicit = compileList(result, "explicit");
+  result.compiledTypeMap = compileMap(result.compiledImplicit, result.compiledExplicit);
+  return result;
+};
+var schema = Schema$1;
+var str = new type("tag:yaml.org,2002:str", {
+  kind: "scalar",
+  construct: function(data) {
+    return data !== null ? data : "";
+  }
+});
+var seq = new type("tag:yaml.org,2002:seq", {
+  kind: "sequence",
+  construct: function(data) {
+    return data !== null ? data : [];
+  }
+});
+var map = new type("tag:yaml.org,2002:map", {
+  kind: "mapping",
+  construct: function(data) {
+    return data !== null ? data : {};
+  }
+});
+var failsafe = new schema({
+  explicit: [
+    str,
+    seq,
+    map
+  ]
+});
+function resolveYamlNull(data) {
+  if (data === null) return true;
+  var max = data.length;
+  return max === 1 && data === "~" || max === 4 && (data === "null" || data === "Null" || data === "NULL");
+}
+function constructYamlNull() {
+  return null;
+}
+function isNull(object) {
+  return object === null;
+}
+var _null = new type("tag:yaml.org,2002:null", {
+  kind: "scalar",
+  resolve: resolveYamlNull,
+  construct: constructYamlNull,
+  predicate: isNull,
+  represent: {
+    canonical: function() {
+      return "~";
+    },
+    lowercase: function() {
+      return "null";
+    },
+    uppercase: function() {
+      return "NULL";
+    },
+    camelcase: function() {
+      return "Null";
+    },
+    empty: function() {
+      return "";
+    }
+  },
+  defaultStyle: "lowercase"
+});
+function resolveYamlBoolean(data) {
+  if (data === null) return false;
+  var max = data.length;
+  return max === 4 && (data === "true" || data === "True" || data === "TRUE") || max === 5 && (data === "false" || data === "False" || data === "FALSE");
+}
+function constructYamlBoolean(data) {
+  return data === "true" || data === "True" || data === "TRUE";
+}
+function isBoolean(object) {
+  return Object.prototype.toString.call(object) === "[object Boolean]";
+}
+var bool = new type("tag:yaml.org,2002:bool", {
+  kind: "scalar",
+  resolve: resolveYamlBoolean,
+  construct: constructYamlBoolean,
+  predicate: isBoolean,
+  represent: {
+    lowercase: function(object) {
+      return object ? "true" : "false";
+    },
+    uppercase: function(object) {
+      return object ? "TRUE" : "FALSE";
+    },
+    camelcase: function(object) {
+      return object ? "True" : "False";
+    }
+  },
+  defaultStyle: "lowercase"
+});
+function isHexCode(c) {
+  return 48 <= c && c <= 57 || 65 <= c && c <= 70 || 97 <= c && c <= 102;
+}
+function isOctCode(c) {
+  return 48 <= c && c <= 55;
+}
+function isDecCode(c) {
+  return 48 <= c && c <= 57;
+}
+function resolveYamlInteger(data) {
+  if (data === null) return false;
+  var max = data.length, index = 0, hasDigits = false, ch;
+  if (!max) return false;
+  ch = data[index];
+  if (ch === "-" || ch === "+") {
+    ch = data[++index];
+  }
+  if (ch === "0") {
+    if (index + 1 === max) return true;
+    ch = data[++index];
+    if (ch === "b") {
+      index++;
+      for (; index < max; index++) {
+        ch = data[index];
+        if (ch === "_") continue;
+        if (ch !== "0" && ch !== "1") return false;
+        hasDigits = true;
+      }
+      return hasDigits && ch !== "_";
+    }
+    if (ch === "x") {
+      index++;
+      for (; index < max; index++) {
+        ch = data[index];
+        if (ch === "_") continue;
+        if (!isHexCode(data.charCodeAt(index))) return false;
+        hasDigits = true;
+      }
+      return hasDigits && ch !== "_";
+    }
+    if (ch === "o") {
+      index++;
+      for (; index < max; index++) {
+        ch = data[index];
+        if (ch === "_") continue;
+        if (!isOctCode(data.charCodeAt(index))) return false;
+        hasDigits = true;
+      }
+      return hasDigits && ch !== "_";
+    }
+  }
+  if (ch === "_") return false;
+  for (; index < max; index++) {
+    ch = data[index];
+    if (ch === "_") continue;
+    if (!isDecCode(data.charCodeAt(index))) {
+      return false;
+    }
+    hasDigits = true;
+  }
+  if (!hasDigits || ch === "_") return false;
+  return true;
+}
+function constructYamlInteger(data) {
+  var value = data, sign = 1, ch;
+  if (value.indexOf("_") !== -1) {
+    value = value.replace(/_/g, "");
+  }
+  ch = value[0];
+  if (ch === "-" || ch === "+") {
+    if (ch === "-") sign = -1;
+    value = value.slice(1);
+    ch = value[0];
+  }
+  if (value === "0") return 0;
+  if (ch === "0") {
+    if (value[1] === "b") return sign * parseInt(value.slice(2), 2);
+    if (value[1] === "x") return sign * parseInt(value.slice(2), 16);
+    if (value[1] === "o") return sign * parseInt(value.slice(2), 8);
+  }
+  return sign * parseInt(value, 10);
+}
+function isInteger(object) {
+  return Object.prototype.toString.call(object) === "[object Number]" && (object % 1 === 0 && !common.isNegativeZero(object));
+}
+var int = new type("tag:yaml.org,2002:int", {
+  kind: "scalar",
+  resolve: resolveYamlInteger,
+  construct: constructYamlInteger,
+  predicate: isInteger,
+  represent: {
+    binary: function(obj) {
+      return obj >= 0 ? "0b" + obj.toString(2) : "-0b" + obj.toString(2).slice(1);
+    },
+    octal: function(obj) {
+      return obj >= 0 ? "0o" + obj.toString(8) : "-0o" + obj.toString(8).slice(1);
+    },
+    decimal: function(obj) {
+      return obj.toString(10);
+    },
+    /* eslint-disable max-len */
+    hexadecimal: function(obj) {
+      return obj >= 0 ? "0x" + obj.toString(16).toUpperCase() : "-0x" + obj.toString(16).toUpperCase().slice(1);
+    }
+  },
+  defaultStyle: "decimal",
+  styleAliases: {
+    binary: [2, "bin"],
+    octal: [8, "oct"],
+    decimal: [10, "dec"],
+    hexadecimal: [16, "hex"]
+  }
+});
+var YAML_FLOAT_PATTERN = new RegExp(
+  // 2.5e4, 2.5 and integers
+  "^(?:[-+]?(?:[0-9][0-9_]*)(?:\\.[0-9_]*)?(?:[eE][-+]?[0-9]+)?|\\.[0-9_]+(?:[eE][-+]?[0-9]+)?|[-+]?\\.(?:inf|Inf|INF)|\\.(?:nan|NaN|NAN))$"
+);
+function resolveYamlFloat(data) {
+  if (data === null) return false;
+  if (!YAML_FLOAT_PATTERN.test(data) || // Quick hack to not allow integers end with `_`
+  // Probably should update regexp & check speed
+  data[data.length - 1] === "_") {
+    return false;
+  }
+  return true;
+}
+function constructYamlFloat(data) {
+  var value, sign;
+  value = data.replace(/_/g, "").toLowerCase();
+  sign = value[0] === "-" ? -1 : 1;
+  if ("+-".indexOf(value[0]) >= 0) {
+    value = value.slice(1);
+  }
+  if (value === ".inf") {
+    return sign === 1 ? Number.POSITIVE_INFINITY : Number.NEGATIVE_INFINITY;
+  } else if (value === ".nan") {
+    return NaN;
+  }
+  return sign * parseFloat(value, 10);
+}
+var SCIENTIFIC_WITHOUT_DOT = /^[-+]?[0-9]+e/;
+function representYamlFloat(object, style) {
+  var res;
+  if (isNaN(object)) {
+    switch (style) {
+      case "lowercase":
+        return ".nan";
+      case "uppercase":
+        return ".NAN";
+      case "camelcase":
+        return ".NaN";
+    }
+  } else if (Number.POSITIVE_INFINITY === object) {
+    switch (style) {
+      case "lowercase":
+        return ".inf";
+      case "uppercase":
+        return ".INF";
+      case "camelcase":
+        return ".Inf";
+    }
+  } else if (Number.NEGATIVE_INFINITY === object) {
+    switch (style) {
+      case "lowercase":
+        return "-.inf";
+      case "uppercase":
+        return "-.INF";
+      case "camelcase":
+        return "-.Inf";
+    }
+  } else if (common.isNegativeZero(object)) {
+    return "-0.0";
+  }
+  res = object.toString(10);
+  return SCIENTIFIC_WITHOUT_DOT.test(res) ? res.replace("e", ".e") : res;
+}
+function isFloat(object) {
+  return Object.prototype.toString.call(object) === "[object Number]" && (object % 1 !== 0 || common.isNegativeZero(object));
+}
+var float = new type("tag:yaml.org,2002:float", {
+  kind: "scalar",
+  resolve: resolveYamlFloat,
+  construct: constructYamlFloat,
+  predicate: isFloat,
+  represent: representYamlFloat,
+  defaultStyle: "lowercase"
+});
+var json = failsafe.extend({
+  implicit: [
+    _null,
+    bool,
+    int,
+    float
+  ]
+});
+var core = json;
+var YAML_DATE_REGEXP = new RegExp(
+  "^([0-9][0-9][0-9][0-9])-([0-9][0-9])-([0-9][0-9])$"
+);
+var YAML_TIMESTAMP_REGEXP = new RegExp(
+  "^([0-9][0-9][0-9][0-9])-([0-9][0-9]?)-([0-9][0-9]?)(?:[Tt]|[ \\t]+)([0-9][0-9]?):([0-9][0-9]):([0-9][0-9])(?:\\.([0-9]*))?(?:[ \\t]*(Z|([-+])([0-9][0-9]?)(?::([0-9][0-9]))?))?$"
+);
+function resolveYamlTimestamp(data) {
+  if (data === null) return false;
+  if (YAML_DATE_REGEXP.exec(data) !== null) return true;
+  if (YAML_TIMESTAMP_REGEXP.exec(data) !== null) return true;
+  return false;
+}
+function constructYamlTimestamp(data) {
+  var match, year, month, day, hour, minute, second, fraction = 0, delta = null, tz_hour, tz_minute, date;
+  match = YAML_DATE_REGEXP.exec(data);
+  if (match === null) match = YAML_TIMESTAMP_REGEXP.exec(data);
+  if (match === null) throw new Error("Date resolve error");
+  year = +match[1];
+  month = +match[2] - 1;
+  day = +match[3];
+  if (!match[4]) {
+    return new Date(Date.UTC(year, month, day));
+  }
+  hour = +match[4];
+  minute = +match[5];
+  second = +match[6];
+  if (match[7]) {
+    fraction = match[7].slice(0, 3);
+    while (fraction.length < 3) {
+      fraction += "0";
+    }
+    fraction = +fraction;
+  }
+  if (match[9]) {
+    tz_hour = +match[10];
+    tz_minute = +(match[11] || 0);
+    delta = (tz_hour * 60 + tz_minute) * 6e4;
+    if (match[9] === "-") delta = -delta;
+  }
+  date = new Date(Date.UTC(year, month, day, hour, minute, second, fraction));
+  if (delta) date.setTime(date.getTime() - delta);
+  return date;
+}
+function representYamlTimestamp(object) {
+  return object.toISOString();
+}
+var timestamp = new type("tag:yaml.org,2002:timestamp", {
+  kind: "scalar",
+  resolve: resolveYamlTimestamp,
+  construct: constructYamlTimestamp,
+  instanceOf: Date,
+  represent: representYamlTimestamp
+});
+function resolveYamlMerge(data) {
+  return data === "<<" || data === null;
+}
+var merge = new type("tag:yaml.org,2002:merge", {
+  kind: "scalar",
+  resolve: resolveYamlMerge
+});
+var BASE64_MAP = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=\n\r";
+function resolveYamlBinary(data) {
+  if (data === null) return false;
+  var code, idx, bitlen = 0, max = data.length, map2 = BASE64_MAP;
+  for (idx = 0; idx < max; idx++) {
+    code = map2.indexOf(data.charAt(idx));
+    if (code > 64) continue;
+    if (code < 0) return false;
+    bitlen += 6;
+  }
+  return bitlen % 8 === 0;
+}
+function constructYamlBinary(data) {
+  var idx, tailbits, input = data.replace(/[\r\n=]/g, ""), max = input.length, map2 = BASE64_MAP, bits = 0, result = [];
+  for (idx = 0; idx < max; idx++) {
+    if (idx % 4 === 0 && idx) {
+      result.push(bits >> 16 & 255);
+      result.push(bits >> 8 & 255);
+      result.push(bits & 255);
+    }
+    bits = bits << 6 | map2.indexOf(input.charAt(idx));
+  }
+  tailbits = max % 4 * 6;
+  if (tailbits === 0) {
+    result.push(bits >> 16 & 255);
+    result.push(bits >> 8 & 255);
+    result.push(bits & 255);
+  } else if (tailbits === 18) {
+    result.push(bits >> 10 & 255);
+    result.push(bits >> 2 & 255);
+  } else if (tailbits === 12) {
+    result.push(bits >> 4 & 255);
+  }
+  return new Uint8Array(result);
+}
+function representYamlBinary(object) {
+  var result = "", bits = 0, idx, tail, max = object.length, map2 = BASE64_MAP;
+  for (idx = 0; idx < max; idx++) {
+    if (idx % 3 === 0 && idx) {
+      result += map2[bits >> 18 & 63];
+      result += map2[bits >> 12 & 63];
+      result += map2[bits >> 6 & 63];
+      result += map2[bits & 63];
+    }
+    bits = (bits << 8) + object[idx];
+  }
+  tail = max % 3;
+  if (tail === 0) {
+    result += map2[bits >> 18 & 63];
+    result += map2[bits >> 12 & 63];
+    result += map2[bits >> 6 & 63];
+    result += map2[bits & 63];
+  } else if (tail === 2) {
+    result += map2[bits >> 10 & 63];
+    result += map2[bits >> 4 & 63];
+    result += map2[bits << 2 & 63];
+    result += map2[64];
+  } else if (tail === 1) {
+    result += map2[bits >> 2 & 63];
+    result += map2[bits << 4 & 63];
+    result += map2[64];
+    result += map2[64];
+  }
+  return result;
+}
+function isBinary(obj) {
+  return Object.prototype.toString.call(obj) === "[object Uint8Array]";
+}
+var binary = new type("tag:yaml.org,2002:binary", {
+  kind: "scalar",
+  resolve: resolveYamlBinary,
+  construct: constructYamlBinary,
+  predicate: isBinary,
+  represent: representYamlBinary
+});
+var _hasOwnProperty$3 = Object.prototype.hasOwnProperty;
+var _toString$2 = Object.prototype.toString;
+function resolveYamlOmap(data) {
+  if (data === null) return true;
+  var objectKeys = [], index, length, pair, pairKey, pairHasKey, object = data;
+  for (index = 0, length = object.length; index < length; index += 1) {
+    pair = object[index];
+    pairHasKey = false;
+    if (_toString$2.call(pair) !== "[object Object]") return false;
+    for (pairKey in pair) {
+      if (_hasOwnProperty$3.call(pair, pairKey)) {
+        if (!pairHasKey) pairHasKey = true;
+        else return false;
+      }
+    }
+    if (!pairHasKey) return false;
+    if (objectKeys.indexOf(pairKey) === -1) objectKeys.push(pairKey);
+    else return false;
+  }
+  return true;
+}
+function constructYamlOmap(data) {
+  return data !== null ? data : [];
+}
+var omap = new type("tag:yaml.org,2002:omap", {
+  kind: "sequence",
+  resolve: resolveYamlOmap,
+  construct: constructYamlOmap
+});
+var _toString$1 = Object.prototype.toString;
+function resolveYamlPairs(data) {
+  if (data === null) return true;
+  var index, length, pair, keys, result, object = data;
+  result = new Array(object.length);
+  for (index = 0, length = object.length; index < length; index += 1) {
+    pair = object[index];
+    if (_toString$1.call(pair) !== "[object Object]") return false;
+    keys = Object.keys(pair);
+    if (keys.length !== 1) return false;
+    result[index] = [keys[0], pair[keys[0]]];
+  }
+  return true;
+}
+function constructYamlPairs(data) {
+  if (data === null) return [];
+  var index, length, pair, keys, result, object = data;
+  result = new Array(object.length);
+  for (index = 0, length = object.length; index < length; index += 1) {
+    pair = object[index];
+    keys = Object.keys(pair);
+    result[index] = [keys[0], pair[keys[0]]];
+  }
+  return result;
+}
+var pairs = new type("tag:yaml.org,2002:pairs", {
+  kind: "sequence",
+  resolve: resolveYamlPairs,
+  construct: constructYamlPairs
+});
+var _hasOwnProperty$2 = Object.prototype.hasOwnProperty;
+function resolveYamlSet(data) {
+  if (data === null) return true;
+  var key, object = data;
+  for (key in object) {
+    if (_hasOwnProperty$2.call(object, key)) {
+      if (object[key] !== null) return false;
+    }
+  }
+  return true;
+}
+function constructYamlSet(data) {
+  return data !== null ? data : {};
+}
+var set = new type("tag:yaml.org,2002:set", {
+  kind: "mapping",
+  resolve: resolveYamlSet,
+  construct: constructYamlSet
+});
+var _default = core.extend({
+  implicit: [
+    timestamp,
+    merge
+  ],
+  explicit: [
+    binary,
+    omap,
+    pairs,
+    set
+  ]
+});
+var _hasOwnProperty$1 = Object.prototype.hasOwnProperty;
+var CONTEXT_FLOW_IN = 1;
+var CONTEXT_FLOW_OUT = 2;
+var CONTEXT_BLOCK_IN = 3;
+var CONTEXT_BLOCK_OUT = 4;
+var CHOMPING_CLIP = 1;
+var CHOMPING_STRIP = 2;
+var CHOMPING_KEEP = 3;
+var PATTERN_NON_PRINTABLE = /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x84\x86-\x9F\uFFFE\uFFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF]/;
+var PATTERN_NON_ASCII_LINE_BREAKS = /[\x85\u2028\u2029]/;
+var PATTERN_FLOW_INDICATORS = /[,\[\]\{\}]/;
+var PATTERN_TAG_HANDLE = /^(?:!|!!|![a-z\-]+!)$/i;
+var PATTERN_TAG_URI = /^(?:!|[^,\[\]\{\}])(?:%[0-9a-f]{2}|[0-9a-z\-#;\/\?:@&=\+\$,_\.!~\*'\(\)\[\]])*$/i;
+function _class(obj) {
+  return Object.prototype.toString.call(obj);
+}
+function is_EOL(c) {
+  return c === 10 || c === 13;
+}
+function is_WHITE_SPACE(c) {
+  return c === 9 || c === 32;
+}
+function is_WS_OR_EOL(c) {
+  return c === 9 || c === 32 || c === 10 || c === 13;
+}
+function is_FLOW_INDICATOR(c) {
+  return c === 44 || c === 91 || c === 93 || c === 123 || c === 125;
+}
+function fromHexCode(c) {
+  var lc;
+  if (48 <= c && c <= 57) {
+    return c - 48;
+  }
+  lc = c | 32;
+  if (97 <= lc && lc <= 102) {
+    return lc - 97 + 10;
+  }
+  return -1;
+}
+function escapedHexLen(c) {
+  if (c === 120) {
+    return 2;
+  }
+  if (c === 117) {
+    return 4;
+  }
+  if (c === 85) {
+    return 8;
+  }
+  return 0;
+}
+function fromDecimalCode(c) {
+  if (48 <= c && c <= 57) {
+    return c - 48;
+  }
+  return -1;
+}
+function simpleEscapeSequence(c) {
+  return c === 48 ? "\0" : c === 97 ? "\x07" : c === 98 ? "\b" : c === 116 ? "	" : c === 9 ? "	" : c === 110 ? "\n" : c === 118 ? "\v" : c === 102 ? "\f" : c === 114 ? "\r" : c === 101 ? "\x1B" : c === 32 ? " " : c === 34 ? '"' : c === 47 ? "/" : c === 92 ? "\\" : c === 78 ? "\x85" : c === 95 ? "\xA0" : c === 76 ? "\u2028" : c === 80 ? "\u2029" : "";
+}
+function charFromCodepoint(c) {
+  if (c <= 65535) {
+    return String.fromCharCode(c);
+  }
+  return String.fromCharCode(
+    (c - 65536 >> 10) + 55296,
+    (c - 65536 & 1023) + 56320
+  );
+}
+var simpleEscapeCheck = new Array(256);
+var simpleEscapeMap = new Array(256);
+for (i = 0; i < 256; i++) {
+  simpleEscapeCheck[i] = simpleEscapeSequence(i) ? 1 : 0;
+  simpleEscapeMap[i] = simpleEscapeSequence(i);
+}
+var i;
+function State$1(input, options) {
+  this.input = input;
+  this.filename = options["filename"] || null;
+  this.schema = options["schema"] || _default;
+  this.onWarning = options["onWarning"] || null;
+  this.legacy = options["legacy"] || false;
+  this.json = options["json"] || false;
+  this.listener = options["listener"] || null;
+  this.implicitTypes = this.schema.compiledImplicit;
+  this.typeMap = this.schema.compiledTypeMap;
+  this.length = input.length;
+  this.position = 0;
+  this.line = 0;
+  this.lineStart = 0;
+  this.lineIndent = 0;
+  this.firstTabInLine = -1;
+  this.documents = [];
+}
+function generateError(state, message) {
+  var mark = {
+    name: state.filename,
+    buffer: state.input.slice(0, -1),
+    // omit trailing \0
+    position: state.position,
+    line: state.line,
+    column: state.position - state.lineStart
+  };
+  mark.snippet = snippet(mark);
+  return new exception(message, mark);
+}
+function throwError(state, message) {
+  throw generateError(state, message);
+}
+function throwWarning(state, message) {
+  if (state.onWarning) {
+    state.onWarning.call(null, generateError(state, message));
+  }
+}
+var directiveHandlers = {
+  YAML: function handleYamlDirective(state, name, args2) {
+    var match, major, minor;
+    if (state.version !== null) {
+      throwError(state, "duplication of %YAML directive");
+    }
+    if (args2.length !== 1) {
+      throwError(state, "YAML directive accepts exactly one argument");
+    }
+    match = /^([0-9]+)\.([0-9]+)$/.exec(args2[0]);
+    if (match === null) {
+      throwError(state, "ill-formed argument of the YAML directive");
+    }
+    major = parseInt(match[1], 10);
+    minor = parseInt(match[2], 10);
+    if (major !== 1) {
+      throwError(state, "unacceptable YAML version of the document");
+    }
+    state.version = args2[0];
+    state.checkLineBreaks = minor < 2;
+    if (minor !== 1 && minor !== 2) {
+      throwWarning(state, "unsupported YAML version of the document");
+    }
+  },
+  TAG: function handleTagDirective(state, name, args2) {
+    var handle, prefix;
+    if (args2.length !== 2) {
+      throwError(state, "TAG directive accepts exactly two arguments");
+    }
+    handle = args2[0];
+    prefix = args2[1];
+    if (!PATTERN_TAG_HANDLE.test(handle)) {
+      throwError(state, "ill-formed tag handle (first argument) of the TAG directive");
+    }
+    if (_hasOwnProperty$1.call(state.tagMap, handle)) {
+      throwError(state, 'there is a previously declared suffix for "' + handle + '" tag handle');
+    }
+    if (!PATTERN_TAG_URI.test(prefix)) {
+      throwError(state, "ill-formed tag prefix (second argument) of the TAG directive");
+    }
+    try {
+      prefix = decodeURIComponent(prefix);
+    } catch (err) {
+      throwError(state, "tag prefix is malformed: " + prefix);
+    }
+    state.tagMap[handle] = prefix;
+  }
+};
+function captureSegment(state, start, end, checkJson) {
+  var _position, _length, _character, _result;
+  if (start < end) {
+    _result = state.input.slice(start, end);
+    if (checkJson) {
+      for (_position = 0, _length = _result.length; _position < _length; _position += 1) {
+        _character = _result.charCodeAt(_position);
+        if (!(_character === 9 || 32 <= _character && _character <= 1114111)) {
+          throwError(state, "expected valid JSON character");
+        }
+      }
+    } else if (PATTERN_NON_PRINTABLE.test(_result)) {
+      throwError(state, "the stream contains non-printable characters");
+    }
+    state.result += _result;
+  }
+}
+function mergeMappings(state, destination, source, overridableKeys) {
+  var sourceKeys, key, index, quantity;
+  if (!common.isObject(source)) {
+    throwError(state, "cannot merge mappings; the provided source object is unacceptable");
+  }
+  sourceKeys = Object.keys(source);
+  for (index = 0, quantity = sourceKeys.length; index < quantity; index += 1) {
+    key = sourceKeys[index];
+    if (!_hasOwnProperty$1.call(destination, key)) {
+      destination[key] = source[key];
+      overridableKeys[key] = true;
+    }
+  }
+}
+function storeMappingPair(state, _result, overridableKeys, keyTag, keyNode, valueNode, startLine, startLineStart, startPos) {
+  var index, quantity;
+  if (Array.isArray(keyNode)) {
+    keyNode = Array.prototype.slice.call(keyNode);
+    for (index = 0, quantity = keyNode.length; index < quantity; index += 1) {
+      if (Array.isArray(keyNode[index])) {
+        throwError(state, "nested arrays are not supported inside keys");
+      }
+      if (typeof keyNode === "object" && _class(keyNode[index]) === "[object Object]") {
+        keyNode[index] = "[object Object]";
+      }
+    }
+  }
+  if (typeof keyNode === "object" && _class(keyNode) === "[object Object]") {
+    keyNode = "[object Object]";
+  }
+  keyNode = String(keyNode);
+  if (_result === null) {
+    _result = {};
+  }
+  if (keyTag === "tag:yaml.org,2002:merge") {
+    if (Array.isArray(valueNode)) {
+      for (index = 0, quantity = valueNode.length; index < quantity; index += 1) {
+        mergeMappings(state, _result, valueNode[index], overridableKeys);
+      }
+    } else {
+      mergeMappings(state, _result, valueNode, overridableKeys);
+    }
+  } else {
+    if (!state.json && !_hasOwnProperty$1.call(overridableKeys, keyNode) && _hasOwnProperty$1.call(_result, keyNode)) {
+      state.line = startLine || state.line;
+      state.lineStart = startLineStart || state.lineStart;
+      state.position = startPos || state.position;
+      throwError(state, "duplicated mapping key");
+    }
+    if (keyNode === "__proto__") {
+      Object.defineProperty(_result, keyNode, {
+        configurable: true,
+        enumerable: true,
+        writable: true,
+        value: valueNode
+      });
+    } else {
+      _result[keyNode] = valueNode;
+    }
+    delete overridableKeys[keyNode];
+  }
+  return _result;
+}
+function readLineBreak(state) {
+  var ch;
+  ch = state.input.charCodeAt(state.position);
+  if (ch === 10) {
+    state.position++;
+  } else if (ch === 13) {
+    state.position++;
+    if (state.input.charCodeAt(state.position) === 10) {
+      state.position++;
+    }
+  } else {
+    throwError(state, "a line break is expected");
+  }
+  state.line += 1;
+  state.lineStart = state.position;
+  state.firstTabInLine = -1;
+}
+function skipSeparationSpace(state, allowComments, checkIndent) {
+  var lineBreaks = 0, ch = state.input.charCodeAt(state.position);
+  while (ch !== 0) {
+    while (is_WHITE_SPACE(ch)) {
+      if (ch === 9 && state.firstTabInLine === -1) {
+        state.firstTabInLine = state.position;
+      }
+      ch = state.input.charCodeAt(++state.position);
+    }
+    if (allowComments && ch === 35) {
+      do {
+        ch = state.input.charCodeAt(++state.position);
+      } while (ch !== 10 && ch !== 13 && ch !== 0);
+    }
+    if (is_EOL(ch)) {
+      readLineBreak(state);
+      ch = state.input.charCodeAt(state.position);
+      lineBreaks++;
+      state.lineIndent = 0;
+      while (ch === 32) {
+        state.lineIndent++;
+        ch = state.input.charCodeAt(++state.position);
+      }
+    } else {
+      break;
+    }
+  }
+  if (checkIndent !== -1 && lineBreaks !== 0 && state.lineIndent < checkIndent) {
+    throwWarning(state, "deficient indentation");
+  }
+  return lineBreaks;
+}
+function testDocumentSeparator(state) {
+  var _position = state.position, ch;
+  ch = state.input.charCodeAt(_position);
+  if ((ch === 45 || ch === 46) && ch === state.input.charCodeAt(_position + 1) && ch === state.input.charCodeAt(_position + 2)) {
+    _position += 3;
+    ch = state.input.charCodeAt(_position);
+    if (ch === 0 || is_WS_OR_EOL(ch)) {
+      return true;
+    }
+  }
+  return false;
+}
+function writeFoldedLines(state, count) {
+  if (count === 1) {
+    state.result += " ";
+  } else if (count > 1) {
+    state.result += common.repeat("\n", count - 1);
+  }
+}
+function readPlainScalar(state, nodeIndent, withinFlowCollection) {
+  var preceding, following, captureStart, captureEnd, hasPendingContent, _line, _lineStart, _lineIndent, _kind = state.kind, _result = state.result, ch;
+  ch = state.input.charCodeAt(state.position);
+  if (is_WS_OR_EOL(ch) || is_FLOW_INDICATOR(ch) || ch === 35 || ch === 38 || ch === 42 || ch === 33 || ch === 124 || ch === 62 || ch === 39 || ch === 34 || ch === 37 || ch === 64 || ch === 96) {
+    return false;
+  }
+  if (ch === 63 || ch === 45) {
+    following = state.input.charCodeAt(state.position + 1);
+    if (is_WS_OR_EOL(following) || withinFlowCollection && is_FLOW_INDICATOR(following)) {
+      return false;
+    }
+  }
+  state.kind = "scalar";
+  state.result = "";
+  captureStart = captureEnd = state.position;
+  hasPendingContent = false;
+  while (ch !== 0) {
+    if (ch === 58) {
+      following = state.input.charCodeAt(state.position + 1);
+      if (is_WS_OR_EOL(following) || withinFlowCollection && is_FLOW_INDICATOR(following)) {
+        break;
+      }
+    } else if (ch === 35) {
+      preceding = state.input.charCodeAt(state.position - 1);
+      if (is_WS_OR_EOL(preceding)) {
+        break;
+      }
+    } else if (state.position === state.lineStart && testDocumentSeparator(state) || withinFlowCollection && is_FLOW_INDICATOR(ch)) {
+      break;
+    } else if (is_EOL(ch)) {
+      _line = state.line;
+      _lineStart = state.lineStart;
+      _lineIndent = state.lineIndent;
+      skipSeparationSpace(state, false, -1);
+      if (state.lineIndent >= nodeIndent) {
+        hasPendingContent = true;
+        ch = state.input.charCodeAt(state.position);
+        continue;
+      } else {
+        state.position = captureEnd;
+        state.line = _line;
+        state.lineStart = _lineStart;
+        state.lineIndent = _lineIndent;
+        break;
+      }
+    }
+    if (hasPendingContent) {
+      captureSegment(state, captureStart, captureEnd, false);
+      writeFoldedLines(state, state.line - _line);
+      captureStart = captureEnd = state.position;
+      hasPendingContent = false;
+    }
+    if (!is_WHITE_SPACE(ch)) {
+      captureEnd = state.position + 1;
+    }
+    ch = state.input.charCodeAt(++state.position);
+  }
+  captureSegment(state, captureStart, captureEnd, false);
+  if (state.result) {
+    return true;
+  }
+  state.kind = _kind;
+  state.result = _result;
+  return false;
+}
+function readSingleQuotedScalar(state, nodeIndent) {
+  var ch, captureStart, captureEnd;
+  ch = state.input.charCodeAt(state.position);
+  if (ch !== 39) {
+    return false;
+  }
+  state.kind = "scalar";
+  state.result = "";
+  state.position++;
+  captureStart = captureEnd = state.position;
+  while ((ch = state.input.charCodeAt(state.position)) !== 0) {
+    if (ch === 39) {
+      captureSegment(state, captureStart, state.position, true);
+      ch = state.input.charCodeAt(++state.position);
+      if (ch === 39) {
+        captureStart = state.position;
+        state.position++;
+        captureEnd = state.position;
+      } else {
+        return true;
+      }
+    } else if (is_EOL(ch)) {
+      captureSegment(state, captureStart, captureEnd, true);
+      writeFoldedLines(state, skipSeparationSpace(state, false, nodeIndent));
+      captureStart = captureEnd = state.position;
+    } else if (state.position === state.lineStart && testDocumentSeparator(state)) {
+      throwError(state, "unexpected end of the document within a single quoted scalar");
+    } else {
+      state.position++;
+      captureEnd = state.position;
+    }
+  }
+  throwError(state, "unexpected end of the stream within a single quoted scalar");
+}
+function readDoubleQuotedScalar(state, nodeIndent) {
+  var captureStart, captureEnd, hexLength, hexResult, tmp, ch;
+  ch = state.input.charCodeAt(state.position);
+  if (ch !== 34) {
+    return false;
+  }
+  state.kind = "scalar";
+  state.result = "";
+  state.position++;
+  captureStart = captureEnd = state.position;
+  while ((ch = state.input.charCodeAt(state.position)) !== 0) {
+    if (ch === 34) {
+      captureSegment(state, captureStart, state.position, true);
+      state.position++;
+      return true;
+    } else if (ch === 92) {
+      captureSegment(state, captureStart, state.position, true);
+      ch = state.input.charCodeAt(++state.position);
+      if (is_EOL(ch)) {
+        skipSeparationSpace(state, false, nodeIndent);
+      } else if (ch < 256 && simpleEscapeCheck[ch]) {
+        state.result += simpleEscapeMap[ch];
+        state.position++;
+      } else if ((tmp = escapedHexLen(ch)) > 0) {
+        hexLength = tmp;
+        hexResult = 0;
+        for (; hexLength > 0; hexLength--) {
+          ch = state.input.charCodeAt(++state.position);
+          if ((tmp = fromHexCode(ch)) >= 0) {
+            hexResult = (hexResult << 4) + tmp;
+          } else {
+            throwError(state, "expected hexadecimal character");
+          }
+        }
+        state.result += charFromCodepoint(hexResult);
+        state.position++;
+      } else {
+        throwError(state, "unknown escape sequence");
+      }
+      captureStart = captureEnd = state.position;
+    } else if (is_EOL(ch)) {
+      captureSegment(state, captureStart, captureEnd, true);
+      writeFoldedLines(state, skipSeparationSpace(state, false, nodeIndent));
+      captureStart = captureEnd = state.position;
+    } else if (state.position === state.lineStart && testDocumentSeparator(state)) {
+      throwError(state, "unexpected end of the document within a double quoted scalar");
+    } else {
+      state.position++;
+      captureEnd = state.position;
+    }
+  }
+  throwError(state, "unexpected end of the stream within a double quoted scalar");
+}
+function readFlowCollection(state, nodeIndent) {
+  var readNext = true, _line, _lineStart, _pos, _tag = state.tag, _result, _anchor = state.anchor, following, terminator, isPair, isExplicitPair, isMapping, overridableKeys = /* @__PURE__ */ Object.create(null), keyNode, keyTag, valueNode, ch;
+  ch = state.input.charCodeAt(state.position);
+  if (ch === 91) {
+    terminator = 93;
+    isMapping = false;
+    _result = [];
+  } else if (ch === 123) {
+    terminator = 125;
+    isMapping = true;
+    _result = {};
+  } else {
+    return false;
+  }
+  if (state.anchor !== null) {
+    state.anchorMap[state.anchor] = _result;
+  }
+  ch = state.input.charCodeAt(++state.position);
+  while (ch !== 0) {
+    skipSeparationSpace(state, true, nodeIndent);
+    ch = state.input.charCodeAt(state.position);
+    if (ch === terminator) {
+      state.position++;
+      state.tag = _tag;
+      state.anchor = _anchor;
+      state.kind = isMapping ? "mapping" : "sequence";
+      state.result = _result;
+      return true;
+    } else if (!readNext) {
+      throwError(state, "missed comma between flow collection entries");
+    } else if (ch === 44) {
+      throwError(state, "expected the node content, but found ','");
+    }
+    keyTag = keyNode = valueNode = null;
+    isPair = isExplicitPair = false;
+    if (ch === 63) {
+      following = state.input.charCodeAt(state.position + 1);
+      if (is_WS_OR_EOL(following)) {
+        isPair = isExplicitPair = true;
+        state.position++;
+        skipSeparationSpace(state, true, nodeIndent);
+      }
+    }
+    _line = state.line;
+    _lineStart = state.lineStart;
+    _pos = state.position;
+    composeNode(state, nodeIndent, CONTEXT_FLOW_IN, false, true);
+    keyTag = state.tag;
+    keyNode = state.result;
+    skipSeparationSpace(state, true, nodeIndent);
+    ch = state.input.charCodeAt(state.position);
+    if ((isExplicitPair || state.line === _line) && ch === 58) {
+      isPair = true;
+      ch = state.input.charCodeAt(++state.position);
+      skipSeparationSpace(state, true, nodeIndent);
+      composeNode(state, nodeIndent, CONTEXT_FLOW_IN, false, true);
+      valueNode = state.result;
+    }
+    if (isMapping) {
+      storeMappingPair(state, _result, overridableKeys, keyTag, keyNode, valueNode, _line, _lineStart, _pos);
+    } else if (isPair) {
+      _result.push(storeMappingPair(state, null, overridableKeys, keyTag, keyNode, valueNode, _line, _lineStart, _pos));
+    } else {
+      _result.push(keyNode);
+    }
+    skipSeparationSpace(state, true, nodeIndent);
+    ch = state.input.charCodeAt(state.position);
+    if (ch === 44) {
+      readNext = true;
+      ch = state.input.charCodeAt(++state.position);
+    } else {
+      readNext = false;
+    }
+  }
+  throwError(state, "unexpected end of the stream within a flow collection");
+}
+function readBlockScalar(state, nodeIndent) {
+  var captureStart, folding, chomping = CHOMPING_CLIP, didReadContent = false, detectedIndent = false, textIndent = nodeIndent, emptyLines = 0, atMoreIndented = false, tmp, ch;
+  ch = state.input.charCodeAt(state.position);
+  if (ch === 124) {
+    folding = false;
+  } else if (ch === 62) {
+    folding = true;
+  } else {
+    return false;
+  }
+  state.kind = "scalar";
+  state.result = "";
+  while (ch !== 0) {
+    ch = state.input.charCodeAt(++state.position);
+    if (ch === 43 || ch === 45) {
+      if (CHOMPING_CLIP === chomping) {
+        chomping = ch === 43 ? CHOMPING_KEEP : CHOMPING_STRIP;
+      } else {
+        throwError(state, "repeat of a chomping mode identifier");
+      }
+    } else if ((tmp = fromDecimalCode(ch)) >= 0) {
+      if (tmp === 0) {
+        throwError(state, "bad explicit indentation width of a block scalar; it cannot be less than one");
+      } else if (!detectedIndent) {
+        textIndent = nodeIndent + tmp - 1;
+        detectedIndent = true;
+      } else {
+        throwError(state, "repeat of an indentation width identifier");
+      }
+    } else {
+      break;
+    }
+  }
+  if (is_WHITE_SPACE(ch)) {
+    do {
+      ch = state.input.charCodeAt(++state.position);
+    } while (is_WHITE_SPACE(ch));
+    if (ch === 35) {
+      do {
+        ch = state.input.charCodeAt(++state.position);
+      } while (!is_EOL(ch) && ch !== 0);
+    }
+  }
+  while (ch !== 0) {
+    readLineBreak(state);
+    state.lineIndent = 0;
+    ch = state.input.charCodeAt(state.position);
+    while ((!detectedIndent || state.lineIndent < textIndent) && ch === 32) {
+      state.lineIndent++;
+      ch = state.input.charCodeAt(++state.position);
+    }
+    if (!detectedIndent && state.lineIndent > textIndent) {
+      textIndent = state.lineIndent;
+    }
+    if (is_EOL(ch)) {
+      emptyLines++;
+      continue;
+    }
+    if (state.lineIndent < textIndent) {
+      if (chomping === CHOMPING_KEEP) {
+        state.result += common.repeat("\n", didReadContent ? 1 + emptyLines : emptyLines);
+      } else if (chomping === CHOMPING_CLIP) {
+        if (didReadContent) {
+          state.result += "\n";
+        }
+      }
+      break;
+    }
+    if (folding) {
+      if (is_WHITE_SPACE(ch)) {
+        atMoreIndented = true;
+        state.result += common.repeat("\n", didReadContent ? 1 + emptyLines : emptyLines);
+      } else if (atMoreIndented) {
+        atMoreIndented = false;
+        state.result += common.repeat("\n", emptyLines + 1);
+      } else if (emptyLines === 0) {
+        if (didReadContent) {
+          state.result += " ";
+        }
+      } else {
+        state.result += common.repeat("\n", emptyLines);
+      }
+    } else {
+      state.result += common.repeat("\n", didReadContent ? 1 + emptyLines : emptyLines);
+    }
+    didReadContent = true;
+    detectedIndent = true;
+    emptyLines = 0;
+    captureStart = state.position;
+    while (!is_EOL(ch) && ch !== 0) {
+      ch = state.input.charCodeAt(++state.position);
+    }
+    captureSegment(state, captureStart, state.position, false);
+  }
+  return true;
+}
+function readBlockSequence(state, nodeIndent) {
+  var _line, _tag = state.tag, _anchor = state.anchor, _result = [], following, detected = false, ch;
+  if (state.firstTabInLine !== -1) return false;
+  if (state.anchor !== null) {
+    state.anchorMap[state.anchor] = _result;
+  }
+  ch = state.input.charCodeAt(state.position);
+  while (ch !== 0) {
+    if (state.firstTabInLine !== -1) {
+      state.position = state.firstTabInLine;
+      throwError(state, "tab characters must not be used in indentation");
+    }
+    if (ch !== 45) {
+      break;
+    }
+    following = state.input.charCodeAt(state.position + 1);
+    if (!is_WS_OR_EOL(following)) {
+      break;
+    }
+    detected = true;
+    state.position++;
+    if (skipSeparationSpace(state, true, -1)) {
+      if (state.lineIndent <= nodeIndent) {
+        _result.push(null);
+        ch = state.input.charCodeAt(state.position);
+        continue;
+      }
+    }
+    _line = state.line;
+    composeNode(state, nodeIndent, CONTEXT_BLOCK_IN, false, true);
+    _result.push(state.result);
+    skipSeparationSpace(state, true, -1);
+    ch = state.input.charCodeAt(state.position);
+    if ((state.line === _line || state.lineIndent > nodeIndent) && ch !== 0) {
+      throwError(state, "bad indentation of a sequence entry");
+    } else if (state.lineIndent < nodeIndent) {
+      break;
+    }
+  }
+  if (detected) {
+    state.tag = _tag;
+    state.anchor = _anchor;
+    state.kind = "sequence";
+    state.result = _result;
+    return true;
+  }
+  return false;
+}
+function readBlockMapping(state, nodeIndent, flowIndent) {
+  var following, allowCompact, _line, _keyLine, _keyLineStart, _keyPos, _tag = state.tag, _anchor = state.anchor, _result = {}, overridableKeys = /* @__PURE__ */ Object.create(null), keyTag = null, keyNode = null, valueNode = null, atExplicitKey = false, detected = false, ch;
+  if (state.firstTabInLine !== -1) return false;
+  if (state.anchor !== null) {
+    state.anchorMap[state.anchor] = _result;
+  }
+  ch = state.input.charCodeAt(state.position);
+  while (ch !== 0) {
+    if (!atExplicitKey && state.firstTabInLine !== -1) {
+      state.position = state.firstTabInLine;
+      throwError(state, "tab characters must not be used in indentation");
+    }
+    following = state.input.charCodeAt(state.position + 1);
+    _line = state.line;
+    if ((ch === 63 || ch === 58) && is_WS_OR_EOL(following)) {
+      if (ch === 63) {
+        if (atExplicitKey) {
+          storeMappingPair(state, _result, overridableKeys, keyTag, keyNode, null, _keyLine, _keyLineStart, _keyPos);
+          keyTag = keyNode = valueNode = null;
+        }
+        detected = true;
+        atExplicitKey = true;
+        allowCompact = true;
+      } else if (atExplicitKey) {
+        atExplicitKey = false;
+        allowCompact = true;
+      } else {
+        throwError(state, "incomplete explicit mapping pair; a key node is missed; or followed by a non-tabulated empty line");
+      }
+      state.position += 1;
+      ch = following;
+    } else {
+      _keyLine = state.line;
+      _keyLineStart = state.lineStart;
+      _keyPos = state.position;
+      if (!composeNode(state, flowIndent, CONTEXT_FLOW_OUT, false, true)) {
+        break;
+      }
+      if (state.line === _line) {
+        ch = state.input.charCodeAt(state.position);
+        while (is_WHITE_SPACE(ch)) {
+          ch = state.input.charCodeAt(++state.position);
+        }
+        if (ch === 58) {
+          ch = state.input.charCodeAt(++state.position);
+          if (!is_WS_OR_EOL(ch)) {
+            throwError(state, "a whitespace character is expected after the key-value separator within a block mapping");
+          }
+          if (atExplicitKey) {
+            storeMappingPair(state, _result, overridableKeys, keyTag, keyNode, null, _keyLine, _keyLineStart, _keyPos);
+            keyTag = keyNode = valueNode = null;
+          }
+          detected = true;
+          atExplicitKey = false;
+          allowCompact = false;
+          keyTag = state.tag;
+          keyNode = state.result;
+        } else if (detected) {
+          throwError(state, "can not read an implicit mapping pair; a colon is missed");
+        } else {
+          state.tag = _tag;
+          state.anchor = _anchor;
+          return true;
+        }
+      } else if (detected) {
+        throwError(state, "can not read a block mapping entry; a multiline key may not be an implicit key");
+      } else {
+        state.tag = _tag;
+        state.anchor = _anchor;
+        return true;
+      }
+    }
+    if (state.line === _line || state.lineIndent > nodeIndent) {
+      if (atExplicitKey) {
+        _keyLine = state.line;
+        _keyLineStart = state.lineStart;
+        _keyPos = state.position;
+      }
+      if (composeNode(state, nodeIndent, CONTEXT_BLOCK_OUT, true, allowCompact)) {
+        if (atExplicitKey) {
+          keyNode = state.result;
+        } else {
+          valueNode = state.result;
+        }
+      }
+      if (!atExplicitKey) {
+        storeMappingPair(state, _result, overridableKeys, keyTag, keyNode, valueNode, _keyLine, _keyLineStart, _keyPos);
+        keyTag = keyNode = valueNode = null;
+      }
+      skipSeparationSpace(state, true, -1);
+      ch = state.input.charCodeAt(state.position);
+    }
+    if ((state.line === _line || state.lineIndent > nodeIndent) && ch !== 0) {
+      throwError(state, "bad indentation of a mapping entry");
+    } else if (state.lineIndent < nodeIndent) {
+      break;
+    }
+  }
+  if (atExplicitKey) {
+    storeMappingPair(state, _result, overridableKeys, keyTag, keyNode, null, _keyLine, _keyLineStart, _keyPos);
+  }
+  if (detected) {
+    state.tag = _tag;
+    state.anchor = _anchor;
+    state.kind = "mapping";
+    state.result = _result;
+  }
+  return detected;
+}
+function readTagProperty(state) {
+  var _position, isVerbatim = false, isNamed = false, tagHandle, tagName, ch;
+  ch = state.input.charCodeAt(state.position);
+  if (ch !== 33) return false;
+  if (state.tag !== null) {
+    throwError(state, "duplication of a tag property");
+  }
+  ch = state.input.charCodeAt(++state.position);
+  if (ch === 60) {
+    isVerbatim = true;
+    ch = state.input.charCodeAt(++state.position);
+  } else if (ch === 33) {
+    isNamed = true;
+    tagHandle = "!!";
+    ch = state.input.charCodeAt(++state.position);
+  } else {
+    tagHandle = "!";
+  }
+  _position = state.position;
+  if (isVerbatim) {
+    do {
+      ch = state.input.charCodeAt(++state.position);
+    } while (ch !== 0 && ch !== 62);
+    if (state.position < state.length) {
+      tagName = state.input.slice(_position, state.position);
+      ch = state.input.charCodeAt(++state.position);
+    } else {
+      throwError(state, "unexpected end of the stream within a verbatim tag");
+    }
+  } else {
+    while (ch !== 0 && !is_WS_OR_EOL(ch)) {
+      if (ch === 33) {
+        if (!isNamed) {
+          tagHandle = state.input.slice(_position - 1, state.position + 1);
+          if (!PATTERN_TAG_HANDLE.test(tagHandle)) {
+            throwError(state, "named tag handle cannot contain such characters");
+          }
+          isNamed = true;
+          _position = state.position + 1;
+        } else {
+          throwError(state, "tag suffix cannot contain exclamation marks");
+        }
+      }
+      ch = state.input.charCodeAt(++state.position);
+    }
+    tagName = state.input.slice(_position, state.position);
+    if (PATTERN_FLOW_INDICATORS.test(tagName)) {
+      throwError(state, "tag suffix cannot contain flow indicator characters");
+    }
+  }
+  if (tagName && !PATTERN_TAG_URI.test(tagName)) {
+    throwError(state, "tag name cannot contain such characters: " + tagName);
+  }
+  try {
+    tagName = decodeURIComponent(tagName);
+  } catch (err) {
+    throwError(state, "tag name is malformed: " + tagName);
+  }
+  if (isVerbatim) {
+    state.tag = tagName;
+  } else if (_hasOwnProperty$1.call(state.tagMap, tagHandle)) {
+    state.tag = state.tagMap[tagHandle] + tagName;
+  } else if (tagHandle === "!") {
+    state.tag = "!" + tagName;
+  } else if (tagHandle === "!!") {
+    state.tag = "tag:yaml.org,2002:" + tagName;
+  } else {
+    throwError(state, 'undeclared tag handle "' + tagHandle + '"');
+  }
+  return true;
+}
+function readAnchorProperty(state) {
+  var _position, ch;
+  ch = state.input.charCodeAt(state.position);
+  if (ch !== 38) return false;
+  if (state.anchor !== null) {
+    throwError(state, "duplication of an anchor property");
+  }
+  ch = state.input.charCodeAt(++state.position);
+  _position = state.position;
+  while (ch !== 0 && !is_WS_OR_EOL(ch) && !is_FLOW_INDICATOR(ch)) {
+    ch = state.input.charCodeAt(++state.position);
+  }
+  if (state.position === _position) {
+    throwError(state, "name of an anchor node must contain at least one character");
+  }
+  state.anchor = state.input.slice(_position, state.position);
+  return true;
+}
+function readAlias(state) {
+  var _position, alias, ch;
+  ch = state.input.charCodeAt(state.position);
+  if (ch !== 42) return false;
+  ch = state.input.charCodeAt(++state.position);
+  _position = state.position;
+  while (ch !== 0 && !is_WS_OR_EOL(ch) && !is_FLOW_INDICATOR(ch)) {
+    ch = state.input.charCodeAt(++state.position);
+  }
+  if (state.position === _position) {
+    throwError(state, "name of an alias node must contain at least one character");
+  }
+  alias = state.input.slice(_position, state.position);
+  if (!_hasOwnProperty$1.call(state.anchorMap, alias)) {
+    throwError(state, 'unidentified alias "' + alias + '"');
+  }
+  state.result = state.anchorMap[alias];
+  skipSeparationSpace(state, true, -1);
+  return true;
+}
+function composeNode(state, parentIndent, nodeContext, allowToSeek, allowCompact) {
+  var allowBlockStyles, allowBlockScalars, allowBlockCollections, indentStatus = 1, atNewLine = false, hasContent = false, typeIndex, typeQuantity, typeList, type2, flowIndent, blockIndent;
+  if (state.listener !== null) {
+    state.listener("open", state);
+  }
+  state.tag = null;
+  state.anchor = null;
+  state.kind = null;
+  state.result = null;
+  allowBlockStyles = allowBlockScalars = allowBlockCollections = CONTEXT_BLOCK_OUT === nodeContext || CONTEXT_BLOCK_IN === nodeContext;
+  if (allowToSeek) {
+    if (skipSeparationSpace(state, true, -1)) {
+      atNewLine = true;
+      if (state.lineIndent > parentIndent) {
+        indentStatus = 1;
+      } else if (state.lineIndent === parentIndent) {
+        indentStatus = 0;
+      } else if (state.lineIndent < parentIndent) {
+        indentStatus = -1;
+      }
+    }
+  }
+  if (indentStatus === 1) {
+    while (readTagProperty(state) || readAnchorProperty(state)) {
+      if (skipSeparationSpace(state, true, -1)) {
+        atNewLine = true;
+        allowBlockCollections = allowBlockStyles;
+        if (state.lineIndent > parentIndent) {
+          indentStatus = 1;
+        } else if (state.lineIndent === parentIndent) {
+          indentStatus = 0;
+        } else if (state.lineIndent < parentIndent) {
+          indentStatus = -1;
+        }
+      } else {
+        allowBlockCollections = false;
+      }
+    }
+  }
+  if (allowBlockCollections) {
+    allowBlockCollections = atNewLine || allowCompact;
+  }
+  if (indentStatus === 1 || CONTEXT_BLOCK_OUT === nodeContext) {
+    if (CONTEXT_FLOW_IN === nodeContext || CONTEXT_FLOW_OUT === nodeContext) {
+      flowIndent = parentIndent;
+    } else {
+      flowIndent = parentIndent + 1;
+    }
+    blockIndent = state.position - state.lineStart;
+    if (indentStatus === 1) {
+      if (allowBlockCollections && (readBlockSequence(state, blockIndent) || readBlockMapping(state, blockIndent, flowIndent)) || readFlowCollection(state, flowIndent)) {
+        hasContent = true;
+      } else {
+        if (allowBlockScalars && readBlockScalar(state, flowIndent) || readSingleQuotedScalar(state, flowIndent) || readDoubleQuotedScalar(state, flowIndent)) {
+          hasContent = true;
+        } else if (readAlias(state)) {
+          hasContent = true;
+          if (state.tag !== null || state.anchor !== null) {
+            throwError(state, "alias node should not have any properties");
+          }
+        } else if (readPlainScalar(state, flowIndent, CONTEXT_FLOW_IN === nodeContext)) {
+          hasContent = true;
+          if (state.tag === null) {
+            state.tag = "?";
+          }
+        }
+        if (state.anchor !== null) {
+          state.anchorMap[state.anchor] = state.result;
+        }
+      }
+    } else if (indentStatus === 0) {
+      hasContent = allowBlockCollections && readBlockSequence(state, blockIndent);
+    }
+  }
+  if (state.tag === null) {
+    if (state.anchor !== null) {
+      state.anchorMap[state.anchor] = state.result;
+    }
+  } else if (state.tag === "?") {
+    if (state.result !== null && state.kind !== "scalar") {
+      throwError(state, 'unacceptable node kind for !<?> tag; it should be "scalar", not "' + state.kind + '"');
+    }
+    for (typeIndex = 0, typeQuantity = state.implicitTypes.length; typeIndex < typeQuantity; typeIndex += 1) {
+      type2 = state.implicitTypes[typeIndex];
+      if (type2.resolve(state.result)) {
+        state.result = type2.construct(state.result);
+        state.tag = type2.tag;
+        if (state.anchor !== null) {
+          state.anchorMap[state.anchor] = state.result;
+        }
+        break;
+      }
+    }
+  } else if (state.tag !== "!") {
+    if (_hasOwnProperty$1.call(state.typeMap[state.kind || "fallback"], state.tag)) {
+      type2 = state.typeMap[state.kind || "fallback"][state.tag];
+    } else {
+      type2 = null;
+      typeList = state.typeMap.multi[state.kind || "fallback"];
+      for (typeIndex = 0, typeQuantity = typeList.length; typeIndex < typeQuantity; typeIndex += 1) {
+        if (state.tag.slice(0, typeList[typeIndex].tag.length) === typeList[typeIndex].tag) {
+          type2 = typeList[typeIndex];
+          break;
+        }
+      }
+    }
+    if (!type2) {
+      throwError(state, "unknown tag !<" + state.tag + ">");
+    }
+    if (state.result !== null && type2.kind !== state.kind) {
+      throwError(state, "unacceptable node kind for !<" + state.tag + '> tag; it should be "' + type2.kind + '", not "' + state.kind + '"');
+    }
+    if (!type2.resolve(state.result, state.tag)) {
+      throwError(state, "cannot resolve a node with !<" + state.tag + "> explicit tag");
+    } else {
+      state.result = type2.construct(state.result, state.tag);
+      if (state.anchor !== null) {
+        state.anchorMap[state.anchor] = state.result;
+      }
+    }
+  }
+  if (state.listener !== null) {
+    state.listener("close", state);
+  }
+  return state.tag !== null || state.anchor !== null || hasContent;
+}
+function readDocument(state) {
+  var documentStart = state.position, _position, directiveName, directiveArgs, hasDirectives = false, ch;
+  state.version = null;
+  state.checkLineBreaks = state.legacy;
+  state.tagMap = /* @__PURE__ */ Object.create(null);
+  state.anchorMap = /* @__PURE__ */ Object.create(null);
+  while ((ch = state.input.charCodeAt(state.position)) !== 0) {
+    skipSeparationSpace(state, true, -1);
+    ch = state.input.charCodeAt(state.position);
+    if (state.lineIndent > 0 || ch !== 37) {
+      break;
+    }
+    hasDirectives = true;
+    ch = state.input.charCodeAt(++state.position);
+    _position = state.position;
+    while (ch !== 0 && !is_WS_OR_EOL(ch)) {
+      ch = state.input.charCodeAt(++state.position);
+    }
+    directiveName = state.input.slice(_position, state.position);
+    directiveArgs = [];
+    if (directiveName.length < 1) {
+      throwError(state, "directive name must not be less than one character in length");
+    }
+    while (ch !== 0) {
+      while (is_WHITE_SPACE(ch)) {
+        ch = state.input.charCodeAt(++state.position);
+      }
+      if (ch === 35) {
+        do {
+          ch = state.input.charCodeAt(++state.position);
+        } while (ch !== 0 && !is_EOL(ch));
+        break;
+      }
+      if (is_EOL(ch)) break;
+      _position = state.position;
+      while (ch !== 0 && !is_WS_OR_EOL(ch)) {
+        ch = state.input.charCodeAt(++state.position);
+      }
+      directiveArgs.push(state.input.slice(_position, state.position));
+    }
+    if (ch !== 0) readLineBreak(state);
+    if (_hasOwnProperty$1.call(directiveHandlers, directiveName)) {
+      directiveHandlers[directiveName](state, directiveName, directiveArgs);
+    } else {
+      throwWarning(state, 'unknown document directive "' + directiveName + '"');
+    }
+  }
+  skipSeparationSpace(state, true, -1);
+  if (state.lineIndent === 0 && state.input.charCodeAt(state.position) === 45 && state.input.charCodeAt(state.position + 1) === 45 && state.input.charCodeAt(state.position + 2) === 45) {
+    state.position += 3;
+    skipSeparationSpace(state, true, -1);
+  } else if (hasDirectives) {
+    throwError(state, "directives end mark is expected");
+  }
+  composeNode(state, state.lineIndent - 1, CONTEXT_BLOCK_OUT, false, true);
+  skipSeparationSpace(state, true, -1);
+  if (state.checkLineBreaks && PATTERN_NON_ASCII_LINE_BREAKS.test(state.input.slice(documentStart, state.position))) {
+    throwWarning(state, "non-ASCII line breaks are interpreted as content");
+  }
+  state.documents.push(state.result);
+  if (state.position === state.lineStart && testDocumentSeparator(state)) {
+    if (state.input.charCodeAt(state.position) === 46) {
+      state.position += 3;
+      skipSeparationSpace(state, true, -1);
+    }
+    return;
+  }
+  if (state.position < state.length - 1) {
+    throwError(state, "end of the stream or a document separator is expected");
+  } else {
+    return;
+  }
+}
+function loadDocuments(input, options) {
+  input = String(input);
+  options = options || {};
+  if (input.length !== 0) {
+    if (input.charCodeAt(input.length - 1) !== 10 && input.charCodeAt(input.length - 1) !== 13) {
+      input += "\n";
+    }
+    if (input.charCodeAt(0) === 65279) {
+      input = input.slice(1);
+    }
+  }
+  var state = new State$1(input, options);
+  var nullpos = input.indexOf("\0");
+  if (nullpos !== -1) {
+    state.position = nullpos;
+    throwError(state, "null byte is not allowed in input");
+  }
+  state.input += "\0";
+  while (state.input.charCodeAt(state.position) === 32) {
+    state.lineIndent += 1;
+    state.position += 1;
+  }
+  while (state.position < state.length - 1) {
+    readDocument(state);
+  }
+  return state.documents;
+}
+function loadAll$1(input, iterator, options) {
+  if (iterator !== null && typeof iterator === "object" && typeof options === "undefined") {
+    options = iterator;
+    iterator = null;
+  }
+  var documents = loadDocuments(input, options);
+  if (typeof iterator !== "function") {
+    return documents;
+  }
+  for (var index = 0, length = documents.length; index < length; index += 1) {
+    iterator(documents[index]);
+  }
+}
+function load$1(input, options) {
+  var documents = loadDocuments(input, options);
+  if (documents.length === 0) {
+    return void 0;
+  } else if (documents.length === 1) {
+    return documents[0];
+  }
+  throw new exception("expected a single document in the stream, but found more");
+}
+var loadAll_1 = loadAll$1;
+var load_1 = load$1;
+var loader = {
+  loadAll: loadAll_1,
+  load: load_1
+};
+var _toString = Object.prototype.toString;
+var _hasOwnProperty = Object.prototype.hasOwnProperty;
+var CHAR_BOM = 65279;
+var CHAR_TAB = 9;
+var CHAR_LINE_FEED = 10;
+var CHAR_CARRIAGE_RETURN = 13;
+var CHAR_SPACE = 32;
+var CHAR_EXCLAMATION = 33;
+var CHAR_DOUBLE_QUOTE = 34;
+var CHAR_SHARP = 35;
+var CHAR_PERCENT = 37;
+var CHAR_AMPERSAND = 38;
+var CHAR_SINGLE_QUOTE = 39;
+var CHAR_ASTERISK = 42;
+var CHAR_COMMA = 44;
+var CHAR_MINUS = 45;
+var CHAR_COLON = 58;
+var CHAR_EQUALS = 61;
+var CHAR_GREATER_THAN = 62;
+var CHAR_QUESTION = 63;
+var CHAR_COMMERCIAL_AT = 64;
+var CHAR_LEFT_SQUARE_BRACKET = 91;
+var CHAR_RIGHT_SQUARE_BRACKET = 93;
+var CHAR_GRAVE_ACCENT = 96;
+var CHAR_LEFT_CURLY_BRACKET = 123;
+var CHAR_VERTICAL_LINE = 124;
+var CHAR_RIGHT_CURLY_BRACKET = 125;
+var ESCAPE_SEQUENCES = {};
+ESCAPE_SEQUENCES[0] = "\\0";
+ESCAPE_SEQUENCES[7] = "\\a";
+ESCAPE_SEQUENCES[8] = "\\b";
+ESCAPE_SEQUENCES[9] = "\\t";
+ESCAPE_SEQUENCES[10] = "\\n";
+ESCAPE_SEQUENCES[11] = "\\v";
+ESCAPE_SEQUENCES[12] = "\\f";
+ESCAPE_SEQUENCES[13] = "\\r";
+ESCAPE_SEQUENCES[27] = "\\e";
+ESCAPE_SEQUENCES[34] = '\\"';
+ESCAPE_SEQUENCES[92] = "\\\\";
+ESCAPE_SEQUENCES[133] = "\\N";
+ESCAPE_SEQUENCES[160] = "\\_";
+ESCAPE_SEQUENCES[8232] = "\\L";
+ESCAPE_SEQUENCES[8233] = "\\P";
+var DEPRECATED_BOOLEANS_SYNTAX = [
+  "y",
+  "Y",
+  "yes",
+  "Yes",
+  "YES",
+  "on",
+  "On",
+  "ON",
+  "n",
+  "N",
+  "no",
+  "No",
+  "NO",
+  "off",
+  "Off",
+  "OFF"
+];
+var DEPRECATED_BASE60_SYNTAX = /^[-+]?[0-9_]+(?::[0-9_]+)+(?:\.[0-9_]*)?$/;
+function compileStyleMap(schema2, map2) {
+  var result, keys, index, length, tag, style, type2;
+  if (map2 === null) return {};
+  result = {};
+  keys = Object.keys(map2);
+  for (index = 0, length = keys.length; index < length; index += 1) {
+    tag = keys[index];
+    style = String(map2[tag]);
+    if (tag.slice(0, 2) === "!!") {
+      tag = "tag:yaml.org,2002:" + tag.slice(2);
+    }
+    type2 = schema2.compiledTypeMap["fallback"][tag];
+    if (type2 && _hasOwnProperty.call(type2.styleAliases, style)) {
+      style = type2.styleAliases[style];
+    }
+    result[tag] = style;
+  }
+  return result;
+}
+function encodeHex(character) {
+  var string, handle, length;
+  string = character.toString(16).toUpperCase();
+  if (character <= 255) {
+    handle = "x";
+    length = 2;
+  } else if (character <= 65535) {
+    handle = "u";
+    length = 4;
+  } else if (character <= 4294967295) {
+    handle = "U";
+    length = 8;
+  } else {
+    throw new exception("code point within a string may not be greater than 0xFFFFFFFF");
+  }
+  return "\\" + handle + common.repeat("0", length - string.length) + string;
+}
+var QUOTING_TYPE_SINGLE = 1;
+var QUOTING_TYPE_DOUBLE = 2;
+function State(options) {
+  this.schema = options["schema"] || _default;
+  this.indent = Math.max(1, options["indent"] || 2);
+  this.noArrayIndent = options["noArrayIndent"] || false;
+  this.skipInvalid = options["skipInvalid"] || false;
+  this.flowLevel = common.isNothing(options["flowLevel"]) ? -1 : options["flowLevel"];
+  this.styleMap = compileStyleMap(this.schema, options["styles"] || null);
+  this.sortKeys = options["sortKeys"] || false;
+  this.lineWidth = options["lineWidth"] || 80;
+  this.noRefs = options["noRefs"] || false;
+  this.noCompatMode = options["noCompatMode"] || false;
+  this.condenseFlow = options["condenseFlow"] || false;
+  this.quotingType = options["quotingType"] === '"' ? QUOTING_TYPE_DOUBLE : QUOTING_TYPE_SINGLE;
+  this.forceQuotes = options["forceQuotes"] || false;
+  this.replacer = typeof options["replacer"] === "function" ? options["replacer"] : null;
+  this.implicitTypes = this.schema.compiledImplicit;
+  this.explicitTypes = this.schema.compiledExplicit;
+  this.tag = null;
+  this.result = "";
+  this.duplicates = [];
+  this.usedDuplicates = null;
+}
+function indentString(string, spaces) {
+  var ind = common.repeat(" ", spaces), position = 0, next = -1, result = "", line, length = string.length;
+  while (position < length) {
+    next = string.indexOf("\n", position);
+    if (next === -1) {
+      line = string.slice(position);
+      position = length;
+    } else {
+      line = string.slice(position, next + 1);
+      position = next + 1;
+    }
+    if (line.length && line !== "\n") result += ind;
+    result += line;
+  }
+  return result;
+}
+function generateNextLine(state, level) {
+  return "\n" + common.repeat(" ", state.indent * level);
+}
+function testImplicitResolving(state, str2) {
+  var index, length, type2;
+  for (index = 0, length = state.implicitTypes.length; index < length; index += 1) {
+    type2 = state.implicitTypes[index];
+    if (type2.resolve(str2)) {
+      return true;
+    }
+  }
+  return false;
+}
+function isWhitespace(c) {
+  return c === CHAR_SPACE || c === CHAR_TAB;
+}
+function isPrintable(c) {
+  return 32 <= c && c <= 126 || 161 <= c && c <= 55295 && c !== 8232 && c !== 8233 || 57344 <= c && c <= 65533 && c !== CHAR_BOM || 65536 <= c && c <= 1114111;
+}
+function isNsCharOrWhitespace(c) {
+  return isPrintable(c) && c !== CHAR_BOM && c !== CHAR_CARRIAGE_RETURN && c !== CHAR_LINE_FEED;
+}
+function isPlainSafe(c, prev, inblock) {
+  var cIsNsCharOrWhitespace = isNsCharOrWhitespace(c);
+  var cIsNsChar = cIsNsCharOrWhitespace && !isWhitespace(c);
+  return (
+    // ns-plain-safe
+    (inblock ? (
+      // c = flow-in
+      cIsNsCharOrWhitespace
+    ) : cIsNsCharOrWhitespace && c !== CHAR_COMMA && c !== CHAR_LEFT_SQUARE_BRACKET && c !== CHAR_RIGHT_SQUARE_BRACKET && c !== CHAR_LEFT_CURLY_BRACKET && c !== CHAR_RIGHT_CURLY_BRACKET) && c !== CHAR_SHARP && !(prev === CHAR_COLON && !cIsNsChar) || isNsCharOrWhitespace(prev) && !isWhitespace(prev) && c === CHAR_SHARP || prev === CHAR_COLON && cIsNsChar
+  );
+}
+function isPlainSafeFirst(c) {
+  return isPrintable(c) && c !== CHAR_BOM && !isWhitespace(c) && c !== CHAR_MINUS && c !== CHAR_QUESTION && c !== CHAR_COLON && c !== CHAR_COMMA && c !== CHAR_LEFT_SQUARE_BRACKET && c !== CHAR_RIGHT_SQUARE_BRACKET && c !== CHAR_LEFT_CURLY_BRACKET && c !== CHAR_RIGHT_CURLY_BRACKET && c !== CHAR_SHARP && c !== CHAR_AMPERSAND && c !== CHAR_ASTERISK && c !== CHAR_EXCLAMATION && c !== CHAR_VERTICAL_LINE && c !== CHAR_EQUALS && c !== CHAR_GREATER_THAN && c !== CHAR_SINGLE_QUOTE && c !== CHAR_DOUBLE_QUOTE && c !== CHAR_PERCENT && c !== CHAR_COMMERCIAL_AT && c !== CHAR_GRAVE_ACCENT;
+}
+function isPlainSafeLast(c) {
+  return !isWhitespace(c) && c !== CHAR_COLON;
+}
+function codePointAt(string, pos) {
+  var first = string.charCodeAt(pos), second;
+  if (first >= 55296 && first <= 56319 && pos + 1 < string.length) {
+    second = string.charCodeAt(pos + 1);
+    if (second >= 56320 && second <= 57343) {
+      return (first - 55296) * 1024 + second - 56320 + 65536;
+    }
+  }
+  return first;
+}
+function needIndentIndicator(string) {
+  var leadingSpaceRe = /^\n* /;
+  return leadingSpaceRe.test(string);
+}
+var STYLE_PLAIN = 1;
+var STYLE_SINGLE = 2;
+var STYLE_LITERAL = 3;
+var STYLE_FOLDED = 4;
+var STYLE_DOUBLE = 5;
+function chooseScalarStyle(string, singleLineOnly, indentPerLevel, lineWidth, testAmbiguousType, quotingType, forceQuotes, inblock) {
+  var i;
+  var char = 0;
+  var prevChar = null;
+  var hasLineBreak = false;
+  var hasFoldableLine = false;
+  var shouldTrackWidth = lineWidth !== -1;
+  var previousLineBreak = -1;
+  var plain = isPlainSafeFirst(codePointAt(string, 0)) && isPlainSafeLast(codePointAt(string, string.length - 1));
+  if (singleLineOnly || forceQuotes) {
+    for (i = 0; i < string.length; char >= 65536 ? i += 2 : i++) {
+      char = codePointAt(string, i);
+      if (!isPrintable(char)) {
+        return STYLE_DOUBLE;
+      }
+      plain = plain && isPlainSafe(char, prevChar, inblock);
+      prevChar = char;
+    }
+  } else {
+    for (i = 0; i < string.length; char >= 65536 ? i += 2 : i++) {
+      char = codePointAt(string, i);
+      if (char === CHAR_LINE_FEED) {
+        hasLineBreak = true;
+        if (shouldTrackWidth) {
+          hasFoldableLine = hasFoldableLine || // Foldable line = too long, and not more-indented.
+          i - previousLineBreak - 1 > lineWidth && string[previousLineBreak + 1] !== " ";
+          previousLineBreak = i;
+        }
+      } else if (!isPrintable(char)) {
+        return STYLE_DOUBLE;
+      }
+      plain = plain && isPlainSafe(char, prevChar, inblock);
+      prevChar = char;
+    }
+    hasFoldableLine = hasFoldableLine || shouldTrackWidth && (i - previousLineBreak - 1 > lineWidth && string[previousLineBreak + 1] !== " ");
+  }
+  if (!hasLineBreak && !hasFoldableLine) {
+    if (plain && !forceQuotes && !testAmbiguousType(string)) {
+      return STYLE_PLAIN;
+    }
+    return quotingType === QUOTING_TYPE_DOUBLE ? STYLE_DOUBLE : STYLE_SINGLE;
+  }
+  if (indentPerLevel > 9 && needIndentIndicator(string)) {
+    return STYLE_DOUBLE;
+  }
+  if (!forceQuotes) {
+    return hasFoldableLine ? STYLE_FOLDED : STYLE_LITERAL;
+  }
+  return quotingType === QUOTING_TYPE_DOUBLE ? STYLE_DOUBLE : STYLE_SINGLE;
+}
+function writeScalar(state, string, level, iskey, inblock) {
+  state.dump = function() {
+    if (string.length === 0) {
+      return state.quotingType === QUOTING_TYPE_DOUBLE ? '""' : "''";
+    }
+    if (!state.noCompatMode) {
+      if (DEPRECATED_BOOLEANS_SYNTAX.indexOf(string) !== -1 || DEPRECATED_BASE60_SYNTAX.test(string)) {
+        return state.quotingType === QUOTING_TYPE_DOUBLE ? '"' + string + '"' : "'" + string + "'";
+      }
+    }
+    var indent = state.indent * Math.max(1, level);
+    var lineWidth = state.lineWidth === -1 ? -1 : Math.max(Math.min(state.lineWidth, 40), state.lineWidth - indent);
+    var singleLineOnly = iskey || state.flowLevel > -1 && level >= state.flowLevel;
+    function testAmbiguity(string2) {
+      return testImplicitResolving(state, string2);
+    }
+    switch (chooseScalarStyle(
+      string,
+      singleLineOnly,
+      state.indent,
+      lineWidth,
+      testAmbiguity,
+      state.quotingType,
+      state.forceQuotes && !iskey,
+      inblock
+    )) {
+      case STYLE_PLAIN:
+        return string;
+      case STYLE_SINGLE:
+        return "'" + string.replace(/'/g, "''") + "'";
+      case STYLE_LITERAL:
+        return "|" + blockHeader(string, state.indent) + dropEndingNewline(indentString(string, indent));
+      case STYLE_FOLDED:
+        return ">" + blockHeader(string, state.indent) + dropEndingNewline(indentString(foldString(string, lineWidth), indent));
+      case STYLE_DOUBLE:
+        return '"' + escapeString(string) + '"';
+      default:
+        throw new exception("impossible error: invalid scalar style");
+    }
+  }();
+}
+function blockHeader(string, indentPerLevel) {
+  var indentIndicator = needIndentIndicator(string) ? String(indentPerLevel) : "";
+  var clip = string[string.length - 1] === "\n";
+  var keep = clip && (string[string.length - 2] === "\n" || string === "\n");
+  var chomp = keep ? "+" : clip ? "" : "-";
+  return indentIndicator + chomp + "\n";
+}
+function dropEndingNewline(string) {
+  return string[string.length - 1] === "\n" ? string.slice(0, -1) : string;
+}
+function foldString(string, width) {
+  var lineRe = /(\n+)([^\n]*)/g;
+  var result = function() {
+    var nextLF = string.indexOf("\n");
+    nextLF = nextLF !== -1 ? nextLF : string.length;
+    lineRe.lastIndex = nextLF;
+    return foldLine(string.slice(0, nextLF), width);
+  }();
+  var prevMoreIndented = string[0] === "\n" || string[0] === " ";
+  var moreIndented;
+  var match;
+  while (match = lineRe.exec(string)) {
+    var prefix = match[1], line = match[2];
+    moreIndented = line[0] === " ";
+    result += prefix + (!prevMoreIndented && !moreIndented && line !== "" ? "\n" : "") + foldLine(line, width);
+    prevMoreIndented = moreIndented;
+  }
+  return result;
+}
+function foldLine(line, width) {
+  if (line === "" || line[0] === " ") return line;
+  var breakRe = / [^ ]/g;
+  var match;
+  var start = 0, end, curr = 0, next = 0;
+  var result = "";
+  while (match = breakRe.exec(line)) {
+    next = match.index;
+    if (next - start > width) {
+      end = curr > start ? curr : next;
+      result += "\n" + line.slice(start, end);
+      start = end + 1;
+    }
+    curr = next;
+  }
+  result += "\n";
+  if (line.length - start > width && curr > start) {
+    result += line.slice(start, curr) + "\n" + line.slice(curr + 1);
+  } else {
+    result += line.slice(start);
+  }
+  return result.slice(1);
+}
+function escapeString(string) {
+  var result = "";
+  var char = 0;
+  var escapeSeq;
+  for (var i = 0; i < string.length; char >= 65536 ? i += 2 : i++) {
+    char = codePointAt(string, i);
+    escapeSeq = ESCAPE_SEQUENCES[char];
+    if (!escapeSeq && isPrintable(char)) {
+      result += string[i];
+      if (char >= 65536) result += string[i + 1];
+    } else {
+      result += escapeSeq || encodeHex(char);
+    }
+  }
+  return result;
+}
+function writeFlowSequence(state, level, object) {
+  var _result = "", _tag = state.tag, index, length, value;
+  for (index = 0, length = object.length; index < length; index += 1) {
+    value = object[index];
+    if (state.replacer) {
+      value = state.replacer.call(object, String(index), value);
+    }
+    if (writeNode(state, level, value, false, false) || typeof value === "undefined" && writeNode(state, level, null, false, false)) {
+      if (_result !== "") _result += "," + (!state.condenseFlow ? " " : "");
+      _result += state.dump;
+    }
+  }
+  state.tag = _tag;
+  state.dump = "[" + _result + "]";
+}
+function writeBlockSequence(state, level, object, compact) {
+  var _result = "", _tag = state.tag, index, length, value;
+  for (index = 0, length = object.length; index < length; index += 1) {
+    value = object[index];
+    if (state.replacer) {
+      value = state.replacer.call(object, String(index), value);
+    }
+    if (writeNode(state, level + 1, value, true, true, false, true) || typeof value === "undefined" && writeNode(state, level + 1, null, true, true, false, true)) {
+      if (!compact || _result !== "") {
+        _result += generateNextLine(state, level);
+      }
+      if (state.dump && CHAR_LINE_FEED === state.dump.charCodeAt(0)) {
+        _result += "-";
+      } else {
+        _result += "- ";
+      }
+      _result += state.dump;
+    }
+  }
+  state.tag = _tag;
+  state.dump = _result || "[]";
+}
+function writeFlowMapping(state, level, object) {
+  var _result = "", _tag = state.tag, objectKeyList = Object.keys(object), index, length, objectKey, objectValue, pairBuffer;
+  for (index = 0, length = objectKeyList.length; index < length; index += 1) {
+    pairBuffer = "";
+    if (_result !== "") pairBuffer += ", ";
+    if (state.condenseFlow) pairBuffer += '"';
+    objectKey = objectKeyList[index];
+    objectValue = object[objectKey];
+    if (state.replacer) {
+      objectValue = state.replacer.call(object, objectKey, objectValue);
+    }
+    if (!writeNode(state, level, objectKey, false, false)) {
+      continue;
+    }
+    if (state.dump.length > 1024) pairBuffer += "? ";
+    pairBuffer += state.dump + (state.condenseFlow ? '"' : "") + ":" + (state.condenseFlow ? "" : " ");
+    if (!writeNode(state, level, objectValue, false, false)) {
+      continue;
+    }
+    pairBuffer += state.dump;
+    _result += pairBuffer;
+  }
+  state.tag = _tag;
+  state.dump = "{" + _result + "}";
+}
+function writeBlockMapping(state, level, object, compact) {
+  var _result = "", _tag = state.tag, objectKeyList = Object.keys(object), index, length, objectKey, objectValue, explicitPair, pairBuffer;
+  if (state.sortKeys === true) {
+    objectKeyList.sort();
+  } else if (typeof state.sortKeys === "function") {
+    objectKeyList.sort(state.sortKeys);
+  } else if (state.sortKeys) {
+    throw new exception("sortKeys must be a boolean or a function");
+  }
+  for (index = 0, length = objectKeyList.length; index < length; index += 1) {
+    pairBuffer = "";
+    if (!compact || _result !== "") {
+      pairBuffer += generateNextLine(state, level);
+    }
+    objectKey = objectKeyList[index];
+    objectValue = object[objectKey];
+    if (state.replacer) {
+      objectValue = state.replacer.call(object, objectKey, objectValue);
+    }
+    if (!writeNode(state, level + 1, objectKey, true, true, true)) {
+      continue;
+    }
+    explicitPair = state.tag !== null && state.tag !== "?" || state.dump && state.dump.length > 1024;
+    if (explicitPair) {
+      if (state.dump && CHAR_LINE_FEED === state.dump.charCodeAt(0)) {
+        pairBuffer += "?";
+      } else {
+        pairBuffer += "? ";
+      }
+    }
+    pairBuffer += state.dump;
+    if (explicitPair) {
+      pairBuffer += generateNextLine(state, level);
+    }
+    if (!writeNode(state, level + 1, objectValue, true, explicitPair)) {
+      continue;
+    }
+    if (state.dump && CHAR_LINE_FEED === state.dump.charCodeAt(0)) {
+      pairBuffer += ":";
+    } else {
+      pairBuffer += ": ";
+    }
+    pairBuffer += state.dump;
+    _result += pairBuffer;
+  }
+  state.tag = _tag;
+  state.dump = _result || "{}";
+}
+function detectType(state, object, explicit) {
+  var _result, typeList, index, length, type2, style;
+  typeList = explicit ? state.explicitTypes : state.implicitTypes;
+  for (index = 0, length = typeList.length; index < length; index += 1) {
+    type2 = typeList[index];
+    if ((type2.instanceOf || type2.predicate) && (!type2.instanceOf || typeof object === "object" && object instanceof type2.instanceOf) && (!type2.predicate || type2.predicate(object))) {
+      if (explicit) {
+        if (type2.multi && type2.representName) {
+          state.tag = type2.representName(object);
+        } else {
+          state.tag = type2.tag;
+        }
+      } else {
+        state.tag = "?";
+      }
+      if (type2.represent) {
+        style = state.styleMap[type2.tag] || type2.defaultStyle;
+        if (_toString.call(type2.represent) === "[object Function]") {
+          _result = type2.represent(object, style);
+        } else if (_hasOwnProperty.call(type2.represent, style)) {
+          _result = type2.represent[style](object, style);
+        } else {
+          throw new exception("!<" + type2.tag + '> tag resolver accepts not "' + style + '" style');
+        }
+        state.dump = _result;
+      }
+      return true;
+    }
+  }
+  return false;
+}
+function writeNode(state, level, object, block, compact, iskey, isblockseq) {
+  state.tag = null;
+  state.dump = object;
+  if (!detectType(state, object, false)) {
+    detectType(state, object, true);
+  }
+  var type2 = _toString.call(state.dump);
+  var inblock = block;
+  var tagStr;
+  if (block) {
+    block = state.flowLevel < 0 || state.flowLevel > level;
+  }
+  var objectOrArray = type2 === "[object Object]" || type2 === "[object Array]", duplicateIndex, duplicate;
+  if (objectOrArray) {
+    duplicateIndex = state.duplicates.indexOf(object);
+    duplicate = duplicateIndex !== -1;
+  }
+  if (state.tag !== null && state.tag !== "?" || duplicate || state.indent !== 2 && level > 0) {
+    compact = false;
+  }
+  if (duplicate && state.usedDuplicates[duplicateIndex]) {
+    state.dump = "*ref_" + duplicateIndex;
+  } else {
+    if (objectOrArray && duplicate && !state.usedDuplicates[duplicateIndex]) {
+      state.usedDuplicates[duplicateIndex] = true;
+    }
+    if (type2 === "[object Object]") {
+      if (block && Object.keys(state.dump).length !== 0) {
+        writeBlockMapping(state, level, state.dump, compact);
+        if (duplicate) {
+          state.dump = "&ref_" + duplicateIndex + state.dump;
+        }
+      } else {
+        writeFlowMapping(state, level, state.dump);
+        if (duplicate) {
+          state.dump = "&ref_" + duplicateIndex + " " + state.dump;
+        }
+      }
+    } else if (type2 === "[object Array]") {
+      if (block && state.dump.length !== 0) {
+        if (state.noArrayIndent && !isblockseq && level > 0) {
+          writeBlockSequence(state, level - 1, state.dump, compact);
+        } else {
+          writeBlockSequence(state, level, state.dump, compact);
+        }
+        if (duplicate) {
+          state.dump = "&ref_" + duplicateIndex + state.dump;
+        }
+      } else {
+        writeFlowSequence(state, level, state.dump);
+        if (duplicate) {
+          state.dump = "&ref_" + duplicateIndex + " " + state.dump;
+        }
+      }
+    } else if (type2 === "[object String]") {
+      if (state.tag !== "?") {
+        writeScalar(state, state.dump, level, iskey, inblock);
+      }
+    } else if (type2 === "[object Undefined]") {
+      return false;
+    } else {
+      if (state.skipInvalid) return false;
+      throw new exception("unacceptable kind of an object to dump " + type2);
+    }
+    if (state.tag !== null && state.tag !== "?") {
+      tagStr = encodeURI(
+        state.tag[0] === "!" ? state.tag.slice(1) : state.tag
+      ).replace(/!/g, "%21");
+      if (state.tag[0] === "!") {
+        tagStr = "!" + tagStr;
+      } else if (tagStr.slice(0, 18) === "tag:yaml.org,2002:") {
+        tagStr = "!!" + tagStr.slice(18);
+      } else {
+        tagStr = "!<" + tagStr + ">";
+      }
+      state.dump = tagStr + " " + state.dump;
+    }
+  }
+  return true;
+}
+function getDuplicateReferences(object, state) {
+  var objects = [], duplicatesIndexes = [], index, length;
+  inspectNode(object, objects, duplicatesIndexes);
+  for (index = 0, length = duplicatesIndexes.length; index < length; index += 1) {
+    state.duplicates.push(objects[duplicatesIndexes[index]]);
+  }
+  state.usedDuplicates = new Array(length);
+}
+function inspectNode(object, objects, duplicatesIndexes) {
+  var objectKeyList, index, length;
+  if (object !== null && typeof object === "object") {
+    index = objects.indexOf(object);
+    if (index !== -1) {
+      if (duplicatesIndexes.indexOf(index) === -1) {
+        duplicatesIndexes.push(index);
+      }
+    } else {
+      objects.push(object);
+      if (Array.isArray(object)) {
+        for (index = 0, length = object.length; index < length; index += 1) {
+          inspectNode(object[index], objects, duplicatesIndexes);
+        }
+      } else {
+        objectKeyList = Object.keys(object);
+        for (index = 0, length = objectKeyList.length; index < length; index += 1) {
+          inspectNode(object[objectKeyList[index]], objects, duplicatesIndexes);
+        }
+      }
+    }
+  }
+}
+function dump$1(input, options) {
+  options = options || {};
+  var state = new State(options);
+  if (!state.noRefs) getDuplicateReferences(input, state);
+  var value = input;
+  if (state.replacer) {
+    value = state.replacer.call({ "": value }, "", value);
+  }
+  if (writeNode(state, 0, value, true, true)) return state.dump + "\n";
+  return "";
+}
+var dump_1 = dump$1;
+var dumper = {
+  dump: dump_1
+};
+function renamed(from, to) {
+  return function() {
+    throw new Error("Function yaml." + from + " is removed in js-yaml 4. Use yaml." + to + " instead, which is now safe by default.");
+  };
+}
+var load = loader.load;
+var loadAll = loader.loadAll;
+var dump = dumper.dump;
+var safeLoad = renamed("safeLoad", "load");
+var safeLoadAll = renamed("safeLoadAll", "loadAll");
+var safeDump = renamed("safeDump", "dump");
+
+// src/config/secrets/deploy-secrets.ts
+var loadYamlConfig = (filePath) => {
+  try {
+    const fileContents = fs.readFileSync(filePath, "utf8");
+    return load(fileContents);
+  } catch (e) {
+    console.error("Failed to load the YAML file:", e);
+    throw e;
+  }
+};
+var secretsManager = new import_client_secrets_manager.SecretsManagerClient({
+  region: process.env.AWS_REGION ?? "eu-west-1"
+});
+var sqsClient = new import_client_sqs.SQSClient({
+  region: process.env.AWS_REGION ?? "eu-west-1"
+});
+var errorMessages = [];
+var updateSecrets = async (secretFolder, secrets) => {
+  try {
+    const getCommand = new import_client_secrets_manager.GetSecretValueCommand({
+      SecretId: secretFolder
+    });
+    const existingSecretsData = await secretsManager.send(getCommand);
+    const existingSecrets = existingSecretsData.SecretString ? JSON.parse(existingSecretsData.SecretString) : {};
+    const updatedSecrets = { ...existingSecrets, ...secrets };
+    const putCommand = new import_client_secrets_manager.PutSecretValueCommand({
+      SecretId: secretFolder,
+      SecretString: JSON.stringify(updatedSecrets)
+    });
+    await secretsManager.send(putCommand);
+    console.log(`Successfully updated secrets in ${secretFolder}`);
+  } catch (error) {
+    errorMessages.push(
+      `Failed to update secrets in ${secretFolder}: ${error}`
+    );
+    console.error(error);
+    throw error;
+  }
+};
+var deployQueueUrls = async (env2, configFilePath2) => {
+  const config = loadYamlConfig(configFilePath2);
+  for (const secretFolder in config) {
+    const secrets = config[secretFolder];
+    const secretUpdates = {};
+    for (const secretName in secrets) {
+      const { queueName } = secrets[secretName];
+      const prefixedQueueName = `${env2}-${queueName}`;
+      console.log(`Fetching URL for Queue: ${prefixedQueueName}`);
+      try {
+        const getQueueUrlCommand = new import_client_sqs.GetQueueUrlCommand({
+          QueueName: prefixedQueueName
+        });
+        const data = await sqsClient.send(getQueueUrlCommand);
+        secretUpdates[secretName] = data.QueueUrl;
+        console.log(
+          `Fetched Queue URL for ${prefixedQueueName}: ${data.QueueUrl}`
+        );
+      } catch (error) {
+        errorMessages.push(
+          `Failed to retrieve URL for ${prefixedQueueName}: ${error}`
+        );
+        console.error(
+          `Error fetching URL for ${prefixedQueueName}:`,
+          error
+        );
+      }
+    }
+    if (Object.keys(secretUpdates).length > 0) {
+      try {
+        await updateSecrets(`${secretFolder}/${env2}`, secretUpdates);
+      } catch (error) {
+        console.error(
+          `Failed to update secrets in folder ${secretFolder}/${env2}`
+        );
+      }
+    }
+  }
+  if (errorMessages.length > 0) {
+    throw new Error("Some operations failed! Check logs for details.");
+  }
+};
+var args = process.argv.slice(2);
+var env = args[0];
+if (!env) {
+  console.error(
+    "Error: No environment specified. Please provide an environment."
+  );
+  process.exit(1);
+}
+var configFilePath = "./src/config/secrets/secrets-mappings.yaml";
+(async () => {
+  try {
+    await deployQueueUrls(env, configFilePath);
+    console.log("Deployment completed successfully.");
+  } catch (err) {
+    console.error("Deployment encountered errors:", err);
+    errorMessages.forEach((errMsg) => console.error(errMsg));
+    process.exit(1);
+  }
+})();
+/*! Bundled license information:
+
+js-yaml/dist/js-yaml.mjs:
+  (*! js-yaml 4.1.0 https://github.com/nodeca/js-yaml @license MIT *)
+*/

@@ -33,6 +33,183 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 ));
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
+// node_modules/@dazn/lambda-powertools-correlation-ids/index.js
+var require_lambda_powertools_correlation_ids = __commonJS({
+  "node_modules/@dazn/lambda-powertools-correlation-ids/index.js"(exports2, module2) {
+    var DEBUG_LOG_ENABLED = "debug-log-enabled";
+    var CorrelationIds = class {
+      constructor(context = {}) {
+        this.context = context;
+      }
+      clearAll() {
+        this.context = {};
+      }
+      replaceAllWith(ctx) {
+        this.context = ctx;
+      }
+      set(key, value) {
+        if (!key.startsWith("x-correlation-")) {
+          key = "x-correlation-" + key;
+        }
+        this.context[key] = value;
+      }
+      get() {
+        return this.context;
+      }
+      get debugLoggingEnabled() {
+        return this.context[DEBUG_LOG_ENABLED] === "true";
+      }
+      set debugLoggingEnabled(enabled) {
+        this.context[DEBUG_LOG_ENABLED] = enabled ? "true" : "false";
+      }
+      static clearAll() {
+        globalCorrelationIds.clearAll();
+      }
+      static replaceAllWith(...args) {
+        globalCorrelationIds.replaceAllWith(...args);
+      }
+      static set(...args) {
+        globalCorrelationIds.set(...args);
+      }
+      static get() {
+        return globalCorrelationIds.get();
+      }
+      static get debugLoggingEnabled() {
+        return globalCorrelationIds.debugLoggingEnabled;
+      }
+      static set debugLoggingEnabled(enabled) {
+        globalCorrelationIds.debugLoggingEnabled = enabled;
+      }
+    };
+    if (!global.CORRELATION_IDS) {
+      global.CORRELATION_IDS = new CorrelationIds();
+    }
+    var globalCorrelationIds = global.CORRELATION_IDS;
+    module2.exports = CorrelationIds;
+  }
+});
+
+// node_modules/@dazn/lambda-powertools-logger/index.js
+var require_lambda_powertools_logger = __commonJS({
+  "node_modules/@dazn/lambda-powertools-logger/index.js"(exports2, module2) {
+    var CorrelationIds = require_lambda_powertools_correlation_ids();
+    var LogLevels = {
+      DEBUG: 20,
+      INFO: 30,
+      WARN: 40,
+      ERROR: 50
+    };
+    var DEFAULT_CONTEXT = {
+      awsRegion: process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION,
+      functionName: process.env.AWS_LAMBDA_FUNCTION_NAME,
+      functionVersion: process.env.AWS_LAMBDA_FUNCTION_VERSION,
+      functionMemorySize: process.env.AWS_LAMBDA_FUNCTION_MEMORY_SIZE,
+      environment: process.env.ENVIRONMENT || process.env.STAGE
+      // convention in our functions
+    };
+    var Logger = class {
+      constructor({
+        correlationIds = CorrelationIds,
+        level = process.env.LOG_LEVEL
+      } = {}) {
+        this.correlationIds = correlationIds;
+        this.level = (level || "DEBUG").toUpperCase();
+        this.originalLevel = this.level;
+        if (correlationIds.debugEnabled) {
+          this.enableDebug();
+        }
+      }
+      get context() {
+        return {
+          ...DEFAULT_CONTEXT,
+          ...this.correlationIds.get()
+        };
+      }
+      isEnabled(level) {
+        return level >= (LogLevels[this.level] || LogLevels.DEBUG);
+      }
+      appendError(params, err) {
+        if (!err) {
+          return params;
+        }
+        return {
+          ...params || {},
+          errorName: err.name,
+          errorMessage: err.message,
+          stackTrace: err.stack
+        };
+      }
+      log(levelName, message, params) {
+        const level = LogLevels[levelName];
+        if (!this.isEnabled(level)) {
+          return;
+        }
+        const logMsg = {
+          ...this.context,
+          ...params,
+          level,
+          sLevel: levelName,
+          message
+        };
+        const consoleMethods = {
+          DEBUG: console.debug,
+          INFO: console.info,
+          WARN: console.warn,
+          ERROR: console.error
+        };
+        consoleMethods[levelName](JSON.stringify(
+          { message, ...params, ...logMsg },
+          (key, value) => typeof value === "bigint" ? value.toString() : value
+        ));
+      }
+      debug(msg, params) {
+        this.log("DEBUG", msg, params);
+      }
+      info(msg, params) {
+        this.log("INFO", msg, params);
+      }
+      warn(msg, params, err) {
+        const parameters = !err && params instanceof Error ? this.appendError({}, params) : this.appendError(params, err);
+        this.log("WARN", msg, parameters);
+      }
+      error(msg, params, err) {
+        const parameters = !err && params instanceof Error ? this.appendError({}, params) : this.appendError(params, err);
+        this.log("ERROR", msg, parameters);
+      }
+      enableDebug() {
+        this.level = "DEBUG";
+        return () => this.resetLevel();
+      }
+      resetLevel() {
+        this.level = this.originalLevel;
+      }
+      static debug(...args) {
+        globalLogger.debug(...args);
+      }
+      static info(...args) {
+        globalLogger.info(...args);
+      }
+      static warn(...args) {
+        globalLogger.warn(...args);
+      }
+      static error(...args) {
+        globalLogger.error(...args);
+      }
+      static enableDebug() {
+        return globalLogger.enableDebug();
+      }
+      static resetLevel() {
+        globalLogger.resetLevel();
+      }
+      static get level() {
+        return globalLogger.level;
+      }
+    };
+    var globalLogger = new Logger();
+    module2.exports = Logger;
+  }
+});
+
 // node_modules/sendpulse-api/api/sendpulse.js
 var require_sendpulse = __commonJS({
   "node_modules/sendpulse-api/api/sendpulse.js"(exports2) {
@@ -1012,8 +1189,8 @@ var require_dist_cjs2 = __commonJS({
     var getHttpHandlerExtensionConfiguration = /* @__PURE__ */ __name((runtimeConfig) => {
       let httpHandler = runtimeConfig.httpHandler;
       return {
-        setHttpHandler(handler) {
-          httpHandler = handler;
+        setHttpHandler(handler2) {
+          httpHandler = handler2;
         },
         httpHandler() {
           return httpHandler;
@@ -3616,14 +3793,14 @@ var require_dist_cjs16 = __commonJS({
             identifyOnResolve = toggle;
           return identifyOnResolve;
         },
-        resolve: (handler, context) => {
+        resolve: (handler2, context) => {
           for (const middleware of getMiddlewareList().map((entry) => entry.middleware).reverse()) {
-            handler = middleware(handler, context);
+            handler2 = middleware(handler2, context);
           }
           if (identifyOnResolve) {
             console.log(stack.identify());
           }
-          return handler;
+          return handler2;
         }
       };
       return stack;
@@ -4093,10 +4270,10 @@ var require_dist_cjs23 = __commonJS({
     var MIN_WAIT_TIME = 1e3;
     async function writeRequestBody(httpRequest, request, maxContinueTimeoutMs = MIN_WAIT_TIME) {
       const headers = request.headers ?? {};
-      const expect = headers["Expect"] || headers["expect"];
+      const expect2 = headers["Expect"] || headers["expect"];
       let timeoutId = -1;
       let hasError = false;
-      if (expect === "100-continue") {
+      if (expect2 === "100-continue") {
         await Promise.race([
           new Promise((resolve) => {
             timeoutId = Number(setTimeout(resolve, Math.max(MIN_WAIT_TIME, maxContinueTimeoutMs)));
@@ -5476,24 +5653,24 @@ var require_dist_cjs27 = __commonJS({
         const options = typeof optionsOrCb !== "function" ? optionsOrCb : void 0;
         const callback = typeof optionsOrCb === "function" ? optionsOrCb : cb;
         const useHandlerCache = options === void 0 && this.config.cacheMiddleware === true;
-        let handler;
+        let handler2;
         if (useHandlerCache) {
           if (!this.handlers) {
             this.handlers = /* @__PURE__ */ new WeakMap();
           }
           const handlers = this.handlers;
           if (handlers.has(command.constructor)) {
-            handler = handlers.get(command.constructor);
+            handler2 = handlers.get(command.constructor);
           } else {
-            handler = command.resolveMiddleware(this.middlewareStack, this.config, options);
-            handlers.set(command.constructor, handler);
+            handler2 = command.resolveMiddleware(this.middlewareStack, this.config, options);
+            handlers.set(command.constructor, handler2);
           }
         } else {
           delete this.handlers;
-          handler = command.resolveMiddleware(this.middlewareStack, this.config, options);
+          handler2 = command.resolveMiddleware(this.middlewareStack, this.config, options);
         }
         if (callback) {
-          handler(command).then(
+          handler2(command).then(
             (result) => callback(null, result.output),
             (err) => callback(err)
           ).catch(
@@ -5503,7 +5680,7 @@ var require_dist_cjs27 = __commonJS({
             }
           );
         } else {
-          return handler(command).then((result) => result.output);
+          return handler2(command).then((result) => result.output);
         }
       }
       destroy() {
@@ -20008,190 +20185,11 @@ var require_dist_cjs53 = __commonJS({
   }
 });
 
-// node_modules/@dazn/lambda-powertools-correlation-ids/index.js
-var require_lambda_powertools_correlation_ids = __commonJS({
-  "node_modules/@dazn/lambda-powertools-correlation-ids/index.js"(exports2, module2) {
-    var DEBUG_LOG_ENABLED = "debug-log-enabled";
-    var CorrelationIds = class {
-      constructor(context = {}) {
-        this.context = context;
-      }
-      clearAll() {
-        this.context = {};
-      }
-      replaceAllWith(ctx) {
-        this.context = ctx;
-      }
-      set(key, value) {
-        if (!key.startsWith("x-correlation-")) {
-          key = "x-correlation-" + key;
-        }
-        this.context[key] = value;
-      }
-      get() {
-        return this.context;
-      }
-      get debugLoggingEnabled() {
-        return this.context[DEBUG_LOG_ENABLED] === "true";
-      }
-      set debugLoggingEnabled(enabled) {
-        this.context[DEBUG_LOG_ENABLED] = enabled ? "true" : "false";
-      }
-      static clearAll() {
-        globalCorrelationIds.clearAll();
-      }
-      static replaceAllWith(...args) {
-        globalCorrelationIds.replaceAllWith(...args);
-      }
-      static set(...args) {
-        globalCorrelationIds.set(...args);
-      }
-      static get() {
-        return globalCorrelationIds.get();
-      }
-      static get debugLoggingEnabled() {
-        return globalCorrelationIds.debugLoggingEnabled;
-      }
-      static set debugLoggingEnabled(enabled) {
-        globalCorrelationIds.debugLoggingEnabled = enabled;
-      }
-    };
-    if (!global.CORRELATION_IDS) {
-      global.CORRELATION_IDS = new CorrelationIds();
-    }
-    var globalCorrelationIds = global.CORRELATION_IDS;
-    module2.exports = CorrelationIds;
-  }
-});
+// src/handlers/send-email-otp/index.test.ts
+var import_lambda_powertools_logger3 = __toESM(require_lambda_powertools_logger());
 
-// node_modules/@dazn/lambda-powertools-logger/index.js
-var require_lambda_powertools_logger = __commonJS({
-  "node_modules/@dazn/lambda-powertools-logger/index.js"(exports2, module2) {
-    var CorrelationIds = require_lambda_powertools_correlation_ids();
-    var LogLevels = {
-      DEBUG: 20,
-      INFO: 30,
-      WARN: 40,
-      ERROR: 50
-    };
-    var DEFAULT_CONTEXT = {
-      awsRegion: process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION,
-      functionName: process.env.AWS_LAMBDA_FUNCTION_NAME,
-      functionVersion: process.env.AWS_LAMBDA_FUNCTION_VERSION,
-      functionMemorySize: process.env.AWS_LAMBDA_FUNCTION_MEMORY_SIZE,
-      environment: process.env.ENVIRONMENT || process.env.STAGE
-      // convention in our functions
-    };
-    var Logger = class {
-      constructor({
-        correlationIds = CorrelationIds,
-        level = process.env.LOG_LEVEL
-      } = {}) {
-        this.correlationIds = correlationIds;
-        this.level = (level || "DEBUG").toUpperCase();
-        this.originalLevel = this.level;
-        if (correlationIds.debugEnabled) {
-          this.enableDebug();
-        }
-      }
-      get context() {
-        return {
-          ...DEFAULT_CONTEXT,
-          ...this.correlationIds.get()
-        };
-      }
-      isEnabled(level) {
-        return level >= (LogLevels[this.level] || LogLevels.DEBUG);
-      }
-      appendError(params, err) {
-        if (!err) {
-          return params;
-        }
-        return {
-          ...params || {},
-          errorName: err.name,
-          errorMessage: err.message,
-          stackTrace: err.stack
-        };
-      }
-      log(levelName, message, params) {
-        const level = LogLevels[levelName];
-        if (!this.isEnabled(level)) {
-          return;
-        }
-        const logMsg = {
-          ...this.context,
-          ...params,
-          level,
-          sLevel: levelName,
-          message
-        };
-        const consoleMethods = {
-          DEBUG: console.debug,
-          INFO: console.info,
-          WARN: console.warn,
-          ERROR: console.error
-        };
-        consoleMethods[levelName](JSON.stringify(
-          { message, ...params, ...logMsg },
-          (key, value) => typeof value === "bigint" ? value.toString() : value
-        ));
-      }
-      debug(msg, params) {
-        this.log("DEBUG", msg, params);
-      }
-      info(msg, params) {
-        this.log("INFO", msg, params);
-      }
-      warn(msg, params, err) {
-        const parameters = !err && params instanceof Error ? this.appendError({}, params) : this.appendError(params, err);
-        this.log("WARN", msg, parameters);
-      }
-      error(msg, params, err) {
-        const parameters = !err && params instanceof Error ? this.appendError({}, params) : this.appendError(params, err);
-        this.log("ERROR", msg, parameters);
-      }
-      enableDebug() {
-        this.level = "DEBUG";
-        return () => this.resetLevel();
-      }
-      resetLevel() {
-        this.level = this.originalLevel;
-      }
-      static debug(...args) {
-        globalLogger.debug(...args);
-      }
-      static info(...args) {
-        globalLogger.info(...args);
-      }
-      static warn(...args) {
-        globalLogger.warn(...args);
-      }
-      static error(...args) {
-        globalLogger.error(...args);
-      }
-      static enableDebug() {
-        return globalLogger.enableDebug();
-      }
-      static resetLevel() {
-        globalLogger.resetLevel();
-      }
-      static get level() {
-        return globalLogger.level;
-      }
-    };
-    var globalLogger = new Logger();
-    module2.exports = Logger;
-  }
-});
-
-// src/services/NotificationsService/index.ts
-var NotificationsService_exports = {};
-__export(NotificationsService_exports, {
-  NotificationsService: () => NotificationsService,
-  default: () => NotificationsService_default
-});
-module.exports = __toCommonJS(NotificationsService_exports);
+// src/handlers/send-email-otp/index.ts
+var import_lambda_powertools_logger2 = __toESM(require_lambda_powertools_logger());
 
 // src/templates/email-templates/create-user-template.ts
 var createUserTemplate = `<!doctype html>
@@ -21888,7 +21886,80 @@ var NotificationsService = class {
   // }
 };
 var NotificationsService_default = new NotificationsService();
-// Annotate the CommonJS export names for ESM import in node:
-0 && (module.exports = {
-  NotificationsService
+
+// src/config/sqs/helpers.ts
+var parseQueueMessagesBody = (event) => {
+  const queueMessages = event.Records.map((record) => {
+    return {
+      ...record,
+      body: JSON.parse(record.body)
+    };
+  });
+  return queueMessages;
+};
+
+// src/handlers/send-email-otp/index.ts
+var handler = async (event) => {
+  import_lambda_powertools_logger2.default.info("Received event", { event });
+  const queueMessages = parseQueueMessagesBody(event);
+  const notificationService = NotificationsService_default;
+  await notificationService.processMessagesAndSendEmails(queueMessages);
+};
+
+// src/handlers/send-email-otp/test-data.ts
+var mockSQSEvent = {
+  Records: [
+    {
+      body: JSON.stringify({
+        body: {
+          recipients: [{ emailAddress: "test@example.com" }],
+          message: "Test message",
+          subject: "Test subject",
+          event: "TestEvent"
+        }
+      })
+    }
+  ]
+};
+
+// src/handlers/send-email-otp/index.test.ts
+jest.mock("src/services/NotificationsService");
+jest.mock("@dazn/lambda-powertools-logger");
+describe("Lambda Handler", () => {
+  const mockProcessMessagesAndSendEmails = jest.fn();
+  const mockLogInfo = jest.fn();
+  beforeAll(() => {
+    NotificationsService_default.processMessagesAndSendEmails = mockProcessMessagesAndSendEmails;
+    import_lambda_powertools_logger3.default.info = mockLogInfo;
+  });
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+  it("should process SQS event and check email address in body", async () => {
+    mockProcessMessagesAndSendEmails.mockResolvedValueOnce(void 0);
+    await handler(mockSQSEvent);
+    expect(mockProcessMessagesAndSendEmails).toHaveBeenCalledTimes(1);
+    expect(mockLogInfo).toHaveBeenCalledWith(
+      "Received event",
+      expect.objectContaining({
+        event: expect.objectContaining({
+          Records: expect.arrayContaining([
+            expect.objectContaining({
+              body: expect.stringContaining("test@example.com")
+            })
+          ])
+        })
+      })
+    );
+  });
+  it("should parse the event body and verify the nested structure of the email address", async () => {
+    mockProcessMessagesAndSendEmails.mockResolvedValueOnce(void 0);
+    await handler(mockSQSEvent);
+    const loggedEvent = mockLogInfo.mock.calls[0][1].event;
+    const parsedBody = JSON.parse(loggedEvent.Records[0].body);
+    expect(parsedBody).toHaveProperty(
+      "body.recipients[0].emailAddress",
+      "test@example.com"
+    );
+  });
 });

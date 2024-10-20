@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { IQueueEmailMessageBody } from "src/config/interfaces";
+import { IQueueMessageBody } from "src/config/interfaces";
 import { formatEmailMessageBody } from "src/helpers/email-helpers";
 import SendpulseEmailService from "src/utils/send-pulse";
 
@@ -7,21 +7,18 @@ export class NotificationsService {
     constructor() {}
 
     public async processMessagesAndSendEmails(
-        queueMessages: IQueueEmailMessageBody[]
+        queueMessages: IQueueMessageBody[]
     ): Promise<void> {
         const sendpulseEmailService = await SendpulseEmailService.create();
         const promises: Promise<any>[] = [];
         queueMessages.forEach((message) => {
             const body = formatEmailMessageBody({
-                recipient: message.body.messageObject.recipients[0],
-                message: message.body.messageObject.message,
+                recipient: message.body.recipients[0],
+                message: message.body.message,
                 event: message.body.event,
             });
-            const subject =
-                message.body.messageObject.subject ?? "TraderApp Notification";
-            const recipient =
-                message.body.messageObject.recipients[0].emailAddress;
-            console.log("Trying to send email: ", recipient, subject);
+            const subject = message.body.subject ?? "TraderApp Notification";
+            const recipient = message.body.recipients[0].emailAddress ?? "";
             promises.push(
                 sendpulseEmailService.sendEmail({ recipient, subject, body })
             );

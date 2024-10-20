@@ -1,5 +1,5 @@
 import { EventTemplate } from "src/config/enums";
-import { IEmailRecipient } from "src/config/interfaces";
+import { IMessageRecipient } from "src/config/interfaces";
 import {
     CreateUserTemplate,
     GeneralTemplate,
@@ -9,7 +9,7 @@ import {
 } from "src/templates/email-templates";
 
 interface IFormatEmailMessageInput {
-    recipient: IEmailRecipient;
+    recipient: IMessageRecipient;
     message: string;
     event: EventTemplate;
 }

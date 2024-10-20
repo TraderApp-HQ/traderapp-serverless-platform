@@ -10,3 +10,4 @@ tsconfig.json
 .prettierrc.json
 dist
 .aws-sam
+*.yaml

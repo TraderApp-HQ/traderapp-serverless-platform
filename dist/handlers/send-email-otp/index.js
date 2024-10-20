@@ -33,6 +33,183 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 ));
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
+// node_modules/@dazn/lambda-powertools-correlation-ids/index.js
+var require_lambda_powertools_correlation_ids = __commonJS({
+  "node_modules/@dazn/lambda-powertools-correlation-ids/index.js"(exports2, module2) {
+    var DEBUG_LOG_ENABLED = "debug-log-enabled";
+    var CorrelationIds = class {
+      constructor(context = {}) {
+        this.context = context;
+      }
+      clearAll() {
+        this.context = {};
+      }
+      replaceAllWith(ctx) {
+        this.context = ctx;
+      }
+      set(key, value) {
+        if (!key.startsWith("x-correlation-")) {
+          key = "x-correlation-" + key;
+        }
+        this.context[key] = value;
+      }
+      get() {
+        return this.context;
+      }
+      get debugLoggingEnabled() {
+        return this.context[DEBUG_LOG_ENABLED] === "true";
+      }
+      set debugLoggingEnabled(enabled) {
+        this.context[DEBUG_LOG_ENABLED] = enabled ? "true" : "false";
+      }
+      static clearAll() {
+        globalCorrelationIds.clearAll();
+      }
+      static replaceAllWith(...args) {
+        globalCorrelationIds.replaceAllWith(...args);
+      }
+      static set(...args) {
+        globalCorrelationIds.set(...args);
+      }
+      static get() {
+        return globalCorrelationIds.get();
+      }
+      static get debugLoggingEnabled() {
+        return globalCorrelationIds.debugLoggingEnabled;
+      }
+      static set debugLoggingEnabled(enabled) {
+        globalCorrelationIds.debugLoggingEnabled = enabled;
+      }
+    };
+    if (!global.CORRELATION_IDS) {
+      global.CORRELATION_IDS = new CorrelationIds();
+    }
+    var globalCorrelationIds = global.CORRELATION_IDS;
+    module2.exports = CorrelationIds;
+  }
+});
+
+// node_modules/@dazn/lambda-powertools-logger/index.js
+var require_lambda_powertools_logger = __commonJS({
+  "node_modules/@dazn/lambda-powertools-logger/index.js"(exports2, module2) {
+    var CorrelationIds = require_lambda_powertools_correlation_ids();
+    var LogLevels = {
+      DEBUG: 20,
+      INFO: 30,
+      WARN: 40,
+      ERROR: 50
+    };
+    var DEFAULT_CONTEXT = {
+      awsRegion: process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION,
+      functionName: process.env.AWS_LAMBDA_FUNCTION_NAME,
+      functionVersion: process.env.AWS_LAMBDA_FUNCTION_VERSION,
+      functionMemorySize: process.env.AWS_LAMBDA_FUNCTION_MEMORY_SIZE,
+      environment: process.env.ENVIRONMENT || process.env.STAGE
+      // convention in our functions
+    };
+    var Logger = class {
+      constructor({
+        correlationIds = CorrelationIds,
+        level = process.env.LOG_LEVEL
+      } = {}) {
+        this.correlationIds = correlationIds;
+        this.level = (level || "DEBUG").toUpperCase();
+        this.originalLevel = this.level;
+        if (correlationIds.debugEnabled) {
+          this.enableDebug();
+        }
+      }
+      get context() {
+        return {
+          ...DEFAULT_CONTEXT,
+          ...this.correlationIds.get()
+        };
+      }
+      isEnabled(level) {
+        return level >= (LogLevels[this.level] || LogLevels.DEBUG);
+      }
+      appendError(params, err) {
+        if (!err) {
+          return params;
+        }
+        return {
+          ...params || {},
+          errorName: err.name,
+          errorMessage: err.message,
+          stackTrace: err.stack
+        };
+      }
+      log(levelName, message, params) {
+        const level = LogLevels[levelName];
+        if (!this.isEnabled(level)) {
+          return;
+        }
+        const logMsg = {
+          ...this.context,
+          ...params,
+          level,
+          sLevel: levelName,
+          message
+        };
+        const consoleMethods = {
+          DEBUG: console.debug,
+          INFO: console.info,
+          WARN: console.warn,
+          ERROR: console.error
+        };
+        consoleMethods[levelName](JSON.stringify(
+          { message, ...params, ...logMsg },
+          (key, value) => typeof value === "bigint" ? value.toString() : value
+        ));
+      }
+      debug(msg, params) {
+        this.log("DEBUG", msg, params);
+      }
+      info(msg, params) {
+        this.log("INFO", msg, params);
+      }
+      warn(msg, params, err) {
+        const parameters = !err && params instanceof Error ? this.appendError({}, params) : this.appendError(params, err);
+        this.log("WARN", msg, parameters);
+      }
+      error(msg, params, err) {
+        const parameters = !err && params instanceof Error ? this.appendError({}, params) : this.appendError(params, err);
+        this.log("ERROR", msg, parameters);
+      }
+      enableDebug() {
+        this.level = "DEBUG";
+        return () => this.resetLevel();
+      }
+      resetLevel() {
+        this.level = this.originalLevel;
+      }
+      static debug(...args) {
+        globalLogger.debug(...args);
+      }
+      static info(...args) {
+        globalLogger.info(...args);
+      }
+      static warn(...args) {
+        globalLogger.warn(...args);
+      }
+      static error(...args) {
+        globalLogger.error(...args);
+      }
+      static enableDebug() {
+        return globalLogger.enableDebug();
+      }
+      static resetLevel() {
+        globalLogger.resetLevel();
+      }
+      static get level() {
+        return globalLogger.level;
+      }
+    };
+    var globalLogger = new Logger();
+    module2.exports = Logger;
+  }
+});
+
 // node_modules/sendpulse-api/api/sendpulse.js
 var require_sendpulse = __commonJS({
   "node_modules/sendpulse-api/api/sendpulse.js"(exports2) {
@@ -20014,6 +20191,7 @@ __export(send_email_otp_exports, {
   handler: () => handler
 });
 module.exports = __toCommonJS(send_email_otp_exports);
+var import_lambda_powertools_logger2 = __toESM(require_lambda_powertools_logger());
 
 // src/templates/email-templates/create-user-template.ts
 var createUserTemplate = `<!doctype html>
@@ -21584,19 +21762,15 @@ var import_sendpulse_api = __toESM(require_sendpulse_api());
 
 // src/config/secrets/helpers.ts
 var import_client_secrets_manager = __toESM(require_dist_cjs53());
+var import_lambda_powertools_logger = __toESM(require_lambda_powertools_logger());
 var client = new import_client_secrets_manager.SecretsManagerClient({
   region: process.env.AWS_REGION || "eu-west-1"
 });
 var getSecrets = async (secretName) => {
-  try {
-    console.info("Secret name", { secretName });
-    const command = new import_client_secrets_manager.GetSecretValueCommand({ SecretId: secretName });
-    const response = await client.send(command);
-    console.log("fetched secrets successfully");
-    return JSON.parse(response.SecretString || "{}");
-  } catch (error) {
-    throw new Error(`Error getting secrets: ${error.message}`);
-  }
+  const command = new import_client_secrets_manager.GetSecretValueCommand({ SecretId: secretName });
+  const response = await client.send(command);
+  import_lambda_powertools_logger.default.info("Secret name fetched", { secretName });
+  return JSON.parse(response.SecretString || "{}");
 };
 
 // src/utils/send-pulse.ts
@@ -21694,13 +21868,12 @@ var NotificationsService = class {
     const promises = [];
     queueMessages.forEach((message) => {
       const body = formatEmailMessageBody({
-        recipient: message.body.messageObject.recipients[0],
-        message: message.body.messageObject.message,
+        recipient: message.body.recipients[0],
+        message: message.body.message,
         event: message.body.event
       });
-      const subject = message.body.messageObject.subject ?? "TraderApp Notification";
-      const recipient = message.body.messageObject.recipients[0].emailAddress;
-      console.log("Trying to send email: ", recipient, subject);
+      const subject = message.body.subject ?? "TraderApp Notification";
+      const recipient = message.body.recipients[0].emailAddress ?? "";
       promises.push(
         sendpulseEmailService.sendEmail({ recipient, subject, body })
       );
@@ -21716,17 +21889,21 @@ var NotificationsService = class {
 };
 var NotificationsService_default = new NotificationsService();
 
+// src/config/sqs/helpers.ts
+var parseQueueMessagesBody = (event) => {
+  const queueMessages = event.Records.map((record) => {
+    return {
+      ...record,
+      body: JSON.parse(record.body)
+    };
+  });
+  return queueMessages;
+};
+
 // src/handlers/send-email-otp/index.ts
 var handler = async (event) => {
-  console.info("Received event", JSON.stringify(event));
-  const queueMessages = event.Records.map(
-    (record) => {
-      return {
-        ...record,
-        body: record.body
-      };
-    }
-  );
+  import_lambda_powertools_logger2.default.info("Received event", { event });
+  const queueMessages = parseQueueMessagesBody(event);
   const notificationService = NotificationsService_default;
   await notificationService.processMessagesAndSendEmails(queueMessages);
 };
