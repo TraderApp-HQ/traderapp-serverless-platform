@@ -14,11 +14,6 @@ jobs:
       - name: Checkout code from branch
         uses: actions/checkout@v2
 
-      # - name: Set environment variables
-      #   run: |
-      #     echo "NODE_ENV=${{ vars.NODE_ENV }}" >> $GITHUB_ENV
-      #     echo "SERVICE=${{ vars.SERVICE }}" >> $GITHUB_ENV
-
       - name: Install Node.js
         uses: actions/setup-node@v2
         with:
@@ -32,3 +27,6 @@ jobs:
 
       - name: Run tests
         run: npm run test
+
+      - name: Clean up
+        run: npm run clean
