@@ -24,7 +24,7 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@v2
         with:
-          node-version: 16.15
+          node-version: 18.17.0
 
       - name: Install dependencies
         run: npm install --force
@@ -54,6 +54,9 @@ jobs:
 
       - name: Deploy the service
         run: npm run deploy --config-env dev
+
+      - name: Install dependencies
+        run: npm install --force
 
       - name: Deploy secrets
         run: npm run deploy-secrets dev
