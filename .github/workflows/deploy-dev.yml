@@ -55,5 +55,8 @@ jobs:
       - name: Deploy the service
         run: npm run deploy --config-env dev
 
+      - name: Install dependencies
+        run: npm install --force
+
       - name: Deploy secrets
         run: npm run deploy-secrets dev
