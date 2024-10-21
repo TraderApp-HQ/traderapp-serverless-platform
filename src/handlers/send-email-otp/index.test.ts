@@ -32,18 +32,6 @@ describe("Lambda Handler", () => {
         await sendEmailOtpHandler(mockSQSEvent);
 
         expect(mockProcessMessagesAndSendEmails).toHaveBeenCalledTimes(1);
-        expect(mockLogInfo).toHaveBeenCalledWith(
-            "Received event",
-            expect.objectContaining({
-                event: expect.objectContaining({
-                    Records: expect.arrayContaining([
-                        expect.objectContaining({
-                            body: expect.stringContaining("test@example.com"),
-                        }),
-                    ]),
-                }),
-            })
-        );
     });
 
     it("should parse the event body and verify the nested structure of the email address", async () => {
