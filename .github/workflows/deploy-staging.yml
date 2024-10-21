@@ -47,14 +47,14 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ vars.AWS_REGION }}
 
+      - name: Install dependencies
+        run: npm install --force
+      
       - name: Build project
         run: npm run build
       
       - name: Deploy the service
         run: sam deploy --config-env staging
-
-      - name: Install dependencies
-        run: npm install --force
 
       - name: Deploy secrets
         run: npm run deploy-secrets staging
