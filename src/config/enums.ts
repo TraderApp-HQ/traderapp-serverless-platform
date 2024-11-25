@@ -5,4 +5,5 @@ export enum EventTemplate {
     RESET_PASSWORD = "RESET_PASSWORD",
     OTP = "OTP",
     CREATE_USER = "CREATE_USER",
+    INVITE_USER = "INVITE_USER",
 }
