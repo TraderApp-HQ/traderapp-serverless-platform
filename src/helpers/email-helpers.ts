@@ -70,10 +70,6 @@ export const formatEmailMessageBody = ({
         }
         case EventTemplate.INVITE_USER: {
             templateBody = ReferralTemplate;
-            templateBody = templateBody.replace(
-                /{REFEREE}/g,
-                recipient.firstName
-            );
             templateBody = templateBody.replace(/{REFERRAL_LINK}/g, message);
             templateBody = templateBody.replace(
                 /{REFERRER}/g,

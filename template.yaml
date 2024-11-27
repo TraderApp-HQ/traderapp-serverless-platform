@@ -102,7 +102,7 @@ Resources:
           Properties:
             Queue: !GetAtt emailNotificationsQueue.Arn
       MemorySize: 128
-      Timeout: 30
+      Timeout: 60
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt emailNotificationsDLQ.Arn

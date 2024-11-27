@@ -195,7 +195,7 @@ const template = `<!doctype html>
                             <tbody>
                               <tr>
                                 <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                                  <div style="font-family:Manrope;font-size:24px;font-weight:800;line-height:1;text-align:left;color:#08123B;">Hi {REFEREE} 👋</div>
+                                  <div style="font-family:Manrope;font-size:24px;font-weight:800;line-height:1;text-align:left;color:#08123B;">Hi 👋</div>
                                 </td>
                               </tr>
                               <tr>
@@ -366,7 +366,7 @@ const template = `<!doctype html>
                                   <tbody>
                                     <tr>
                                       <td style="font-size:0;height:25px;vertical-align:middle;width:25px;">
-                                        <a href="https://instagram.com/traderapphq" target="_blank">
+                                        <a href="https://instagram.com/traderappinc" target="_blank">
                                           <img alt="" height="25" src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/ig22.png" style="border-radius:3px;display:block;" width="25" />
                                         </a>
                                       </td>

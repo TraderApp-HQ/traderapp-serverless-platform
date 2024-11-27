@@ -63,7 +63,7 @@
                         font-weight="800"
                         color="#08123B"
                     >
-                        Hi {REFEREE} 👋
+                        Hi 👋
                     </mj-text>
 
                     <mj-text
@@ -205,7 +205,7 @@
                         src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/facebook22.png"
                     />
                     <mj-social-element
-                        href="https://instagram.com/traderapphq"
+                        href="https://instagram.com/traderappinc"
                         src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/ig22.png"
                     />
                     <mj-social-element
