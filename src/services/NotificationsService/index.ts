@@ -12,16 +12,22 @@ export class NotificationsService {
         const sendpulseEmailService = await SendpulseEmailService.create();
         const promises: Promise<any>[] = [];
         queueMessages.forEach((message) => {
-            const body = formatEmailMessageBody({
-                recipient: message.body.recipients[0],
-                message: message.body.message,
-                event: message.body.event,
+            message.body.recipients.forEach((recipient) => {
+                const body = formatEmailMessageBody({
+                    recipient,
+                    message: message.body.message,
+                    event: message.body.event,
+                });
+                const subject =
+                    message.body.subject ?? "TraderApp Notification";
+                promises.push(
+                    sendpulseEmailService.sendEmail({
+                        recipient: recipient.emailAddress ?? "",
+                        subject,
+                        body,
+                    })
+                );
             });
-            const subject = message.body.subject ?? "TraderApp Notification";
-            const recipient = message.body.recipients[0].emailAddress ?? "";
-            promises.push(
-                sendpulseEmailService.sendEmail({ recipient, subject, body })
-            );
         });
         await Promise.all(promises);
     }

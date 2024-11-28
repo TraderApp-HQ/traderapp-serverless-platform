@@ -6,18 +6,21 @@ import {
     GetStartedTemplate,
     OtpTemplate,
     PasswordResetTemplate,
+    ReferralTemplate,
 } from "src/templates/email-templates";
 
 interface IFormatEmailMessageInput {
     recipient: IMessageRecipient;
     message: string;
     event: EventTemplate;
+    sender?: IMessageRecipient;
 }
 
 export const formatEmailMessageBody = ({
     recipient,
     message,
     event,
+    sender,
 }: IFormatEmailMessageInput) => {
     let templateBody = "";
     switch (event) {
@@ -62,6 +65,15 @@ export const formatEmailMessageBody = ({
             templateBody = templateBody.replace(
                 /{USER_NAME}/g,
                 recipient.firstName
+            );
+            break;
+        }
+        case EventTemplate.INVITE_USER: {
+            templateBody = ReferralTemplate;
+            templateBody = templateBody.replace(/{REFERRAL_LINK}/g, message);
+            templateBody = templateBody.replace(
+                /{REFERRER}/g,
+                `${sender?.firstName} ${sender?.lastName}`
             );
             break;
         }
