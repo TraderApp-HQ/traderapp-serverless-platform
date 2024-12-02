@@ -17,6 +17,7 @@ export class NotificationsService {
                     recipient,
                     message: message.body.message,
                     event: message.body.event,
+                    sender: message.body.sender,
                 });
                 const subject =
                     message.body.subject ?? "TraderApp Notification";
