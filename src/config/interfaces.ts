@@ -31,7 +31,7 @@ export type DatabaseConnections = {
     [key in DatabaseType]: mongoose.Connection;
 };
 
-export interface User {
+export interface IUser {
     id: string;
     firstName: string;
     lastName: string;
@@ -39,9 +39,9 @@ export interface User {
     referralRank: string;
 }
 
-export interface ReferralQueueMessage {
-    user: User;
-    referrals: User[];
+export interface IReferralQueueMessage {
+    user: IUser;
+    referrals: IUser[];
 }
 
 export interface IUsersServiceSecrets {
@@ -52,32 +52,32 @@ export interface ITradingEngineServiceSecrets {
     TRADING_ENGINE_SERVICE_DB_URL: string;
 }
 
-export interface ScriptConfig {
+export interface IScriptConfig {
     scriptFunction: (connections: DatabaseConnections) => Promise<void>;
     dbUrls: { [dbName in DatabaseType]: string };
 }
 
-export interface UserDbConnection {
+export interface IUserDbConnection {
     userId: string;
     mongooseConnection: mongoose.Connection;
 }
 
-export interface UserBalance {
+export interface IUserBalance {
     availableBalance: number;
     lockedBalance?: number;
 }
 
-export interface ComputeBalanceInput {
+export interface IComputeBalanceInput {
     tradingEngineConnection: mongoose.Connection;
-    referrals: ReferralQueueMessage["referrals"];
+    referrals: IReferralQueueMessage["referrals"];
     userId: string;
 }
 
-export interface Balances {
-    userBalance: UserBalance;
+export interface IBalances {
+    userBalance: IUserBalance;
     communityBalance: number;
 }
 
-export interface UpdateUserRecordInput extends UserDbConnection {
-    balance: Balances;
+export interface IUpdateUserRecordInput extends IUserDbConnection {
+    balance: IBalances;
 }

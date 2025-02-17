@@ -1,10 +1,14 @@
 import mongoose from "mongoose";
-import { DatabaseConnections, DatabaseType, ScriptConfig } from "../interfaces";
+import {
+    DatabaseConnections,
+    DatabaseType,
+    IScriptConfig,
+} from "../interfaces";
 
 export const runScript = async ({
     scriptFunction,
     dbUrls,
-}: ScriptConfig): Promise<void> => {
+}: IScriptConfig): Promise<void> => {
     const connections: DatabaseConnections = {} as DatabaseConnections;
 
     for (const [dbName, url] of Object.entries(dbUrls)) {

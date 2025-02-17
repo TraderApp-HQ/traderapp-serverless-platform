@@ -127,13 +127,13 @@ Resources:
               Resource:
                 - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:notifications-service/${Environment}*
 
-  processReferralsData:
+  userReferralsTracking :
     Type: AWS::Serverless::Function
     Properties:
       Environment:
         Variables:
           ENV: !Ref Environment
-      FunctionName: !Sub ${Environment}-processReferralsData
+      FunctionName: !Sub ${Environment}-userReferralsTracking 
       Runtime: nodejs20.x
       Architectures:
         - x86_64
@@ -144,7 +144,7 @@ Resources:
           Properties:
             Queue: !GetAtt userReferralsTrackingQueue.Arn
       MemorySize: 128
-      Timeout: 30
+      Timeout: 90
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt userReferralsTrackingDLQ.Arn
