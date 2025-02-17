@@ -1,0 +1,20 @@
+{
+    "Records": [
+        {
+            "messageId": "8d0d2fae-1a50-4e88-943f-ac07493a1af0",
+            "receiptHandle": "AQEB",
+            "body": "{\"user\":{\"id\":\"666fd3b2bf31f343523ecd8a\",\"firstName\":\"John\",\"lastName\":\"Doe\",\"email\":\"john@example.com\",\"referralRank\":\"TA_RECRUIT\"},\"referrals\":[{\"id\":\"67190cfd244778bf2265a6fb\",\"firstName\":\"Jane\",\"lastName\":\"Smith\",\"email\":\"jane@example.com\",\"referralRank\":\"TA_RECRUIT\"},{\"id\":\"6731c99169e8d2fead7a7038\",\"firstName\":\"Bob\",\"lastName\":\"Wilson\",\"email\":\"bob@example.com\",\"referralRank\":\"TA_RECRUIT\"}]}",
+            "attributes": {
+                "ApproximateReceiveCount": "1",
+                "SentTimestamp": "1729383908528",
+                "SenderId": "AIDAYL6XCX7JKIAG7VEHQ",
+                "ApproximateFirstReceiveTimestamp": "1729383908540"
+            },
+            "messageAttributes": {},
+            "md5OfBody": "f2e9098bc1e087904f2aa7237833e167",
+            "eventSource": "aws:sqs",
+            "eventSourceARN": "arn:aws:sqs:eu-west-1:575439814610:dev-userReferralsTrackingQueue",
+            "awsRegion": "eu-west-1"
+        }
+    ]
+}

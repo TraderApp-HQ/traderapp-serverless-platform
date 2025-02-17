@@ -54,6 +54,18 @@ Resources:
     Properties:
       QueueName: !Sub ${Environment}-emailNotificationsDLQ
 
+  userReferralsTrackingQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${Environment}-userReferralsTrackingQueue
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt userReferralsTrackingDLQ.Arn
+        maxReceiveCount: 3
+  userReferralsTrackingDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${Environment}-userReferralsTrackingDLQ
+
   sendEmailOtp:
     Type: AWS::Serverless::Function
     Properties:
@@ -114,3 +126,34 @@ Resources:
                 - secretsmanager:GetSecretValue
               Resource:
                 - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:notifications-service/${Environment}*
+
+  processReferralsData:
+    Type: AWS::Serverless::Function
+    Properties:
+      Environment:
+        Variables:
+          ENV: !Ref Environment
+      FunctionName: !Sub ${Environment}-processReferralsData
+      Runtime: nodejs20.x
+      Architectures:
+        - x86_64
+      Handler: dist/handlers/process-referrals-data.handler
+      Events:
+        SQSQueueEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt userReferralsTrackingQueue.Arn
+      MemorySize: 128
+      Timeout: 30
+      DeadLetterQueue:
+        Type: SQS
+        TargetArn: !GetAtt userReferralsTrackingDLQ.Arn
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Statement:
+          - Effect: Allow
+            Action:
+              - secretsmanager:GetSecretValue
+            Resource:
+              - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:trading-engine-service-secrets
+              - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:users-service-secrets
