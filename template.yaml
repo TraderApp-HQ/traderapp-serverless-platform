@@ -58,6 +58,7 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       QueueName: !Sub ${Environment}-userReferralsTrackingQueue
+      VisibilityTimeout: 90
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt userReferralsTrackingDLQ.Arn
         maxReceiveCount: 3
@@ -155,5 +156,5 @@ Resources:
             Action:
               - secretsmanager:GetSecretValue
             Resource:
-              - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:trading-engine-service-secrets
-              - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:users-service-secrets
+              - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:trading-engine-service-secrets/${Environment}*
+              - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:users-service-secrets/${Environment}*
