@@ -128,17 +128,17 @@ Resources:
               Resource:
                 - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:notifications-service/${Environment}*
 
-  userReferralsTracking :
+  trackUserReferrals:
     Type: AWS::Serverless::Function
     Properties:
       Environment:
         Variables:
           ENV: !Ref Environment
-      FunctionName: !Sub ${Environment}-userReferralsTracking 
+      FunctionName: !Sub ${Environment}-trackUserReferrals 
       Runtime: nodejs20.x
       Architectures:
         - x86_64
-      Handler: dist/handlers/process-referrals-data.handler
+      Handler: dist/handlers/track-user-referrals.handler
       Events:
         SQSQueueEvent:
           Type: SQS
