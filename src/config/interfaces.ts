@@ -1,6 +1,7 @@
 import { SQSRecord } from "aws-lambda";
 import mongoose from "mongoose";
 import { EventTemplate } from "src/config/enums";
+import { ReferralRank } from "./constants";
 
 export interface IMessageRecipient {
     firstName: string;
@@ -42,6 +43,7 @@ export interface IUser {
 export interface IReferralQueueMessage {
     user: IUser;
     referrals: IUser[];
+    isTestReferralTracking?: boolean;
 }
 
 export interface IUsersServiceSecrets {
@@ -80,4 +82,14 @@ export interface IBalances {
 
 export interface IUpdateUserRecordInput extends IUserDbConnection {
     balance: IBalances;
+    referralRank: ReferralRankType | null;
+}
+
+export type ReferralRankType = (typeof ReferralRank)[keyof typeof ReferralRank];
+
+export interface IRankCriteria {
+    personalATC: number;
+    communityATC: number;
+    communitySize: number;
+    isTestReferralTracking?: boolean;
 }
