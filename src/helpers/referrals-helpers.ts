@@ -121,7 +121,7 @@ export async function computeUserAndReferralsBalances({
 
     return {
         userBalance,
-        communityBalance: sumReferralBalance + userBalance.availableBalance,
+        communityBalance: sumReferralBalance,
     };
 }
 
