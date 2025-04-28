@@ -30,6 +30,7 @@ Parameters:
     Description: Environment name to prefix resources
 
 Resources:
+# create queues
   emailOtpQueue:
     Type: AWS::SQS::Queue
     Properties:
@@ -67,6 +68,31 @@ Resources:
     Properties:
       QueueName: !Sub ${Environment}-userReferralsTrackingDLQ
 
+  cryptopayChannelsWebhooksQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${Environment}-cryptopayChannelsWebhooksQueue
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt cryptopayChannelsWebhooksDLQ.Arn
+        maxReceiveCount: 3
+  cryptopayChannelsWebhooksDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${Environment}-cryptopayChannelsWebhooksDLQ
+
+  cryptopayInvoiceWebhooksQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${Environment}-cryptopayInvoiceWebhooksQueue
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt cryptopayInvoiceWebhooksDLQ.Arn
+        maxReceiveCount: 3
+  cryptopayInvoiceWebhooksDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${Environment}-cryptopayInvoiceWebhooksDLQ
+
+# create lambda functions
   sendEmailOtp:
     Type: AWS::Serverless::Function
     Properties:
@@ -158,3 +184,63 @@ Resources:
             Resource:
               - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:trading-engine-service-secrets/${Environment}*
               - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:users-service-secrets/${Environment}*
+            
+  processCryptopayChannelsWebhooks:
+    Type: AWS::Serverless::Function
+    Properties:
+      Environment:
+        Variables:
+          ENV: !Ref Environment
+      FunctionName: !Sub ${Environment}-processCryptopayChannelsWebhooks
+      Runtime: nodejs20.x
+      Architectures:
+        - x86_64
+      Handler: dist/handlers/process-cryptopay-channels-webhooks.handler
+      Events:
+        SQSQueueEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt cryptopayChannelsWebhooksQueue.Arn
+      MemorySize: 128
+      Timeout: 60
+      DeadLetterQueue:
+        Type: SQS
+        TargetArn: !GetAtt cryptopayChannelsWebhooksDLQ.Arn
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource:
+                - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:wallets-service-secrets/${Environment}*
+
+  processCryptopayInvoiceWebhooks:
+    Type: AWS::Serverless::Function
+    Properties:
+      Environment:
+        Variables:
+          ENV: !Ref Environment
+      FunctionName: !Sub ${Environment}-processCryptopayInvoiceWebhooks
+      Runtime: nodejs20.x
+      Architectures:
+        - x86_64
+      Handler: dist/handlers/process-cryptopay-invoice-webhooks.handler
+      Events:
+        SQSQueueEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt cryptopayInvoiceWebhooksQueue.Arn
+      MemorySize: 128
+      Timeout: 60
+      DeadLetterQueue:
+        Type: SQS
+        TargetArn: !GetAtt cryptopayInvoiceWebhooksDLQ.Arn
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource:
+                - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:wallets-service-secrets/${Environment}*
