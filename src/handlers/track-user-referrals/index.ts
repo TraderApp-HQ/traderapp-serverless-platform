@@ -2,13 +2,12 @@ import { SQSEvent } from "aws-lambda";
 import log from "@dazn/lambda-powertools-logger";
 import {
     DatabaseConnections,
-    ITradingEngineServiceSecrets,
-    IUsersServiceSecrets,
 } from "src/config/interfaces";
 import { getSecrets } from "src/config/secrets/helpers";
 import { SecretLocation } from "src/config/secrets/enums";
 import { runScript } from "src/config/scripts/config";
 import { processUserReferralTracking } from "./helpers";
+import { ITradingEngineServiceSecrets, IUsersServiceSecrets } from "src/config/secrets/interfaces";
 
 export const handler = async (event: SQSEvent): Promise<void> => {
     log.info("Processing referrals data", { event });

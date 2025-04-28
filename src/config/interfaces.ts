@@ -19,8 +19,8 @@ export interface IQueueMessageBodyObject {
     sender?: IMessageRecipient;
 }
 
-export interface IQueueMessageBody extends Omit<SQSRecord, "body"> {
-    body: IQueueMessageBodyObject;
+export interface IQueueMessageBody<T = IQueueMessageBodyObject> extends Omit<SQSRecord, "body"> {
+    body: T;
 }
 
 export enum DatabaseType {
@@ -44,14 +44,6 @@ export interface IReferralQueueMessage {
     user: IUser;
     referrals: IUser[];
     isTestReferralTracking?: boolean;
-}
-
-export interface IUsersServiceSecrets {
-    USERS_SERVICE_DB_URL: string;
-}
-
-export interface ITradingEngineServiceSecrets {
-    TRADING_ENGINE_SERVICE_DB_URL: string;
 }
 
 export interface IScriptConfig {

@@ -13,12 +13,15 @@
         "format:write": "prettier --write .",
         "prepare": "husky",
         "deploy": "sam deploy",
+        "sample-local-invoke": "sam local invoke <handler-name-on-template.yml> -e events/<even-name>.json",
         "deploy-secrets": "npx ts-node src/config/secrets/deploy-secrets.ts"
     },
     "dependencies": {
         "@aws-sdk/client-secrets-manager": "^3.675.0",
         "@aws-sdk/client-sqs": "^3.675.0",
         "@dazn/lambda-powertools-logger": "^1.28.1",
+        "axios": "^1.8.4",
+        "crypto-js": "^4.2.0",
         "js-yaml": "^4.1.0",
         "mongoose": "^8.10.0",
         "sendpulse-api": "^1.1.7"
@@ -26,6 +29,7 @@
     "devDependencies": {
         "@eslint/js": "^9.12.0",
         "@types/aws-lambda": "^8.10.145",
+        "@types/crypto-js": "^4.2.2",
         "@types/jest": "^29.5.13",
         "@types/js-yaml": "^4.0.9",
         "@types/mongoose": "^5.11.97",
