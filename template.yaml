@@ -72,6 +72,7 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       QueueName: !Sub ${Environment}-cryptopayChannelsWebhooksQueue
+      VisibilityTimeout: 90
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt cryptopayChannelsWebhooksDLQ.Arn
         maxReceiveCount: 3
@@ -84,6 +85,7 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       QueueName: !Sub ${Environment}-cryptopayInvoiceWebhooksQueue
+      VisibilityTimeout: 90
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt cryptopayInvoiceWebhooksDLQ.Arn
         maxReceiveCount: 3
@@ -202,7 +204,7 @@ Resources:
           Properties:
             Queue: !GetAtt cryptopayChannelsWebhooksQueue.Arn
       MemorySize: 128
-      Timeout: 60
+      Timeout: 90
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt cryptopayChannelsWebhooksDLQ.Arn
@@ -232,7 +234,7 @@ Resources:
           Properties:
             Queue: !GetAtt cryptopayInvoiceWebhooksQueue.Arn
       MemorySize: 128
-      Timeout: 60
+      Timeout: 90
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt cryptopayInvoiceWebhooksDLQ.Arn

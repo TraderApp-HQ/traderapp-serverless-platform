@@ -19,7 +19,8 @@ export interface IQueueMessageBodyObject {
     sender?: IMessageRecipient;
 }
 
-export interface IQueueMessageBody<T = IQueueMessageBodyObject> extends Omit<SQSRecord, "body"> {
+export interface IQueueMessageBody<T = IQueueMessageBodyObject>
+    extends Omit<SQSRecord, "body"> {
     body: T;
 }
 
