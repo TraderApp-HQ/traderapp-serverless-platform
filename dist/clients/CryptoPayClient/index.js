@@ -21589,8 +21589,17 @@ var CryptoPayClient = class {
     let transactionHash;
     let fromWalletAddress;
     let toWalletAddress;
+    console.log("Comparing statuses ##########################", {
+      transactionStatus: transaction.data.status,
+      enumStatus: "completed" /* completed */
+    });
     if (transaction.data.status === "completed" /* completed */) {
       status = "SUCCESS" /* SUCCESS */;
+      console.log("inside completed status################", {
+        transactionStatus: transaction.data.status,
+        enumStatus: "completed" /* completed */,
+        status
+      });
     } else if (transaction.data.status === "cancelled" /* cancelled */ || transaction.data.status === "on_hold" /* onHold */ || transaction.data.status === "unresolved" /* unresolved */ || transaction.data.status === "refunded" /* refunded */) {
       status = "FAILED" /* FAILED */;
     }
@@ -21616,6 +21625,11 @@ var CryptoPayClient = class {
       transactionHash = transaction.data.txid ?? "";
       toWalletAddress = transaction.data.address;
     }
+    console.log("final status################", {
+      transactionStatus: transaction.data.status,
+      enumStatus: "completed" /* completed */,
+      status
+    });
     return {
       userId,
       transactionType: "DEPOSIT" /* DEPOSIT */,

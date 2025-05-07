@@ -117,7 +117,7 @@ export class WalletsService {
                             externalTransactionId:
                                 transaction.externalTransactionId,
                         },
-                        { status: transaction.status }
+                        { $set: { status: transaction.status } }
                     );
                 }
             } else {
@@ -232,6 +232,8 @@ export class WalletsService {
                     })
             );
 
+            console.log("confirmationResults", { confirmationResults });
+
             // Track confirmation failures
             confirmationResults.forEach((result) => {
                 if (result.status === "rejected" || !result.value.success) {
@@ -266,6 +268,8 @@ export class WalletsService {
                     }
                 })
             );
+
+            console.log("walletLookupResults", { walletLookupResults });
 
             // Process successful wallet lookups
             const successfulLookups = walletLookupResults
@@ -311,39 +315,9 @@ export class WalletsService {
                 };
             });
 
-            // Step 4: Record transactions in parallel
-            const transactionRecordResults = await Promise.allSettled(
-                transactions.map(async ({ messageId, transaction }) => {
-                    try {
-                        await this.recordTransactionToDB(transaction);
-                        return { messageId, success: true };
-                    } catch (error) {
-                        log.debug(
-                            `Failed to record transaction for message ${messageId}:`,
-                            { error }
-                        );
-                        return { messageId, success: false };
-                    }
-                })
-            );
+            console.log("transactions", { transactions });
 
-            // Track transaction recording failures
-            transactionRecordResults.forEach((result) => {
-                if (
-                    result.status === "rejected" ||
-                    (result.status === "fulfilled" && !result.value.success)
-                ) {
-                    const messageId =
-                        result.status === "fulfilled"
-                            ? result.value.messageId
-                            : "unknown";
-                    if (!failedMessageIds.includes(messageId)) {
-                        failedMessageIds.push(messageId);
-                    }
-                }
-            });
-
-            // Step 5: Check which transactions need crediting (not already completed)
+            // Step 4: Check which transactions need crediting (not already completed)
             const completedDeposits = transactions.filter(
                 (t) =>
                     t.queueMessage.body.data.status ===
@@ -387,6 +361,8 @@ export class WalletsService {
                 )
             );
 
+            console.log("transactionsToCredit", { transactionsToCredit });
+
             // Filter out nulls (already credited or errored)
             const filteredTransactionsToCredit = transactionsToCredit.filter(
                 Boolean
@@ -396,7 +372,7 @@ export class WalletsService {
                 queueMessage: IQueueMessageBody<ICryptopayWebhookEvent>;
             }[];
 
-            // Step 6: Credit user wallets for transactions that need crediting
+            // Step 5: Credit user wallets for transactions that need crediting
             const creditResults = await Promise.allSettled(
                 filteredTransactionsToCredit.map(
                     async ({ messageId, userId, queueMessage }) => {
@@ -422,8 +398,46 @@ export class WalletsService {
                 )
             );
 
+            console.log("creditResults", { creditResults });
+
             // Track credit failures
             creditResults.forEach((result) => {
+                if (
+                    result.status === "rejected" ||
+                    (result.status === "fulfilled" && !result.value.success)
+                ) {
+                    const messageId =
+                        result.status === "fulfilled"
+                            ? result.value.messageId
+                            : "unknown";
+                    if (!failedMessageIds.includes(messageId)) {
+                        failedMessageIds.push(messageId);
+                    }
+                }
+            });
+
+            // Step 6: Record transactions in parallel
+            const transactionRecordResults = await Promise.allSettled(
+                transactions.map(async ({ messageId, transaction }) => {
+                    try {
+                        await this.recordTransactionToDB(transaction);
+                        return { messageId, success: true };
+                    } catch (error) {
+                        log.debug(
+                            `Failed to record transaction for message ${messageId}:`,
+                            { error }
+                        );
+                        return { messageId, success: false };
+                    }
+                })
+            );
+
+            console.log("transactionRecordResults", {
+                transactionRecordResults,
+            });
+
+            // Track transaction recording failures
+            transactionRecordResults.forEach((result) => {
                 if (
                     result.status === "rejected" ||
                     (result.status === "fulfilled" && !result.value.success)

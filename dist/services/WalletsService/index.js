@@ -104705,8 +104705,17 @@ var CryptoPayClient = class {
     let transactionHash;
     let fromWalletAddress;
     let toWalletAddress;
+    console.log("Comparing statuses ##########################", {
+      transactionStatus: transaction.data.status,
+      enumStatus: "completed" /* completed */
+    });
     if (transaction.data.status === "completed" /* completed */) {
       status = "SUCCESS" /* SUCCESS */;
+      console.log("inside completed status################", {
+        transactionStatus: transaction.data.status,
+        enumStatus: "completed" /* completed */,
+        status
+      });
     } else if (transaction.data.status === "cancelled" /* cancelled */ || transaction.data.status === "on_hold" /* onHold */ || transaction.data.status === "unresolved" /* unresolved */ || transaction.data.status === "refunded" /* refunded */) {
       status = "FAILED" /* FAILED */;
     }
@@ -104732,6 +104741,11 @@ var CryptoPayClient = class {
       transactionHash = transaction.data.txid ?? "";
       toWalletAddress = transaction.data.address;
     }
+    console.log("final status################", {
+      transactionStatus: transaction.data.status,
+      enumStatus: "completed" /* completed */,
+      status
+    });
     return {
       userId,
       transactionType: "DEPOSIT" /* DEPOSIT */,
@@ -104878,11 +104892,15 @@ var WalletsService = class {
       });
       if (existingTransaction) {
         if (existingTransaction.status !== transaction.status) {
+          console.log("inside updating status################", {
+            transactionStatus: transaction.status,
+            existingTransactionStatus: existingTransaction.status
+          });
           await transactionsCollection.updateOne(
             {
               externalTransactionId: transaction.externalTransactionId
             },
-            { status: transaction.status }
+            { $set: { status: transaction.status } }
           );
         }
       } else {
@@ -105017,28 +105035,6 @@ var WalletsService = class {
           queueMessage: lookup.queueMessage
         };
       });
-      const transactionRecordResults = await Promise.allSettled(
-        transactions.map(async ({ messageId, transaction }) => {
-          try {
-            await this.recordTransactionToDB(transaction);
-            return { messageId, success: true };
-          } catch (error) {
-            import_lambda_powertools_logger2.default.debug(
-              `Failed to record transaction for message ${messageId}:`,
-              { error }
-            );
-            return { messageId, success: false };
-          }
-        })
-      );
-      transactionRecordResults.forEach((result) => {
-        if (result.status === "rejected" || result.status === "fulfilled" && !result.value.success) {
-          const messageId = result.status === "fulfilled" ? result.value.messageId : "unknown";
-          if (!failedMessageIds.includes(messageId)) {
-            failedMessageIds.push(messageId);
-          }
-        }
-      });
       const completedDeposits = transactions.filter(
         (t) => t.queueMessage.body.data.status === "completed" /* completed */ && t.userId
       );
@@ -105056,7 +105052,7 @@ var WalletsService = class {
               );
               if (existingTransaction && existingTransaction.status === "SUCCESS" /* SUCCESS */) {
                 console.log(
-                  `Transaction ${transaction.externalTransactionId} already credited, skipping.@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@`
+                  `Transaction ${transaction.externalTransactionId} already credited, skipping.`
                 );
                 return null;
               }
@@ -105100,6 +105096,28 @@ var WalletsService = class {
         )
       );
       creditResults.forEach((result) => {
+        if (result.status === "rejected" || result.status === "fulfilled" && !result.value.success) {
+          const messageId = result.status === "fulfilled" ? result.value.messageId : "unknown";
+          if (!failedMessageIds.includes(messageId)) {
+            failedMessageIds.push(messageId);
+          }
+        }
+      });
+      const transactionRecordResults = await Promise.allSettled(
+        transactions.map(async ({ messageId, transaction }) => {
+          try {
+            await this.recordTransactionToDB(transaction);
+            return { messageId, success: true };
+          } catch (error) {
+            import_lambda_powertools_logger2.default.debug(
+              `Failed to record transaction for message ${messageId}:`,
+              { error }
+            );
+            return { messageId, success: false };
+          }
+        })
+      );
+      transactionRecordResults.forEach((result) => {
         if (result.status === "rejected" || result.status === "fulfilled" && !result.value.success) {
           const messageId = result.status === "fulfilled" ? result.value.messageId : "unknown";
           if (!failedMessageIds.includes(messageId)) {

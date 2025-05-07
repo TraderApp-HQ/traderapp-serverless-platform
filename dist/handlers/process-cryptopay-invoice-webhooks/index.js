@@ -33,6 +33,183 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 ));
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
+// node_modules/@dazn/lambda-powertools-correlation-ids/index.js
+var require_lambda_powertools_correlation_ids = __commonJS({
+  "node_modules/@dazn/lambda-powertools-correlation-ids/index.js"(exports2, module2) {
+    var DEBUG_LOG_ENABLED = "debug-log-enabled";
+    var CorrelationIds = class {
+      constructor(context = {}) {
+        this.context = context;
+      }
+      clearAll() {
+        this.context = {};
+      }
+      replaceAllWith(ctx) {
+        this.context = ctx;
+      }
+      set(key, value) {
+        if (!key.startsWith("x-correlation-")) {
+          key = "x-correlation-" + key;
+        }
+        this.context[key] = value;
+      }
+      get() {
+        return this.context;
+      }
+      get debugLoggingEnabled() {
+        return this.context[DEBUG_LOG_ENABLED] === "true";
+      }
+      set debugLoggingEnabled(enabled) {
+        this.context[DEBUG_LOG_ENABLED] = enabled ? "true" : "false";
+      }
+      static clearAll() {
+        globalCorrelationIds.clearAll();
+      }
+      static replaceAllWith(...args) {
+        globalCorrelationIds.replaceAllWith(...args);
+      }
+      static set(...args) {
+        globalCorrelationIds.set(...args);
+      }
+      static get() {
+        return globalCorrelationIds.get();
+      }
+      static get debugLoggingEnabled() {
+        return globalCorrelationIds.debugLoggingEnabled;
+      }
+      static set debugLoggingEnabled(enabled) {
+        globalCorrelationIds.debugLoggingEnabled = enabled;
+      }
+    };
+    if (!global.CORRELATION_IDS) {
+      global.CORRELATION_IDS = new CorrelationIds();
+    }
+    var globalCorrelationIds = global.CORRELATION_IDS;
+    module2.exports = CorrelationIds;
+  }
+});
+
+// node_modules/@dazn/lambda-powertools-logger/index.js
+var require_lambda_powertools_logger = __commonJS({
+  "node_modules/@dazn/lambda-powertools-logger/index.js"(exports2, module2) {
+    var CorrelationIds = require_lambda_powertools_correlation_ids();
+    var LogLevels = {
+      DEBUG: 20,
+      INFO: 30,
+      WARN: 40,
+      ERROR: 50
+    };
+    var DEFAULT_CONTEXT = {
+      awsRegion: process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION,
+      functionName: process.env.AWS_LAMBDA_FUNCTION_NAME,
+      functionVersion: process.env.AWS_LAMBDA_FUNCTION_VERSION,
+      functionMemorySize: process.env.AWS_LAMBDA_FUNCTION_MEMORY_SIZE,
+      environment: process.env.ENVIRONMENT || process.env.STAGE
+      // convention in our functions
+    };
+    var Logger = class {
+      constructor({
+        correlationIds = CorrelationIds,
+        level = process.env.LOG_LEVEL
+      } = {}) {
+        this.correlationIds = correlationIds;
+        this.level = (level || "DEBUG").toUpperCase();
+        this.originalLevel = this.level;
+        if (correlationIds.debugEnabled) {
+          this.enableDebug();
+        }
+      }
+      get context() {
+        return {
+          ...DEFAULT_CONTEXT,
+          ...this.correlationIds.get()
+        };
+      }
+      isEnabled(level) {
+        return level >= (LogLevels[this.level] || LogLevels.DEBUG);
+      }
+      appendError(params, err) {
+        if (!err) {
+          return params;
+        }
+        return {
+          ...params || {},
+          errorName: err.name,
+          errorMessage: err.message,
+          stackTrace: err.stack
+        };
+      }
+      log(levelName, message, params) {
+        const level = LogLevels[levelName];
+        if (!this.isEnabled(level)) {
+          return;
+        }
+        const logMsg = {
+          ...this.context,
+          ...params,
+          level,
+          sLevel: levelName,
+          message
+        };
+        const consoleMethods = {
+          DEBUG: console.debug,
+          INFO: console.info,
+          WARN: console.warn,
+          ERROR: console.error
+        };
+        consoleMethods[levelName](JSON.stringify(
+          { message, ...params, ...logMsg },
+          (key, value) => typeof value === "bigint" ? value.toString() : value
+        ));
+      }
+      debug(msg, params) {
+        this.log("DEBUG", msg, params);
+      }
+      info(msg, params) {
+        this.log("INFO", msg, params);
+      }
+      warn(msg, params, err) {
+        const parameters = !err && params instanceof Error ? this.appendError({}, params) : this.appendError(params, err);
+        this.log("WARN", msg, parameters);
+      }
+      error(msg, params, err) {
+        const parameters = !err && params instanceof Error ? this.appendError({}, params) : this.appendError(params, err);
+        this.log("ERROR", msg, parameters);
+      }
+      enableDebug() {
+        this.level = "DEBUG";
+        return () => this.resetLevel();
+      }
+      resetLevel() {
+        this.level = this.originalLevel;
+      }
+      static debug(...args) {
+        globalLogger.debug(...args);
+      }
+      static info(...args) {
+        globalLogger.info(...args);
+      }
+      static warn(...args) {
+        globalLogger.warn(...args);
+      }
+      static error(...args) {
+        globalLogger.error(...args);
+      }
+      static enableDebug() {
+        return globalLogger.enableDebug();
+      }
+      static resetLevel() {
+        globalLogger.resetLevel();
+      }
+      static get level() {
+        return globalLogger.level;
+      }
+    };
+    var globalLogger = new Logger();
+    module2.exports = Logger;
+  }
+});
+
 // node_modules/mongoose/lib/connectionState.js
 var require_connectionState = __commonJS({
   "node_modules/mongoose/lib/connectionState.js"(exports2, module2) {
@@ -8209,8 +8386,8 @@ var require_mongo_logger = __commonJS({
     }
     function createStdioLogger(stream4) {
       return {
-        write: (0, util_1.promisify)((log3, cb) => {
-          const logLine = (0, util_1.inspect)(log3, { compact: true, breakLength: Infinity });
+        write: (0, util_1.promisify)((log4, cb) => {
+          const logLine = (0, util_1.inspect)(log4, { compact: true, breakLength: Infinity });
           stream4.write(`${logLine}
 `, "utf-8", cb);
           return;
@@ -8338,91 +8515,91 @@ var require_mongo_logger = __commonJS({
       const objAsLogConvertible = obj;
       return objAsLogConvertible.toLog !== void 0 && typeof objAsLogConvertible.toLog === "function";
     }
-    function attachServerSelectionFields(log3, serverSelectionEvent, maxDocumentLength = exports2.DEFAULT_MAX_DOCUMENT_LENGTH) {
+    function attachServerSelectionFields(log4, serverSelectionEvent, maxDocumentLength = exports2.DEFAULT_MAX_DOCUMENT_LENGTH) {
       const { selector, operation, topologyDescription, message } = serverSelectionEvent;
-      log3.selector = stringifyWithMaxLen(selector, maxDocumentLength);
-      log3.operation = operation;
-      log3.topologyDescription = stringifyWithMaxLen(topologyDescription, maxDocumentLength);
-      log3.message = message;
-      return log3;
+      log4.selector = stringifyWithMaxLen(selector, maxDocumentLength);
+      log4.operation = operation;
+      log4.topologyDescription = stringifyWithMaxLen(topologyDescription, maxDocumentLength);
+      log4.message = message;
+      return log4;
     }
-    function attachCommandFields(log3, commandEvent) {
-      log3.commandName = commandEvent.commandName;
-      log3.requestId = commandEvent.requestId;
-      log3.driverConnectionId = commandEvent.connectionId;
+    function attachCommandFields(log4, commandEvent) {
+      log4.commandName = commandEvent.commandName;
+      log4.requestId = commandEvent.requestId;
+      log4.driverConnectionId = commandEvent.connectionId;
       const { host, port } = utils_1.HostAddress.fromString(commandEvent.address).toHostPort();
-      log3.serverHost = host;
-      log3.serverPort = port;
+      log4.serverHost = host;
+      log4.serverPort = port;
       if (commandEvent?.serviceId) {
-        log3.serviceId = commandEvent.serviceId.toHexString();
+        log4.serviceId = commandEvent.serviceId.toHexString();
       }
-      log3.databaseName = commandEvent.databaseName;
-      log3.serverConnectionId = commandEvent.serverConnectionId;
-      return log3;
+      log4.databaseName = commandEvent.databaseName;
+      log4.serverConnectionId = commandEvent.serverConnectionId;
+      return log4;
     }
-    function attachConnectionFields(log3, event) {
+    function attachConnectionFields(log4, event) {
       const { host, port } = utils_1.HostAddress.fromString(event.address).toHostPort();
-      log3.serverHost = host;
-      log3.serverPort = port;
-      return log3;
+      log4.serverHost = host;
+      log4.serverPort = port;
+      return log4;
     }
-    function attachSDAMFields(log3, sdamEvent) {
-      log3.topologyId = sdamEvent.topologyId;
-      return log3;
+    function attachSDAMFields(log4, sdamEvent) {
+      log4.topologyId = sdamEvent.topologyId;
+      return log4;
     }
-    function attachServerHeartbeatFields(log3, serverHeartbeatEvent) {
+    function attachServerHeartbeatFields(log4, serverHeartbeatEvent) {
       const { awaited, connectionId } = serverHeartbeatEvent;
-      log3.awaited = awaited;
-      log3.driverConnectionId = serverHeartbeatEvent.connectionId;
+      log4.awaited = awaited;
+      log4.driverConnectionId = serverHeartbeatEvent.connectionId;
       const { host, port } = utils_1.HostAddress.fromString(connectionId).toHostPort();
-      log3.serverHost = host;
-      log3.serverPort = port;
-      return log3;
+      log4.serverHost = host;
+      log4.serverPort = port;
+      return log4;
     }
     function defaultLogTransform(logObject, maxDocumentLength = exports2.DEFAULT_MAX_DOCUMENT_LENGTH) {
-      let log3 = /* @__PURE__ */ Object.create(null);
+      let log4 = /* @__PURE__ */ Object.create(null);
       switch (logObject.name) {
         case constants_1.SERVER_SELECTION_STARTED:
-          log3 = attachServerSelectionFields(log3, logObject, maxDocumentLength);
-          return log3;
+          log4 = attachServerSelectionFields(log4, logObject, maxDocumentLength);
+          return log4;
         case constants_1.SERVER_SELECTION_FAILED:
-          log3 = attachServerSelectionFields(log3, logObject, maxDocumentLength);
-          log3.failure = logObject.failure?.message;
-          return log3;
+          log4 = attachServerSelectionFields(log4, logObject, maxDocumentLength);
+          log4.failure = logObject.failure?.message;
+          return log4;
         case constants_1.SERVER_SELECTION_SUCCEEDED:
-          log3 = attachServerSelectionFields(log3, logObject, maxDocumentLength);
-          log3.serverHost = logObject.serverHost;
-          log3.serverPort = logObject.serverPort;
-          return log3;
+          log4 = attachServerSelectionFields(log4, logObject, maxDocumentLength);
+          log4.serverHost = logObject.serverHost;
+          log4.serverPort = logObject.serverPort;
+          return log4;
         case constants_1.WAITING_FOR_SUITABLE_SERVER:
-          log3 = attachServerSelectionFields(log3, logObject, maxDocumentLength);
-          log3.remainingTimeMS = logObject.remainingTimeMS;
-          return log3;
+          log4 = attachServerSelectionFields(log4, logObject, maxDocumentLength);
+          log4.remainingTimeMS = logObject.remainingTimeMS;
+          return log4;
         case constants_1.COMMAND_STARTED:
-          log3 = attachCommandFields(log3, logObject);
-          log3.message = "Command started";
-          log3.command = stringifyWithMaxLen(logObject.command, maxDocumentLength, { relaxed: true });
-          log3.databaseName = logObject.databaseName;
-          return log3;
+          log4 = attachCommandFields(log4, logObject);
+          log4.message = "Command started";
+          log4.command = stringifyWithMaxLen(logObject.command, maxDocumentLength, { relaxed: true });
+          log4.databaseName = logObject.databaseName;
+          return log4;
         case constants_1.COMMAND_SUCCEEDED:
-          log3 = attachCommandFields(log3, logObject);
-          log3.message = "Command succeeded";
-          log3.durationMS = logObject.duration;
-          log3.reply = stringifyWithMaxLen(logObject.reply, maxDocumentLength, { relaxed: true });
-          return log3;
+          log4 = attachCommandFields(log4, logObject);
+          log4.message = "Command succeeded";
+          log4.durationMS = logObject.duration;
+          log4.reply = stringifyWithMaxLen(logObject.reply, maxDocumentLength, { relaxed: true });
+          return log4;
         case constants_1.COMMAND_FAILED:
-          log3 = attachCommandFields(log3, logObject);
-          log3.message = "Command failed";
-          log3.durationMS = logObject.duration;
-          log3.failure = logObject.failure?.message ?? "(redacted)";
-          return log3;
+          log4 = attachCommandFields(log4, logObject);
+          log4.message = "Command failed";
+          log4.durationMS = logObject.duration;
+          log4.failure = logObject.failure?.message ?? "(redacted)";
+          return log4;
         case constants_1.CONNECTION_POOL_CREATED:
-          log3 = attachConnectionFields(log3, logObject);
-          log3.message = "Connection pool created";
+          log4 = attachConnectionFields(log4, logObject);
+          log4.message = "Connection pool created";
           if (logObject.options) {
             const { maxIdleTimeMS, minPoolSize, maxPoolSize, maxConnecting, waitQueueTimeoutMS } = logObject.options;
-            log3 = {
-              ...log3,
+            log4 = {
+              ...log4,
               maxIdleTimeMS,
               minPoolSize,
               maxPoolSize,
@@ -8430,144 +8607,144 @@ var require_mongo_logger = __commonJS({
               waitQueueTimeoutMS
             };
           }
-          return log3;
+          return log4;
         case constants_1.CONNECTION_POOL_READY:
-          log3 = attachConnectionFields(log3, logObject);
-          log3.message = "Connection pool ready";
-          return log3;
+          log4 = attachConnectionFields(log4, logObject);
+          log4.message = "Connection pool ready";
+          return log4;
         case constants_1.CONNECTION_POOL_CLEARED:
-          log3 = attachConnectionFields(log3, logObject);
-          log3.message = "Connection pool cleared";
+          log4 = attachConnectionFields(log4, logObject);
+          log4.message = "Connection pool cleared";
           if (logObject.serviceId?._bsontype === "ObjectId") {
-            log3.serviceId = logObject.serviceId?.toHexString();
+            log4.serviceId = logObject.serviceId?.toHexString();
           }
-          return log3;
+          return log4;
         case constants_1.CONNECTION_POOL_CLOSED:
-          log3 = attachConnectionFields(log3, logObject);
-          log3.message = "Connection pool closed";
-          return log3;
+          log4 = attachConnectionFields(log4, logObject);
+          log4.message = "Connection pool closed";
+          return log4;
         case constants_1.CONNECTION_CREATED:
-          log3 = attachConnectionFields(log3, logObject);
-          log3.message = "Connection created";
-          log3.driverConnectionId = logObject.connectionId;
-          return log3;
+          log4 = attachConnectionFields(log4, logObject);
+          log4.message = "Connection created";
+          log4.driverConnectionId = logObject.connectionId;
+          return log4;
         case constants_1.CONNECTION_READY:
-          log3 = attachConnectionFields(log3, logObject);
-          log3.message = "Connection ready";
-          log3.driverConnectionId = logObject.connectionId;
-          log3.durationMS = logObject.durationMS;
-          return log3;
+          log4 = attachConnectionFields(log4, logObject);
+          log4.message = "Connection ready";
+          log4.driverConnectionId = logObject.connectionId;
+          log4.durationMS = logObject.durationMS;
+          return log4;
         case constants_1.CONNECTION_CLOSED:
-          log3 = attachConnectionFields(log3, logObject);
-          log3.message = "Connection closed";
-          log3.driverConnectionId = logObject.connectionId;
+          log4 = attachConnectionFields(log4, logObject);
+          log4.message = "Connection closed";
+          log4.driverConnectionId = logObject.connectionId;
           switch (logObject.reason) {
             case "stale":
-              log3.reason = "Connection became stale because the pool was cleared";
+              log4.reason = "Connection became stale because the pool was cleared";
               break;
             case "idle":
-              log3.reason = "Connection has been available but unused for longer than the configured max idle time";
+              log4.reason = "Connection has been available but unused for longer than the configured max idle time";
               break;
             case "error":
-              log3.reason = "An error occurred while using the connection";
+              log4.reason = "An error occurred while using the connection";
               if (logObject.error) {
-                log3.error = logObject.error;
+                log4.error = logObject.error;
               }
               break;
             case "poolClosed":
-              log3.reason = "Connection pool was closed";
+              log4.reason = "Connection pool was closed";
               break;
             default:
-              log3.reason = `Unknown close reason: ${logObject.reason}`;
+              log4.reason = `Unknown close reason: ${logObject.reason}`;
           }
-          return log3;
+          return log4;
         case constants_1.CONNECTION_CHECK_OUT_STARTED:
-          log3 = attachConnectionFields(log3, logObject);
-          log3.message = "Connection checkout started";
-          return log3;
+          log4 = attachConnectionFields(log4, logObject);
+          log4.message = "Connection checkout started";
+          return log4;
         case constants_1.CONNECTION_CHECK_OUT_FAILED:
-          log3 = attachConnectionFields(log3, logObject);
-          log3.message = "Connection checkout failed";
+          log4 = attachConnectionFields(log4, logObject);
+          log4.message = "Connection checkout failed";
           switch (logObject.reason) {
             case "poolClosed":
-              log3.reason = "Connection pool was closed";
+              log4.reason = "Connection pool was closed";
               break;
             case "timeout":
-              log3.reason = "Wait queue timeout elapsed without a connection becoming available";
+              log4.reason = "Wait queue timeout elapsed without a connection becoming available";
               break;
             case "connectionError":
-              log3.reason = "An error occurred while trying to establish a new connection";
+              log4.reason = "An error occurred while trying to establish a new connection";
               if (logObject.error) {
-                log3.error = logObject.error;
+                log4.error = logObject.error;
               }
               break;
             default:
-              log3.reason = `Unknown close reason: ${logObject.reason}`;
+              log4.reason = `Unknown close reason: ${logObject.reason}`;
           }
-          log3.durationMS = logObject.durationMS;
-          return log3;
+          log4.durationMS = logObject.durationMS;
+          return log4;
         case constants_1.CONNECTION_CHECKED_OUT:
-          log3 = attachConnectionFields(log3, logObject);
-          log3.message = "Connection checked out";
-          log3.driverConnectionId = logObject.connectionId;
-          log3.durationMS = logObject.durationMS;
-          return log3;
+          log4 = attachConnectionFields(log4, logObject);
+          log4.message = "Connection checked out";
+          log4.driverConnectionId = logObject.connectionId;
+          log4.durationMS = logObject.durationMS;
+          return log4;
         case constants_1.CONNECTION_CHECKED_IN:
-          log3 = attachConnectionFields(log3, logObject);
-          log3.message = "Connection checked in";
-          log3.driverConnectionId = logObject.connectionId;
-          return log3;
+          log4 = attachConnectionFields(log4, logObject);
+          log4.message = "Connection checked in";
+          log4.driverConnectionId = logObject.connectionId;
+          return log4;
         case constants_1.SERVER_OPENING:
-          log3 = attachSDAMFields(log3, logObject);
-          log3 = attachConnectionFields(log3, logObject);
-          log3.message = "Starting server monitoring";
-          return log3;
+          log4 = attachSDAMFields(log4, logObject);
+          log4 = attachConnectionFields(log4, logObject);
+          log4.message = "Starting server monitoring";
+          return log4;
         case constants_1.SERVER_CLOSED:
-          log3 = attachSDAMFields(log3, logObject);
-          log3 = attachConnectionFields(log3, logObject);
-          log3.message = "Stopped server monitoring";
-          return log3;
+          log4 = attachSDAMFields(log4, logObject);
+          log4 = attachConnectionFields(log4, logObject);
+          log4.message = "Stopped server monitoring";
+          return log4;
         case constants_1.SERVER_HEARTBEAT_STARTED:
-          log3 = attachSDAMFields(log3, logObject);
-          log3 = attachServerHeartbeatFields(log3, logObject);
-          log3.message = "Server heartbeat started";
-          return log3;
+          log4 = attachSDAMFields(log4, logObject);
+          log4 = attachServerHeartbeatFields(log4, logObject);
+          log4.message = "Server heartbeat started";
+          return log4;
         case constants_1.SERVER_HEARTBEAT_SUCCEEDED:
-          log3 = attachSDAMFields(log3, logObject);
-          log3 = attachServerHeartbeatFields(log3, logObject);
-          log3.message = "Server heartbeat succeeded";
-          log3.durationMS = logObject.duration;
-          log3.serverConnectionId = logObject.serverConnectionId;
-          log3.reply = stringifyWithMaxLen(logObject.reply, maxDocumentLength, { relaxed: true });
-          return log3;
+          log4 = attachSDAMFields(log4, logObject);
+          log4 = attachServerHeartbeatFields(log4, logObject);
+          log4.message = "Server heartbeat succeeded";
+          log4.durationMS = logObject.duration;
+          log4.serverConnectionId = logObject.serverConnectionId;
+          log4.reply = stringifyWithMaxLen(logObject.reply, maxDocumentLength, { relaxed: true });
+          return log4;
         case constants_1.SERVER_HEARTBEAT_FAILED:
-          log3 = attachSDAMFields(log3, logObject);
-          log3 = attachServerHeartbeatFields(log3, logObject);
-          log3.message = "Server heartbeat failed";
-          log3.durationMS = logObject.duration;
-          log3.failure = logObject.failure?.message;
-          return log3;
+          log4 = attachSDAMFields(log4, logObject);
+          log4 = attachServerHeartbeatFields(log4, logObject);
+          log4.message = "Server heartbeat failed";
+          log4.durationMS = logObject.duration;
+          log4.failure = logObject.failure?.message;
+          return log4;
         case constants_1.TOPOLOGY_OPENING:
-          log3 = attachSDAMFields(log3, logObject);
-          log3.message = "Starting topology monitoring";
-          return log3;
+          log4 = attachSDAMFields(log4, logObject);
+          log4.message = "Starting topology monitoring";
+          return log4;
         case constants_1.TOPOLOGY_CLOSED:
-          log3 = attachSDAMFields(log3, logObject);
-          log3.message = "Stopped topology monitoring";
-          return log3;
+          log4 = attachSDAMFields(log4, logObject);
+          log4.message = "Stopped topology monitoring";
+          return log4;
         case constants_1.TOPOLOGY_DESCRIPTION_CHANGED:
-          log3 = attachSDAMFields(log3, logObject);
-          log3.message = "Topology description changed";
-          log3.previousDescription = log3.reply = stringifyWithMaxLen(logObject.previousDescription, maxDocumentLength);
-          log3.newDescription = log3.reply = stringifyWithMaxLen(logObject.newDescription, maxDocumentLength);
-          return log3;
+          log4 = attachSDAMFields(log4, logObject);
+          log4.message = "Topology description changed";
+          log4.previousDescription = log4.reply = stringifyWithMaxLen(logObject.previousDescription, maxDocumentLength);
+          log4.newDescription = log4.reply = stringifyWithMaxLen(logObject.newDescription, maxDocumentLength);
+          return log4;
         default:
           for (const [key, value] of Object.entries(logObject)) {
             if (value != null)
-              log3[key] = value;
+              log4[key] = value;
           }
       }
-      return log3;
+      return log4;
     }
     var MongoLogger = class {
       constructor(options) {
@@ -53804,7 +53981,7 @@ var require_node2 = __commonJS({
     var tty = require("tty");
     var util3 = require("util");
     exports2.init = init;
-    exports2.log = log3;
+    exports2.log = log4;
     exports2.formatArgs = formatArgs;
     exports2.save = save;
     exports2.load = load;
@@ -53939,7 +54116,7 @@ var require_node2 = __commonJS({
       }
       return (/* @__PURE__ */ new Date()).toISOString() + " ";
     }
-    function log3(...args) {
+    function log4(...args) {
       return process.stderr.write(util3.formatWithOptions(exports2.inspectOpts, ...args) + "\n");
     }
     function save(namespaces) {
@@ -64572,183 +64749,6 @@ var require_mongoose2 = __commonJS({
     module2.exports.trusted = mongoose2.trusted;
     module2.exports.skipMiddlewareFunction = mongoose2.skipMiddlewareFunction;
     module2.exports.overwriteMiddlewareResult = mongoose2.overwriteMiddlewareResult;
-  }
-});
-
-// node_modules/@dazn/lambda-powertools-correlation-ids/index.js
-var require_lambda_powertools_correlation_ids = __commonJS({
-  "node_modules/@dazn/lambda-powertools-correlation-ids/index.js"(exports2, module2) {
-    var DEBUG_LOG_ENABLED = "debug-log-enabled";
-    var CorrelationIds = class {
-      constructor(context = {}) {
-        this.context = context;
-      }
-      clearAll() {
-        this.context = {};
-      }
-      replaceAllWith(ctx) {
-        this.context = ctx;
-      }
-      set(key, value) {
-        if (!key.startsWith("x-correlation-")) {
-          key = "x-correlation-" + key;
-        }
-        this.context[key] = value;
-      }
-      get() {
-        return this.context;
-      }
-      get debugLoggingEnabled() {
-        return this.context[DEBUG_LOG_ENABLED] === "true";
-      }
-      set debugLoggingEnabled(enabled) {
-        this.context[DEBUG_LOG_ENABLED] = enabled ? "true" : "false";
-      }
-      static clearAll() {
-        globalCorrelationIds.clearAll();
-      }
-      static replaceAllWith(...args) {
-        globalCorrelationIds.replaceAllWith(...args);
-      }
-      static set(...args) {
-        globalCorrelationIds.set(...args);
-      }
-      static get() {
-        return globalCorrelationIds.get();
-      }
-      static get debugLoggingEnabled() {
-        return globalCorrelationIds.debugLoggingEnabled;
-      }
-      static set debugLoggingEnabled(enabled) {
-        globalCorrelationIds.debugLoggingEnabled = enabled;
-      }
-    };
-    if (!global.CORRELATION_IDS) {
-      global.CORRELATION_IDS = new CorrelationIds();
-    }
-    var globalCorrelationIds = global.CORRELATION_IDS;
-    module2.exports = CorrelationIds;
-  }
-});
-
-// node_modules/@dazn/lambda-powertools-logger/index.js
-var require_lambda_powertools_logger = __commonJS({
-  "node_modules/@dazn/lambda-powertools-logger/index.js"(exports2, module2) {
-    var CorrelationIds = require_lambda_powertools_correlation_ids();
-    var LogLevels = {
-      DEBUG: 20,
-      INFO: 30,
-      WARN: 40,
-      ERROR: 50
-    };
-    var DEFAULT_CONTEXT = {
-      awsRegion: process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION,
-      functionName: process.env.AWS_LAMBDA_FUNCTION_NAME,
-      functionVersion: process.env.AWS_LAMBDA_FUNCTION_VERSION,
-      functionMemorySize: process.env.AWS_LAMBDA_FUNCTION_MEMORY_SIZE,
-      environment: process.env.ENVIRONMENT || process.env.STAGE
-      // convention in our functions
-    };
-    var Logger = class {
-      constructor({
-        correlationIds = CorrelationIds,
-        level = process.env.LOG_LEVEL
-      } = {}) {
-        this.correlationIds = correlationIds;
-        this.level = (level || "DEBUG").toUpperCase();
-        this.originalLevel = this.level;
-        if (correlationIds.debugEnabled) {
-          this.enableDebug();
-        }
-      }
-      get context() {
-        return {
-          ...DEFAULT_CONTEXT,
-          ...this.correlationIds.get()
-        };
-      }
-      isEnabled(level) {
-        return level >= (LogLevels[this.level] || LogLevels.DEBUG);
-      }
-      appendError(params, err) {
-        if (!err) {
-          return params;
-        }
-        return {
-          ...params || {},
-          errorName: err.name,
-          errorMessage: err.message,
-          stackTrace: err.stack
-        };
-      }
-      log(levelName, message, params) {
-        const level = LogLevels[levelName];
-        if (!this.isEnabled(level)) {
-          return;
-        }
-        const logMsg = {
-          ...this.context,
-          ...params,
-          level,
-          sLevel: levelName,
-          message
-        };
-        const consoleMethods = {
-          DEBUG: console.debug,
-          INFO: console.info,
-          WARN: console.warn,
-          ERROR: console.error
-        };
-        consoleMethods[levelName](JSON.stringify(
-          { message, ...params, ...logMsg },
-          (key, value) => typeof value === "bigint" ? value.toString() : value
-        ));
-      }
-      debug(msg, params) {
-        this.log("DEBUG", msg, params);
-      }
-      info(msg, params) {
-        this.log("INFO", msg, params);
-      }
-      warn(msg, params, err) {
-        const parameters = !err && params instanceof Error ? this.appendError({}, params) : this.appendError(params, err);
-        this.log("WARN", msg, parameters);
-      }
-      error(msg, params, err) {
-        const parameters = !err && params instanceof Error ? this.appendError({}, params) : this.appendError(params, err);
-        this.log("ERROR", msg, parameters);
-      }
-      enableDebug() {
-        this.level = "DEBUG";
-        return () => this.resetLevel();
-      }
-      resetLevel() {
-        this.level = this.originalLevel;
-      }
-      static debug(...args) {
-        globalLogger.debug(...args);
-      }
-      static info(...args) {
-        globalLogger.info(...args);
-      }
-      static warn(...args) {
-        globalLogger.warn(...args);
-      }
-      static error(...args) {
-        globalLogger.error(...args);
-      }
-      static enableDebug() {
-        return globalLogger.enableDebug();
-      }
-      static resetLevel() {
-        globalLogger.resetLevel();
-      }
-      static get level() {
-        return globalLogger.level;
-      }
-    };
-    var globalLogger = new Logger();
-    module2.exports = Logger;
   }
 });
 
@@ -101313,6 +101313,7 @@ __export(process_cryptopay_invoice_webhooks_exports, {
   handler: () => handler
 });
 module.exports = __toCommonJS(process_cryptopay_invoice_webhooks_exports);
+var import_lambda_powertools_logger3 = __toESM(require_lambda_powertools_logger());
 
 // src/config/sqs/helpers.ts
 var parseQueueMessagesBody = (event) => {
@@ -104720,8 +104721,17 @@ var CryptoPayClient = class {
     let transactionHash;
     let fromWalletAddress;
     let toWalletAddress;
+    console.log("Comparing statuses ##########################", {
+      transactionStatus: transaction.data.status,
+      enumStatus: "completed" /* completed */
+    });
     if (transaction.data.status === "completed" /* completed */) {
       status = "SUCCESS" /* SUCCESS */;
+      console.log("inside completed status################", {
+        transactionStatus: transaction.data.status,
+        enumStatus: "completed" /* completed */,
+        status
+      });
     } else if (transaction.data.status === "cancelled" /* cancelled */ || transaction.data.status === "on_hold" /* onHold */ || transaction.data.status === "unresolved" /* unresolved */ || transaction.data.status === "refunded" /* refunded */) {
       status = "FAILED" /* FAILED */;
     }
@@ -104747,6 +104757,11 @@ var CryptoPayClient = class {
       transactionHash = transaction.data.txid ?? "";
       toWalletAddress = transaction.data.address;
     }
+    console.log("final status################", {
+      transactionStatus: transaction.data.status,
+      enumStatus: "completed" /* completed */,
+      status
+    });
     return {
       userId,
       transactionType: "DEPOSIT" /* DEPOSIT */,
@@ -104893,11 +104908,15 @@ var WalletsService = class {
       });
       if (existingTransaction) {
         if (existingTransaction.status !== transaction.status) {
+          console.log("inside updating status################", {
+            transactionStatus: transaction.status,
+            existingTransactionStatus: existingTransaction.status
+          });
           await transactionsCollection.updateOne(
             {
               externalTransactionId: transaction.externalTransactionId
             },
-            { status: transaction.status }
+            { $set: { status: transaction.status } }
           );
         }
       } else {
@@ -105032,28 +105051,6 @@ var WalletsService = class {
           queueMessage: lookup.queueMessage
         };
       });
-      const transactionRecordResults = await Promise.allSettled(
-        transactions.map(async ({ messageId, transaction }) => {
-          try {
-            await this.recordTransactionToDB(transaction);
-            return { messageId, success: true };
-          } catch (error) {
-            import_lambda_powertools_logger2.default.debug(
-              `Failed to record transaction for message ${messageId}:`,
-              { error }
-            );
-            return { messageId, success: false };
-          }
-        })
-      );
-      transactionRecordResults.forEach((result) => {
-        if (result.status === "rejected" || result.status === "fulfilled" && !result.value.success) {
-          const messageId = result.status === "fulfilled" ? result.value.messageId : "unknown";
-          if (!failedMessageIds.includes(messageId)) {
-            failedMessageIds.push(messageId);
-          }
-        }
-      });
       const completedDeposits = transactions.filter(
         (t) => t.queueMessage.body.data.status === "completed" /* completed */ && t.userId
       );
@@ -105071,7 +105068,7 @@ var WalletsService = class {
               );
               if (existingTransaction && existingTransaction.status === "SUCCESS" /* SUCCESS */) {
                 console.log(
-                  `Transaction ${transaction.externalTransactionId} already credited, skipping.@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@`
+                  `Transaction ${transaction.externalTransactionId} already credited, skipping.`
                 );
                 return null;
               }
@@ -105122,6 +105119,28 @@ var WalletsService = class {
           }
         }
       });
+      const transactionRecordResults = await Promise.allSettled(
+        transactions.map(async ({ messageId, transaction }) => {
+          try {
+            await this.recordTransactionToDB(transaction);
+            return { messageId, success: true };
+          } catch (error) {
+            import_lambda_powertools_logger2.default.debug(
+              `Failed to record transaction for message ${messageId}:`,
+              { error }
+            );
+            return { messageId, success: false };
+          }
+        })
+      );
+      transactionRecordResults.forEach((result) => {
+        if (result.status === "rejected" || result.status === "fulfilled" && !result.value.success) {
+          const messageId = result.status === "fulfilled" ? result.value.messageId : "unknown";
+          if (!failedMessageIds.includes(messageId)) {
+            failedMessageIds.push(messageId);
+          }
+        }
+      });
       successMessageIds.push(
         ...queueMessages.filter((qm) => !failedMessageIds.includes(qm.messageId)).map((qm) => qm.messageId)
       );
@@ -105147,6 +105166,7 @@ var WalletsService_default = new WalletsService();
 
 // src/handlers/process-cryptopay-invoice-webhooks/index.ts
 var handler = async (event) => {
+  import_lambda_powertools_logger3.default.info("Received event", { event });
   const queueMessages = getParsedQueueMessagesBody(event);
   await WalletsService_default.processCryptoPayInvoiceWebhook(queueMessages);
 };
