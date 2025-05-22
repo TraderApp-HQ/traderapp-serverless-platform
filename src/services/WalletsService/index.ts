@@ -11,6 +11,9 @@ import {
     ITransaction,
     IUserWallet,
     IUserWalletDepositDetail,
+    IWalletCurrency,
+    IWalletInput,
+    IWalletType,
     TransactionStatus,
 } from "src/types/wallets-service";
 import { IQueueMessageBody } from "src/config/interfaces";
@@ -51,7 +54,7 @@ export class WalletsService {
 
                 this.initialized = true;
             } catch (error) {
-                log.debug("Failed to initialize WalletsService:", { error });
+                log.error("Failed to initialize WalletsService:", { error });
                 throw error;
             } finally {
                 this.initializationPromise = null;
@@ -478,6 +481,152 @@ export class WalletsService {
         queueMessages: IQueueMessageBody<ICryptopayWebhookEvent>[]
     ): Promise<void> {
         log.info("processCryptoPayInvoiceWebhook", { queueMessages });
+    }
+
+    // Create User Wallet
+    public async createUserWallet(
+        queueMessages: IQueueMessageBody<IWalletInput>[]
+    ): Promise<{
+        successMessageIds: string[];
+        failedMessageIds: string[];
+    }> {
+        try {
+            // Ensure service is initialized
+            await this.initialize();
+            const connection = await this.getConnection();
+
+            const successMessageIds: string[] = [];
+            const failedMessageIds: string[] = [];
+
+            // 1.) Set up colllection
+            const walletTypeCollection = new MongoDBClient<IWalletType>(
+                connection,
+                WalletsServiceCollections.walletTypes
+            );
+            const currenciesCollection = new MongoDBClient<IWalletCurrency>(
+                connection,
+                WalletsServiceCollections.currencies
+            );
+            const userWalletCollection = new MongoDBClient<IUserWallet>(
+                connection,
+                WalletsServiceCollections.userWallets
+            );
+
+            // 2.) Get all wallet types and currencies
+            const walletTypes = await walletTypeCollection.findAll();
+
+            // Get unique currency IDs for all Wallet Type's
+            const uniqueCurrencyIds = new Set<string>();
+            walletTypes.forEach((wallet) => {
+                wallet.currencies.forEach((currency) => {
+                    uniqueCurrencyIds.add(currency._id.toString()); // Ensure currency ID is a string
+                });
+            });
+            const currencyIdsArray = Array.from(uniqueCurrencyIds); // Convert Set to Array
+
+            // Get all Currencies with ID in the currencyIdsArray
+            const walletCurrencies = await currenciesCollection.find({
+                _id: {
+                    $in: currencyIdsArray.map(
+                        (id) => new mongoose.Types.ObjectId(id)
+                    ),
+                },
+            });
+
+            // 3.) Create user wallets
+            const userWalletCreationResult = await Promise.allSettled(
+                queueMessages.map(async (queue) => {
+                    try {
+                        // Create wallet for each wallet type and currency
+                        const walletPromises = walletTypes.flatMap((wallet) =>
+                            wallet.currencies.map(async (currency) => {
+                                try {
+                                    await userWalletCollection.insertOne({
+                                        userId: queue.body.userId,
+                                        walletType: new mongoose.Types.ObjectId(
+                                            wallet.id
+                                        ),
+                                        walletTypeName: wallet.walletTypeName,
+                                        currency: currency,
+                                        currencyName: walletCurrencies.find(
+                                            (cur) =>
+                                                cur._id.toString() ===
+                                                currency._id.toString()
+                                        )?.name,
+                                        currencySymbol: walletCurrencies.find(
+                                            (cur) =>
+                                                cur._id.toString() ===
+                                                currency._id.toString()
+                                        )?.symbol,
+                                        availableBalance: 0,
+                                        lockedBalance: 0,
+                                    });
+                                    return { success: true };
+                                } catch (error) {
+                                    log.debug(
+                                        `Failed to create user wallet for currency ${currency._id}:`,
+                                        { error }
+                                    );
+                                    return { success: false };
+                                }
+                            })
+                        );
+
+                        const walletResults = await Promise.all(walletPromises);
+                        const allWalletsCreatedSuccessfully =
+                            walletResults.every((result) => result.success);
+
+                        return {
+                            messageId: queue.messageId,
+                            success: allWalletsCreatedSuccessfully,
+                        };
+                    } catch (error) {
+                        log.debug(
+                            `Failed to create all wallets for user ${queue.messageId}:`,
+                            {
+                                error,
+                            }
+                        );
+                        return {
+                            messageId: queue.messageId,
+                            success: false,
+                        };
+                    }
+                })
+            );
+
+            // 4.) Process operation result
+            userWalletCreationResult.forEach((result) => {
+                if (result.status === "fulfilled") {
+                    if (result.value.success) {
+                        successMessageIds.push(result.value.messageId);
+                    } else {
+                        failedMessageIds.push(result.value.messageId);
+                    }
+                } else {
+                    // Handle rejected promises
+                    const messageId = queueMessages.find(
+                        (qm) => qm.messageId === result.reason.messageId
+                    )?.messageId;
+                    if (messageId) {
+                        failedMessageIds.push(messageId);
+                    }
+                }
+            });
+
+            return {
+                successMessageIds,
+                failedMessageIds,
+            };
+        } catch (error) {
+            log.error("General error in createUserWallet:", {
+                error,
+            });
+            return {
+                successMessageIds: [],
+                failedMessageIds: queueMessages.map((qm) => qm.messageId),
+            };
+        }
     }
 }
 

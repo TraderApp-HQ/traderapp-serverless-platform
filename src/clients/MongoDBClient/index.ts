@@ -17,10 +17,18 @@ export class MongoDBClient<T> {
     }
 
     async find(filter: Record<string, any>): Promise<T[]> {
-        return this.connection
-            .collection(this.collection)
-            .find(filter)
-            .toArray() as Promise<T[]>;
+        const result = this.connection.collection(this.collection).find(filter);
+        return (await result.toArray()) as T[];
+    }
+
+    async findAll(): Promise<T[]> {
+        await this.connection.asPromise(); // Wait for connection to be ready
+        const collection = this.connection.collection(this.collection);
+        if (!collection) {
+            throw new Error(`${this.collection} collection is undefined`);
+        }
+        const result = (await collection.find({}).toArray()) as T[];
+        return result;
     }
 
     async insertOne(doc: Partial<T>): Promise<T> {
@@ -44,6 +52,13 @@ export class MongoDBClient<T> {
         const result = await this.connection
             .collection(this.collection)
             .deleteOne(filter);
+        return result.deletedCount > 0;
+    }
+
+    async deleteMany(filter: Record<string, any>): Promise<boolean> {
+        const result = await this.connection
+            .collection(this.collection)
+            .deleteMany(filter);
         return result.deletedCount > 0;
     }
 

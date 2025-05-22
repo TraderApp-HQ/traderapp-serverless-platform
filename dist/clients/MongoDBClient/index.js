@@ -32,7 +32,17 @@ var MongoDBClient = class {
     return this.connection.collection(this.collection).findOne(filter);
   }
   async find(filter) {
-    return this.connection.collection(this.collection).find(filter).toArray();
+    const result = this.connection.collection(this.collection).find(filter);
+    return await result.toArray();
+  }
+  async findAll() {
+    await this.connection.asPromise();
+    const collection = this.connection.collection(this.collection);
+    if (!collection) {
+      throw new Error(`${this.collection} collection is undefined`);
+    }
+    const result = await collection.find({}).toArray();
+    return result;
   }
   async insertOne(doc) {
     const result = await this.connection.collection(this.collection).insertOne(doc);
@@ -44,6 +54,10 @@ var MongoDBClient = class {
   }
   async deleteOne(filter) {
     const result = await this.connection.collection(this.collection).deleteOne(filter);
+    return result.deletedCount > 0;
+  }
+  async deleteMany(filter) {
+    const result = await this.connection.collection(this.collection).deleteMany(filter);
     return result.deletedCount > 0;
   }
   // Add any other MongoDB operations you commonly use

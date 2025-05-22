@@ -26,7 +26,9 @@ module.exports = __toCommonJS(constants_exports);
 var WalletsServiceCollections = {
   userWalletDepositDetails: "user-wallet-deposit-details",
   transactions: "transactions",
-  userWallets: "user-wallets"
+  userWallets: "user-wallets",
+  walletTypes: "wallet-types",
+  currencies: "currencies"
 };
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
