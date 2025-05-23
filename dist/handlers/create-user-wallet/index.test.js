@@ -49145,9 +49145,9 @@ var require_schema2 = __commonJS({
     };
     Schema.prototype._buildEncryptedFields = function() {
       const fields = Object.entries(this.encryptedFields).map(
-        ([path, config]) => {
+        ([path, config2]) => {
           const bsonType = this.path(path).autoEncryptionType();
-          return { path, bsonType, ...config };
+          return { path, bsonType, ...config2 };
         }
       );
       return { fields };
@@ -82789,8 +82789,8 @@ var require_dist_cjs = __commonJS({
     var getDefaultClientConfiguration = /* @__PURE__ */ __name((runtimeConfig) => {
       return getChecksumConfiguration(runtimeConfig);
     }, "getDefaultClientConfiguration");
-    var resolveDefaultRuntimeConfig3 = /* @__PURE__ */ __name((config) => {
-      return resolveChecksumRuntimeConfig(config);
+    var resolveDefaultRuntimeConfig3 = /* @__PURE__ */ __name((config2) => {
+      return resolveChecksumRuntimeConfig(config2);
     }, "resolveDefaultRuntimeConfig");
     var FieldPosition = /* @__PURE__ */ ((FieldPosition2) => {
       FieldPosition2[FieldPosition2["HEADER"] = 0] = "HEADER";
@@ -83339,11 +83339,11 @@ var init_httpAuthSchemeMiddleware = __esm({
     import_types2 = __toESM(require_dist_cjs());
     import_util_middleware = __toESM(require_dist_cjs6());
     init_resolveAuthOptions();
-    httpAuthSchemeMiddleware = (config, mwOptions) => (next, context) => async (args) => {
-      const options = config.httpAuthSchemeProvider(await mwOptions.httpAuthSchemeParametersProvider(config, context, args.input));
-      const authSchemePreference = config.authSchemePreference ? await config.authSchemePreference() : [];
+    httpAuthSchemeMiddleware = (config2, mwOptions) => (next, context) => async (args) => {
+      const options = config2.httpAuthSchemeProvider(await mwOptions.httpAuthSchemeParametersProvider(config2, context, args.input));
+      const authSchemePreference = config2.authSchemePreference ? await config2.authSchemePreference() : [];
       const resolvedOptions = resolveAuthOptions(options, authSchemePreference);
-      const authSchemes = convertHttpAuthSchemesToMap(config.httpAuthSchemes);
+      const authSchemes = convertHttpAuthSchemesToMap(config2.httpAuthSchemes);
       const smithyContext = (0, import_util_middleware.getSmithyContext)(context);
       const failureReasons = [];
       for (const option of resolvedOptions) {
@@ -83352,12 +83352,12 @@ var init_httpAuthSchemeMiddleware = __esm({
           failureReasons.push(`HttpAuthScheme \`${option.schemeId}\` was not enabled for this service.`);
           continue;
         }
-        const identityProvider = scheme.identityProvider(await mwOptions.identityProviderConfigProvider(config));
+        const identityProvider = scheme.identityProvider(await mwOptions.identityProviderConfigProvider(config2));
         if (!identityProvider) {
           failureReasons.push(`HttpAuthScheme \`${option.schemeId}\` did not have an IdentityProvider configured.`);
           continue;
         }
-        const { identityProperties = {}, signingProperties = {} } = option.propertiesExtractor?.(config, context) || {};
+        const { identityProperties = {}, signingProperties = {} } = option.propertiesExtractor?.(config2, context) || {};
         option.identityProperties = Object.assign(option.identityProperties || {}, identityProperties);
         option.signingProperties = Object.assign(option.signingProperties || {}, signingProperties);
         smithyContext.selectedHttpAuthScheme = {
@@ -83388,9 +83388,9 @@ var init_getHttpAuthSchemeEndpointRuleSetPlugin = __esm({
       relation: "before",
       toMiddleware: "endpointV2Middleware"
     };
-    getHttpAuthSchemeEndpointRuleSetPlugin = (config, { httpAuthSchemeParametersProvider, identityProviderConfigProvider }) => ({
+    getHttpAuthSchemeEndpointRuleSetPlugin = (config2, { httpAuthSchemeParametersProvider, identityProviderConfigProvider }) => ({
       applyToStack: (clientStack) => {
-        clientStack.addRelativeTo(httpAuthSchemeMiddleware(config, {
+        clientStack.addRelativeTo(httpAuthSchemeMiddleware(config2, {
           httpAuthSchemeParametersProvider,
           identityProviderConfigProvider
         }), httpAuthSchemeEndpointRuleSetMiddlewareOptions);
@@ -83504,11 +83504,11 @@ var require_dist_cjs7 = __commonJS({
       tags: ["SERIALIZER"],
       override: true
     };
-    function getSerdePlugin4(config, serializer, deserializer) {
+    function getSerdePlugin4(config2, serializer, deserializer) {
       return {
         applyToStack: (commandStack) => {
-          commandStack.add(deserializerMiddleware(config, deserializer), deserializerMiddlewareOption);
-          commandStack.add(serializerMiddleware(config, serializer), serializerMiddlewareOption2);
+          commandStack.add(deserializerMiddleware(config2, deserializer), deserializerMiddlewareOption);
+          commandStack.add(serializerMiddleware(config2, serializer), serializerMiddlewareOption2);
         }
       };
     }
@@ -83530,9 +83530,9 @@ var init_getHttpAuthSchemePlugin = __esm({
       relation: "before",
       toMiddleware: import_middleware_serde.serializerMiddlewareOption.name
     };
-    getHttpAuthSchemePlugin = (config, { httpAuthSchemeParametersProvider, identityProviderConfigProvider }) => ({
+    getHttpAuthSchemePlugin = (config2, { httpAuthSchemeParametersProvider, identityProviderConfigProvider }) => ({
       applyToStack: (clientStack) => {
-        clientStack.addRelativeTo(httpAuthSchemeMiddleware(config, {
+        clientStack.addRelativeTo(httpAuthSchemeMiddleware(config2, {
           httpAuthSchemeParametersProvider,
           identityProviderConfigProvider
         }), httpAuthSchemeMiddlewareOptions);
@@ -83562,7 +83562,7 @@ var init_httpSigningMiddleware = __esm({
     };
     defaultSuccessHandler = (httpResponse, signingProperties) => {
     };
-    httpSigningMiddleware = (config) => (next, context) => async (args) => {
+    httpSigningMiddleware = (config2) => (next, context) => async (args) => {
       if (!import_protocol_http.HttpRequest.isInstance(args.request)) {
         return next(args);
       }
@@ -83596,9 +83596,9 @@ var init_getHttpSigningMiddleware = __esm({
       relation: "after",
       toMiddleware: "retryMiddleware"
     };
-    getHttpSigningPlugin = (config) => ({
+    getHttpSigningPlugin = (config2) => ({
       applyToStack: (clientStack) => {
-        clientStack.addRelativeTo(httpSigningMiddleware(config), httpSigningMiddlewareOptions);
+        clientStack.addRelativeTo(httpSigningMiddleware(config2), httpSigningMiddlewareOptions);
       }
     });
   }
@@ -83627,25 +83627,25 @@ var init_normalizeProvider = __esm({
 
 // node_modules/@smithy/core/dist-es/pagination/createPaginator.js
 function createPaginator(ClientCtor, CommandCtor, inputTokenName, outputTokenName, pageSizeTokenName) {
-  return async function* paginateOperation(config, input, ...additionalArguments) {
+  return async function* paginateOperation(config2, input, ...additionalArguments) {
     const _input = input;
-    let token = config.startingToken ?? _input[inputTokenName];
+    let token = config2.startingToken ?? _input[inputTokenName];
     let hasNext = true;
     let page;
     while (hasNext) {
       _input[inputTokenName] = token;
       if (pageSizeTokenName) {
-        _input[pageSizeTokenName] = _input[pageSizeTokenName] ?? config.pageSize;
+        _input[pageSizeTokenName] = _input[pageSizeTokenName] ?? config2.pageSize;
       }
-      if (config.client instanceof ClientCtor) {
-        page = await makePagedClientRequest(CommandCtor, config.client, input, config.withCommand, ...additionalArguments);
+      if (config2.client instanceof ClientCtor) {
+        page = await makePagedClientRequest(CommandCtor, config2.client, input, config2.withCommand, ...additionalArguments);
       } else {
         throw new Error(`Invalid client, expected instance of ${ClientCtor.name}`);
       }
       yield page;
       const prevToken = token;
       token = get(page, outputTokenName);
-      hasNext = !!(token && (!config.stopOnSameToken || token !== prevToken));
+      hasNext = !!(token && (!config2.stopOnSameToken || token !== prevToken));
     }
     return void 0;
   };
@@ -84848,9 +84848,9 @@ or increase socketAcquisitionWarningTimeout=(millis) in the NodeHttpHandler conf
       }
       updateHttpClientConfig(key, value) {
         this.config = void 0;
-        this.configProvider = this.configProvider.then((config) => {
+        this.configProvider = this.configProvider.then((config2) => {
           return {
-            ...config,
+            ...config2,
             [key]: value
           };
         });
@@ -84896,9 +84896,9 @@ or increase socketAcquisitionWarningTimeout=(millis) in the NodeHttpHandler conf
     }, __name(_a3, "NodeHttp2ConnectionPool"), _a3);
     var _a4;
     var NodeHttp2ConnectionManager = (_a4 = class {
-      constructor(config) {
+      constructor(config2) {
         this.sessionCache = /* @__PURE__ */ new Map();
-        this.config = config;
+        this.config = config2;
         if (this.config.maxConcurrency && this.config.maxConcurrency <= 0) {
           throw new RangeError("maxConcurrency must be greater than zero.");
         }
@@ -85131,9 +85131,9 @@ or increase socketAcquisitionWarningTimeout=(millis) in the NodeHttpHandler conf
       }
       updateHttpClientConfig(key, value) {
         this.config = void 0;
-        this.configProvider = this.configProvider.then((config) => {
+        this.configProvider = this.configProvider.then((config2) => {
           return {
-            ...config,
+            ...config2,
             [key]: value
           };
         });
@@ -85386,9 +85386,9 @@ var require_dist_cjs15 = __commonJS({
       }
       updateHttpClientConfig(key, value) {
         this.config = void 0;
-        this.configProvider = this.configProvider.then((config) => {
-          config[key] = value;
-          return config;
+        this.configProvider = this.configProvider.then((config2) => {
+          config2[key] = value;
+          return config2;
         });
       }
       httpHandlerConfigs() {
@@ -85938,9 +85938,9 @@ var DefaultIdentityProviderConfig;
 var init_DefaultIdentityProviderConfig = __esm({
   "node_modules/@smithy/core/dist-es/util-identity-and-auth/DefaultIdentityProviderConfig.js"() {
     DefaultIdentityProviderConfig = class {
-      constructor(config) {
+      constructor(config2) {
         this.authSchemes = /* @__PURE__ */ new Map();
-        for (const [key, value] of Object.entries(config)) {
+        for (const [key, value] of Object.entries(config2)) {
           if (value !== void 0) {
             this.authSchemes.set(key, value);
           }
@@ -87135,15 +87135,15 @@ var init_AwsSdkSigV4Signer = __esm({
     };
     validateSigningProperties = async (signingProperties) => {
       const context = throwSigningPropertyError("context", signingProperties.context);
-      const config = throwSigningPropertyError("config", signingProperties.config);
+      const config2 = throwSigningPropertyError("config", signingProperties.config);
       const authScheme = context.endpointV2?.properties?.authSchemes?.[0];
-      const signerFunction = throwSigningPropertyError("signer", config.signer);
+      const signerFunction = throwSigningPropertyError("signer", config2.signer);
       const signer = await signerFunction(authScheme);
       const signingRegion = signingProperties?.signingRegion;
       const signingRegionSet = signingProperties?.signingRegionSet;
       const signingName = signingProperties?.signingName;
       return {
-        config,
+        config: config2,
         signer,
         signingRegion,
         signingRegionSet,
@@ -87156,7 +87156,7 @@ var init_AwsSdkSigV4Signer = __esm({
           throw new Error("The request is not an instance of `HttpRequest` and cannot be signed");
         }
         const validatedProps = await validateSigningProperties(signingProperties);
-        const { config, signer } = validatedProps;
+        const { config: config2, signer } = validatedProps;
         let { signingRegion, signingName } = validatedProps;
         const handlerExecutionContext = signingProperties.context;
         if (handlerExecutionContext?.authSchemes?.length ?? 0 > 1) {
@@ -87167,7 +87167,7 @@ var init_AwsSdkSigV4Signer = __esm({
           }
         }
         const signedRequest = await signer.sign(httpRequest, {
-          signingDate: getSkewCorrectedDate(config.systemClockOffset),
+          signingDate: getSkewCorrectedDate(config2.systemClockOffset),
           signingRegion,
           signingService: signingName
         });
@@ -87177,10 +87177,10 @@ var init_AwsSdkSigV4Signer = __esm({
         return (error) => {
           const serverTime = error.ServerTime ?? getDateHeader(error.$response);
           if (serverTime) {
-            const config = throwSigningPropertyError("config", signingProperties.config);
-            const initialSystemClockOffset = config.systemClockOffset;
-            config.systemClockOffset = getUpdatedSystemClockOffset(serverTime, config.systemClockOffset);
-            const clockSkewCorrected = config.systemClockOffset !== initialSystemClockOffset;
+            const config2 = throwSigningPropertyError("config", signingProperties.config);
+            const initialSystemClockOffset = config2.systemClockOffset;
+            config2.systemClockOffset = getUpdatedSystemClockOffset(serverTime, config2.systemClockOffset);
+            const clockSkewCorrected = config2.systemClockOffset !== initialSystemClockOffset;
             if (clockSkewCorrected && error.$metadata) {
               error.$metadata.clockSkewCorrected = true;
             }
@@ -87191,8 +87191,8 @@ var init_AwsSdkSigV4Signer = __esm({
       successHandler(httpResponse, signingProperties) {
         const dateHeader = getDateHeader(httpResponse);
         if (dateHeader) {
-          const config = throwSigningPropertyError("config", signingProperties.config);
-          config.systemClockOffset = getUpdatedSystemClockOffset(dateHeader, config.systemClockOffset);
+          const config2 = throwSigningPropertyError("config", signingProperties.config);
+          config2.systemClockOffset = getUpdatedSystemClockOffset(dateHeader, config2.systemClockOffset);
         }
       }
     };
@@ -87212,11 +87212,11 @@ var init_AwsSdkSigV4ASigner = __esm({
         if (!import_protocol_http7.HttpRequest.isInstance(httpRequest)) {
           throw new Error("The request is not an instance of `HttpRequest` and cannot be signed");
         }
-        const { config, signer, signingRegion, signingRegionSet, signingName } = await validateSigningProperties(signingProperties);
-        const configResolvedSigningRegionSet = await config.sigv4aSigningRegionSet?.();
+        const { config: config2, signer, signingRegion, signingRegionSet, signingName } = await validateSigningProperties(signingProperties);
+        const configResolvedSigningRegionSet = await config2.sigv4aSigningRegionSet?.();
         const multiRegionOverride = (configResolvedSigningRegionSet ?? signingRegionSet ?? [signingRegion]).join(",");
         const signedRequest = await signer.sign(httpRequest, {
-          signingDate: getSkewCorrectedDate(config.systemClockOffset),
+          signingDate: getSkewCorrectedDate(config2.systemClockOffset),
           signingRegion: multiRegionOverride,
           signingService: signingName
         });
@@ -87422,9 +87422,9 @@ var init_resolveAwsSdkSigV4AConfig = __esm({
   "node_modules/@aws-sdk/core/dist-es/submodules/httpAuthSchemes/aws_sdk/resolveAwsSdkSigV4AConfig.js"() {
     init_dist_es();
     import_property_provider = __toESM(require_dist_cjs20());
-    resolveAwsSdkSigV4AConfig = (config) => {
-      config.sigv4aSigningRegionSet = normalizeProvider(config.sigv4aSigningRegionSet);
-      return config;
+    resolveAwsSdkSigV4AConfig = (config2) => {
+      config2.sigv4aSigningRegionSet = normalizeProvider(config2.sigv4aSigningRegionSet);
+      return config2;
     };
     NODE_SIGV4A_CONFIG_OPTIONS = {
       environmentVariableSelector(env) {
@@ -88066,7 +88066,7 @@ ${(0, import_util_hex_encoding.toHex)(hashedRequest)}`;
 });
 
 // node_modules/@aws-sdk/core/dist-es/submodules/httpAuthSchemes/aws_sdk/resolveAwsSdkSigV4Config.js
-function normalizeCredentialProvider(config, { credentials, credentialDefaultProvider }) {
+function normalizeCredentialProvider(config2, { credentials, credentialDefaultProvider }) {
   let credentialsProvider;
   if (credentials) {
     if (!credentials?.memoized) {
@@ -88076,8 +88076,8 @@ function normalizeCredentialProvider(config, { credentials, credentialDefaultPro
     }
   } else {
     if (credentialDefaultProvider) {
-      credentialsProvider = normalizeProvider(credentialDefaultProvider(Object.assign({}, config, {
-        parentClientConfig: config
+      credentialsProvider = normalizeProvider(credentialDefaultProvider(Object.assign({}, config2, {
+        parentClientConfig: config2
       })));
     } else {
       credentialsProvider = async () => {
@@ -88088,11 +88088,11 @@ function normalizeCredentialProvider(config, { credentials, credentialDefaultPro
   credentialsProvider.memoized = true;
   return credentialsProvider;
 }
-function bindCallerConfig(config, credentialsProvider) {
+function bindCallerConfig(config2, credentialsProvider) {
   if (credentialsProvider.configBound) {
     return credentialsProvider;
   }
-  const fn = async (options) => credentialsProvider({ ...options, callerClientConfig: config });
+  const fn = async (options) => credentialsProvider({ ...options, callerClientConfig: config2 });
   fn.memoized = credentialsProvider.memoized;
   fn.configBound = true;
   return fn;
@@ -88103,21 +88103,21 @@ var init_resolveAwsSdkSigV4Config = __esm({
     init_client();
     init_dist_es();
     import_signature_v4 = __toESM(require_dist_cjs21());
-    resolveAwsSdkSigV4Config = (config) => {
-      let inputCredentials = config.credentials;
-      let isUserSupplied = !!config.credentials;
+    resolveAwsSdkSigV4Config = (config2) => {
+      let inputCredentials = config2.credentials;
+      let isUserSupplied = !!config2.credentials;
       let resolvedCredentials = void 0;
-      Object.defineProperty(config, "credentials", {
+      Object.defineProperty(config2, "credentials", {
         set(credentials) {
           if (credentials && credentials !== inputCredentials && credentials !== resolvedCredentials) {
             isUserSupplied = true;
           }
           inputCredentials = credentials;
-          const memoizedProvider = normalizeCredentialProvider(config, {
+          const memoizedProvider = normalizeCredentialProvider(config2, {
             credentials: inputCredentials,
-            credentialDefaultProvider: config.credentialDefaultProvider
+            credentialDefaultProvider: config2.credentialDefaultProvider
           });
-          const boundProvider = bindCallerConfig(config, memoizedProvider);
+          const boundProvider = bindCallerConfig(config2, memoizedProvider);
           if (isUserSupplied && !boundProvider.attributed) {
             resolvedCredentials = async (options) => boundProvider(options).then((creds) => setCredentialFeature(creds, "CREDENTIALS_CODE", "e"));
             resolvedCredentials.memoized = boundProvider.memoized;
@@ -88133,58 +88133,58 @@ var init_resolveAwsSdkSigV4Config = __esm({
         enumerable: true,
         configurable: true
       });
-      config.credentials = inputCredentials;
-      const { signingEscapePath = true, systemClockOffset = config.systemClockOffset || 0, sha256 } = config;
+      config2.credentials = inputCredentials;
+      const { signingEscapePath = true, systemClockOffset = config2.systemClockOffset || 0, sha256 } = config2;
       let signer;
-      if (config.signer) {
-        signer = normalizeProvider(config.signer);
-      } else if (config.regionInfoProvider) {
-        signer = () => normalizeProvider(config.region)().then(async (region) => [
-          await config.regionInfoProvider(region, {
-            useFipsEndpoint: await config.useFipsEndpoint(),
-            useDualstackEndpoint: await config.useDualstackEndpoint()
+      if (config2.signer) {
+        signer = normalizeProvider(config2.signer);
+      } else if (config2.regionInfoProvider) {
+        signer = () => normalizeProvider(config2.region)().then(async (region) => [
+          await config2.regionInfoProvider(region, {
+            useFipsEndpoint: await config2.useFipsEndpoint(),
+            useDualstackEndpoint: await config2.useDualstackEndpoint()
           }) || {},
           region
         ]).then(([regionInfo, region]) => {
           const { signingRegion, signingService } = regionInfo;
-          config.signingRegion = config.signingRegion || signingRegion || region;
-          config.signingName = config.signingName || signingService || config.serviceId;
+          config2.signingRegion = config2.signingRegion || signingRegion || region;
+          config2.signingName = config2.signingName || signingService || config2.serviceId;
           const params = {
-            ...config,
-            credentials: config.credentials,
-            region: config.signingRegion,
-            service: config.signingName,
+            ...config2,
+            credentials: config2.credentials,
+            region: config2.signingRegion,
+            service: config2.signingName,
             sha256,
             uriEscapePath: signingEscapePath
           };
-          const SignerCtor = config.signerConstructor || import_signature_v4.SignatureV4;
+          const SignerCtor = config2.signerConstructor || import_signature_v4.SignatureV4;
           return new SignerCtor(params);
         });
       } else {
         signer = async (authScheme) => {
           authScheme = Object.assign({}, {
             name: "sigv4",
-            signingName: config.signingName || config.defaultSigningName,
-            signingRegion: await normalizeProvider(config.region)(),
+            signingName: config2.signingName || config2.defaultSigningName,
+            signingRegion: await normalizeProvider(config2.region)(),
             properties: {}
           }, authScheme);
           const signingRegion = authScheme.signingRegion;
           const signingService = authScheme.signingName;
-          config.signingRegion = config.signingRegion || signingRegion;
-          config.signingName = config.signingName || signingService || config.serviceId;
+          config2.signingRegion = config2.signingRegion || signingRegion;
+          config2.signingName = config2.signingName || signingService || config2.serviceId;
           const params = {
-            ...config,
-            credentials: config.credentials,
-            region: config.signingRegion,
-            service: config.signingName,
+            ...config2,
+            credentials: config2.credentials,
+            region: config2.signingRegion,
+            service: config2.signingName,
             sha256,
             uriEscapePath: signingEscapePath
           };
-          const SignerCtor = config.signerConstructor || import_signature_v4.SignatureV4;
+          const SignerCtor = config2.signerConstructor || import_signature_v4.SignatureV4;
           return new SignerCtor(params);
         };
       }
-      const resolvedConfig = Object.assign(config, {
+      const resolvedConfig = Object.assign(config2, {
         systemClockOffset,
         signingEscapePath,
         signer
@@ -88671,8 +88671,8 @@ var require_dist_cjs23 = __commonJS({
     var import_middleware_stack = require_dist_cjs22();
     var _a2;
     var Client = (_a2 = class {
-      constructor(config) {
-        this.config = config;
+      constructor(config2) {
+        this.config = config2;
         this.middlewareStack = (0, import_middleware_stack.constructStack)();
       }
       send(command, optionsOrCb, cb) {
@@ -89509,8 +89509,8 @@ var require_dist_cjs23 = __commonJS({
       return Object.assign(getChecksumConfiguration(runtimeConfig), getRetryConfiguration(runtimeConfig));
     }, "getDefaultExtensionConfiguration");
     var getDefaultClientConfiguration = getDefaultExtensionConfiguration3;
-    var resolveDefaultRuntimeConfig3 = /* @__PURE__ */ __name((config) => {
-      return Object.assign(resolveChecksumRuntimeConfig(config), resolveRetryRuntimeConfig(config));
+    var resolveDefaultRuntimeConfig3 = /* @__PURE__ */ __name((config2) => {
+      return Object.assign(resolveChecksumRuntimeConfig(config2), resolveRetryRuntimeConfig(config2));
     }, "resolveDefaultRuntimeConfig");
     var getArrayIfSingleItem = /* @__PURE__ */ __name((mayBeArray) => Array.isArray(mayBeArray) ? mayBeArray : [mayBeArray], "getArrayIfSingleItem");
     var getValueFromTextNode2 = /* @__PURE__ */ __name((obj) => {
@@ -91676,13 +91676,13 @@ var require_dist_cjs24 = __commonJS({
     var import_protocol_http11 = require_dist_cjs2();
     var import_core22 = (init_dist_es2(), __toCommonJS(dist_es_exports2));
     var ACCOUNT_ID_ENDPOINT_REGEX = /\d{12}\.ddb/;
-    async function checkFeatures(context, config, args) {
+    async function checkFeatures(context, config2, args) {
       const request = args.request;
       if (request?.headers?.["smithy-protocol"] === "rpc-v2-cbor") {
         (0, import_core22.setFeature)(context, "PROTOCOL_RPC_V2_CBOR", "M");
       }
-      if (typeof config.retryStrategy === "function") {
-        const retryStrategy = await config.retryStrategy();
+      if (typeof config2.retryStrategy === "function") {
+        const retryStrategy = await config2.retryStrategy();
         if (typeof retryStrategy.acquireInitialRetryToken === "function") {
           if (retryStrategy.constructor?.name?.includes("Adaptive")) {
             (0, import_core22.setFeature)(context, "RETRY_MODE_ADAPTIVE", "F");
@@ -91693,12 +91693,12 @@ var require_dist_cjs24 = __commonJS({
           (0, import_core22.setFeature)(context, "RETRY_MODE_LEGACY", "D");
         }
       }
-      if (typeof config.accountIdEndpointMode === "function") {
+      if (typeof config2.accountIdEndpointMode === "function") {
         const endpointV2 = context.endpointV2;
         if (String(endpointV2?.url?.hostname).match(ACCOUNT_ID_ENDPOINT_REGEX)) {
           (0, import_core22.setFeature)(context, "ACCOUNT_ID_ENDPOINT", "O");
         }
-        switch (await config.accountIdEndpointMode?.()) {
+        switch (await config2.accountIdEndpointMode?.()) {
           case "disabled":
             (0, import_core22.setFeature)(context, "ACCOUNT_ID_MODE_DISABLED", "Q");
             break;
@@ -91813,9 +91813,9 @@ var require_dist_cjs24 = __commonJS({
       tags: ["SET_USER_AGENT", "USER_AGENT"],
       override: true
     };
-    var getUserAgentPlugin3 = /* @__PURE__ */ __name((config) => ({
+    var getUserAgentPlugin3 = /* @__PURE__ */ __name((config2) => ({
       applyToStack: /* @__PURE__ */ __name((clientStack) => {
-        clientStack.add(userAgentMiddleware(config), getUserAgentMiddlewareOptions);
+        clientStack.add(userAgentMiddleware(config2), getUserAgentMiddlewareOptions);
       }, "applyToStack")
     }), "getUserAgentPlugin");
   }
@@ -92414,11 +92414,11 @@ var require_dist_cjs29 = __commonJS({
     __name(getSelectorName, "getSelectorName");
     var fromEnv = /* @__PURE__ */ __name((envVarSelector, options) => async () => {
       try {
-        const config = envVarSelector(process.env, options);
-        if (config === void 0) {
+        const config2 = envVarSelector(process.env, options);
+        if (config2 === void 0) {
           throw new Error();
         }
-        return config;
+        return config2;
       } catch (e3) {
         throw new import_property_provider2.CredentialsProviderError(
           e3.message || `Not found in ENV: ${getSelectorName(envVarSelector.toString())}`,
@@ -92483,9 +92483,9 @@ var require_getEndpointUrlConfig = __commonJS({
           return endpointUrl;
         return void 0;
       },
-      configFileSelector: (profile, config) => {
-        if (config && profile.services) {
-          const servicesSection = config[["services", profile.services].join(shared_ini_file_loader_1.CONFIG_PREFIX_SEPARATOR)];
+      configFileSelector: (profile, config2) => {
+        if (config2 && profile.services) {
+          const servicesSection = config2[["services", profile.services].join(shared_ini_file_loader_1.CONFIG_PREFIX_SEPARATOR)];
           if (servicesSection) {
             const servicePrefixParts = serviceId.split(" ").map((w3) => w3.toLowerCase());
             const endpointUrl2 = servicesSection[[servicePrefixParts.join("_"), CONFIG_ENDPOINT_URL].join(shared_ini_file_loader_1.CONFIG_PREFIX_SEPARATOR)];
@@ -92678,9 +92678,9 @@ var require_dist_cjs32 = __commonJS({
       }
       return isValidArn;
     }, "isArnBucketName");
-    var createConfigValueProvider = /* @__PURE__ */ __name((configKey, canonicalEndpointParamKey, config) => {
+    var createConfigValueProvider = /* @__PURE__ */ __name((configKey, canonicalEndpointParamKey, config2) => {
       const configProvider = /* @__PURE__ */ __name(async () => {
-        const configValue = config[configKey] ?? config[canonicalEndpointParamKey];
+        const configValue = config2[configKey] ?? config2[canonicalEndpointParamKey];
         if (typeof configValue === "function") {
           return configValue();
         }
@@ -92688,14 +92688,14 @@ var require_dist_cjs32 = __commonJS({
       }, "configProvider");
       if (configKey === "credentialScope" || canonicalEndpointParamKey === "CredentialScope") {
         return async () => {
-          const credentials = typeof config.credentials === "function" ? await config.credentials() : config.credentials;
+          const credentials = typeof config2.credentials === "function" ? await config2.credentials() : config2.credentials;
           const configValue = credentials?.credentialScope ?? credentials?.CredentialScope;
           return configValue;
         };
       }
       if (configKey === "accountId" || canonicalEndpointParamKey === "AccountId") {
         return async () => {
-          const credentials = typeof config.credentials === "function" ? await config.credentials() : config.credentials;
+          const credentials = typeof config2.credentials === "function" ? await config2.credentials() : config2.credentials;
           const configValue = credentials?.accountId ?? credentials?.AccountId;
           return configValue;
         };
@@ -92780,11 +92780,11 @@ var require_dist_cjs32 = __commonJS({
     var import_core17 = (init_dist_es(), __toCommonJS(dist_es_exports));
     var import_util_middleware5 = require_dist_cjs6();
     var endpointMiddleware = /* @__PURE__ */ __name(({
-      config,
+      config: config2,
       instructions
     }) => {
       return (next, context) => async (args) => {
-        if (config.endpoint) {
+        if (config2.endpoint) {
           (0, import_core17.setFeature)(context, "ENDPOINT_OVERRIDE", "N");
         }
         const endpoint = await getEndpointFromInstructions(
@@ -92794,7 +92794,7 @@ var require_dist_cjs32 = __commonJS({
               return instructions;
             }
           },
-          { ...config },
+          { ...config2 },
           context
         );
         context.endpointV2 = endpoint;
@@ -92833,11 +92833,11 @@ var require_dist_cjs32 = __commonJS({
       relation: "before",
       toMiddleware: import_middleware_serde5.serializerMiddlewareOption.name
     };
-    var getEndpointPlugin4 = /* @__PURE__ */ __name((config, instructions) => ({
+    var getEndpointPlugin4 = /* @__PURE__ */ __name((config2, instructions) => ({
       applyToStack: (clientStack) => {
         clientStack.addRelativeTo(
           endpointMiddleware({
-            config,
+            config: config2,
             instructions
           }),
           endpointMiddlewareOptions
@@ -94017,10 +94017,10 @@ var require_httpAuthSchemeProvider = __commonJS({
     exports2.resolveHttpAuthSchemeConfig = exports2.defaultSecretsManagerHttpAuthSchemeProvider = exports2.defaultSecretsManagerHttpAuthSchemeParametersProvider = void 0;
     var core_1 = (init_dist_es2(), __toCommonJS(dist_es_exports2));
     var util_middleware_1 = require_dist_cjs6();
-    var defaultSecretsManagerHttpAuthSchemeParametersProvider = async (config, context, input) => {
+    var defaultSecretsManagerHttpAuthSchemeParametersProvider = async (config2, context, input) => {
       return {
         operation: (0, util_middleware_1.getSmithyContext)(context).operation,
-        region: await (0, util_middleware_1.normalizeProvider)(config.region)() || (() => {
+        region: await (0, util_middleware_1.normalizeProvider)(config2.region)() || (() => {
           throw new Error("expected `region` to be configured for `aws.auth#sigv4`");
         })()
       };
@@ -94033,9 +94033,9 @@ var require_httpAuthSchemeProvider = __commonJS({
           name: "secretsmanager",
           region: authParameters.region
         },
-        propertiesExtractor: (config, context) => ({
+        propertiesExtractor: (config2, context) => ({
           signingProperties: {
-            config,
+            config: config2,
             context
           }
         })
@@ -94051,10 +94051,10 @@ var require_httpAuthSchemeProvider = __commonJS({
       return options;
     };
     exports2.defaultSecretsManagerHttpAuthSchemeProvider = defaultSecretsManagerHttpAuthSchemeProvider;
-    var resolveHttpAuthSchemeConfig3 = (config) => {
-      const config_0 = (0, core_1.resolveAwsSdkSigV4Config)(config);
+    var resolveHttpAuthSchemeConfig3 = (config2) => {
+      const config_0 = (0, core_1.resolveAwsSdkSigV4Config)(config2);
       return Object.assign(config_0, {
-        authSchemePreference: (0, util_middleware_1.normalizeProvider)(config.authSchemePreference ?? [])
+        authSchemePreference: (0, util_middleware_1.normalizeProvider)(config2.authSchemePreference ?? [])
       });
     };
     exports2.resolveHttpAuthSchemeConfig = resolveHttpAuthSchemeConfig3;
@@ -95362,10 +95362,10 @@ var require_httpAuthSchemeProvider2 = __commonJS({
     exports2.resolveHttpAuthSchemeConfig = exports2.defaultSSOHttpAuthSchemeProvider = exports2.defaultSSOHttpAuthSchemeParametersProvider = void 0;
     var core_1 = (init_dist_es2(), __toCommonJS(dist_es_exports2));
     var util_middleware_1 = require_dist_cjs6();
-    var defaultSSOHttpAuthSchemeParametersProvider = async (config, context, input) => {
+    var defaultSSOHttpAuthSchemeParametersProvider = async (config2, context, input) => {
       return {
         operation: (0, util_middleware_1.getSmithyContext)(context).operation,
-        region: await (0, util_middleware_1.normalizeProvider)(config.region)() || (() => {
+        region: await (0, util_middleware_1.normalizeProvider)(config2.region)() || (() => {
           throw new Error("expected `region` to be configured for `aws.auth#sigv4`");
         })()
       };
@@ -95378,9 +95378,9 @@ var require_httpAuthSchemeProvider2 = __commonJS({
           name: "awsssoportal",
           region: authParameters.region
         },
-        propertiesExtractor: (config, context) => ({
+        propertiesExtractor: (config2, context) => ({
           signingProperties: {
-            config,
+            config: config2,
             context
           }
         })
@@ -95417,10 +95417,10 @@ var require_httpAuthSchemeProvider2 = __commonJS({
       return options;
     };
     exports2.defaultSSOHttpAuthSchemeProvider = defaultSSOHttpAuthSchemeProvider;
-    var resolveHttpAuthSchemeConfig3 = (config) => {
-      const config_0 = (0, core_1.resolveAwsSdkSigV4Config)(config);
+    var resolveHttpAuthSchemeConfig3 = (config2) => {
+      const config_0 = (0, core_1.resolveAwsSdkSigV4Config)(config2);
       return Object.assign(config_0, {
-        authSchemePreference: (0, util_middleware_1.normalizeProvider)(config.authSchemePreference ?? [])
+        authSchemePreference: (0, util_middleware_1.normalizeProvider)(config2.authSchemePreference ?? [])
       });
     };
     exports2.resolveHttpAuthSchemeConfig = resolveHttpAuthSchemeConfig3;
@@ -95575,7 +95575,7 @@ var require_dist_cjs39 = __commonJS({
       return null;
     }, "isCrtAvailable");
     var createDefaultUserAgentProvider3 = /* @__PURE__ */ __name(({ serviceId, clientVersion }) => {
-      return async (config) => {
+      return async (config2) => {
         const sections = [
           // sdk-metadata
           ["aws-sdk-js", clientVersion],
@@ -95598,7 +95598,7 @@ var require_dist_cjs39 = __commonJS({
         if (import_process.env.AWS_EXECUTION_ENV) {
           sections.push([`exec-env/${import_process.env.AWS_EXECUTION_ENV}`]);
         }
-        const appId = await config?.userAgentAppId?.();
+        const appId = await config2?.userAgentAppId?.();
         const resolvedUserAgent = appId ? [...sections, [`app/${appId}`]] : [...sections];
         return resolvedUserAgent;
       };
@@ -95801,16 +95801,16 @@ var require_runtimeConfig_shared = __commonJS({
     var util_utf8_1 = require_dist_cjs10();
     var httpAuthSchemeProvider_1 = require_httpAuthSchemeProvider2();
     var endpointResolver_1 = require_endpointResolver();
-    var getRuntimeConfig5 = (config) => {
+    var getRuntimeConfig5 = (config2) => {
       return {
         apiVersion: "2019-06-10",
-        base64Decoder: config?.base64Decoder ?? util_base64_1.fromBase64,
-        base64Encoder: config?.base64Encoder ?? util_base64_1.toBase64,
-        disableHostPrefix: config?.disableHostPrefix ?? false,
-        endpointProvider: config?.endpointProvider ?? endpointResolver_1.defaultEndpointResolver,
-        extensions: config?.extensions ?? [],
-        httpAuthSchemeProvider: config?.httpAuthSchemeProvider ?? httpAuthSchemeProvider_1.defaultSSOHttpAuthSchemeProvider,
-        httpAuthSchemes: config?.httpAuthSchemes ?? [
+        base64Decoder: config2?.base64Decoder ?? util_base64_1.fromBase64,
+        base64Encoder: config2?.base64Encoder ?? util_base64_1.toBase64,
+        disableHostPrefix: config2?.disableHostPrefix ?? false,
+        endpointProvider: config2?.endpointProvider ?? endpointResolver_1.defaultEndpointResolver,
+        extensions: config2?.extensions ?? [],
+        httpAuthSchemeProvider: config2?.httpAuthSchemeProvider ?? httpAuthSchemeProvider_1.defaultSSOHttpAuthSchemeProvider,
+        httpAuthSchemes: config2?.httpAuthSchemes ?? [
           {
             schemeId: "aws.auth#sigv4",
             identityProvider: (ipc) => ipc.getIdentityProvider("aws.auth#sigv4"),
@@ -95822,11 +95822,11 @@ var require_runtimeConfig_shared = __commonJS({
             signer: new core_2.NoAuthSigner()
           }
         ],
-        logger: config?.logger ?? new smithy_client_1.NoOpLogger(),
-        serviceId: config?.serviceId ?? "SSO",
-        urlParser: config?.urlParser ?? url_parser_1.parseUrl,
-        utf8Decoder: config?.utf8Decoder ?? util_utf8_1.fromUtf8,
-        utf8Encoder: config?.utf8Encoder ?? util_utf8_1.toUtf8
+        logger: config2?.logger ?? new smithy_client_1.NoOpLogger(),
+        serviceId: config2?.serviceId ?? "SSO",
+        urlParser: config2?.urlParser ?? url_parser_1.parseUrl,
+        utf8Decoder: config2?.utf8Decoder ?? util_utf8_1.fromUtf8,
+        utf8Encoder: config2?.utf8Encoder ?? util_utf8_1.toUtf8
       };
     };
     exports2.getRuntimeConfig = getRuntimeConfig5;
@@ -95963,33 +95963,33 @@ var require_runtimeConfig = __commonJS({
     var smithy_client_1 = require_dist_cjs23();
     var util_defaults_mode_node_1 = require_dist_cjs42();
     var smithy_client_2 = require_dist_cjs23();
-    var getRuntimeConfig5 = (config) => {
+    var getRuntimeConfig5 = (config2) => {
       (0, smithy_client_2.emitWarningIfUnsupportedVersion)(process.version);
-      const defaultsMode = (0, util_defaults_mode_node_1.resolveDefaultsModeConfig)(config);
+      const defaultsMode = (0, util_defaults_mode_node_1.resolveDefaultsModeConfig)(config2);
       const defaultConfigProvider = () => defaultsMode().then(smithy_client_1.loadConfigsForDefaultMode);
-      const clientSharedValues = (0, runtimeConfig_shared_1.getRuntimeConfig)(config);
+      const clientSharedValues = (0, runtimeConfig_shared_1.getRuntimeConfig)(config2);
       (0, core_1.emitWarningIfUnsupportedVersion)(process.version);
-      const loaderConfig = { profile: config?.profile, logger: clientSharedValues.logger };
+      const loaderConfig = { profile: config2?.profile, logger: clientSharedValues.logger };
       return {
         ...clientSharedValues,
-        ...config,
+        ...config2,
         runtime: "node",
         defaultsMode,
-        authSchemePreference: config?.authSchemePreference ?? (0, node_config_provider_1.loadConfig)(core_1.NODE_AUTH_SCHEME_PREFERENCE_OPTIONS, loaderConfig),
-        bodyLengthChecker: config?.bodyLengthChecker ?? util_body_length_node_1.calculateBodyLength,
-        defaultUserAgentProvider: config?.defaultUserAgentProvider ?? (0, util_user_agent_node_1.createDefaultUserAgentProvider)({ serviceId: clientSharedValues.serviceId, clientVersion: package_json_1.default.version }),
-        maxAttempts: config?.maxAttempts ?? (0, node_config_provider_1.loadConfig)(middleware_retry_1.NODE_MAX_ATTEMPT_CONFIG_OPTIONS, config),
-        region: config?.region ?? (0, node_config_provider_1.loadConfig)(config_resolver_1.NODE_REGION_CONFIG_OPTIONS, { ...config_resolver_1.NODE_REGION_CONFIG_FILE_OPTIONS, ...loaderConfig }),
-        requestHandler: node_http_handler_1.NodeHttpHandler.create(config?.requestHandler ?? defaultConfigProvider),
-        retryMode: config?.retryMode ?? (0, node_config_provider_1.loadConfig)({
+        authSchemePreference: config2?.authSchemePreference ?? (0, node_config_provider_1.loadConfig)(core_1.NODE_AUTH_SCHEME_PREFERENCE_OPTIONS, loaderConfig),
+        bodyLengthChecker: config2?.bodyLengthChecker ?? util_body_length_node_1.calculateBodyLength,
+        defaultUserAgentProvider: config2?.defaultUserAgentProvider ?? (0, util_user_agent_node_1.createDefaultUserAgentProvider)({ serviceId: clientSharedValues.serviceId, clientVersion: package_json_1.default.version }),
+        maxAttempts: config2?.maxAttempts ?? (0, node_config_provider_1.loadConfig)(middleware_retry_1.NODE_MAX_ATTEMPT_CONFIG_OPTIONS, config2),
+        region: config2?.region ?? (0, node_config_provider_1.loadConfig)(config_resolver_1.NODE_REGION_CONFIG_OPTIONS, { ...config_resolver_1.NODE_REGION_CONFIG_FILE_OPTIONS, ...loaderConfig }),
+        requestHandler: node_http_handler_1.NodeHttpHandler.create(config2?.requestHandler ?? defaultConfigProvider),
+        retryMode: config2?.retryMode ?? (0, node_config_provider_1.loadConfig)({
           ...middleware_retry_1.NODE_RETRY_MODE_CONFIG_OPTIONS,
           default: async () => (await defaultConfigProvider()).retryMode || util_retry_1.DEFAULT_RETRY_MODE
-        }, config),
-        sha256: config?.sha256 ?? hash_node_1.Hash.bind(null, "sha256"),
-        streamCollector: config?.streamCollector ?? node_http_handler_1.streamCollector,
-        useDualstackEndpoint: config?.useDualstackEndpoint ?? (0, node_config_provider_1.loadConfig)(config_resolver_1.NODE_USE_DUALSTACK_ENDPOINT_CONFIG_OPTIONS, loaderConfig),
-        useFipsEndpoint: config?.useFipsEndpoint ?? (0, node_config_provider_1.loadConfig)(config_resolver_1.NODE_USE_FIPS_ENDPOINT_CONFIG_OPTIONS, loaderConfig),
-        userAgentAppId: config?.userAgentAppId ?? (0, node_config_provider_1.loadConfig)(util_user_agent_node_1.NODE_APP_ID_CONFIG_OPTIONS, loaderConfig)
+        }, config2),
+        sha256: config2?.sha256 ?? hash_node_1.Hash.bind(null, "sha256"),
+        streamCollector: config2?.streamCollector ?? node_http_handler_1.streamCollector,
+        useDualstackEndpoint: config2?.useDualstackEndpoint ?? (0, node_config_provider_1.loadConfig)(config_resolver_1.NODE_USE_DUALSTACK_ENDPOINT_CONFIG_OPTIONS, loaderConfig),
+        useFipsEndpoint: config2?.useFipsEndpoint ?? (0, node_config_provider_1.loadConfig)(config_resolver_1.NODE_USE_FIPS_ENDPOINT_CONFIG_OPTIONS, loaderConfig),
+        userAgentAppId: config2?.userAgentAppId ?? (0, node_config_provider_1.loadConfig)(util_user_agent_node_1.NODE_APP_ID_CONFIG_OPTIONS, loaderConfig)
       };
     };
     exports2.getRuntimeConfig = getRuntimeConfig5;
@@ -96186,11 +96186,11 @@ var require_dist_cjs44 = __commonJS({
         }
       };
     }, "getHttpAuthExtensionConfiguration");
-    var resolveHttpAuthRuntimeConfig3 = /* @__PURE__ */ __name((config) => {
+    var resolveHttpAuthRuntimeConfig3 = /* @__PURE__ */ __name((config2) => {
       return {
-        httpAuthSchemes: config.httpAuthSchemes(),
-        httpAuthSchemeProvider: config.httpAuthSchemeProvider(),
-        credentials: config.credentials()
+        httpAuthSchemes: config2.httpAuthSchemes(),
+        httpAuthSchemeProvider: config2.httpAuthSchemeProvider(),
+        credentials: config2.credentials()
       };
     }, "resolveHttpAuthRuntimeConfig");
     var resolveRuntimeExtensions3 = /* @__PURE__ */ __name((runtimeConfig, extensions) => {
@@ -96237,8 +96237,8 @@ var require_dist_cjs44 = __commonJS({
         this.middlewareStack.use(
           (0, import_core17.getHttpAuthSchemeEndpointRuleSetPlugin)(this.config, {
             httpAuthSchemeParametersProvider: import_httpAuthSchemeProvider5.defaultSSOHttpAuthSchemeParametersProvider,
-            identityProviderConfigProvider: /* @__PURE__ */ __name(async (config) => new import_core17.DefaultIdentityProviderConfig({
-              "aws.auth#sigv4": config.credentials
+            identityProviderConfigProvider: /* @__PURE__ */ __name(async (config2) => new import_core17.DefaultIdentityProviderConfig({
+              "aws.auth#sigv4": config2.credentials
             }), "identityProviderConfigProvider")
           })
         );
@@ -96559,34 +96559,34 @@ var require_dist_cjs44 = __commonJS({
     var _rn = "role_name";
     var _xasbt = "x-amz-sso_bearer_token";
     var _a8;
-    var GetRoleCredentialsCommand = (_a8 = class extends import_smithy_client25.Command.classBuilder().ep(commonParams3).m(function(Command, cs, config, o3) {
+    var GetRoleCredentialsCommand = (_a8 = class extends import_smithy_client25.Command.classBuilder().ep(commonParams3).m(function(Command, cs, config2, o3) {
       return [
-        (0, import_middleware_serde5.getSerdePlugin)(config, this.serialize, this.deserialize),
-        (0, import_middleware_endpoint6.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+        (0, import_middleware_serde5.getSerdePlugin)(config2, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint6.getEndpointPlugin)(config2, Command.getEndpointParameterInstructions())
       ];
     }).s("SWBPortalService", "GetRoleCredentials", {}).n("SSOClient", "GetRoleCredentialsCommand").f(GetRoleCredentialsRequestFilterSensitiveLog, GetRoleCredentialsResponseFilterSensitiveLog).ser(se_GetRoleCredentialsCommand).de(de_GetRoleCredentialsCommand).build() {
     }, __name(_a8, "GetRoleCredentialsCommand"), _a8);
     var _a9;
-    var ListAccountRolesCommand = (_a9 = class extends import_smithy_client25.Command.classBuilder().ep(commonParams3).m(function(Command, cs, config, o3) {
+    var ListAccountRolesCommand = (_a9 = class extends import_smithy_client25.Command.classBuilder().ep(commonParams3).m(function(Command, cs, config2, o3) {
       return [
-        (0, import_middleware_serde5.getSerdePlugin)(config, this.serialize, this.deserialize),
-        (0, import_middleware_endpoint6.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+        (0, import_middleware_serde5.getSerdePlugin)(config2, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint6.getEndpointPlugin)(config2, Command.getEndpointParameterInstructions())
       ];
     }).s("SWBPortalService", "ListAccountRoles", {}).n("SSOClient", "ListAccountRolesCommand").f(ListAccountRolesRequestFilterSensitiveLog, void 0).ser(se_ListAccountRolesCommand).de(de_ListAccountRolesCommand).build() {
     }, __name(_a9, "ListAccountRolesCommand"), _a9);
     var _a10;
-    var ListAccountsCommand = (_a10 = class extends import_smithy_client25.Command.classBuilder().ep(commonParams3).m(function(Command, cs, config, o3) {
+    var ListAccountsCommand = (_a10 = class extends import_smithy_client25.Command.classBuilder().ep(commonParams3).m(function(Command, cs, config2, o3) {
       return [
-        (0, import_middleware_serde5.getSerdePlugin)(config, this.serialize, this.deserialize),
-        (0, import_middleware_endpoint6.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+        (0, import_middleware_serde5.getSerdePlugin)(config2, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint6.getEndpointPlugin)(config2, Command.getEndpointParameterInstructions())
       ];
     }).s("SWBPortalService", "ListAccounts", {}).n("SSOClient", "ListAccountsCommand").f(ListAccountsRequestFilterSensitiveLog, void 0).ser(se_ListAccountsCommand).de(de_ListAccountsCommand).build() {
     }, __name(_a10, "ListAccountsCommand"), _a10);
     var _a11;
-    var LogoutCommand = (_a11 = class extends import_smithy_client25.Command.classBuilder().ep(commonParams3).m(function(Command, cs, config, o3) {
+    var LogoutCommand = (_a11 = class extends import_smithy_client25.Command.classBuilder().ep(commonParams3).m(function(Command, cs, config2, o3) {
       return [
-        (0, import_middleware_serde5.getSerdePlugin)(config, this.serialize, this.deserialize),
-        (0, import_middleware_endpoint6.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+        (0, import_middleware_serde5.getSerdePlugin)(config2, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint6.getEndpointPlugin)(config2, Command.getEndpointParameterInstructions())
       ];
     }).s("SWBPortalService", "Logout", {}).n("SSOClient", "LogoutCommand").f(LogoutRequestFilterSensitiveLog, void 0).ser(se_LogoutCommand).de(de_LogoutCommand).build() {
     }, __name(_a11, "LogoutCommand"), _a11);
@@ -96613,9 +96613,9 @@ function createAwsAuthSigv4HttpAuthOption(authParameters) {
       name: "sso-oauth",
       region: authParameters.region
     },
-    propertiesExtractor: (config, context) => ({
+    propertiesExtractor: (config2, context) => ({
       signingProperties: {
-        config,
+        config: config2,
         context
       }
     })
@@ -96631,10 +96631,10 @@ var init_httpAuthSchemeProvider = __esm({
   "node_modules/@aws-sdk/nested-clients/dist-es/submodules/sso-oidc/auth/httpAuthSchemeProvider.js"() {
     init_dist_es2();
     import_util_middleware3 = __toESM(require_dist_cjs6());
-    defaultSSOOIDCHttpAuthSchemeParametersProvider = async (config, context, input) => {
+    defaultSSOOIDCHttpAuthSchemeParametersProvider = async (config2, context, input) => {
       return {
         operation: (0, import_util_middleware3.getSmithyContext)(context).operation,
-        region: await (0, import_util_middleware3.normalizeProvider)(config.region)() || (() => {
+        region: await (0, import_util_middleware3.normalizeProvider)(config2.region)() || (() => {
           throw new Error("expected `region` to be configured for `aws.auth#sigv4`");
         })()
       };
@@ -96652,10 +96652,10 @@ var init_httpAuthSchemeProvider = __esm({
       }
       return options;
     };
-    resolveHttpAuthSchemeConfig = (config) => {
-      const config_0 = resolveAwsSdkSigV4Config(config);
+    resolveHttpAuthSchemeConfig = (config2) => {
+      const config_0 = resolveAwsSdkSigV4Config(config2);
       return Object.assign(config_0, {
-        authSchemePreference: (0, import_util_middleware3.normalizeProvider)(config.authSchemePreference ?? [])
+        authSchemePreference: (0, import_util_middleware3.normalizeProvider)(config2.authSchemePreference ?? [])
       });
     };
   }
@@ -96869,16 +96869,16 @@ var init_runtimeConfig_shared = __esm({
     import_util_utf8 = __toESM(require_dist_cjs10());
     init_httpAuthSchemeProvider();
     init_endpointResolver();
-    getRuntimeConfig = (config) => {
+    getRuntimeConfig = (config2) => {
       return {
         apiVersion: "2019-06-10",
-        base64Decoder: config?.base64Decoder ?? import_util_base64.fromBase64,
-        base64Encoder: config?.base64Encoder ?? import_util_base64.toBase64,
-        disableHostPrefix: config?.disableHostPrefix ?? false,
-        endpointProvider: config?.endpointProvider ?? defaultEndpointResolver,
-        extensions: config?.extensions ?? [],
-        httpAuthSchemeProvider: config?.httpAuthSchemeProvider ?? defaultSSOOIDCHttpAuthSchemeProvider,
-        httpAuthSchemes: config?.httpAuthSchemes ?? [
+        base64Decoder: config2?.base64Decoder ?? import_util_base64.fromBase64,
+        base64Encoder: config2?.base64Encoder ?? import_util_base64.toBase64,
+        disableHostPrefix: config2?.disableHostPrefix ?? false,
+        endpointProvider: config2?.endpointProvider ?? defaultEndpointResolver,
+        extensions: config2?.extensions ?? [],
+        httpAuthSchemeProvider: config2?.httpAuthSchemeProvider ?? defaultSSOOIDCHttpAuthSchemeProvider,
+        httpAuthSchemes: config2?.httpAuthSchemes ?? [
           {
             schemeId: "aws.auth#sigv4",
             identityProvider: (ipc) => ipc.getIdentityProvider("aws.auth#sigv4"),
@@ -96890,11 +96890,11 @@ var init_runtimeConfig_shared = __esm({
             signer: new NoAuthSigner()
           }
         ],
-        logger: config?.logger ?? new import_smithy_client4.NoOpLogger(),
-        serviceId: config?.serviceId ?? "SSO OIDC",
-        urlParser: config?.urlParser ?? import_url_parser.parseUrl,
-        utf8Decoder: config?.utf8Decoder ?? import_util_utf8.fromUtf8,
-        utf8Encoder: config?.utf8Encoder ?? import_util_utf8.toUtf8
+        logger: config2?.logger ?? new import_smithy_client4.NoOpLogger(),
+        serviceId: config2?.serviceId ?? "SSO OIDC",
+        urlParser: config2?.urlParser ?? import_url_parser.parseUrl,
+        utf8Decoder: config2?.utf8Decoder ?? import_util_utf8.fromUtf8,
+        utf8Encoder: config2?.utf8Encoder ?? import_util_utf8.toUtf8
       };
     };
   }
@@ -96918,33 +96918,33 @@ var init_runtimeConfig = __esm({
     import_smithy_client5 = __toESM(require_dist_cjs23());
     import_util_defaults_mode_node = __toESM(require_dist_cjs42());
     import_smithy_client6 = __toESM(require_dist_cjs23());
-    getRuntimeConfig2 = (config) => {
+    getRuntimeConfig2 = (config2) => {
       (0, import_smithy_client6.emitWarningIfUnsupportedVersion)(process.version);
-      const defaultsMode = (0, import_util_defaults_mode_node.resolveDefaultsModeConfig)(config);
+      const defaultsMode = (0, import_util_defaults_mode_node.resolveDefaultsModeConfig)(config2);
       const defaultConfigProvider = () => defaultsMode().then(import_smithy_client5.loadConfigsForDefaultMode);
-      const clientSharedValues = getRuntimeConfig(config);
+      const clientSharedValues = getRuntimeConfig(config2);
       emitWarningIfUnsupportedVersion(process.version);
-      const loaderConfig = { profile: config?.profile, logger: clientSharedValues.logger };
+      const loaderConfig = { profile: config2?.profile, logger: clientSharedValues.logger };
       return {
         ...clientSharedValues,
-        ...config,
+        ...config2,
         runtime: "node",
         defaultsMode,
-        authSchemePreference: config?.authSchemePreference ?? (0, import_node_config_provider.loadConfig)(NODE_AUTH_SCHEME_PREFERENCE_OPTIONS, loaderConfig),
-        bodyLengthChecker: config?.bodyLengthChecker ?? import_util_body_length_node.calculateBodyLength,
-        defaultUserAgentProvider: config?.defaultUserAgentProvider ?? (0, import_util_user_agent_node.createDefaultUserAgentProvider)({ serviceId: clientSharedValues.serviceId, clientVersion: package_default.version }),
-        maxAttempts: config?.maxAttempts ?? (0, import_node_config_provider.loadConfig)(import_middleware_retry.NODE_MAX_ATTEMPT_CONFIG_OPTIONS, config),
-        region: config?.region ?? (0, import_node_config_provider.loadConfig)(import_config_resolver.NODE_REGION_CONFIG_OPTIONS, { ...import_config_resolver.NODE_REGION_CONFIG_FILE_OPTIONS, ...loaderConfig }),
-        requestHandler: import_node_http_handler.NodeHttpHandler.create(config?.requestHandler ?? defaultConfigProvider),
-        retryMode: config?.retryMode ?? (0, import_node_config_provider.loadConfig)({
+        authSchemePreference: config2?.authSchemePreference ?? (0, import_node_config_provider.loadConfig)(NODE_AUTH_SCHEME_PREFERENCE_OPTIONS, loaderConfig),
+        bodyLengthChecker: config2?.bodyLengthChecker ?? import_util_body_length_node.calculateBodyLength,
+        defaultUserAgentProvider: config2?.defaultUserAgentProvider ?? (0, import_util_user_agent_node.createDefaultUserAgentProvider)({ serviceId: clientSharedValues.serviceId, clientVersion: package_default.version }),
+        maxAttempts: config2?.maxAttempts ?? (0, import_node_config_provider.loadConfig)(import_middleware_retry.NODE_MAX_ATTEMPT_CONFIG_OPTIONS, config2),
+        region: config2?.region ?? (0, import_node_config_provider.loadConfig)(import_config_resolver.NODE_REGION_CONFIG_OPTIONS, { ...import_config_resolver.NODE_REGION_CONFIG_FILE_OPTIONS, ...loaderConfig }),
+        requestHandler: import_node_http_handler.NodeHttpHandler.create(config2?.requestHandler ?? defaultConfigProvider),
+        retryMode: config2?.retryMode ?? (0, import_node_config_provider.loadConfig)({
           ...import_middleware_retry.NODE_RETRY_MODE_CONFIG_OPTIONS,
           default: async () => (await defaultConfigProvider()).retryMode || import_util_retry.DEFAULT_RETRY_MODE
-        }, config),
-        sha256: config?.sha256 ?? import_hash_node.Hash.bind(null, "sha256"),
-        streamCollector: config?.streamCollector ?? import_node_http_handler.streamCollector,
-        useDualstackEndpoint: config?.useDualstackEndpoint ?? (0, import_node_config_provider.loadConfig)(import_config_resolver.NODE_USE_DUALSTACK_ENDPOINT_CONFIG_OPTIONS, loaderConfig),
-        useFipsEndpoint: config?.useFipsEndpoint ?? (0, import_node_config_provider.loadConfig)(import_config_resolver.NODE_USE_FIPS_ENDPOINT_CONFIG_OPTIONS, loaderConfig),
-        userAgentAppId: config?.userAgentAppId ?? (0, import_node_config_provider.loadConfig)(import_util_user_agent_node.NODE_APP_ID_CONFIG_OPTIONS, loaderConfig)
+        }, config2),
+        sha256: config2?.sha256 ?? import_hash_node.Hash.bind(null, "sha256"),
+        streamCollector: config2?.streamCollector ?? import_node_http_handler.streamCollector,
+        useDualstackEndpoint: config2?.useDualstackEndpoint ?? (0, import_node_config_provider.loadConfig)(import_config_resolver.NODE_USE_DUALSTACK_ENDPOINT_CONFIG_OPTIONS, loaderConfig),
+        useFipsEndpoint: config2?.useFipsEndpoint ?? (0, import_node_config_provider.loadConfig)(import_config_resolver.NODE_USE_FIPS_ENDPOINT_CONFIG_OPTIONS, loaderConfig),
+        userAgentAppId: config2?.userAgentAppId ?? (0, import_node_config_provider.loadConfig)(import_util_user_agent_node.NODE_APP_ID_CONFIG_OPTIONS, loaderConfig)
       };
     };
   }
@@ -96984,11 +96984,11 @@ var init_httpAuthExtensionConfiguration = __esm({
         }
       };
     };
-    resolveHttpAuthRuntimeConfig = (config) => {
+    resolveHttpAuthRuntimeConfig = (config2) => {
       return {
-        httpAuthSchemes: config.httpAuthSchemes(),
-        httpAuthSchemeProvider: config.httpAuthSchemeProvider(),
-        credentials: config.credentials()
+        httpAuthSchemes: config2.httpAuthSchemes(),
+        httpAuthSchemeProvider: config2.httpAuthSchemeProvider(),
+        credentials: config2.credentials()
       };
     };
   }
@@ -97051,8 +97051,8 @@ var init_SSOOIDCClient = __esm({
         this.middlewareStack.use((0, import_middleware_recursion_detection.getRecursionDetectionPlugin)(this.config));
         this.middlewareStack.use(getHttpAuthSchemeEndpointRuleSetPlugin(this.config, {
           httpAuthSchemeParametersProvider: defaultSSOOIDCHttpAuthSchemeParametersProvider,
-          identityProviderConfigProvider: async (config) => new DefaultIdentityProviderConfig({
-            "aws.auth#sigv4": config.credentials
+          identityProviderConfigProvider: async (config2) => new DefaultIdentityProviderConfig({
+            "aws.auth#sigv4": config2.credentials
           })
         }));
         this.middlewareStack.use(getHttpSigningPlugin(this.config));
@@ -97546,10 +97546,10 @@ var init_CreateTokenCommand = __esm({
     init_EndpointParameters();
     init_models_0();
     init_Aws_restJson1();
-    CreateTokenCommand = class extends import_smithy_client12.Command.classBuilder().ep(commonParams).m(function(Command, cs, config, o3) {
+    CreateTokenCommand = class extends import_smithy_client12.Command.classBuilder().ep(commonParams).m(function(Command, cs, config2, o3) {
       return [
-        (0, import_middleware_serde2.getSerdePlugin)(config, this.serialize, this.deserialize),
-        (0, import_middleware_endpoint2.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+        (0, import_middleware_serde2.getSerdePlugin)(config2, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint2.getEndpointPlugin)(config2, Command.getEndpointParameterInstructions())
       ];
     }).s("AWSSSOOIDCService", "CreateToken", {}).n("SSOOIDCClient", "CreateTokenCommand").f(CreateTokenRequestFilterSensitiveLog, CreateTokenResponseFilterSensitiveLog).ser(se_CreateTokenCommand).de(de_CreateTokenCommand).build() {
     };
@@ -98042,9 +98042,9 @@ function createAwsAuthSigv4HttpAuthOption2(authParameters) {
       name: "sts",
       region: authParameters.region
     },
-    propertiesExtractor: (config, context) => ({
+    propertiesExtractor: (config2, context) => ({
       signingProperties: {
-        config,
+        config: config2,
         context
       }
     })
@@ -98061,10 +98061,10 @@ var init_httpAuthSchemeProvider2 = __esm({
     init_dist_es2();
     import_util_middleware4 = __toESM(require_dist_cjs6());
     init_STSClient();
-    defaultSTSHttpAuthSchemeParametersProvider = async (config, context, input) => {
+    defaultSTSHttpAuthSchemeParametersProvider = async (config2, context, input) => {
       return {
         operation: (0, import_util_middleware4.getSmithyContext)(context).operation,
-        region: await (0, import_util_middleware4.normalizeProvider)(config.region)() || (() => {
+        region: await (0, import_util_middleware4.normalizeProvider)(config2.region)() || (() => {
           throw new Error("expected `region` to be configured for `aws.auth#sigv4`");
         })()
       };
@@ -98085,11 +98085,11 @@ var init_httpAuthSchemeProvider2 = __esm({
     resolveStsAuthConfig = (input) => Object.assign(input, {
       stsClientCtor: STSClient
     });
-    resolveHttpAuthSchemeConfig2 = (config) => {
-      const config_0 = resolveStsAuthConfig(config);
+    resolveHttpAuthSchemeConfig2 = (config2) => {
+      const config_0 = resolveStsAuthConfig(config2);
       const config_1 = resolveAwsSdkSigV4Config(config_0);
       return Object.assign(config_1, {
-        authSchemePreference: (0, import_util_middleware4.normalizeProvider)(config.authSchemePreference ?? [])
+        authSchemePreference: (0, import_util_middleware4.normalizeProvider)(config2.authSchemePreference ?? [])
       });
     };
   }
@@ -98195,16 +98195,16 @@ var init_runtimeConfig_shared2 = __esm({
     import_util_utf82 = __toESM(require_dist_cjs10());
     init_httpAuthSchemeProvider2();
     init_endpointResolver2();
-    getRuntimeConfig3 = (config) => {
+    getRuntimeConfig3 = (config2) => {
       return {
         apiVersion: "2011-06-15",
-        base64Decoder: config?.base64Decoder ?? import_util_base642.fromBase64,
-        base64Encoder: config?.base64Encoder ?? import_util_base642.toBase64,
-        disableHostPrefix: config?.disableHostPrefix ?? false,
-        endpointProvider: config?.endpointProvider ?? defaultEndpointResolver2,
-        extensions: config?.extensions ?? [],
-        httpAuthSchemeProvider: config?.httpAuthSchemeProvider ?? defaultSTSHttpAuthSchemeProvider,
-        httpAuthSchemes: config?.httpAuthSchemes ?? [
+        base64Decoder: config2?.base64Decoder ?? import_util_base642.fromBase64,
+        base64Encoder: config2?.base64Encoder ?? import_util_base642.toBase64,
+        disableHostPrefix: config2?.disableHostPrefix ?? false,
+        endpointProvider: config2?.endpointProvider ?? defaultEndpointResolver2,
+        extensions: config2?.extensions ?? [],
+        httpAuthSchemeProvider: config2?.httpAuthSchemeProvider ?? defaultSTSHttpAuthSchemeProvider,
+        httpAuthSchemes: config2?.httpAuthSchemes ?? [
           {
             schemeId: "aws.auth#sigv4",
             identityProvider: (ipc) => ipc.getIdentityProvider("aws.auth#sigv4"),
@@ -98216,11 +98216,11 @@ var init_runtimeConfig_shared2 = __esm({
             signer: new NoAuthSigner()
           }
         ],
-        logger: config?.logger ?? new import_smithy_client14.NoOpLogger(),
-        serviceId: config?.serviceId ?? "STS",
-        urlParser: config?.urlParser ?? import_url_parser2.parseUrl,
-        utf8Decoder: config?.utf8Decoder ?? import_util_utf82.fromUtf8,
-        utf8Encoder: config?.utf8Encoder ?? import_util_utf82.toUtf8
+        logger: config2?.logger ?? new import_smithy_client14.NoOpLogger(),
+        serviceId: config2?.serviceId ?? "STS",
+        urlParser: config2?.urlParser ?? import_url_parser2.parseUrl,
+        utf8Decoder: config2?.utf8Decoder ?? import_util_utf82.fromUtf8,
+        utf8Encoder: config2?.utf8Encoder ?? import_util_utf82.toUtf8
       };
     };
   }
@@ -98245,25 +98245,25 @@ var init_runtimeConfig2 = __esm({
     import_smithy_client15 = __toESM(require_dist_cjs23());
     import_util_defaults_mode_node2 = __toESM(require_dist_cjs42());
     import_smithy_client16 = __toESM(require_dist_cjs23());
-    getRuntimeConfig4 = (config) => {
+    getRuntimeConfig4 = (config2) => {
       (0, import_smithy_client16.emitWarningIfUnsupportedVersion)(process.version);
-      const defaultsMode = (0, import_util_defaults_mode_node2.resolveDefaultsModeConfig)(config);
+      const defaultsMode = (0, import_util_defaults_mode_node2.resolveDefaultsModeConfig)(config2);
       const defaultConfigProvider = () => defaultsMode().then(import_smithy_client15.loadConfigsForDefaultMode);
-      const clientSharedValues = getRuntimeConfig3(config);
+      const clientSharedValues = getRuntimeConfig3(config2);
       emitWarningIfUnsupportedVersion(process.version);
-      const loaderConfig = { profile: config?.profile, logger: clientSharedValues.logger };
+      const loaderConfig = { profile: config2?.profile, logger: clientSharedValues.logger };
       return {
         ...clientSharedValues,
-        ...config,
+        ...config2,
         runtime: "node",
         defaultsMode,
-        authSchemePreference: config?.authSchemePreference ?? (0, import_node_config_provider2.loadConfig)(NODE_AUTH_SCHEME_PREFERENCE_OPTIONS, loaderConfig),
-        bodyLengthChecker: config?.bodyLengthChecker ?? import_util_body_length_node2.calculateBodyLength,
-        defaultUserAgentProvider: config?.defaultUserAgentProvider ?? (0, import_util_user_agent_node2.createDefaultUserAgentProvider)({ serviceId: clientSharedValues.serviceId, clientVersion: package_default.version }),
-        httpAuthSchemes: config?.httpAuthSchemes ?? [
+        authSchemePreference: config2?.authSchemePreference ?? (0, import_node_config_provider2.loadConfig)(NODE_AUTH_SCHEME_PREFERENCE_OPTIONS, loaderConfig),
+        bodyLengthChecker: config2?.bodyLengthChecker ?? import_util_body_length_node2.calculateBodyLength,
+        defaultUserAgentProvider: config2?.defaultUserAgentProvider ?? (0, import_util_user_agent_node2.createDefaultUserAgentProvider)({ serviceId: clientSharedValues.serviceId, clientVersion: package_default.version }),
+        httpAuthSchemes: config2?.httpAuthSchemes ?? [
           {
             schemeId: "aws.auth#sigv4",
-            identityProvider: (ipc) => ipc.getIdentityProvider("aws.auth#sigv4") || (async (idProps) => await config.credentialDefaultProvider(idProps?.__config || {})()),
+            identityProvider: (ipc) => ipc.getIdentityProvider("aws.auth#sigv4") || (async (idProps) => await config2.credentialDefaultProvider(idProps?.__config || {})()),
             signer: new AwsSdkSigV4Signer()
           },
           {
@@ -98272,18 +98272,18 @@ var init_runtimeConfig2 = __esm({
             signer: new NoAuthSigner()
           }
         ],
-        maxAttempts: config?.maxAttempts ?? (0, import_node_config_provider2.loadConfig)(import_middleware_retry3.NODE_MAX_ATTEMPT_CONFIG_OPTIONS, config),
-        region: config?.region ?? (0, import_node_config_provider2.loadConfig)(import_config_resolver3.NODE_REGION_CONFIG_OPTIONS, { ...import_config_resolver3.NODE_REGION_CONFIG_FILE_OPTIONS, ...loaderConfig }),
-        requestHandler: import_node_http_handler2.NodeHttpHandler.create(config?.requestHandler ?? defaultConfigProvider),
-        retryMode: config?.retryMode ?? (0, import_node_config_provider2.loadConfig)({
+        maxAttempts: config2?.maxAttempts ?? (0, import_node_config_provider2.loadConfig)(import_middleware_retry3.NODE_MAX_ATTEMPT_CONFIG_OPTIONS, config2),
+        region: config2?.region ?? (0, import_node_config_provider2.loadConfig)(import_config_resolver3.NODE_REGION_CONFIG_OPTIONS, { ...import_config_resolver3.NODE_REGION_CONFIG_FILE_OPTIONS, ...loaderConfig }),
+        requestHandler: import_node_http_handler2.NodeHttpHandler.create(config2?.requestHandler ?? defaultConfigProvider),
+        retryMode: config2?.retryMode ?? (0, import_node_config_provider2.loadConfig)({
           ...import_middleware_retry3.NODE_RETRY_MODE_CONFIG_OPTIONS,
           default: async () => (await defaultConfigProvider()).retryMode || import_util_retry2.DEFAULT_RETRY_MODE
-        }, config),
-        sha256: config?.sha256 ?? import_hash_node2.Hash.bind(null, "sha256"),
-        streamCollector: config?.streamCollector ?? import_node_http_handler2.streamCollector,
-        useDualstackEndpoint: config?.useDualstackEndpoint ?? (0, import_node_config_provider2.loadConfig)(import_config_resolver3.NODE_USE_DUALSTACK_ENDPOINT_CONFIG_OPTIONS, loaderConfig),
-        useFipsEndpoint: config?.useFipsEndpoint ?? (0, import_node_config_provider2.loadConfig)(import_config_resolver3.NODE_USE_FIPS_ENDPOINT_CONFIG_OPTIONS, loaderConfig),
-        userAgentAppId: config?.userAgentAppId ?? (0, import_node_config_provider2.loadConfig)(import_util_user_agent_node2.NODE_APP_ID_CONFIG_OPTIONS, loaderConfig)
+        }, config2),
+        sha256: config2?.sha256 ?? import_hash_node2.Hash.bind(null, "sha256"),
+        streamCollector: config2?.streamCollector ?? import_node_http_handler2.streamCollector,
+        useDualstackEndpoint: config2?.useDualstackEndpoint ?? (0, import_node_config_provider2.loadConfig)(import_config_resolver3.NODE_USE_DUALSTACK_ENDPOINT_CONFIG_OPTIONS, loaderConfig),
+        useFipsEndpoint: config2?.useFipsEndpoint ?? (0, import_node_config_provider2.loadConfig)(import_config_resolver3.NODE_USE_FIPS_ENDPOINT_CONFIG_OPTIONS, loaderConfig),
+        userAgentAppId: config2?.userAgentAppId ?? (0, import_node_config_provider2.loadConfig)(import_util_user_agent_node2.NODE_APP_ID_CONFIG_OPTIONS, loaderConfig)
       };
     };
   }
@@ -98323,11 +98323,11 @@ var init_httpAuthExtensionConfiguration2 = __esm({
         }
       };
     };
-    resolveHttpAuthRuntimeConfig2 = (config) => {
+    resolveHttpAuthRuntimeConfig2 = (config2) => {
       return {
-        httpAuthSchemes: config.httpAuthSchemes(),
-        httpAuthSchemeProvider: config.httpAuthSchemeProvider(),
-        credentials: config.credentials()
+        httpAuthSchemes: config2.httpAuthSchemes(),
+        httpAuthSchemeProvider: config2.httpAuthSchemeProvider(),
+        credentials: config2.credentials()
       };
     };
   }
@@ -98390,8 +98390,8 @@ var init_STSClient = __esm({
         this.middlewareStack.use((0, import_middleware_recursion_detection2.getRecursionDetectionPlugin)(this.config));
         this.middlewareStack.use(getHttpAuthSchemeEndpointRuleSetPlugin(this.config, {
           httpAuthSchemeParametersProvider: defaultSTSHttpAuthSchemeParametersProvider,
-          identityProviderConfigProvider: async (config) => new DefaultIdentityProviderConfig({
-            "aws.auth#sigv4": config.credentials
+          identityProviderConfigProvider: async (config2) => new DefaultIdentityProviderConfig({
+            "aws.auth#sigv4": config2.credentials
           })
         }));
         this.middlewareStack.use(getHttpSigningPlugin(this.config));
@@ -99068,10 +99068,10 @@ var init_AssumeRoleCommand = __esm({
     init_EndpointParameters2();
     init_models_02();
     init_Aws_query();
-    AssumeRoleCommand = class extends import_smithy_client22.Command.classBuilder().ep(commonParams2).m(function(Command, cs, config, o3) {
+    AssumeRoleCommand = class extends import_smithy_client22.Command.classBuilder().ep(commonParams2).m(function(Command, cs, config2, o3) {
       return [
-        (0, import_middleware_serde3.getSerdePlugin)(config, this.serialize, this.deserialize),
-        (0, import_middleware_endpoint4.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+        (0, import_middleware_serde3.getSerdePlugin)(config2, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint4.getEndpointPlugin)(config2, Command.getEndpointParameterInstructions())
       ];
     }).s("AWSSecurityTokenServiceV20110615", "AssumeRole", {}).n("STSClient", "AssumeRoleCommand").f(void 0, AssumeRoleResponseFilterSensitiveLog).ser(se_AssumeRoleCommand).de(de_AssumeRoleCommand).build() {
     };
@@ -99088,10 +99088,10 @@ var init_AssumeRoleWithWebIdentityCommand = __esm({
     init_EndpointParameters2();
     init_models_02();
     init_Aws_query();
-    AssumeRoleWithWebIdentityCommand = class extends import_smithy_client23.Command.classBuilder().ep(commonParams2).m(function(Command, cs, config, o3) {
+    AssumeRoleWithWebIdentityCommand = class extends import_smithy_client23.Command.classBuilder().ep(commonParams2).m(function(Command, cs, config2, o3) {
       return [
-        (0, import_middleware_serde4.getSerdePlugin)(config, this.serialize, this.deserialize),
-        (0, import_middleware_endpoint5.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+        (0, import_middleware_serde4.getSerdePlugin)(config2, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint5.getEndpointPlugin)(config2, Command.getEndpointParameterInstructions())
       ];
     }).s("AWSSecurityTokenServiceV20110615", "AssumeRoleWithWebIdentity", {}).n("STSClient", "AssumeRoleWithWebIdentityCommand").f(AssumeRoleWithWebIdentityRequestFilterSensitiveLog, AssumeRoleWithWebIdentityResponseFilterSensitiveLog).ser(se_AssumeRoleWithWebIdentityCommand).de(de_AssumeRoleWithWebIdentityCommand).build() {
     };
@@ -99239,8 +99239,8 @@ var init_defaultRoleAssumers = __esm({
         return baseCtor;
       else
         return class CustomizableSTSClient extends baseCtor {
-          constructor(config) {
-            super(config);
+          constructor(config2) {
+            super(config2);
             for (const customization of customizations) {
               this.middlewareStack.use(customization);
             }
@@ -99987,27 +99987,27 @@ var require_runtimeConfig_shared2 = __commonJS({
     var util_utf8_1 = require_dist_cjs10();
     var httpAuthSchemeProvider_1 = require_httpAuthSchemeProvider();
     var endpointResolver_1 = require_endpointResolver2();
-    var getRuntimeConfig5 = (config) => {
+    var getRuntimeConfig5 = (config2) => {
       return {
         apiVersion: "2017-10-17",
-        base64Decoder: config?.base64Decoder ?? util_base64_1.fromBase64,
-        base64Encoder: config?.base64Encoder ?? util_base64_1.toBase64,
-        disableHostPrefix: config?.disableHostPrefix ?? false,
-        endpointProvider: config?.endpointProvider ?? endpointResolver_1.defaultEndpointResolver,
-        extensions: config?.extensions ?? [],
-        httpAuthSchemeProvider: config?.httpAuthSchemeProvider ?? httpAuthSchemeProvider_1.defaultSecretsManagerHttpAuthSchemeProvider,
-        httpAuthSchemes: config?.httpAuthSchemes ?? [
+        base64Decoder: config2?.base64Decoder ?? util_base64_1.fromBase64,
+        base64Encoder: config2?.base64Encoder ?? util_base64_1.toBase64,
+        disableHostPrefix: config2?.disableHostPrefix ?? false,
+        endpointProvider: config2?.endpointProvider ?? endpointResolver_1.defaultEndpointResolver,
+        extensions: config2?.extensions ?? [],
+        httpAuthSchemeProvider: config2?.httpAuthSchemeProvider ?? httpAuthSchemeProvider_1.defaultSecretsManagerHttpAuthSchemeProvider,
+        httpAuthSchemes: config2?.httpAuthSchemes ?? [
           {
             schemeId: "aws.auth#sigv4",
             identityProvider: (ipc) => ipc.getIdentityProvider("aws.auth#sigv4"),
             signer: new core_1.AwsSdkSigV4Signer()
           }
         ],
-        logger: config?.logger ?? new smithy_client_1.NoOpLogger(),
-        serviceId: config?.serviceId ?? "Secrets Manager",
-        urlParser: config?.urlParser ?? url_parser_1.parseUrl,
-        utf8Decoder: config?.utf8Decoder ?? util_utf8_1.fromUtf8,
-        utf8Encoder: config?.utf8Encoder ?? util_utf8_1.toUtf8
+        logger: config2?.logger ?? new smithy_client_1.NoOpLogger(),
+        serviceId: config2?.serviceId ?? "Secrets Manager",
+        urlParser: config2?.urlParser ?? url_parser_1.parseUrl,
+        utf8Decoder: config2?.utf8Decoder ?? util_utf8_1.fromUtf8,
+        utf8Encoder: config2?.utf8Encoder ?? util_utf8_1.toUtf8
       };
     };
     exports2.getRuntimeConfig = getRuntimeConfig5;
@@ -100036,34 +100036,34 @@ var require_runtimeConfig2 = __commonJS({
     var smithy_client_1 = require_dist_cjs23();
     var util_defaults_mode_node_1 = require_dist_cjs42();
     var smithy_client_2 = require_dist_cjs23();
-    var getRuntimeConfig5 = (config) => {
+    var getRuntimeConfig5 = (config2) => {
       (0, smithy_client_2.emitWarningIfUnsupportedVersion)(process.version);
-      const defaultsMode = (0, util_defaults_mode_node_1.resolveDefaultsModeConfig)(config);
+      const defaultsMode = (0, util_defaults_mode_node_1.resolveDefaultsModeConfig)(config2);
       const defaultConfigProvider = () => defaultsMode().then(smithy_client_1.loadConfigsForDefaultMode);
-      const clientSharedValues = (0, runtimeConfig_shared_1.getRuntimeConfig)(config);
+      const clientSharedValues = (0, runtimeConfig_shared_1.getRuntimeConfig)(config2);
       (0, core_1.emitWarningIfUnsupportedVersion)(process.version);
-      const loaderConfig = { profile: config?.profile, logger: clientSharedValues.logger };
+      const loaderConfig = { profile: config2?.profile, logger: clientSharedValues.logger };
       return {
         ...clientSharedValues,
-        ...config,
+        ...config2,
         runtime: "node",
         defaultsMode,
-        authSchemePreference: config?.authSchemePreference ?? (0, node_config_provider_1.loadConfig)(core_1.NODE_AUTH_SCHEME_PREFERENCE_OPTIONS, loaderConfig),
-        bodyLengthChecker: config?.bodyLengthChecker ?? util_body_length_node_1.calculateBodyLength,
-        credentialDefaultProvider: config?.credentialDefaultProvider ?? credential_provider_node_1.defaultProvider,
-        defaultUserAgentProvider: config?.defaultUserAgentProvider ?? (0, util_user_agent_node_1.createDefaultUserAgentProvider)({ serviceId: clientSharedValues.serviceId, clientVersion: package_json_1.default.version }),
-        maxAttempts: config?.maxAttempts ?? (0, node_config_provider_1.loadConfig)(middleware_retry_1.NODE_MAX_ATTEMPT_CONFIG_OPTIONS, config),
-        region: config?.region ?? (0, node_config_provider_1.loadConfig)(config_resolver_1.NODE_REGION_CONFIG_OPTIONS, { ...config_resolver_1.NODE_REGION_CONFIG_FILE_OPTIONS, ...loaderConfig }),
-        requestHandler: node_http_handler_1.NodeHttpHandler.create(config?.requestHandler ?? defaultConfigProvider),
-        retryMode: config?.retryMode ?? (0, node_config_provider_1.loadConfig)({
+        authSchemePreference: config2?.authSchemePreference ?? (0, node_config_provider_1.loadConfig)(core_1.NODE_AUTH_SCHEME_PREFERENCE_OPTIONS, loaderConfig),
+        bodyLengthChecker: config2?.bodyLengthChecker ?? util_body_length_node_1.calculateBodyLength,
+        credentialDefaultProvider: config2?.credentialDefaultProvider ?? credential_provider_node_1.defaultProvider,
+        defaultUserAgentProvider: config2?.defaultUserAgentProvider ?? (0, util_user_agent_node_1.createDefaultUserAgentProvider)({ serviceId: clientSharedValues.serviceId, clientVersion: package_json_1.default.version }),
+        maxAttempts: config2?.maxAttempts ?? (0, node_config_provider_1.loadConfig)(middleware_retry_1.NODE_MAX_ATTEMPT_CONFIG_OPTIONS, config2),
+        region: config2?.region ?? (0, node_config_provider_1.loadConfig)(config_resolver_1.NODE_REGION_CONFIG_OPTIONS, { ...config_resolver_1.NODE_REGION_CONFIG_FILE_OPTIONS, ...loaderConfig }),
+        requestHandler: node_http_handler_1.NodeHttpHandler.create(config2?.requestHandler ?? defaultConfigProvider),
+        retryMode: config2?.retryMode ?? (0, node_config_provider_1.loadConfig)({
           ...middleware_retry_1.NODE_RETRY_MODE_CONFIG_OPTIONS,
           default: async () => (await defaultConfigProvider()).retryMode || util_retry_1.DEFAULT_RETRY_MODE
-        }, config),
-        sha256: config?.sha256 ?? hash_node_1.Hash.bind(null, "sha256"),
-        streamCollector: config?.streamCollector ?? node_http_handler_1.streamCollector,
-        useDualstackEndpoint: config?.useDualstackEndpoint ?? (0, node_config_provider_1.loadConfig)(config_resolver_1.NODE_USE_DUALSTACK_ENDPOINT_CONFIG_OPTIONS, loaderConfig),
-        useFipsEndpoint: config?.useFipsEndpoint ?? (0, node_config_provider_1.loadConfig)(config_resolver_1.NODE_USE_FIPS_ENDPOINT_CONFIG_OPTIONS, loaderConfig),
-        userAgentAppId: config?.userAgentAppId ?? (0, node_config_provider_1.loadConfig)(util_user_agent_node_1.NODE_APP_ID_CONFIG_OPTIONS, loaderConfig)
+        }, config2),
+        sha256: config2?.sha256 ?? hash_node_1.Hash.bind(null, "sha256"),
+        streamCollector: config2?.streamCollector ?? node_http_handler_1.streamCollector,
+        useDualstackEndpoint: config2?.useDualstackEndpoint ?? (0, node_config_provider_1.loadConfig)(config_resolver_1.NODE_USE_DUALSTACK_ENDPOINT_CONFIG_OPTIONS, loaderConfig),
+        useFipsEndpoint: config2?.useFipsEndpoint ?? (0, node_config_provider_1.loadConfig)(config_resolver_1.NODE_USE_FIPS_ENDPOINT_CONFIG_OPTIONS, loaderConfig),
+        userAgentAppId: config2?.userAgentAppId ?? (0, node_config_provider_1.loadConfig)(util_user_agent_node_1.NODE_APP_ID_CONFIG_OPTIONS, loaderConfig)
       };
     };
     exports2.getRuntimeConfig = getRuntimeConfig5;
@@ -100205,11 +100205,11 @@ var require_dist_cjs51 = __commonJS({
         }
       };
     }, "getHttpAuthExtensionConfiguration");
-    var resolveHttpAuthRuntimeConfig3 = /* @__PURE__ */ __name((config) => {
+    var resolveHttpAuthRuntimeConfig3 = /* @__PURE__ */ __name((config2) => {
       return {
-        httpAuthSchemes: config.httpAuthSchemes(),
-        httpAuthSchemeProvider: config.httpAuthSchemeProvider(),
-        credentials: config.credentials()
+        httpAuthSchemes: config2.httpAuthSchemes(),
+        httpAuthSchemeProvider: config2.httpAuthSchemeProvider(),
+        credentials: config2.credentials()
       };
     }, "resolveHttpAuthRuntimeConfig");
     var resolveRuntimeExtensions3 = /* @__PURE__ */ __name((runtimeConfig, extensions) => {
@@ -100256,8 +100256,8 @@ var require_dist_cjs51 = __commonJS({
         this.middlewareStack.use(
           (0, import_core17.getHttpAuthSchemeEndpointRuleSetPlugin)(this.config, {
             httpAuthSchemeParametersProvider: import_httpAuthSchemeProvider5.defaultSecretsManagerHttpAuthSchemeParametersProvider,
-            identityProviderConfigProvider: /* @__PURE__ */ __name(async (config) => new import_core17.DefaultIdentityProviderConfig({
-              "aws.auth#sigv4": config.credentials
+            identityProviderConfigProvider: /* @__PURE__ */ __name(async (config2) => new import_core17.DefaultIdentityProviderConfig({
+              "aws.auth#sigv4": config2.credentials
             }), "identityProviderConfigProvider")
           })
         );
@@ -101374,186 +101374,186 @@ var require_dist_cjs51 = __commonJS({
     }
     __name(sharedHeaders, "sharedHeaders");
     var _a16;
-    var BatchGetSecretValueCommand = (_a16 = class extends import_smithy_client25.Command.classBuilder().ep(commonParams3).m(function(Command, cs, config, o3) {
+    var BatchGetSecretValueCommand = (_a16 = class extends import_smithy_client25.Command.classBuilder().ep(commonParams3).m(function(Command, cs, config2, o3) {
       return [
-        (0, import_middleware_serde5.getSerdePlugin)(config, this.serialize, this.deserialize),
-        (0, import_middleware_endpoint6.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+        (0, import_middleware_serde5.getSerdePlugin)(config2, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint6.getEndpointPlugin)(config2, Command.getEndpointParameterInstructions())
       ];
     }).s("secretsmanager", "BatchGetSecretValue", {}).n("SecretsManagerClient", "BatchGetSecretValueCommand").f(void 0, BatchGetSecretValueResponseFilterSensitiveLog).ser(se_BatchGetSecretValueCommand).de(de_BatchGetSecretValueCommand).build() {
     }, __name(_a16, "BatchGetSecretValueCommand"), _a16);
     var _a17;
-    var CancelRotateSecretCommand = (_a17 = class extends import_smithy_client25.Command.classBuilder().ep(commonParams3).m(function(Command, cs, config, o3) {
+    var CancelRotateSecretCommand = (_a17 = class extends import_smithy_client25.Command.classBuilder().ep(commonParams3).m(function(Command, cs, config2, o3) {
       return [
-        (0, import_middleware_serde5.getSerdePlugin)(config, this.serialize, this.deserialize),
-        (0, import_middleware_endpoint6.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+        (0, import_middleware_serde5.getSerdePlugin)(config2, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint6.getEndpointPlugin)(config2, Command.getEndpointParameterInstructions())
       ];
     }).s("secretsmanager", "CancelRotateSecret", {}).n("SecretsManagerClient", "CancelRotateSecretCommand").f(void 0, void 0).ser(se_CancelRotateSecretCommand).de(de_CancelRotateSecretCommand).build() {
     }, __name(_a17, "CancelRotateSecretCommand"), _a17);
     var _a18;
-    var CreateSecretCommand = (_a18 = class extends import_smithy_client25.Command.classBuilder().ep(commonParams3).m(function(Command, cs, config, o3) {
+    var CreateSecretCommand = (_a18 = class extends import_smithy_client25.Command.classBuilder().ep(commonParams3).m(function(Command, cs, config2, o3) {
       return [
-        (0, import_middleware_serde5.getSerdePlugin)(config, this.serialize, this.deserialize),
-        (0, import_middleware_endpoint6.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+        (0, import_middleware_serde5.getSerdePlugin)(config2, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint6.getEndpointPlugin)(config2, Command.getEndpointParameterInstructions())
       ];
     }).s("secretsmanager", "CreateSecret", {}).n("SecretsManagerClient", "CreateSecretCommand").f(CreateSecretRequestFilterSensitiveLog, void 0).ser(se_CreateSecretCommand).de(de_CreateSecretCommand).build() {
     }, __name(_a18, "CreateSecretCommand"), _a18);
     var _a19;
-    var DeleteResourcePolicyCommand = (_a19 = class extends import_smithy_client25.Command.classBuilder().ep(commonParams3).m(function(Command, cs, config, o3) {
+    var DeleteResourcePolicyCommand = (_a19 = class extends import_smithy_client25.Command.classBuilder().ep(commonParams3).m(function(Command, cs, config2, o3) {
       return [
-        (0, import_middleware_serde5.getSerdePlugin)(config, this.serialize, this.deserialize),
-        (0, import_middleware_endpoint6.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+        (0, import_middleware_serde5.getSerdePlugin)(config2, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint6.getEndpointPlugin)(config2, Command.getEndpointParameterInstructions())
       ];
     }).s("secretsmanager", "DeleteResourcePolicy", {}).n("SecretsManagerClient", "DeleteResourcePolicyCommand").f(void 0, void 0).ser(se_DeleteResourcePolicyCommand).de(de_DeleteResourcePolicyCommand).build() {
     }, __name(_a19, "DeleteResourcePolicyCommand"), _a19);
     var _a20;
-    var DeleteSecretCommand = (_a20 = class extends import_smithy_client25.Command.classBuilder().ep(commonParams3).m(function(Command, cs, config, o3) {
+    var DeleteSecretCommand = (_a20 = class extends import_smithy_client25.Command.classBuilder().ep(commonParams3).m(function(Command, cs, config2, o3) {
       return [
-        (0, import_middleware_serde5.getSerdePlugin)(config, this.serialize, this.deserialize),
-        (0, import_middleware_endpoint6.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+        (0, import_middleware_serde5.getSerdePlugin)(config2, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint6.getEndpointPlugin)(config2, Command.getEndpointParameterInstructions())
       ];
     }).s("secretsmanager", "DeleteSecret", {}).n("SecretsManagerClient", "DeleteSecretCommand").f(void 0, void 0).ser(se_DeleteSecretCommand).de(de_DeleteSecretCommand).build() {
     }, __name(_a20, "DeleteSecretCommand"), _a20);
     var _a21;
-    var DescribeSecretCommand = (_a21 = class extends import_smithy_client25.Command.classBuilder().ep(commonParams3).m(function(Command, cs, config, o3) {
+    var DescribeSecretCommand = (_a21 = class extends import_smithy_client25.Command.classBuilder().ep(commonParams3).m(function(Command, cs, config2, o3) {
       return [
-        (0, import_middleware_serde5.getSerdePlugin)(config, this.serialize, this.deserialize),
-        (0, import_middleware_endpoint6.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+        (0, import_middleware_serde5.getSerdePlugin)(config2, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint6.getEndpointPlugin)(config2, Command.getEndpointParameterInstructions())
       ];
     }).s("secretsmanager", "DescribeSecret", {}).n("SecretsManagerClient", "DescribeSecretCommand").f(void 0, void 0).ser(se_DescribeSecretCommand).de(de_DescribeSecretCommand).build() {
     }, __name(_a21, "DescribeSecretCommand"), _a21);
     var _a22;
-    var GetRandomPasswordCommand = (_a22 = class extends import_smithy_client25.Command.classBuilder().ep(commonParams3).m(function(Command, cs, config, o3) {
+    var GetRandomPasswordCommand = (_a22 = class extends import_smithy_client25.Command.classBuilder().ep(commonParams3).m(function(Command, cs, config2, o3) {
       return [
-        (0, import_middleware_serde5.getSerdePlugin)(config, this.serialize, this.deserialize),
-        (0, import_middleware_endpoint6.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+        (0, import_middleware_serde5.getSerdePlugin)(config2, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint6.getEndpointPlugin)(config2, Command.getEndpointParameterInstructions())
       ];
     }).s("secretsmanager", "GetRandomPassword", {}).n("SecretsManagerClient", "GetRandomPasswordCommand").f(void 0, GetRandomPasswordResponseFilterSensitiveLog).ser(se_GetRandomPasswordCommand).de(de_GetRandomPasswordCommand).build() {
     }, __name(_a22, "GetRandomPasswordCommand"), _a22);
     var _a23;
-    var GetResourcePolicyCommand = (_a23 = class extends import_smithy_client25.Command.classBuilder().ep(commonParams3).m(function(Command, cs, config, o3) {
+    var GetResourcePolicyCommand = (_a23 = class extends import_smithy_client25.Command.classBuilder().ep(commonParams3).m(function(Command, cs, config2, o3) {
       return [
-        (0, import_middleware_serde5.getSerdePlugin)(config, this.serialize, this.deserialize),
-        (0, import_middleware_endpoint6.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+        (0, import_middleware_serde5.getSerdePlugin)(config2, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint6.getEndpointPlugin)(config2, Command.getEndpointParameterInstructions())
       ];
     }).s("secretsmanager", "GetResourcePolicy", {}).n("SecretsManagerClient", "GetResourcePolicyCommand").f(void 0, void 0).ser(se_GetResourcePolicyCommand).de(de_GetResourcePolicyCommand).build() {
     }, __name(_a23, "GetResourcePolicyCommand"), _a23);
     var _a24;
-    var GetSecretValueCommand2 = (_a24 = class extends import_smithy_client25.Command.classBuilder().ep(commonParams3).m(function(Command, cs, config, o3) {
+    var GetSecretValueCommand2 = (_a24 = class extends import_smithy_client25.Command.classBuilder().ep(commonParams3).m(function(Command, cs, config2, o3) {
       return [
-        (0, import_middleware_serde5.getSerdePlugin)(config, this.serialize, this.deserialize),
-        (0, import_middleware_endpoint6.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+        (0, import_middleware_serde5.getSerdePlugin)(config2, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint6.getEndpointPlugin)(config2, Command.getEndpointParameterInstructions())
       ];
     }).s("secretsmanager", "GetSecretValue", {}).n("SecretsManagerClient", "GetSecretValueCommand").f(void 0, GetSecretValueResponseFilterSensitiveLog).ser(se_GetSecretValueCommand).de(de_GetSecretValueCommand).build() {
     }, __name(_a24, "GetSecretValueCommand"), _a24);
     var _a25;
-    var ListSecretsCommand = (_a25 = class extends import_smithy_client25.Command.classBuilder().ep(commonParams3).m(function(Command, cs, config, o3) {
+    var ListSecretsCommand = (_a25 = class extends import_smithy_client25.Command.classBuilder().ep(commonParams3).m(function(Command, cs, config2, o3) {
       return [
-        (0, import_middleware_serde5.getSerdePlugin)(config, this.serialize, this.deserialize),
-        (0, import_middleware_endpoint6.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+        (0, import_middleware_serde5.getSerdePlugin)(config2, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint6.getEndpointPlugin)(config2, Command.getEndpointParameterInstructions())
       ];
     }).s("secretsmanager", "ListSecrets", {}).n("SecretsManagerClient", "ListSecretsCommand").f(void 0, void 0).ser(se_ListSecretsCommand).de(de_ListSecretsCommand).build() {
     }, __name(_a25, "ListSecretsCommand"), _a25);
     var _a26;
-    var ListSecretVersionIdsCommand = (_a26 = class extends import_smithy_client25.Command.classBuilder().ep(commonParams3).m(function(Command, cs, config, o3) {
+    var ListSecretVersionIdsCommand = (_a26 = class extends import_smithy_client25.Command.classBuilder().ep(commonParams3).m(function(Command, cs, config2, o3) {
       return [
-        (0, import_middleware_serde5.getSerdePlugin)(config, this.serialize, this.deserialize),
-        (0, import_middleware_endpoint6.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+        (0, import_middleware_serde5.getSerdePlugin)(config2, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint6.getEndpointPlugin)(config2, Command.getEndpointParameterInstructions())
       ];
     }).s("secretsmanager", "ListSecretVersionIds", {}).n("SecretsManagerClient", "ListSecretVersionIdsCommand").f(void 0, void 0).ser(se_ListSecretVersionIdsCommand).de(de_ListSecretVersionIdsCommand).build() {
     }, __name(_a26, "ListSecretVersionIdsCommand"), _a26);
     var _a27;
-    var PutResourcePolicyCommand = (_a27 = class extends import_smithy_client25.Command.classBuilder().ep(commonParams3).m(function(Command, cs, config, o3) {
+    var PutResourcePolicyCommand = (_a27 = class extends import_smithy_client25.Command.classBuilder().ep(commonParams3).m(function(Command, cs, config2, o3) {
       return [
-        (0, import_middleware_serde5.getSerdePlugin)(config, this.serialize, this.deserialize),
-        (0, import_middleware_endpoint6.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+        (0, import_middleware_serde5.getSerdePlugin)(config2, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint6.getEndpointPlugin)(config2, Command.getEndpointParameterInstructions())
       ];
     }).s("secretsmanager", "PutResourcePolicy", {}).n("SecretsManagerClient", "PutResourcePolicyCommand").f(void 0, void 0).ser(se_PutResourcePolicyCommand).de(de_PutResourcePolicyCommand).build() {
     }, __name(_a27, "PutResourcePolicyCommand"), _a27);
     var _a28;
-    var PutSecretValueCommand = (_a28 = class extends import_smithy_client25.Command.classBuilder().ep(commonParams3).m(function(Command, cs, config, o3) {
+    var PutSecretValueCommand = (_a28 = class extends import_smithy_client25.Command.classBuilder().ep(commonParams3).m(function(Command, cs, config2, o3) {
       return [
-        (0, import_middleware_serde5.getSerdePlugin)(config, this.serialize, this.deserialize),
-        (0, import_middleware_endpoint6.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+        (0, import_middleware_serde5.getSerdePlugin)(config2, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint6.getEndpointPlugin)(config2, Command.getEndpointParameterInstructions())
       ];
     }).s("secretsmanager", "PutSecretValue", {}).n("SecretsManagerClient", "PutSecretValueCommand").f(PutSecretValueRequestFilterSensitiveLog, void 0).ser(se_PutSecretValueCommand).de(de_PutSecretValueCommand).build() {
     }, __name(_a28, "PutSecretValueCommand"), _a28);
     var _a29;
-    var RemoveRegionsFromReplicationCommand = (_a29 = class extends import_smithy_client25.Command.classBuilder().ep(commonParams3).m(function(Command, cs, config, o3) {
+    var RemoveRegionsFromReplicationCommand = (_a29 = class extends import_smithy_client25.Command.classBuilder().ep(commonParams3).m(function(Command, cs, config2, o3) {
       return [
-        (0, import_middleware_serde5.getSerdePlugin)(config, this.serialize, this.deserialize),
-        (0, import_middleware_endpoint6.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+        (0, import_middleware_serde5.getSerdePlugin)(config2, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint6.getEndpointPlugin)(config2, Command.getEndpointParameterInstructions())
       ];
     }).s("secretsmanager", "RemoveRegionsFromReplication", {}).n("SecretsManagerClient", "RemoveRegionsFromReplicationCommand").f(void 0, void 0).ser(se_RemoveRegionsFromReplicationCommand).de(de_RemoveRegionsFromReplicationCommand).build() {
     }, __name(_a29, "RemoveRegionsFromReplicationCommand"), _a29);
     var _a30;
-    var ReplicateSecretToRegionsCommand = (_a30 = class extends import_smithy_client25.Command.classBuilder().ep(commonParams3).m(function(Command, cs, config, o3) {
+    var ReplicateSecretToRegionsCommand = (_a30 = class extends import_smithy_client25.Command.classBuilder().ep(commonParams3).m(function(Command, cs, config2, o3) {
       return [
-        (0, import_middleware_serde5.getSerdePlugin)(config, this.serialize, this.deserialize),
-        (0, import_middleware_endpoint6.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+        (0, import_middleware_serde5.getSerdePlugin)(config2, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint6.getEndpointPlugin)(config2, Command.getEndpointParameterInstructions())
       ];
     }).s("secretsmanager", "ReplicateSecretToRegions", {}).n("SecretsManagerClient", "ReplicateSecretToRegionsCommand").f(void 0, void 0).ser(se_ReplicateSecretToRegionsCommand).de(de_ReplicateSecretToRegionsCommand).build() {
     }, __name(_a30, "ReplicateSecretToRegionsCommand"), _a30);
     var _a31;
-    var RestoreSecretCommand = (_a31 = class extends import_smithy_client25.Command.classBuilder().ep(commonParams3).m(function(Command, cs, config, o3) {
+    var RestoreSecretCommand = (_a31 = class extends import_smithy_client25.Command.classBuilder().ep(commonParams3).m(function(Command, cs, config2, o3) {
       return [
-        (0, import_middleware_serde5.getSerdePlugin)(config, this.serialize, this.deserialize),
-        (0, import_middleware_endpoint6.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+        (0, import_middleware_serde5.getSerdePlugin)(config2, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint6.getEndpointPlugin)(config2, Command.getEndpointParameterInstructions())
       ];
     }).s("secretsmanager", "RestoreSecret", {}).n("SecretsManagerClient", "RestoreSecretCommand").f(void 0, void 0).ser(se_RestoreSecretCommand).de(de_RestoreSecretCommand).build() {
     }, __name(_a31, "RestoreSecretCommand"), _a31);
     var _a32;
-    var RotateSecretCommand = (_a32 = class extends import_smithy_client25.Command.classBuilder().ep(commonParams3).m(function(Command, cs, config, o3) {
+    var RotateSecretCommand = (_a32 = class extends import_smithy_client25.Command.classBuilder().ep(commonParams3).m(function(Command, cs, config2, o3) {
       return [
-        (0, import_middleware_serde5.getSerdePlugin)(config, this.serialize, this.deserialize),
-        (0, import_middleware_endpoint6.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+        (0, import_middleware_serde5.getSerdePlugin)(config2, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint6.getEndpointPlugin)(config2, Command.getEndpointParameterInstructions())
       ];
     }).s("secretsmanager", "RotateSecret", {}).n("SecretsManagerClient", "RotateSecretCommand").f(void 0, void 0).ser(se_RotateSecretCommand).de(de_RotateSecretCommand).build() {
     }, __name(_a32, "RotateSecretCommand"), _a32);
     var _a33;
-    var StopReplicationToReplicaCommand = (_a33 = class extends import_smithy_client25.Command.classBuilder().ep(commonParams3).m(function(Command, cs, config, o3) {
+    var StopReplicationToReplicaCommand = (_a33 = class extends import_smithy_client25.Command.classBuilder().ep(commonParams3).m(function(Command, cs, config2, o3) {
       return [
-        (0, import_middleware_serde5.getSerdePlugin)(config, this.serialize, this.deserialize),
-        (0, import_middleware_endpoint6.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+        (0, import_middleware_serde5.getSerdePlugin)(config2, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint6.getEndpointPlugin)(config2, Command.getEndpointParameterInstructions())
       ];
     }).s("secretsmanager", "StopReplicationToReplica", {}).n("SecretsManagerClient", "StopReplicationToReplicaCommand").f(void 0, void 0).ser(se_StopReplicationToReplicaCommand).de(de_StopReplicationToReplicaCommand).build() {
     }, __name(_a33, "StopReplicationToReplicaCommand"), _a33);
     var _a34;
-    var TagResourceCommand = (_a34 = class extends import_smithy_client25.Command.classBuilder().ep(commonParams3).m(function(Command, cs, config, o3) {
+    var TagResourceCommand = (_a34 = class extends import_smithy_client25.Command.classBuilder().ep(commonParams3).m(function(Command, cs, config2, o3) {
       return [
-        (0, import_middleware_serde5.getSerdePlugin)(config, this.serialize, this.deserialize),
-        (0, import_middleware_endpoint6.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+        (0, import_middleware_serde5.getSerdePlugin)(config2, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint6.getEndpointPlugin)(config2, Command.getEndpointParameterInstructions())
       ];
     }).s("secretsmanager", "TagResource", {}).n("SecretsManagerClient", "TagResourceCommand").f(void 0, void 0).ser(se_TagResourceCommand).de(de_TagResourceCommand).build() {
     }, __name(_a34, "TagResourceCommand"), _a34);
     var _a35;
-    var UntagResourceCommand = (_a35 = class extends import_smithy_client25.Command.classBuilder().ep(commonParams3).m(function(Command, cs, config, o3) {
+    var UntagResourceCommand = (_a35 = class extends import_smithy_client25.Command.classBuilder().ep(commonParams3).m(function(Command, cs, config2, o3) {
       return [
-        (0, import_middleware_serde5.getSerdePlugin)(config, this.serialize, this.deserialize),
-        (0, import_middleware_endpoint6.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+        (0, import_middleware_serde5.getSerdePlugin)(config2, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint6.getEndpointPlugin)(config2, Command.getEndpointParameterInstructions())
       ];
     }).s("secretsmanager", "UntagResource", {}).n("SecretsManagerClient", "UntagResourceCommand").f(void 0, void 0).ser(se_UntagResourceCommand).de(de_UntagResourceCommand).build() {
     }, __name(_a35, "UntagResourceCommand"), _a35);
     var _a36;
-    var UpdateSecretCommand = (_a36 = class extends import_smithy_client25.Command.classBuilder().ep(commonParams3).m(function(Command, cs, config, o3) {
+    var UpdateSecretCommand = (_a36 = class extends import_smithy_client25.Command.classBuilder().ep(commonParams3).m(function(Command, cs, config2, o3) {
       return [
-        (0, import_middleware_serde5.getSerdePlugin)(config, this.serialize, this.deserialize),
-        (0, import_middleware_endpoint6.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+        (0, import_middleware_serde5.getSerdePlugin)(config2, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint6.getEndpointPlugin)(config2, Command.getEndpointParameterInstructions())
       ];
     }).s("secretsmanager", "UpdateSecret", {}).n("SecretsManagerClient", "UpdateSecretCommand").f(UpdateSecretRequestFilterSensitiveLog, void 0).ser(se_UpdateSecretCommand).de(de_UpdateSecretCommand).build() {
     }, __name(_a36, "UpdateSecretCommand"), _a36);
     var _a37;
-    var UpdateSecretVersionStageCommand = (_a37 = class extends import_smithy_client25.Command.classBuilder().ep(commonParams3).m(function(Command, cs, config, o3) {
+    var UpdateSecretVersionStageCommand = (_a37 = class extends import_smithy_client25.Command.classBuilder().ep(commonParams3).m(function(Command, cs, config2, o3) {
       return [
-        (0, import_middleware_serde5.getSerdePlugin)(config, this.serialize, this.deserialize),
-        (0, import_middleware_endpoint6.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+        (0, import_middleware_serde5.getSerdePlugin)(config2, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint6.getEndpointPlugin)(config2, Command.getEndpointParameterInstructions())
       ];
     }).s("secretsmanager", "UpdateSecretVersionStage", {}).n("SecretsManagerClient", "UpdateSecretVersionStageCommand").f(void 0, void 0).ser(se_UpdateSecretVersionStageCommand).de(de_UpdateSecretVersionStageCommand).build() {
     }, __name(_a37, "UpdateSecretVersionStageCommand"), _a37);
     var _a38;
-    var ValidateResourcePolicyCommand = (_a38 = class extends import_smithy_client25.Command.classBuilder().ep(commonParams3).m(function(Command, cs, config, o3) {
+    var ValidateResourcePolicyCommand = (_a38 = class extends import_smithy_client25.Command.classBuilder().ep(commonParams3).m(function(Command, cs, config2, o3) {
       return [
-        (0, import_middleware_serde5.getSerdePlugin)(config, this.serialize, this.deserialize),
-        (0, import_middleware_endpoint6.getEndpointPlugin)(config, Command.getEndpointParameterInstructions())
+        (0, import_middleware_serde5.getSerdePlugin)(config2, this.serialize, this.deserialize),
+        (0, import_middleware_endpoint6.getEndpointPlugin)(config2, Command.getEndpointParameterInstructions())
       ];
     }).s("secretsmanager", "ValidateResourcePolicy", {}).n("SecretsManagerClient", "ValidateResourcePolicyCommand").f(void 0, void 0).ser(se_ValidateResourcePolicyCommand).de(de_ValidateResourcePolicyCommand).build() {
     }, __name(_a38, "ValidateResourcePolicyCommand"), _a38);
@@ -101589,6 +101589,341 @@ var require_dist_cjs51 = __commonJS({
     var paginateBatchGetSecretValue = (0, import_core17.createPaginator)(SecretsManagerClient2, BatchGetSecretValueCommand, "NextToken", "NextToken", "MaxResults");
     var paginateListSecretVersionIds = (0, import_core17.createPaginator)(SecretsManagerClient2, ListSecretVersionIdsCommand, "NextToken", "NextToken", "MaxResults");
     var paginateListSecrets = (0, import_core17.createPaginator)(SecretsManagerClient2, ListSecretsCommand, "NextToken", "NextToken", "MaxResults");
+  }
+});
+
+// node_modules/dotenv/package.json
+var require_package5 = __commonJS({
+  "node_modules/dotenv/package.json"(exports2, module2) {
+    module2.exports = {
+      name: "dotenv",
+      version: "16.5.0",
+      description: "Loads environment variables from .env file",
+      main: "lib/main.js",
+      types: "lib/main.d.ts",
+      exports: {
+        ".": {
+          types: "./lib/main.d.ts",
+          require: "./lib/main.js",
+          default: "./lib/main.js"
+        },
+        "./config": "./config.js",
+        "./config.js": "./config.js",
+        "./lib/env-options": "./lib/env-options.js",
+        "./lib/env-options.js": "./lib/env-options.js",
+        "./lib/cli-options": "./lib/cli-options.js",
+        "./lib/cli-options.js": "./lib/cli-options.js",
+        "./package.json": "./package.json"
+      },
+      scripts: {
+        "dts-check": "tsc --project tests/types/tsconfig.json",
+        lint: "standard",
+        pretest: "npm run lint && npm run dts-check",
+        test: "tap run --allow-empty-coverage --disable-coverage --timeout=60000",
+        "test:coverage": "tap run --show-full-coverage --timeout=60000 --coverage-report=lcov",
+        prerelease: "npm test",
+        release: "standard-version"
+      },
+      repository: {
+        type: "git",
+        url: "git://github.com/motdotla/dotenv.git"
+      },
+      homepage: "https://github.com/motdotla/dotenv#readme",
+      funding: "https://dotenvx.com",
+      keywords: [
+        "dotenv",
+        "env",
+        ".env",
+        "environment",
+        "variables",
+        "config",
+        "settings"
+      ],
+      readmeFilename: "README.md",
+      license: "BSD-2-Clause",
+      devDependencies: {
+        "@types/node": "^18.11.3",
+        decache: "^4.6.2",
+        sinon: "^14.0.1",
+        standard: "^17.0.0",
+        "standard-version": "^9.5.0",
+        tap: "^19.2.0",
+        typescript: "^4.8.4"
+      },
+      engines: {
+        node: ">=12"
+      },
+      browser: {
+        fs: false
+      }
+    };
+  }
+});
+
+// node_modules/dotenv/lib/main.js
+var require_main = __commonJS({
+  "node_modules/dotenv/lib/main.js"(exports2, module2) {
+    var fs = require("fs");
+    var path = require("path");
+    var os = require("os");
+    var crypto7 = require("crypto");
+    var packageJson = require_package5();
+    var version2 = packageJson.version;
+    var LINE = /(?:^|^)\s*(?:export\s+)?([\w.-]+)(?:\s*=\s*?|:\s+?)(\s*'(?:\\'|[^'])*'|\s*"(?:\\"|[^"])*"|\s*`(?:\\`|[^`])*`|[^#\r\n]+)?\s*(?:#.*)?(?:$|$)/mg;
+    function parse2(src) {
+      const obj = {};
+      let lines = src.toString();
+      lines = lines.replace(/\r\n?/mg, "\n");
+      let match;
+      while ((match = LINE.exec(lines)) != null) {
+        const key = match[1];
+        let value = match[2] || "";
+        value = value.trim();
+        const maybeQuote = value[0];
+        value = value.replace(/^(['"`])([\s\S]*)\1$/mg, "$2");
+        if (maybeQuote === '"') {
+          value = value.replace(/\\n/g, "\n");
+          value = value.replace(/\\r/g, "\r");
+        }
+        obj[key] = value;
+      }
+      return obj;
+    }
+    function _parseVault(options) {
+      const vaultPath = _vaultPath(options);
+      const result = DotenvModule.configDotenv({ path: vaultPath });
+      if (!result.parsed) {
+        const err = new Error(`MISSING_DATA: Cannot parse ${vaultPath} for an unknown reason`);
+        err.code = "MISSING_DATA";
+        throw err;
+      }
+      const keys = _dotenvKey(options).split(",");
+      const length = keys.length;
+      let decrypted;
+      for (let i3 = 0; i3 < length; i3++) {
+        try {
+          const key = keys[i3].trim();
+          const attrs = _instructions(result, key);
+          decrypted = DotenvModule.decrypt(attrs.ciphertext, attrs.key);
+          break;
+        } catch (error) {
+          if (i3 + 1 >= length) {
+            throw error;
+          }
+        }
+      }
+      return DotenvModule.parse(decrypted);
+    }
+    function _warn(message) {
+      console.log(`[dotenv@${version2}][WARN] ${message}`);
+    }
+    function _debug(message) {
+      console.log(`[dotenv@${version2}][DEBUG] ${message}`);
+    }
+    function _dotenvKey(options) {
+      if (options && options.DOTENV_KEY && options.DOTENV_KEY.length > 0) {
+        return options.DOTENV_KEY;
+      }
+      if (process.env.DOTENV_KEY && process.env.DOTENV_KEY.length > 0) {
+        return process.env.DOTENV_KEY;
+      }
+      return "";
+    }
+    function _instructions(result, dotenvKey) {
+      let uri;
+      try {
+        uri = new URL(dotenvKey);
+      } catch (error) {
+        if (error.code === "ERR_INVALID_URL") {
+          const err = new Error("INVALID_DOTENV_KEY: Wrong format. Must be in valid uri format like dotenv://:key_1234@dotenvx.com/vault/.env.vault?environment=development");
+          err.code = "INVALID_DOTENV_KEY";
+          throw err;
+        }
+        throw error;
+      }
+      const key = uri.password;
+      if (!key) {
+        const err = new Error("INVALID_DOTENV_KEY: Missing key part");
+        err.code = "INVALID_DOTENV_KEY";
+        throw err;
+      }
+      const environment = uri.searchParams.get("environment");
+      if (!environment) {
+        const err = new Error("INVALID_DOTENV_KEY: Missing environment part");
+        err.code = "INVALID_DOTENV_KEY";
+        throw err;
+      }
+      const environmentKey = `DOTENV_VAULT_${environment.toUpperCase()}`;
+      const ciphertext = result.parsed[environmentKey];
+      if (!ciphertext) {
+        const err = new Error(`NOT_FOUND_DOTENV_ENVIRONMENT: Cannot locate environment ${environmentKey} in your .env.vault file.`);
+        err.code = "NOT_FOUND_DOTENV_ENVIRONMENT";
+        throw err;
+      }
+      return { ciphertext, key };
+    }
+    function _vaultPath(options) {
+      let possibleVaultPath = null;
+      if (options && options.path && options.path.length > 0) {
+        if (Array.isArray(options.path)) {
+          for (const filepath of options.path) {
+            if (fs.existsSync(filepath)) {
+              possibleVaultPath = filepath.endsWith(".vault") ? filepath : `${filepath}.vault`;
+            }
+          }
+        } else {
+          possibleVaultPath = options.path.endsWith(".vault") ? options.path : `${options.path}.vault`;
+        }
+      } else {
+        possibleVaultPath = path.resolve(process.cwd(), ".env.vault");
+      }
+      if (fs.existsSync(possibleVaultPath)) {
+        return possibleVaultPath;
+      }
+      return null;
+    }
+    function _resolveHome(envPath) {
+      return envPath[0] === "~" ? path.join(os.homedir(), envPath.slice(1)) : envPath;
+    }
+    function _configVault(options) {
+      const debug = Boolean(options && options.debug);
+      if (debug) {
+        _debug("Loading env from encrypted .env.vault");
+      }
+      const parsed = DotenvModule._parseVault(options);
+      let processEnv = process.env;
+      if (options && options.processEnv != null) {
+        processEnv = options.processEnv;
+      }
+      DotenvModule.populate(processEnv, parsed, options);
+      return { parsed };
+    }
+    function configDotenv(options) {
+      const dotenvPath = path.resolve(process.cwd(), ".env");
+      let encoding = "utf8";
+      const debug = Boolean(options && options.debug);
+      if (options && options.encoding) {
+        encoding = options.encoding;
+      } else {
+        if (debug) {
+          _debug("No encoding is specified. UTF-8 is used by default");
+        }
+      }
+      let optionPaths = [dotenvPath];
+      if (options && options.path) {
+        if (!Array.isArray(options.path)) {
+          optionPaths = [_resolveHome(options.path)];
+        } else {
+          optionPaths = [];
+          for (const filepath of options.path) {
+            optionPaths.push(_resolveHome(filepath));
+          }
+        }
+      }
+      let lastError;
+      const parsedAll = {};
+      for (const path2 of optionPaths) {
+        try {
+          const parsed = DotenvModule.parse(fs.readFileSync(path2, { encoding }));
+          DotenvModule.populate(parsedAll, parsed, options);
+        } catch (e3) {
+          if (debug) {
+            _debug(`Failed to load ${path2} ${e3.message}`);
+          }
+          lastError = e3;
+        }
+      }
+      let processEnv = process.env;
+      if (options && options.processEnv != null) {
+        processEnv = options.processEnv;
+      }
+      DotenvModule.populate(processEnv, parsedAll, options);
+      if (lastError) {
+        return { parsed: parsedAll, error: lastError };
+      } else {
+        return { parsed: parsedAll };
+      }
+    }
+    function config2(options) {
+      if (_dotenvKey(options).length === 0) {
+        return DotenvModule.configDotenv(options);
+      }
+      const vaultPath = _vaultPath(options);
+      if (!vaultPath) {
+        _warn(`You set DOTENV_KEY but you are missing a .env.vault file at ${vaultPath}. Did you forget to build it?`);
+        return DotenvModule.configDotenv(options);
+      }
+      return DotenvModule._configVault(options);
+    }
+    function decrypt(encrypted, keyStr) {
+      const key = Buffer.from(keyStr.slice(-64), "hex");
+      let ciphertext = Buffer.from(encrypted, "base64");
+      const nonce = ciphertext.subarray(0, 12);
+      const authTag = ciphertext.subarray(-16);
+      ciphertext = ciphertext.subarray(12, -16);
+      try {
+        const aesgcm = crypto7.createDecipheriv("aes-256-gcm", key, nonce);
+        aesgcm.setAuthTag(authTag);
+        return `${aesgcm.update(ciphertext)}${aesgcm.final()}`;
+      } catch (error) {
+        const isRange = error instanceof RangeError;
+        const invalidKeyLength = error.message === "Invalid key length";
+        const decryptionFailed = error.message === "Unsupported state or unable to authenticate data";
+        if (isRange || invalidKeyLength) {
+          const err = new Error("INVALID_DOTENV_KEY: It must be 64 characters long (or more)");
+          err.code = "INVALID_DOTENV_KEY";
+          throw err;
+        } else if (decryptionFailed) {
+          const err = new Error("DECRYPTION_FAILED: Please check your DOTENV_KEY");
+          err.code = "DECRYPTION_FAILED";
+          throw err;
+        } else {
+          throw error;
+        }
+      }
+    }
+    function populate(processEnv, parsed, options = {}) {
+      const debug = Boolean(options && options.debug);
+      const override = Boolean(options && options.override);
+      if (typeof parsed !== "object") {
+        const err = new Error("OBJECT_REQUIRED: Please check the processEnv argument being passed to populate");
+        err.code = "OBJECT_REQUIRED";
+        throw err;
+      }
+      for (const key of Object.keys(parsed)) {
+        if (Object.prototype.hasOwnProperty.call(processEnv, key)) {
+          if (override === true) {
+            processEnv[key] = parsed[key];
+          }
+          if (debug) {
+            if (override === true) {
+              _debug(`"${key}" is already defined and WAS overwritten`);
+            } else {
+              _debug(`"${key}" is already defined and was NOT overwritten`);
+            }
+          }
+        } else {
+          processEnv[key] = parsed[key];
+        }
+      }
+    }
+    var DotenvModule = {
+      configDotenv,
+      _configVault,
+      _parseVault,
+      config: config2,
+      decrypt,
+      parse: parse2,
+      populate
+    };
+    module2.exports.configDotenv = DotenvModule.configDotenv;
+    module2.exports._configVault = DotenvModule._configVault;
+    module2.exports._parseVault = DotenvModule._parseVault;
+    module2.exports.config = DotenvModule.config;
+    module2.exports.decrypt = DotenvModule.decrypt;
+    module2.exports.parse = DotenvModule.parse;
+    module2.exports.populate = DotenvModule.populate;
+    module2.exports = DotenvModule;
   }
 });
 
@@ -101972,7 +102307,7 @@ var utils_default = {
 };
 
 // node_modules/axios/lib/core/AxiosError.js
-function AxiosError(message, code, config, request, response) {
+function AxiosError(message, code, config2, request, response) {
   Error.call(this);
   if (Error.captureStackTrace) {
     Error.captureStackTrace(this, this.constructor);
@@ -101982,7 +102317,7 @@ function AxiosError(message, code, config, request, response) {
   this.message = message;
   this.name = "AxiosError";
   code && (this.code = code);
-  config && (this.config = config);
+  config2 && (this.config = config2);
   request && (this.request = request);
   if (response) {
     this.response = response;
@@ -102031,14 +102366,14 @@ var descriptors = {};
 });
 Object.defineProperties(AxiosError, descriptors);
 Object.defineProperty(prototype, "isAxiosError", { value: true });
-AxiosError.from = (error, code, config, request, response, customProps) => {
+AxiosError.from = (error, code, config2, request, response, customProps) => {
   const axiosError = Object.create(prototype);
   utils_default.toFlatObject(error, axiosError, function filter2(obj) {
     return obj !== Error.prototype;
   }, (prop) => {
     return prop !== "isAxiosError";
   });
-  AxiosError.call(axiosError, error.message, code, config, request, response);
+  AxiosError.call(axiosError, error.message, code, config2, request, response);
   axiosError.cause = error;
   axiosError.name = error.name;
   customProps && Object.assign(axiosError, customProps);
@@ -102809,12 +103144,12 @@ var AxiosHeaders_default = AxiosHeaders;
 
 // node_modules/axios/lib/core/transformData.js
 function transformData(fns, response) {
-  const config = this || defaults_default;
-  const context = response || config;
+  const config2 = this || defaults_default;
+  const context = response || config2;
   const headers = AxiosHeaders_default.from(context.headers);
   let data = context.data;
   utils_default.forEach(fns, function transform(fn) {
-    data = fn.call(config, data, headers.normalize(), response ? response.status : void 0);
+    data = fn.call(config2, data, headers.normalize(), response ? response.status : void 0);
   });
   headers.normalize();
   return data;
@@ -102826,8 +103161,8 @@ function isCancel(value) {
 }
 
 // node_modules/axios/lib/cancel/CanceledError.js
-function CanceledError(message, config, request) {
-  AxiosError_default.call(this, message == null ? "canceled" : message, AxiosError_default.ERR_CANCELED, config, request);
+function CanceledError(message, config2, request) {
+  AxiosError_default.call(this, message == null ? "canceled" : message, AxiosError_default.ERR_CANCELED, config2, request);
   this.name = "CanceledError";
 }
 utils_default.inherits(CanceledError, AxiosError_default, {
@@ -103369,11 +103704,11 @@ var resolveFamily = ({ address, family }) => {
   };
 };
 var buildAddressEntry = (address, family) => resolveFamily(utils_default.isObject(address) ? address : { address, family });
-var http_default = isHttpAdapterSupported && function httpAdapter(config) {
+var http_default = isHttpAdapterSupported && function httpAdapter(config2) {
   return wrapAsync(async function dispatchHttpRequest(resolve, reject, onDone) {
-    let { data, lookup, family } = config;
-    const { responseType, responseEncoding } = config;
-    const method = config.method.toUpperCase();
+    let { data, lookup, family } = config2;
+    const { responseType, responseEncoding } = config2;
+    const method = config2.method.toUpperCase();
     let isDone;
     let rejected = false;
     let req;
@@ -103391,11 +103726,11 @@ var http_default = isHttpAdapterSupported && function httpAdapter(config) {
     }
     const emitter = new import_events.EventEmitter();
     const onFinished = () => {
-      if (config.cancelToken) {
-        config.cancelToken.unsubscribe(abort);
+      if (config2.cancelToken) {
+        config2.cancelToken.unsubscribe(abort);
       }
-      if (config.signal) {
-        config.signal.removeEventListener("abort", abort);
+      if (config2.signal) {
+        config2.signal.removeEventListener("abort", abort);
       }
       emitter.removeAllListeners();
     };
@@ -103407,16 +103742,16 @@ var http_default = isHttpAdapterSupported && function httpAdapter(config) {
       }
     });
     function abort(reason) {
-      emitter.emit("abort", !reason || reason.type ? new CanceledError_default(null, config, req) : reason);
+      emitter.emit("abort", !reason || reason.type ? new CanceledError_default(null, config2, req) : reason);
     }
     emitter.once("abort", reject);
-    if (config.cancelToken || config.signal) {
-      config.cancelToken && config.cancelToken.subscribe(abort);
-      if (config.signal) {
-        config.signal.aborted ? abort() : config.signal.addEventListener("abort", abort);
+    if (config2.cancelToken || config2.signal) {
+      config2.cancelToken && config2.cancelToken.subscribe(abort);
+      if (config2.signal) {
+        config2.signal.aborted ? abort() : config2.signal.addEventListener("abort", abort);
       }
     }
-    const fullPath = buildFullPath(config.baseURL, config.url, config.allowAbsoluteUrls);
+    const fullPath = buildFullPath(config2.baseURL, config2.url, config2.allowAbsoluteUrls);
     const parsed = new URL(fullPath, platform_default.hasBrowserEnv ? platform_default.origin : void 0);
     const protocol = parsed.protocol || supportedProtocols[0];
     if (protocol === "data:") {
@@ -103426,15 +103761,15 @@ var http_default = isHttpAdapterSupported && function httpAdapter(config) {
           status: 405,
           statusText: "method not allowed",
           headers: {},
-          config
+          config: config2
         });
       }
       try {
-        convertedData = fromDataURI(config.url, responseType === "blob", {
-          Blob: config.env && config.env.Blob
+        convertedData = fromDataURI(config2.url, responseType === "blob", {
+          Blob: config2.env && config2.env.Blob
         });
       } catch (err) {
-        throw AxiosError_default.from(err, AxiosError_default.ERR_BAD_REQUEST, config);
+        throw AxiosError_default.from(err, AxiosError_default.ERR_BAD_REQUEST, config2);
       }
       if (responseType === "text") {
         convertedData = convertedData.toString(responseEncoding);
@@ -103449,20 +103784,20 @@ var http_default = isHttpAdapterSupported && function httpAdapter(config) {
         status: 200,
         statusText: "OK",
         headers: new AxiosHeaders_default(),
-        config
+        config: config2
       });
     }
     if (supportedProtocols.indexOf(protocol) === -1) {
       return reject(new AxiosError_default(
         "Unsupported protocol " + protocol,
         AxiosError_default.ERR_BAD_REQUEST,
-        config
+        config2
       ));
     }
-    const headers = AxiosHeaders_default.from(config.headers).normalize();
+    const headers = AxiosHeaders_default.from(config2.headers).normalize();
     headers.set("User-Agent", "axios/" + VERSION, false);
-    const { onUploadProgress, onDownloadProgress } = config;
-    const maxRate = config.maxRate;
+    const { onUploadProgress, onDownloadProgress } = config2;
+    const maxRate = config2.maxRate;
     let maxUploadRate = void 0;
     let maxDownloadRate = void 0;
     if (utils_default.isSpecCompliantForm(data)) {
@@ -103496,15 +103831,15 @@ var http_default = isHttpAdapterSupported && function httpAdapter(config) {
         return reject(new AxiosError_default(
           "Data after transformation must be a string, an ArrayBuffer, a Buffer, or a Stream",
           AxiosError_default.ERR_BAD_REQUEST,
-          config
+          config2
         ));
       }
       headers.setContentLength(data.length, false);
-      if (config.maxBodyLength > -1 && data.length > config.maxBodyLength) {
+      if (config2.maxBodyLength > -1 && data.length > config2.maxBodyLength) {
         return reject(new AxiosError_default(
           "Request body larger than maxBodyLength limit",
           AxiosError_default.ERR_BAD_REQUEST,
-          config
+          config2
         ));
       }
     }
@@ -103531,9 +103866,9 @@ var http_default = isHttpAdapterSupported && function httpAdapter(config) {
       ));
     }
     let auth = void 0;
-    if (config.auth) {
-      const username = config.auth.username || "";
-      const password = config.auth.password || "";
+    if (config2.auth) {
+      const username = config2.auth.username || "";
+      const password = config2.auth.password || "";
       auth = username + ":" + password;
     }
     if (!auth && parsed.username) {
@@ -103546,13 +103881,13 @@ var http_default = isHttpAdapterSupported && function httpAdapter(config) {
     try {
       path = buildURL(
         parsed.pathname + parsed.search,
-        config.params,
-        config.paramsSerializer
+        config2.params,
+        config2.paramsSerializer
       ).replace(/^\?/, "");
     } catch (err) {
       const customErr = new Error(err.message);
-      customErr.config = config;
-      customErr.url = config.url;
+      customErr.config = config2;
+      customErr.url = config2.url;
       customErr.exists = true;
       return reject(customErr);
     }
@@ -103565,7 +103900,7 @@ var http_default = isHttpAdapterSupported && function httpAdapter(config) {
       path,
       method,
       headers: headers.toJSON(),
-      agents: { http: config.httpAgent, https: config.httpsAgent },
+      agents: { http: config2.httpAgent, https: config2.httpsAgent },
       auth,
       protocol,
       family,
@@ -103573,36 +103908,36 @@ var http_default = isHttpAdapterSupported && function httpAdapter(config) {
       beforeRedirects: {}
     };
     !utils_default.isUndefined(lookup) && (options.lookup = lookup);
-    if (config.socketPath) {
-      options.socketPath = config.socketPath;
+    if (config2.socketPath) {
+      options.socketPath = config2.socketPath;
     } else {
       options.hostname = parsed.hostname.startsWith("[") ? parsed.hostname.slice(1, -1) : parsed.hostname;
       options.port = parsed.port;
-      setProxy(options, config.proxy, protocol + "//" + parsed.hostname + (parsed.port ? ":" + parsed.port : "") + options.path);
+      setProxy(options, config2.proxy, protocol + "//" + parsed.hostname + (parsed.port ? ":" + parsed.port : "") + options.path);
     }
     let transport;
     const isHttpsRequest = isHttps.test(options.protocol);
-    options.agent = isHttpsRequest ? config.httpsAgent : config.httpAgent;
-    if (config.transport) {
-      transport = config.transport;
-    } else if (config.maxRedirects === 0) {
+    options.agent = isHttpsRequest ? config2.httpsAgent : config2.httpAgent;
+    if (config2.transport) {
+      transport = config2.transport;
+    } else if (config2.maxRedirects === 0) {
       transport = isHttpsRequest ? import_https.default : import_http.default;
     } else {
-      if (config.maxRedirects) {
-        options.maxRedirects = config.maxRedirects;
+      if (config2.maxRedirects) {
+        options.maxRedirects = config2.maxRedirects;
       }
-      if (config.beforeRedirect) {
-        options.beforeRedirects.config = config.beforeRedirect;
+      if (config2.beforeRedirect) {
+        options.beforeRedirects.config = config2.beforeRedirect;
       }
       transport = isHttpsRequest ? httpsFollow : httpFollow;
     }
-    if (config.maxBodyLength > -1) {
-      options.maxBodyLength = config.maxBodyLength;
+    if (config2.maxBodyLength > -1) {
+      options.maxBodyLength = config2.maxBodyLength;
     } else {
       options.maxBodyLength = Infinity;
     }
-    if (config.insecureHTTPParser) {
-      options.insecureHTTPParser = config.insecureHTTPParser;
+    if (config2.insecureHTTPParser) {
+      options.insecureHTTPParser = config2.insecureHTTPParser;
     }
     req = transport.request(options, function handleResponse(res) {
       if (req.destroyed) return;
@@ -103623,7 +103958,7 @@ var http_default = isHttpAdapterSupported && function httpAdapter(config) {
       }
       let responseStream = res;
       const lastRequest = res.req || req;
-      if (config.decompress !== false && res.headers["content-encoding"]) {
+      if (config2.decompress !== false && res.headers["content-encoding"]) {
         if (method === "HEAD" || res.statusCode === 204) {
           delete res.headers["content-encoding"];
         }
@@ -103657,7 +103992,7 @@ var http_default = isHttpAdapterSupported && function httpAdapter(config) {
         status: res.statusCode,
         statusText: res.statusMessage,
         headers: new AxiosHeaders_default(res.headers),
-        config,
+        config: config2,
         request: lastRequest
       };
       if (responseType === "stream") {
@@ -103669,13 +104004,13 @@ var http_default = isHttpAdapterSupported && function httpAdapter(config) {
         responseStream.on("data", function handleStreamData(chunk) {
           responseBuffer.push(chunk);
           totalResponseBytes += chunk.length;
-          if (config.maxContentLength > -1 && totalResponseBytes > config.maxContentLength) {
+          if (config2.maxContentLength > -1 && totalResponseBytes > config2.maxContentLength) {
             rejected = true;
             responseStream.destroy();
             reject(new AxiosError_default(
-              "maxContentLength size of " + config.maxContentLength + " exceeded",
+              "maxContentLength size of " + config2.maxContentLength + " exceeded",
               AxiosError_default.ERR_BAD_RESPONSE,
-              config,
+              config2,
               lastRequest
             ));
           }
@@ -103687,7 +104022,7 @@ var http_default = isHttpAdapterSupported && function httpAdapter(config) {
           const err = new AxiosError_default(
             "stream has been aborted",
             AxiosError_default.ERR_BAD_RESPONSE,
-            config,
+            config2,
             lastRequest
           );
           responseStream.destroy(err);
@@ -103695,7 +104030,7 @@ var http_default = isHttpAdapterSupported && function httpAdapter(config) {
         });
         responseStream.on("error", function handleStreamError(err) {
           if (req.destroyed) return;
-          reject(AxiosError_default.from(err, null, config, lastRequest));
+          reject(AxiosError_default.from(err, null, config2, lastRequest));
         });
         responseStream.on("end", function handleStreamEnd() {
           try {
@@ -103708,7 +104043,7 @@ var http_default = isHttpAdapterSupported && function httpAdapter(config) {
             }
             response.data = responseData;
           } catch (err) {
-            return reject(AxiosError_default.from(err, null, config, response.request, response));
+            return reject(AxiosError_default.from(err, null, config2, response.request, response));
           }
           settle(resolve, reject, response);
         });
@@ -103725,33 +104060,33 @@ var http_default = isHttpAdapterSupported && function httpAdapter(config) {
       req.destroy(err);
     });
     req.on("error", function handleRequestError(err) {
-      reject(AxiosError_default.from(err, null, config, req));
+      reject(AxiosError_default.from(err, null, config2, req));
     });
     req.on("socket", function handleRequestSocket(socket) {
       socket.setKeepAlive(true, 1e3 * 60);
     });
-    if (config.timeout) {
-      const timeout = parseInt(config.timeout, 10);
+    if (config2.timeout) {
+      const timeout = parseInt(config2.timeout, 10);
       if (Number.isNaN(timeout)) {
         reject(new AxiosError_default(
           "error trying to parse `config.timeout` to int",
           AxiosError_default.ERR_BAD_OPTION_VALUE,
-          config,
+          config2,
           req
         ));
         return;
       }
       req.setTimeout(timeout, function handleRequestTimeout() {
         if (isDone) return;
-        let timeoutErrorMessage = config.timeout ? "timeout of " + config.timeout + "ms exceeded" : "timeout exceeded";
-        const transitional2 = config.transitional || transitional_default;
-        if (config.timeoutErrorMessage) {
-          timeoutErrorMessage = config.timeoutErrorMessage;
+        let timeoutErrorMessage = config2.timeout ? "timeout of " + config2.timeout + "ms exceeded" : "timeout exceeded";
+        const transitional2 = config2.transitional || transitional_default;
+        if (config2.timeoutErrorMessage) {
+          timeoutErrorMessage = config2.timeoutErrorMessage;
         }
         reject(new AxiosError_default(
           timeoutErrorMessage,
           transitional2.clarifyTimeoutError ? AxiosError_default.ETIMEDOUT : AxiosError_default.ECONNABORTED,
-          config,
+          config2,
           req
         ));
         abort();
@@ -103769,7 +104104,7 @@ var http_default = isHttpAdapterSupported && function httpAdapter(config) {
       });
       data.on("close", () => {
         if (!ended && !errored) {
-          abort(new CanceledError_default("Request stream has been aborted", config, req));
+          abort(new CanceledError_default("Request stream has been aborted", config2, req));
         }
       });
       data.pipe(req);
@@ -103825,7 +104160,7 @@ var cookies_default = platform_default.hasStandardBrowserEnv ? (
 var headersToObject = (thing) => thing instanceof AxiosHeaders_default ? { ...thing } : thing;
 function mergeConfig(config1, config2) {
   config2 = config2 || {};
-  const config = {};
+  const config3 = {};
   function getMergedValue(target, source, prop, caseless) {
     if (utils_default.isPlainObject(target) && utils_default.isPlainObject(source)) {
       return utils_default.merge.call({ caseless }, target, source);
@@ -103896,17 +104231,17 @@ function mergeConfig(config1, config2) {
   utils_default.forEach(Object.keys(Object.assign({}, config1, config2)), function computeConfigValue(prop) {
     const merge2 = mergeMap[prop] || mergeDeepProperties;
     const configValue = merge2(config1[prop], config2[prop], prop);
-    utils_default.isUndefined(configValue) && merge2 !== mergeDirectKeys || (config[prop] = configValue);
+    utils_default.isUndefined(configValue) && merge2 !== mergeDirectKeys || (config3[prop] = configValue);
   });
-  return config;
+  return config3;
 }
 
 // node_modules/axios/lib/helpers/resolveConfig.js
-var resolveConfig_default = (config) => {
-  const newConfig = mergeConfig({}, config);
+var resolveConfig_default = (config2) => {
+  const newConfig = mergeConfig({}, config2);
   let { data, withXSRFToken, xsrfHeaderName, xsrfCookieName, headers, auth } = newConfig;
   newConfig.headers = headers = AxiosHeaders_default.from(headers);
-  newConfig.url = buildURL(buildFullPath(newConfig.baseURL, newConfig.url, newConfig.allowAbsoluteUrls), config.params, config.paramsSerializer);
+  newConfig.url = buildURL(buildFullPath(newConfig.baseURL, newConfig.url, newConfig.allowAbsoluteUrls), config2.params, config2.paramsSerializer);
   if (auth) {
     headers.set(
       "Authorization",
@@ -103936,9 +104271,9 @@ var resolveConfig_default = (config) => {
 
 // node_modules/axios/lib/adapters/xhr.js
 var isXHRAdapterSupported = typeof XMLHttpRequest !== "undefined";
-var xhr_default = isXHRAdapterSupported && function(config) {
+var xhr_default = isXHRAdapterSupported && function(config2) {
   return new Promise(function dispatchXhrRequest(resolve, reject) {
-    const _config = resolveConfig_default(config);
+    const _config = resolveConfig_default(config2);
     let requestData = _config.data;
     const requestHeaders = AxiosHeaders_default.from(_config.headers).normalize();
     let { responseType, onUploadProgress, onDownloadProgress } = _config;
@@ -103967,7 +104302,7 @@ var xhr_default = isXHRAdapterSupported && function(config) {
         status: request.status,
         statusText: request.statusText,
         headers: responseHeaders,
-        config,
+        config: config2,
         request
       };
       settle(function _resolve(value) {
@@ -103996,11 +104331,11 @@ var xhr_default = isXHRAdapterSupported && function(config) {
       if (!request) {
         return;
       }
-      reject(new AxiosError_default("Request aborted", AxiosError_default.ECONNABORTED, config, request));
+      reject(new AxiosError_default("Request aborted", AxiosError_default.ECONNABORTED, config2, request));
       request = null;
     };
     request.onerror = function handleError() {
-      reject(new AxiosError_default("Network Error", AxiosError_default.ERR_NETWORK, config, request));
+      reject(new AxiosError_default("Network Error", AxiosError_default.ERR_NETWORK, config2, request));
       request = null;
     };
     request.ontimeout = function handleTimeout() {
@@ -104012,7 +104347,7 @@ var xhr_default = isXHRAdapterSupported && function(config) {
       reject(new AxiosError_default(
         timeoutErrorMessage,
         transitional2.clarifyTimeoutError ? AxiosError_default.ETIMEDOUT : AxiosError_default.ECONNABORTED,
-        config,
+        config2,
         request
       ));
       request = null;
@@ -104043,7 +104378,7 @@ var xhr_default = isXHRAdapterSupported && function(config) {
         if (!request) {
           return;
         }
-        reject(!cancel || cancel.type ? new CanceledError_default(null, config, request) : cancel);
+        reject(!cancel || cancel.type ? new CanceledError_default(null, config2, request) : cancel);
         request.abort();
         request = null;
       };
@@ -104054,7 +104389,7 @@ var xhr_default = isXHRAdapterSupported && function(config) {
     }
     const protocol = parseProtocol(_config.url);
     if (protocol && platform_default.protocols.indexOf(protocol) === -1) {
-      reject(new AxiosError_default("Unsupported protocol " + protocol + ":", AxiosError_default.ERR_BAD_REQUEST, config));
+      reject(new AxiosError_default("Unsupported protocol " + protocol + ":", AxiosError_default.ERR_BAD_REQUEST, config2));
       return;
     }
     request.send(requestData || null);
@@ -104204,8 +104539,8 @@ var resolvers = {
 };
 isFetchSupported && ((res) => {
   ["text", "arrayBuffer", "blob", "formData", "stream"].forEach((type) => {
-    !resolvers[type] && (resolvers[type] = utils_default.isFunction(res[type]) ? (res2) => res2[type]() : (_2, config) => {
-      throw new AxiosError_default(`Response type '${type}' is not supported`, AxiosError_default.ERR_NOT_SUPPORT, config);
+    !resolvers[type] && (resolvers[type] = utils_default.isFunction(res[type]) ? (res2) => res2[type]() : (_2, config2) => {
+      throw new AxiosError_default(`Response type '${type}' is not supported`, AxiosError_default.ERR_NOT_SUPPORT, config2);
     });
   });
 })(new Response());
@@ -104237,7 +104572,7 @@ var resolveBodyLength = async (headers, body) => {
   const length = utils_default.toFiniteNumber(headers.getContentLength());
   return length == null ? getBodyLength(body) : length;
 };
-var fetch_default = isFetchSupported && (async (config) => {
+var fetch_default = isFetchSupported && (async (config2) => {
   let {
     url: url2,
     method,
@@ -104251,7 +104586,7 @@ var fetch_default = isFetchSupported && (async (config) => {
     headers,
     withCredentials = "same-origin",
     fetchOptions
-  } = resolveConfig_default(config);
+  } = resolveConfig_default(config2);
   responseType = responseType ? (responseType + "").toLowerCase() : "text";
   let composedSignal = composeSignals_default([signal, cancelToken && cancelToken.toAbortSignal()], timeout);
   let request;
@@ -104312,7 +104647,7 @@ var fetch_default = isFetchSupported && (async (config) => {
       );
     }
     responseType = responseType || "text";
-    let responseData = await resolvers[utils_default.findKey(resolvers, responseType) || "text"](response, config);
+    let responseData = await resolvers[utils_default.findKey(resolvers, responseType) || "text"](response, config2);
     !isStreamResponse && unsubscribe && unsubscribe();
     return await new Promise((resolve, reject) => {
       settle(resolve, reject, {
@@ -104320,7 +104655,7 @@ var fetch_default = isFetchSupported && (async (config) => {
         headers: AxiosHeaders_default.from(response.headers),
         status: response.status,
         statusText: response.statusText,
-        config,
+        config: config2,
         request
       });
     });
@@ -104328,13 +104663,13 @@ var fetch_default = isFetchSupported && (async (config) => {
     unsubscribe && unsubscribe();
     if (err && err.name === "TypeError" && /Load failed|fetch/i.test(err.message)) {
       throw Object.assign(
-        new AxiosError_default("Network Error", AxiosError_default.ERR_NETWORK, config, request),
+        new AxiosError_default("Network Error", AxiosError_default.ERR_NETWORK, config2, request),
         {
           cause: err.cause || err
         }
       );
     }
-    throw AxiosError_default.from(err, err && err.code, config, request);
+    throw AxiosError_default.from(err, err && err.code, config2, request);
   }
 });
 
@@ -104393,41 +104728,41 @@ var adapters_default = {
 };
 
 // node_modules/axios/lib/core/dispatchRequest.js
-function throwIfCancellationRequested(config) {
-  if (config.cancelToken) {
-    config.cancelToken.throwIfRequested();
+function throwIfCancellationRequested(config2) {
+  if (config2.cancelToken) {
+    config2.cancelToken.throwIfRequested();
   }
-  if (config.signal && config.signal.aborted) {
-    throw new CanceledError_default(null, config);
+  if (config2.signal && config2.signal.aborted) {
+    throw new CanceledError_default(null, config2);
   }
 }
-function dispatchRequest(config) {
-  throwIfCancellationRequested(config);
-  config.headers = AxiosHeaders_default.from(config.headers);
-  config.data = transformData.call(
-    config,
-    config.transformRequest
+function dispatchRequest(config2) {
+  throwIfCancellationRequested(config2);
+  config2.headers = AxiosHeaders_default.from(config2.headers);
+  config2.data = transformData.call(
+    config2,
+    config2.transformRequest
   );
-  if (["post", "put", "patch"].indexOf(config.method) !== -1) {
-    config.headers.setContentType("application/x-www-form-urlencoded", false);
+  if (["post", "put", "patch"].indexOf(config2.method) !== -1) {
+    config2.headers.setContentType("application/x-www-form-urlencoded", false);
   }
-  const adapter = adapters_default.getAdapter(config.adapter || defaults_default.adapter);
-  return adapter(config).then(function onAdapterResolution(response) {
-    throwIfCancellationRequested(config);
+  const adapter = adapters_default.getAdapter(config2.adapter || defaults_default.adapter);
+  return adapter(config2).then(function onAdapterResolution(response) {
+    throwIfCancellationRequested(config2);
     response.data = transformData.call(
-      config,
-      config.transformResponse,
+      config2,
+      config2.transformResponse,
       response
     );
     response.headers = AxiosHeaders_default.from(response.headers);
     return response;
   }, function onAdapterRejection(reason) {
     if (!isCancel(reason)) {
-      throwIfCancellationRequested(config);
+      throwIfCancellationRequested(config2);
       if (reason && reason.response) {
         reason.response.data = transformData.call(
-          config,
-          config.transformResponse,
+          config2,
+          config2.transformResponse,
           reason.response
         );
         reason.response.headers = AxiosHeaders_default.from(reason.response.headers);
@@ -104519,9 +104854,9 @@ var Axios = class {
    *
    * @returns {Promise} The Promise to be fulfilled
    */
-  async request(configOrUrl, config) {
+  async request(configOrUrl, config2) {
     try {
-      return await this._request(configOrUrl, config);
+      return await this._request(configOrUrl, config2);
     } catch (err) {
       if (err instanceof Error) {
         let dummy = {};
@@ -104539,15 +104874,15 @@ var Axios = class {
       throw err;
     }
   }
-  _request(configOrUrl, config) {
+  _request(configOrUrl, config2) {
     if (typeof configOrUrl === "string") {
-      config = config || {};
-      config.url = configOrUrl;
+      config2 = config2 || {};
+      config2.url = configOrUrl;
     } else {
-      config = configOrUrl || {};
+      config2 = configOrUrl || {};
     }
-    config = mergeConfig(this.defaults, config);
-    const { transitional: transitional2, paramsSerializer, headers } = config;
+    config2 = mergeConfig(this.defaults, config2);
+    const { transitional: transitional2, paramsSerializer, headers } = config2;
     if (transitional2 !== void 0) {
       validator_default.assertOptions(transitional2, {
         silentJSONParsing: validators2.transitional(validators2.boolean),
@@ -104557,7 +104892,7 @@ var Axios = class {
     }
     if (paramsSerializer != null) {
       if (utils_default.isFunction(paramsSerializer)) {
-        config.paramsSerializer = {
+        config2.paramsSerializer = {
           serialize: paramsSerializer
         };
       } else {
@@ -104567,20 +104902,20 @@ var Axios = class {
         }, true);
       }
     }
-    if (config.allowAbsoluteUrls !== void 0) {
+    if (config2.allowAbsoluteUrls !== void 0) {
     } else if (this.defaults.allowAbsoluteUrls !== void 0) {
-      config.allowAbsoluteUrls = this.defaults.allowAbsoluteUrls;
+      config2.allowAbsoluteUrls = this.defaults.allowAbsoluteUrls;
     } else {
-      config.allowAbsoluteUrls = true;
+      config2.allowAbsoluteUrls = true;
     }
-    validator_default.assertOptions(config, {
+    validator_default.assertOptions(config2, {
       baseUrl: validators2.spelling("baseURL"),
       withXsrfToken: validators2.spelling("withXSRFToken")
     }, true);
-    config.method = (config.method || this.defaults.method || "get").toLowerCase();
+    config2.method = (config2.method || this.defaults.method || "get").toLowerCase();
     let contextHeaders = headers && utils_default.merge(
       headers.common,
-      headers[config.method]
+      headers[config2.method]
     );
     headers && utils_default.forEach(
       ["delete", "get", "head", "post", "put", "patch", "common"],
@@ -104588,11 +104923,11 @@ var Axios = class {
         delete headers[method];
       }
     );
-    config.headers = AxiosHeaders_default.concat(contextHeaders, headers);
+    config2.headers = AxiosHeaders_default.concat(contextHeaders, headers);
     const requestInterceptorChain = [];
     let synchronousRequestInterceptors = true;
     this.interceptors.request.forEach(function unshiftRequestInterceptors(interceptor) {
-      if (typeof interceptor.runWhen === "function" && interceptor.runWhen(config) === false) {
+      if (typeof interceptor.runWhen === "function" && interceptor.runWhen(config2) === false) {
         return;
       }
       synchronousRequestInterceptors = synchronousRequestInterceptors && interceptor.synchronous;
@@ -104610,14 +104945,14 @@ var Axios = class {
       chain.unshift.apply(chain, requestInterceptorChain);
       chain.push.apply(chain, responseInterceptorChain);
       len = chain.length;
-      promise = Promise.resolve(config);
+      promise = Promise.resolve(config2);
       while (i3 < len) {
         promise = promise.then(chain[i3++], chain[i3++]);
       }
       return promise;
     }
     len = requestInterceptorChain.length;
-    let newConfig = config;
+    let newConfig = config2;
     i3 = 0;
     while (i3 < len) {
       const onFulfilled = requestInterceptorChain[i3++];
@@ -104641,25 +104976,25 @@ var Axios = class {
     }
     return promise;
   }
-  getUri(config) {
-    config = mergeConfig(this.defaults, config);
-    const fullPath = buildFullPath(config.baseURL, config.url, config.allowAbsoluteUrls);
-    return buildURL(fullPath, config.params, config.paramsSerializer);
+  getUri(config2) {
+    config2 = mergeConfig(this.defaults, config2);
+    const fullPath = buildFullPath(config2.baseURL, config2.url, config2.allowAbsoluteUrls);
+    return buildURL(fullPath, config2.params, config2.paramsSerializer);
   }
 };
 utils_default.forEach(["delete", "get", "head", "options"], function forEachMethodNoData(method) {
-  Axios.prototype[method] = function(url2, config) {
-    return this.request(mergeConfig(config || {}, {
+  Axios.prototype[method] = function(url2, config2) {
+    return this.request(mergeConfig(config2 || {}, {
       method,
       url: url2,
-      data: (config || {}).data
+      data: (config2 || {}).data
     }));
   };
 });
 utils_default.forEach(["post", "put", "patch"], function forEachMethodWithData(method) {
   function generateHTTPMethod(isForm) {
-    return function httpMethod(url2, data, config) {
-      return this.request(mergeConfig(config || {}, {
+    return function httpMethod(url2, data, config2) {
+      return this.request(mergeConfig(config2 || {}, {
         method,
         headers: isForm ? {
           "Content-Type": "multipart/form-data"
@@ -104704,11 +105039,11 @@ var CancelToken = class _CancelToken {
       };
       return promise;
     };
-    executor(function cancel(message, config, request) {
+    executor(function cancel(message, config2, request) {
       if (token.reason) {
         return;
       }
-      token.reason = new CanceledError_default(message, config, request);
+      token.reason = new CanceledError_default(message, config2, request);
       resolvePromise(token.reason);
     });
   }
@@ -105114,6 +105449,8 @@ var getSecrets = async (secretName) => {
 };
 
 // src/services/WalletsService/index.ts
+var import_dotenv = __toESM(require_main());
+(0, import_dotenv.config)();
 var WalletsService = class {
   constructor() {
     this.connection = null;
@@ -105517,7 +105854,7 @@ var WalletsService = class {
               success: allWalletsCreatedSuccessfully
             };
           } catch (error) {
-            import_lambda_powertools_logger2.default.debug(
+            import_lambda_powertools_logger2.default.error(
               `Failed to create all wallets for user ${queue.messageId}:`,
               {
                 error

@@ -20,6 +20,9 @@ import { IQueueMessageBody } from "src/config/interfaces";
 import { SecretLocation } from "src/config/secrets/enums";
 import { getSecrets } from "src/config/secrets/helpers";
 import { IWalletsServiceSecrets } from "src/config/secrets/interfaces";
+import { config } from "dotenv";
+
+config(); // Loads the .env file
 
 export class WalletsService {
     private connection: mongoose.Connection | null = null;
@@ -581,7 +584,7 @@ export class WalletsService {
                             success: allWalletsCreatedSuccessfully,
                         };
                     } catch (error) {
-                        log.debug(
+                        log.error(
                             `Failed to create all wallets for user ${queue.messageId}:`,
                             {
                                 error,

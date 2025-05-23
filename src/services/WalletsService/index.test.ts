@@ -12,8 +12,6 @@ describe("Create User Wallet Integration Test", () => {
     const testMessageId = "8d0d2fae-1a50-4e88-943f-ac07493a1af0";
 
     beforeAll(async () => {
-        process.env.ENV = "dev";
-
         // Create a real instance of WalletsService and initialize it
         walletsService = WalletsService;
         await walletsService["initialize"]();
