@@ -38,7 +38,7 @@ export interface IUser {
     firstName: string;
     lastName: string;
     email: string;
-    referralRank: string;
+    referralRank?: ReferralRankType;
 }
 
 export interface IReferralQueueMessage {
@@ -76,6 +76,7 @@ export interface IBalances {
 export interface IUpdateUserRecordInput extends IUserDbConnection {
     balance: IBalances;
     referralRank: ReferralRankType | null;
+    maxReferralRankRequirementMet: ReferralRankType;
 }
 
 export type ReferralRankType = (typeof ReferralRank)[keyof typeof ReferralRank];
@@ -84,5 +85,6 @@ export interface IRankCriteria {
     personalATC: number;
     communityATC: number;
     communitySize: number;
+    maxReferralRankRequirementMet: ReferralRankType;
     isTestReferralTracking?: boolean;
 }

@@ -2,6 +2,7 @@ import { SQSEvent } from "aws-lambda";
 import {
     DatabaseConnections,
     IReferralQueueMessage,
+    ReferralRankType,
 } from "src/config/interfaces";
 import {
     computeRank,
@@ -9,6 +10,11 @@ import {
     updateUserBalanceInDb,
 } from "src/helpers/referrals-helpers";
 import { getParsedQueueMessagesBody } from "src/config/sqs/helpers";
+import {
+    RANK_ORDER,
+    ReferralRank,
+    REQUIRED_RANK_REFERRALS,
+} from "src/config/constants";
 
 export const processUserReferralTracking = async (
     connections: DatabaseConnections,
@@ -22,24 +28,43 @@ export const processUserReferralTracking = async (
     // Process each message in the batch
     const processPromises = queueMessages.map(async (queueMessage) => {
         try {
+            const { referrals, user, isTestReferralTracking } =
+                queueMessage.body;
             const balances = await computeUserAndReferralsBalances({
                 tradingEngineConnection,
-                referrals: queueMessage.body.referrals,
-                userId: queueMessage.body.user.id,
+                referrals,
+                userId: user.id,
+            });
+
+            let maxReferralRankRequirementMet: ReferralRankType =
+                ReferralRank.TA_RECRUIT;
+
+            RANK_ORDER.forEach((rank, rankIndex) => {
+                const meetsRequirement =
+                    referrals.filter((referral) => {
+                        const referralRankIndex = referral.referralRank
+                            ? RANK_ORDER.indexOf(referral.referralRank)
+                            : -1;
+                        return referralRankIndex >= rankIndex;
+                    }).length >= REQUIRED_RANK_REFERRALS;
+                if (meetsRequirement) {
+                    maxReferralRankRequirementMet = rank;
+                }
             });
 
             const referralRank = computeRank({
                 personalATC: balances.userBalance.availableBalance,
                 communityATC: balances.communityBalance,
-                communitySize: queueMessage.body.referrals.length,
-                isTestReferralTracking:
-                    queueMessage.body.isTestReferralTracking,
+                communitySize: referrals.length,
+                maxReferralRankRequirementMet,
+                isTestReferralTracking,
             });
 
             await updateUserBalanceInDb({
                 mongooseConnection: usersConnection,
                 balance: balances,
-                userId: queueMessage.body.user.id,
+                userId: user.id,
+                maxReferralRankRequirementMet,
                 referralRank,
             });
         } catch (error) {

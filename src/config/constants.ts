@@ -52,3 +52,15 @@ export const RANK_REQUIREMENTS = {
         testCommunitySize: 12,
     },
 } as const;
+
+export const RANK_ORDER = [
+    ReferralRank.TA_RECRUIT,
+    ReferralRank.TA_LIEUTENANT,
+    ReferralRank.TA_CAPTAIN,
+    ReferralRank.TA_MAJOR,
+    ReferralRank.TA_COLONEL,
+    ReferralRank.TA_GENERAL,
+    ReferralRank.TA_FIELD_MARSHAL,
+];
+
+export const REQUIRED_RANK_REFERRALS = 3;
