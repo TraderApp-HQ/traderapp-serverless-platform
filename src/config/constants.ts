@@ -63,6 +63,10 @@ export const RANK_ORDER = [
     ReferralRank.TA_FIELD_MARSHAL,
 ];
 
+export const RANK_INDEX_MAP = Object.fromEntries(
+    RANK_ORDER.map((r, i) => [r, i])
+);
+
 export const REQUIRED_RANK_REFERRALS = 3;
 
 export const TradingEngineServiceDbCollection = {

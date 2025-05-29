@@ -2,6 +2,7 @@ import { SQSEvent } from "aws-lambda";
 import mongoose from "mongoose";
 import log from "@dazn/lambda-powertools-logger";
 import {
+    RANK_INDEX_MAP,
     RANK_ORDER,
     RANK_REQUIREMENTS,
     ReferralRank,
@@ -98,8 +99,8 @@ export class ReferralsService {
         maxReferralRankRequirementMet: ReferralRankType
     ): boolean {
         return (
-            RANK_ORDER.indexOf(maxReferralRankRequirementMet) >=
-            RANK_ORDER.indexOf(rank)
+            RANK_INDEX_MAP[maxReferralRankRequirementMet] >=
+            RANK_INDEX_MAP[rank]
         );
     }
 
@@ -108,9 +109,7 @@ export class ReferralsService {
     ): ReferralRankType {
         // Precompute the rank index for each referral
         const referralRankIndices = referrals.map((referral) =>
-            referral.referralRank
-                ? RANK_ORDER.indexOf(referral.referralRank)
-                : -1
+            referral.referralRank ? RANK_INDEX_MAP[referral.referralRank] : -1
         );
 
         // Prepare an array to count referrals at each rank or higher
