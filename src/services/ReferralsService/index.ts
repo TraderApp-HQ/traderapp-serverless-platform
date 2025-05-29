@@ -25,102 +25,6 @@ import { getParsedQueueMessagesBody } from "src/config/sqs/helpers";
 export class ReferralsService {
     constructor() {}
 
-    public async processUserReferralTracking(
-        connections: DatabaseConnections,
-        event: SQSEvent
-    ): Promise<void> {
-        const queueMessages =
-            getParsedQueueMessagesBody<IReferralQueueMessage>(event);
-        const {
-            tradingEngine: tradingEngineConnection,
-            users: usersConnection,
-        } = connections;
-
-        const processPromises = queueMessages.map(async (queueMessage) => {
-            try {
-                const { referrals, user, isTestReferralTracking } =
-                    queueMessage.body;
-                const balances = await this.computeUserAndReferralsBalances({
-                    tradingEngineConnection,
-                    referrals,
-                    userId: user.id,
-                });
-
-                const maxReferralRankRequirementMet =
-                    this.getMaxReferralRankRequirementMet(referrals);
-
-                const referralRank = this.computeRank({
-                    personalATC: balances.userBalance.availableBalance,
-                    communityATC: balances.communityBalance,
-                    communitySize: referrals.length,
-                    maxReferralRankRequirementMet,
-                    isTestReferralTracking,
-                });
-
-                await this.updateUserInfoInDb({
-                    mongooseConnection: usersConnection,
-                    balance: balances,
-                    userId: user.id,
-                    maxReferralRankRequirementMet,
-                    referralRank,
-                });
-            } catch (error) {
-                console.error(`An error occurred processing message: ${error}`);
-                // Don't throw the error so other messages can still be processed
-            }
-        });
-        await Promise.all(processPromises);
-    }
-
-    private getMaxReferralRankRequirementMet(
-        referrals: IUser[]
-    ): ReferralRankType {
-        let maxReferralRankRequirementMet: ReferralRankType =
-            ReferralRank.TA_RECRUIT;
-
-        RANK_ORDER.forEach((rank, rankIndex) => {
-            const meetsRequirement =
-                referrals.filter((referral) => {
-                    const referralRankIndex = referral.referralRank
-                        ? RANK_ORDER.indexOf(referral.referralRank)
-                        : -1;
-                    return referralRankIndex >= rankIndex;
-                }).length >= REQUIRED_RANK_REFERRALS;
-            if (meetsRequirement) {
-                maxReferralRankRequirementMet = rank;
-            }
-        });
-        return maxReferralRankRequirementMet;
-    }
-
-    public async computeUserAndReferralsBalances({
-        tradingEngineConnection,
-        referrals,
-        userId,
-    }: IComputeBalanceInput): Promise<IBalances> {
-        const [userBalance, ...referralBalances] = await Promise.all([
-            this.getTotalUsdtBalanceFromDb({
-                userId,
-                mongooseConnection: tradingEngineConnection,
-            }),
-            ...referrals.map((ref) =>
-                this.getTotalUsdtBalanceFromDb({
-                    userId: ref.id,
-                    mongooseConnection: tradingEngineConnection,
-                })
-            ),
-        ]);
-        const sumReferralBalance = referralBalances.reduce(
-            (total, balance) => total + balance.availableBalance,
-            0
-        );
-
-        return {
-            userBalance,
-            communityBalance: sumReferralBalance,
-        };
-    }
-
     private async getTotalUsdtBalanceFromDb({
         userId,
         mongooseConnection,
@@ -179,6 +83,135 @@ export class ReferralsService {
         }
     }
 
+    private getCommunitySize(
+        rank: ReferralRankType,
+        isTestReferralTracking: boolean = false
+    ): number {
+        return isTestReferralTracking
+            ? RANK_REQUIREMENTS[rank].testCommunitySize
+            : RANK_REQUIREMENTS[rank].communitySize;
+    }
+
+    // Determines if the user meets the required rank referrals for a given rank.
+    private hasRequiredRankReferrals(
+        rank: ReferralRankType,
+        maxReferralRankRequirementMet: ReferralRankType
+    ): boolean {
+        return (
+            RANK_ORDER.indexOf(maxReferralRankRequirementMet) >=
+            RANK_ORDER.indexOf(rank)
+        );
+    }
+
+    private getMaxReferralRankRequirementMet(
+        referrals: IUser[]
+    ): ReferralRankType {
+        // Precompute the rank index for each referral
+        const referralRankIndices = referrals.map((referral) =>
+            referral.referralRank
+                ? RANK_ORDER.indexOf(referral.referralRank)
+                : -1
+        );
+
+        // Prepare an array to count referrals at each rank or higher
+        const countsAtOrAbove: number[] = new Array(RANK_ORDER.length).fill(0);
+
+        // For each referral, increment the count for all ranks at or below their rank
+        referralRankIndices.forEach((referralIndex) => {
+            if (referralIndex >= 0) {
+                for (let i = 0; i <= referralIndex; i++) {
+                    countsAtOrAbove[i]++;
+                }
+            }
+        });
+
+        // Find the highest rank for which the requirement is met
+        let maxReferralRankRequirementMet: ReferralRankType =
+            ReferralRank.TA_RECRUIT;
+        for (let rankIndex = 0; rankIndex < RANK_ORDER.length; rankIndex++) {
+            if (countsAtOrAbove[rankIndex] >= REQUIRED_RANK_REFERRALS) {
+                maxReferralRankRequirementMet = RANK_ORDER[rankIndex];
+            }
+        }
+
+        return maxReferralRankRequirementMet;
+    }
+
+    public async processUserReferralTracking(
+        connections: DatabaseConnections,
+        event: SQSEvent
+    ): Promise<void> {
+        const queueMessages =
+            getParsedQueueMessagesBody<IReferralQueueMessage>(event);
+        const {
+            tradingEngine: tradingEngineConnection,
+            users: usersConnection,
+        } = connections;
+
+        const processPromises = queueMessages.map(async (queueMessage) => {
+            try {
+                const { referrals, user, isTestReferralTracking } =
+                    queueMessage.body;
+                const balances = await this.computeUserAndReferralsBalances({
+                    tradingEngineConnection,
+                    referrals,
+                    userId: user.id,
+                });
+
+                const maxReferralRankRequirementMet =
+                    this.getMaxReferralRankRequirementMet(referrals);
+
+                const referralRank = this.computeRank({
+                    personalATC: balances.userBalance.availableBalance,
+                    communityATC: balances.communityBalance,
+                    communitySize: referrals.length,
+                    maxReferralRankRequirementMet,
+                    isTestReferralTracking,
+                });
+
+                await this.updateUserInfoInDb({
+                    mongooseConnection: usersConnection,
+                    balance: balances,
+                    userId: user.id,
+                    maxReferralRankRequirementMet,
+                    referralRank,
+                });
+            } catch (error) {
+                console.error(`An error occurred processing message: ${error}`);
+                // Don't throw the error so other messages can still be processed
+            }
+        });
+        await Promise.all(processPromises);
+    }
+
+    public async computeUserAndReferralsBalances({
+        tradingEngineConnection,
+        referrals,
+        userId,
+    }: IComputeBalanceInput): Promise<IBalances> {
+        const [userBalance, ...referralBalances] = await Promise.all([
+            this.getTotalUsdtBalanceFromDb({
+                userId,
+                mongooseConnection: tradingEngineConnection,
+            }),
+            ...referrals.map((ref) =>
+                this.getTotalUsdtBalanceFromDb({
+                    userId: ref.id,
+                    mongooseConnection: tradingEngineConnection,
+                })
+            ),
+        ]);
+        const sumReferralBalance = referralBalances.reduce(
+            (total, balance) => total + balance.availableBalance,
+            0
+        );
+
+        return {
+            userBalance,
+            communityBalance: sumReferralBalance,
+        };
+    }
+
     public computeRank(criteria: IRankCriteria): ReferralRankType | null {
         const {
             personalATC,
@@ -188,22 +221,11 @@ export class ReferralsService {
             isTestReferralTracking,
         } = criteria;
 
-        const getCommunitySize = (rank: ReferralRankType) => {
-            return isTestReferralTracking
-                ? RANK_REQUIREMENTS[rank].testCommunitySize
-                : RANK_REQUIREMENTS[rank].communitySize;
-        };
-
-        // Determines if the user meets the required rank referrals for a given rank.
-        const hasRequiredRankReferrals = (rank: ReferralRankType): boolean => {
-            return (
-                RANK_ORDER.indexOf(maxReferralRankRequirementMet) >=
-                RANK_ORDER.indexOf(rank)
-            );
-        };
-
         switch (true) {
-            case hasRequiredRankReferrals(ReferralRank.TA_FIELD_MARSHAL) &&
+            case this.hasRequiredRankReferrals(
+                ReferralRank.TA_FIELD_MARSHAL,
+                maxReferralRankRequirementMet
+            ) &&
                 personalATC >=
                     RANK_REQUIREMENTS[ReferralRank.TA_FIELD_MARSHAL]
                         .personalATC &&
@@ -211,48 +233,86 @@ export class ReferralsService {
                     RANK_REQUIREMENTS[ReferralRank.TA_FIELD_MARSHAL]
                         .communityATC &&
                 communitySize >=
-                    getCommunitySize(ReferralRank.TA_FIELD_MARSHAL):
+                    this.getCommunitySize(
+                        ReferralRank.TA_FIELD_MARSHAL,
+                        isTestReferralTracking
+                    ):
                 return ReferralRank.TA_FIELD_MARSHAL;
 
-            case hasRequiredRankReferrals(ReferralRank.TA_GENERAL) &&
+            case this.hasRequiredRankReferrals(
+                ReferralRank.TA_GENERAL,
+                maxReferralRankRequirementMet
+            ) &&
                 personalATC >=
                     RANK_REQUIREMENTS[ReferralRank.TA_GENERAL].personalATC &&
                 communityATC >=
                     RANK_REQUIREMENTS[ReferralRank.TA_GENERAL].communityATC &&
-                communitySize >= getCommunitySize(ReferralRank.TA_GENERAL):
+                communitySize >=
+                    this.getCommunitySize(
+                        ReferralRank.TA_GENERAL,
+                        isTestReferralTracking
+                    ):
                 return ReferralRank.TA_GENERAL;
 
-            case hasRequiredRankReferrals(ReferralRank.TA_COLONEL) &&
+            case this.hasRequiredRankReferrals(
+                ReferralRank.TA_COLONEL,
+                maxReferralRankRequirementMet
+            ) &&
                 personalATC >=
                     RANK_REQUIREMENTS[ReferralRank.TA_COLONEL].personalATC &&
                 communityATC >=
                     RANK_REQUIREMENTS[ReferralRank.TA_COLONEL].communityATC &&
-                communitySize >= getCommunitySize(ReferralRank.TA_COLONEL):
+                communitySize >=
+                    this.getCommunitySize(
+                        ReferralRank.TA_COLONEL,
+                        isTestReferralTracking
+                    ):
                 return ReferralRank.TA_COLONEL;
 
-            case hasRequiredRankReferrals(ReferralRank.TA_MAJOR) &&
+            case this.hasRequiredRankReferrals(
+                ReferralRank.TA_MAJOR,
+                maxReferralRankRequirementMet
+            ) &&
                 personalATC >=
                     RANK_REQUIREMENTS[ReferralRank.TA_MAJOR].personalATC &&
                 communityATC >=
                     RANK_REQUIREMENTS[ReferralRank.TA_MAJOR].communityATC &&
-                communitySize >= getCommunitySize(ReferralRank.TA_MAJOR):
+                communitySize >=
+                    this.getCommunitySize(
+                        ReferralRank.TA_MAJOR,
+                        isTestReferralTracking
+                    ):
                 return ReferralRank.TA_MAJOR;
 
-            case hasRequiredRankReferrals(ReferralRank.TA_CAPTAIN) &&
+            case this.hasRequiredRankReferrals(
+                ReferralRank.TA_CAPTAIN,
+                maxReferralRankRequirementMet
+            ) &&
                 personalATC >=
                     RANK_REQUIREMENTS[ReferralRank.TA_CAPTAIN].personalATC &&
                 communityATC >=
                     RANK_REQUIREMENTS[ReferralRank.TA_CAPTAIN].communityATC &&
-                communitySize >= getCommunitySize(ReferralRank.TA_CAPTAIN):
+                communitySize >=
+                    this.getCommunitySize(
+                        ReferralRank.TA_CAPTAIN,
+                        isTestReferralTracking
+                    ):
                 return ReferralRank.TA_CAPTAIN;
 
-            case hasRequiredRankReferrals(ReferralRank.TA_LIEUTENANT) &&
+            case this.hasRequiredRankReferrals(
+                ReferralRank.TA_LIEUTENANT,
+                maxReferralRankRequirementMet
+            ) &&
                 personalATC >=
                     RANK_REQUIREMENTS[ReferralRank.TA_LIEUTENANT].personalATC &&
                 communityATC >=
                     RANK_REQUIREMENTS[ReferralRank.TA_LIEUTENANT]
                         .communityATC &&
-                communitySize >= getCommunitySize(ReferralRank.TA_LIEUTENANT):
+                communitySize >=
+                    this.getCommunitySize(
+                        ReferralRank.TA_LIEUTENANT,
+                        isTestReferralTracking
+                    ):
                 return ReferralRank.TA_LIEUTENANT;
 
             case personalATC >=
