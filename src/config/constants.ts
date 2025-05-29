@@ -64,3 +64,12 @@ export const RANK_ORDER = [
 ];
 
 export const REQUIRED_RANK_REFERRALS = 3;
+
+export const TradingEngineServiceDbCollection = {
+    userTradingAccountsCollection: "user-trading-accounts",
+    userTradingAccountBalanceCollection: "user-trading-account-balances",
+};
+
+export const UserServiceDbCollection = {
+    users: "users",
+};
