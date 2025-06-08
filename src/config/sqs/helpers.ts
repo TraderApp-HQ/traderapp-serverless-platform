@@ -6,7 +6,9 @@ import { IQueueMessageBody, IQueueMessageBodyObject } from "../interfaces";
  * @param event The SQS event containing records to parse
  * @returns Array of parsed records with typed body
  */
-export const parseQueueMessagesBody = <T = IQueueMessageBodyObject>(event: SQSEvent) => {
+export const parseQueueMessagesBody = <T = IQueueMessageBodyObject>(
+    event: SQSEvent
+) => {
     const queueMessages = event.Records.map((record) => {
         return {
             ...record,
@@ -21,7 +23,9 @@ export const parseQueueMessagesBody = <T = IQueueMessageBodyObject>(event: SQSEv
  * @param event The SQS event containing records to parse
  * @returns Array of parsed records with IQueueMessageBodyObject body
  */
-export const getParsedQueueMessagesBody = <T = IQueueMessageBodyObject>(event: SQSEvent): IQueueMessageBody<T>[] => {
+export const getParsedQueueMessagesBody = <T = IQueueMessageBodyObject>(
+    event: SQSEvent
+): IQueueMessageBody<T>[] => {
     return parseQueueMessagesBody<T>(event) as IQueueMessageBody<T>[];
 };
 

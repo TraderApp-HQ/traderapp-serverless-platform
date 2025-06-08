@@ -59,22 +59,22 @@ describe("Create User Wallet Integration Test", () => {
     });
 
     it("verify new wallet details", async () => {
-            // Verify wallets were created
-            const createdWallets = await userWalletCollection.find({
-                userId: testUserId,
-            });
+        // Verify wallets were created
+        const createdWallets = await userWalletCollection.find({
+            userId: testUserId,
+        });
 
-			expect(createdWallets).toBeDefined();
-			expect(Array.isArray(createdWallets)).toBe(true);
-			expect(createdWallets.length).toBeGreaterThan(0);
+        expect(createdWallets).toBeDefined();
+        expect(Array.isArray(createdWallets)).toBe(true);
+        expect(createdWallets.length).toBeGreaterThan(0);
 
-			// Check wallet properties
-			const wallet = createdWallets[0];
-			expect(wallet.userId).toBe(testUserId);
-			expect(wallet.availableBalance).toBe(0);
-			expect(wallet.lockedBalance).toBe(0);
-			expect(wallet.walletTypeName).toBeDefined();
-			expect(wallet.currencyName).toBeDefined();
-			expect(wallet.currencySymbol).toBeDefined();
-		});
+        // Check wallet properties
+        const wallet = createdWallets[0];
+        expect(wallet.userId).toBe(testUserId);
+        expect(wallet.availableBalance).toBe(0);
+        expect(wallet.lockedBalance).toBe(0);
+        expect(wallet.walletTypeName).toBeDefined();
+        expect(wallet.currencyName).toBeDefined();
+        expect(wallet.currencySymbol).toBeDefined();
+    });
 });
