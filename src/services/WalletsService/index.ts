@@ -20,9 +20,9 @@ import { IQueueMessageBody } from "src/config/interfaces";
 import { SecretLocation } from "src/config/secrets/enums";
 import { getSecrets } from "src/config/secrets/helpers";
 import { IWalletsServiceSecrets } from "src/config/secrets/interfaces";
-import { config } from "dotenv";
+// import { config } from "dotenv";
 
-config(); // Loads the .env file
+// config(); // Loads the .env file
 
 export class WalletsService {
     private connection: mongoose.Connection | null = null;
@@ -46,8 +46,12 @@ export class WalletsService {
         this.initializationPromise = (async () => {
             try {
                 // Fetch secrets once
+                const env = process.env.ENV ?? "dev";
+                console.log(
+                    `=============== Getting secrets  for ${SecretLocation.walletsServiceSecrets}/${env} =====================`
+                );
                 this.secrets = await getSecrets<IWalletsServiceSecrets>(
-                    `${SecretLocation.walletsServiceSecrets}/${process.env.ENV}`
+                    `${SecretLocation.walletsServiceSecrets}/${env}`
                 );
 
                 // Create connection
