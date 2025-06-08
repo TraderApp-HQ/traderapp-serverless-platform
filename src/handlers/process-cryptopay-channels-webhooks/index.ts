@@ -11,6 +11,7 @@ export const handler = async (event: SQSEvent): Promise<SQSBatchResponse> => {
     const { failedMessageIds } =
         await WalletsService.processCryptoPayChannelsWebhook(queueMessages);
 
+    // put failed items back into the queue
     return {
         batchItemFailures: failedMessageIds.map((id) => ({
             itemIdentifier: id,
