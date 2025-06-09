@@ -7,5 +7,6 @@
     "git.ignoreLimitWarning": true,
     "[prisma]": {
         "editor.defaultFormatter": "Prisma.prisma"
-    }
+    },
+    "markdown.validate.enabled": true
 }

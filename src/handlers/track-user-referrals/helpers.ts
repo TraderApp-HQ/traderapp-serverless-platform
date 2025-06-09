@@ -14,8 +14,10 @@ export const processUserReferralTracking = async (
     connections: DatabaseConnections,
     event: SQSEvent
 ): Promise<void> => {
-    const queueMessages = getParsedQueueMessagesBody<IReferralQueueMessage>(event);
-    const { tradingEngine: tradingEngineConnection, users: usersConnection } = connections;
+    const queueMessages =
+        getParsedQueueMessagesBody<IReferralQueueMessage>(event);
+    const { tradingEngine: tradingEngineConnection, users: usersConnection } =
+        connections;
 
     // Process each message in the batch
     const processPromises = queueMessages.map(async (queueMessage) => {
@@ -30,7 +32,8 @@ export const processUserReferralTracking = async (
                 personalATC: balances.userBalance.availableBalance,
                 communityATC: balances.communityBalance,
                 communitySize: queueMessage.body.referrals.length,
-                isTestReferralTracking: queueMessage.body.isTestReferralTracking,
+                isTestReferralTracking:
+                    queueMessage.body.isTestReferralTracking,
             });
 
             await updateUserBalanceInDb({

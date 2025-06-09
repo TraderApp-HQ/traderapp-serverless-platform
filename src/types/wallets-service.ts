@@ -88,3 +88,20 @@ export interface IUserWallet {
     availableBalance: number;
     lockedBalance: number;
 }
+
+export interface IWalletInput {
+    userId: string;
+}
+
+export interface IWalletType {
+    id: string;
+    walletTypeName: WalletType; // WalletType enum value
+    currencies: mongoose.Types.ObjectId[]; // Array of Currency references
+}
+
+export interface IWalletCurrency {
+    _id: string;
+    name: string;
+    symbol: string;
+    logoUrl: string;
+}

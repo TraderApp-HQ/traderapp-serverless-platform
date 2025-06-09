@@ -13,9 +13,9 @@ export interface ITradingEngineServiceSecrets {
     TRADING_ENGINE_SERVICE_DB_URL: string;
 }
 export interface IWalletsServiceSecrets {
-    CRYPTOPAY_BASE_URL: string
-    CRYPTOPAY_DEPOSITS_API_KEY: string
-    CRYPTOPAY_DEPOSITS_API_SECRET: string
-    CRYPTOPAY_WEBHOOK_SHARED_SECRET: string
-    WALLET_SERVICE_DB_URL: string
+    CRYPTOPAY_BASE_URL: string;
+    CRYPTOPAY_DEPOSITS_API_KEY: string;
+    CRYPTOPAY_DEPOSITS_API_SECRET: string;
+    CRYPTOPAY_WEBHOOK_SHARED_SECRET: string;
+    WALLET_SERVICE_DB_URL: string;
 }
