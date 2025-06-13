@@ -20,9 +20,7 @@ import { IQueueMessageBody } from "src/config/interfaces";
 import { SecretLocation } from "src/config/secrets/enums";
 import { getSecrets } from "src/config/secrets/helpers";
 import { IWalletsServiceSecrets } from "src/config/secrets/interfaces";
-// import { config } from "dotenv";
-
-// config(); // Loads the .env file
+import "dotenv/config";
 
 export class WalletsService {
     private connection: mongoose.Connection | null = null;
@@ -46,7 +44,7 @@ export class WalletsService {
         this.initializationPromise = (async () => {
             try {
                 // Fetch secrets once
-                const env = process.env.ENV ?? "dev";
+                const env = process.env.ENV;
                 console.log(
                     `=============== Getting secrets  for ${SecretLocation.walletsServiceSecrets}/${env} =====================`
                 );

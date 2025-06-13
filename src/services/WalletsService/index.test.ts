@@ -1,3 +1,4 @@
+import "dotenv/config";
 import WalletsService from ".";
 import { IUserWallet } from "src/types/wallets-service";
 import { WalletsServiceCollections } from "src/clients/MongoDBClient/constants";
