@@ -1,9 +1,9 @@
-name: traderapp-serverless-platform-deploy-staging
+name: traderapp-serverless-platform-deploy-prod
 
 on:
   push:
     branches:
-      - staging
+      - main
   workflow_dispatch: # Allow manual runs of the pipeline.
 
 jobs:
@@ -29,7 +29,7 @@ jobs:
           aws-region: ${{ vars.AWS_REGION }}
 
       - name: Install dependencies
-        run: npm install --force
+        run: npm install --include=dev --force
 
       - name: Build project
         run: npm run build
@@ -37,7 +37,7 @@ jobs:
       - name: Run tests
         run: npm run test
 
-  deploy-staging:
+  deploy-prod:
     runs-on: ubuntu-latest
     needs: build
     environment:
@@ -55,16 +55,16 @@ jobs:
           aws-region: ${{ vars.AWS_REGION }}
 
       - name: Install dependencies
-        run: npm install --force
+        run: npm install --include=dev --force
       
       - name: Build project
         run: npm run build
       
       - name: Deploy the service
-        run: sam deploy --config-env staging
+        run: sam deploy --config-env prod
 
       - name: Deploy secrets
-        run: npm run deploy-secrets staging
+        run: npm run deploy-secrets prod
 
       - name: Clean up
         run: npm run clean

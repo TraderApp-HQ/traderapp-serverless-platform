@@ -1,5 +1,7 @@
 import { SQSRecord } from "aws-lambda";
+import mongoose from "mongoose";
 import { EventTemplate } from "src/config/enums";
+import { ReferralRank } from "./constants";
 
 export interface IMessageRecipient {
     firstName: string;
@@ -10,12 +12,77 @@ export interface IMessageRecipient {
 }
 
 export interface IQueueMessageBodyObject {
-    recipients: [IMessageRecipient];
+    recipients: IMessageRecipient[];
     subject?: string;
     message: string;
     event: EventTemplate;
+    sender?: IMessageRecipient;
 }
 
-export interface IQueueMessageBody extends Omit<SQSRecord, "body"> {
-    body: IQueueMessageBodyObject;
+export interface IQueueMessageBody<T = IQueueMessageBodyObject>
+    extends Omit<SQSRecord, "body"> {
+    body: T;
+}
+
+export enum DatabaseType {
+    TRADING_ENGINE = "tradingEngine",
+    USERS = "users",
+}
+
+export type DatabaseConnections = {
+    [key in DatabaseType]: mongoose.Connection;
+};
+
+export interface IUser {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    referralRank: string;
+}
+
+export interface IReferralQueueMessage {
+    user: IUser;
+    referrals: IUser[];
+    isTestReferralTracking?: boolean;
+}
+
+export interface IScriptConfig {
+    scriptFunction: (connections: DatabaseConnections) => Promise<void>;
+    dbUrls: { [dbName in DatabaseType]: string };
+}
+
+export interface IUserDbConnection {
+    userId: string;
+    mongooseConnection: mongoose.Connection;
+}
+
+export interface IUserBalance {
+    availableBalance: number;
+    lockedBalance?: number;
+}
+
+export interface IComputeBalanceInput {
+    tradingEngineConnection: mongoose.Connection;
+    referrals: IReferralQueueMessage["referrals"];
+    userId: string;
+}
+
+export interface IBalances {
+    userBalance: IUserBalance;
+    communityBalance: number;
+}
+
+export interface IUpdateUserRecordInput extends IUserDbConnection {
+    balance: IBalances;
+    referralRank: ReferralRankType | null;
+}
+
+export type ReferralRankType = (typeof ReferralRank)[keyof typeof ReferralRank];
+
+export interface IRankCriteria {
+    personalATC: number;
+    communityATC: number;
+    communitySize: number;
+    isTestReferralTracking?: boolean;
 }
