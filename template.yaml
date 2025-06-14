@@ -30,6 +30,7 @@ Parameters:
     Description: Environment name to prefix resources
 
 Resources:
+# create queues
   emailOtpQueue:
     Type: AWS::SQS::Queue
     Properties:
@@ -54,6 +55,59 @@ Resources:
     Properties:
       QueueName: !Sub ${Environment}-emailNotificationsDLQ
 
+  userReferralsTrackingQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${Environment}-userReferralsTrackingQueue
+      VisibilityTimeout: 90
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt userReferralsTrackingDLQ.Arn
+        maxReceiveCount: 3
+  userReferralsTrackingDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${Environment}-userReferralsTrackingDLQ
+
+  cryptopayChannelsWebhooksQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${Environment}-cryptopayChannelsWebhooksQueue
+      VisibilityTimeout: 90
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt cryptopayChannelsWebhooksDLQ.Arn
+        maxReceiveCount: 3
+  cryptopayChannelsWebhooksDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${Environment}-cryptopayChannelsWebhooksDLQ
+
+  cryptopayInvoiceWebhooksQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${Environment}-cryptopayInvoiceWebhooksQueue
+      VisibilityTimeout: 90
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt cryptopayInvoiceWebhooksDLQ.Arn
+        maxReceiveCount: 3
+  cryptopayInvoiceWebhooksDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${Environment}-cryptopayInvoiceWebhooksDLQ
+ 
+  createUserWalletQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${Environment}-createUserWalletQueue
+      VisibilityTimeout: 90
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt createUserWalletDLQ.Arn
+        maxReceiveCount: 3
+  createUserWalletDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${Environment}-createUserWalletDLQ
+
+# create lambda functions
   sendEmailOtp:
     Type: AWS::Serverless::Function
     Properties:
@@ -102,7 +156,7 @@ Resources:
           Properties:
             Queue: !GetAtt emailNotificationsQueue.Arn
       MemorySize: 128
-      Timeout: 30
+      Timeout: 60
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt emailNotificationsDLQ.Arn
@@ -114,3 +168,125 @@ Resources:
                 - secretsmanager:GetSecretValue
               Resource:
                 - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:notifications-service/${Environment}*
+
+  userReferralsTracking:
+    Type: AWS::Serverless::Function
+    Properties:
+      Environment:
+        Variables:
+          ENV: !Ref Environment
+      FunctionName: !Sub ${Environment}-userReferralsTracking 
+      Runtime: nodejs20.x
+      Architectures:
+        - x86_64
+      Handler: dist/handlers/track-user-referrals.handler
+      Events:
+        SQSQueueEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt userReferralsTrackingQueue.Arn
+      MemorySize: 128
+      Timeout: 90
+      DeadLetterQueue:
+        Type: SQS
+        TargetArn: !GetAtt userReferralsTrackingDLQ.Arn
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Statement:
+          - Effect: Allow
+            Action:
+              - secretsmanager:GetSecretValue
+            Resource:
+              - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:trading-engine-service-secrets/${Environment}*
+              - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:users-service-secrets/${Environment}*
+            
+  processCryptopayChannelsWebhooks:
+    Type: AWS::Serverless::Function
+    Properties:
+      Environment:
+        Variables:
+          ENV: !Ref Environment
+      FunctionName: !Sub ${Environment}-processCryptopayChannelsWebhooks
+      Runtime: nodejs20.x
+      Architectures:
+        - x86_64
+      Handler: dist/handlers/process-cryptopay-channels-webhooks.handler
+      Events:
+        SQSQueueEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt cryptopayChannelsWebhooksQueue.Arn
+      MemorySize: 128
+      Timeout: 90
+      DeadLetterQueue:
+        Type: SQS
+        TargetArn: !GetAtt cryptopayChannelsWebhooksDLQ.Arn
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource:
+                - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:wallets-service-secrets/${Environment}*
+
+  processCryptopayInvoiceWebhooks:
+    Type: AWS::Serverless::Function
+    Properties:
+      Environment:
+        Variables:
+          ENV: !Ref Environment
+      FunctionName: !Sub ${Environment}-processCryptopayInvoiceWebhooks
+      Runtime: nodejs20.x
+      Architectures:
+        - x86_64
+      Handler: dist/handlers/process-cryptopay-invoice-webhooks.handler
+      Events:
+        SQSQueueEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt cryptopayInvoiceWebhooksQueue.Arn
+      MemorySize: 128
+      Timeout: 90
+      DeadLetterQueue:
+        Type: SQS
+        TargetArn: !GetAtt cryptopayInvoiceWebhooksDLQ.Arn
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource:
+                - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:wallets-service-secrets/${Environment}*
+
+  createUserWallet:
+    Type: AWS::Serverless::Function
+    Properties:
+      Environment:
+        Variables:
+          ENV: !Ref Environment
+      FunctionName: !Sub ${Environment}-createUserWallet
+      Runtime: nodejs20.x
+      Architectures:
+        - x86_64
+      Handler: dist/handlers/create-user-wallet.handler
+      Events:
+        SQSQueueEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt createUserWalletQueue.Arn
+      MemorySize: 128
+      Timeout: 90
+      DeadLetterQueue:
+        Type: SQS
+        TargetArn: !GetAtt createUserWalletDLQ.Arn
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource:
+                - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:common-secrets/${Environment}*
+                - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:wallets-service-secrets/${Environment}*
