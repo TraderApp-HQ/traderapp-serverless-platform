@@ -33,5 +33,6 @@ confirm_changeset = false
 stack_name = "prod"
 parameter_overrides = "Environment=\"prod\""
 s3_prefix = "prod"
+resolve_s3 = true
 capabilities = "CAPABILITY_IAM"
 confirm_changeset = false
