@@ -47,6 +47,7 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       QueueName: !Sub ${Environment}-emailNotificationsQueue
+      VisibilityTimeout: 60
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt emailNotificationsDLQ.Arn
         maxReceiveCount: 3
