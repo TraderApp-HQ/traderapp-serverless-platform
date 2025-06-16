@@ -116,13 +116,29 @@ export class ReferralsService {
         const countsAtOrAbove: number[] = new Array(RANK_ORDER.length).fill(0);
 
         // For each referral, increment the count for all ranks at or below their rank
-        referralRankIndices.forEach((referralIndex) => {
-            if (referralIndex >= 0) {
-                for (let i = 0; i <= referralIndex; i++) {
-                    countsAtOrAbove[i]++;
-                }
+
+        // Sort referralRankIndices in descending order
+        const sortedIndices = referralRankIndices
+            .filter((i) => i >= 0)
+            .sort((a, b) => b - a);
+
+        let runningCount = 0;
+        let currentIndex = RANK_ORDER.length - 1;
+
+        // Process from lowest to highest rank
+        for (let i = sortedIndices.length - 1; i >= 0; i--) {
+            const idx = sortedIndices[i];
+            while (currentIndex >= idx) {
+                countsAtOrAbove[currentIndex] = runningCount;
+                currentIndex--;
             }
-        });
+            runningCount++;
+        }
+        // Fill in any remaining lower ranks
+        while (currentIndex >= 0) {
+            countsAtOrAbove[currentIndex] = runningCount;
+            currentIndex--;
+        }
 
         // Find the highest rank for which the requirement is met
         let maxReferralRankRequirementMet: ReferralRankType =
@@ -139,7 +155,10 @@ export class ReferralsService {
     public async processUserReferralTracking(
         connections: DatabaseConnections,
         event: SQSEvent
-    ): Promise<void> {
+    ): Promise<{
+        successMessageIds: string[];
+        failedMessageIds: string[];
+    }> {
         const queueMessages =
             getParsedQueueMessagesBody<IReferralQueueMessage>(event);
         const {
@@ -147,40 +166,81 @@ export class ReferralsService {
             users: usersConnection,
         } = connections;
 
-        const processPromises = queueMessages.map(async (queueMessage) => {
-            try {
-                const { referrals, user, isTestReferralTracking } =
-                    queueMessage.body;
-                const balances = await this.computeUserAndReferralsBalances({
-                    tradingEngineConnection,
-                    referrals,
-                    userId: user.id,
-                });
+        const successMessageIds: string[] = [];
+        const failedMessageIds: string[] = [];
 
-                const maxReferralRankRequirementMet =
-                    this.getMaxReferralRankRequirementMet(referrals);
+        try {
+            const processingResults = await Promise.allSettled(
+                queueMessages.map(async (queueMessage) => {
+                    try {
+                        const { referrals, user, isTestReferralTracking } =
+                            queueMessage.body;
 
-                const referralRank = this.computeRank({
-                    personalATC: balances.userBalance.availableBalance,
-                    communityATC: balances.communityBalance,
-                    communitySize: referrals.length,
-                    maxReferralRankRequirementMet,
-                    isTestReferralTracking,
-                });
+                        const balances =
+                            await this.computeUserAndReferralsBalances({
+                                tradingEngineConnection,
+                                referrals,
+                                userId: user.id,
+                            });
 
-                await this.updateUserInfoInDb({
-                    mongooseConnection: usersConnection,
-                    balance: balances,
-                    userId: user.id,
-                    maxReferralRankRequirementMet,
-                    referralRank,
-                });
-            } catch (error) {
-                console.error(`An error occurred processing message: ${error}`);
-                // Don't throw the error so other messages can still be processed
-            }
-        });
-        await Promise.all(processPromises);
+                        const maxReferralRankRequirementMet =
+                            this.getMaxReferralRankRequirementMet(referrals);
+
+                        const referralRank = this.computeRank({
+                            personalATC: balances.userBalance.availableBalance,
+                            communityATC: balances.communityBalance,
+                            communitySize: referrals.length,
+                            maxReferralRankRequirementMet,
+                            isTestReferralTracking,
+                        });
+
+                        await this.updateUserInfoInDb({
+                            mongooseConnection: usersConnection,
+                            balance: balances,
+                            userId: user.id,
+                            maxReferralRankRequirementMet,
+                            referralRank,
+                        });
+
+                        return {
+                            messageId: queueMessage.messageId,
+                            success: true,
+                        };
+                    } catch (error) {
+                        log.error(
+                            `Failed to process referral message ${queueMessage.messageId}:`,
+                            { error }
+                        );
+                        return {
+                            messageId: queueMessage.messageId,
+                            success: false,
+                        };
+                    }
+                })
+            );
+
+            processingResults.forEach((result) => {
+                if (result.status === "fulfilled" && result.value.success) {
+                    successMessageIds.push(result.value.messageId);
+                } else {
+                    const messageId =
+                        result.status === "fulfilled"
+                            ? result.value.messageId
+                            : "unknown";
+                    failedMessageIds.push(messageId);
+                }
+            });
+
+            return { successMessageIds, failedMessageIds };
+        } catch (error) {
+            log.error("Error in processUserReferralTracking:", {
+                error,
+            });
+            return {
+                successMessageIds: [],
+                failedMessageIds: queueMessages.map((qm) => qm.messageId),
+            };
+        }
     }
 
     public async computeUserAndReferralsBalances({

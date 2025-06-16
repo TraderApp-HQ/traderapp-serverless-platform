@@ -1,4 +1,4 @@
-import { SQSEvent } from "aws-lambda";
+import { SQSBatchResponse, SQSEvent } from "aws-lambda";
 import log from "@dazn/lambda-powertools-logger";
 import { DatabaseConnections } from "src/config/interfaces";
 import { getSecrets } from "src/config/secrets/helpers";
@@ -10,7 +10,7 @@ import {
 } from "src/config/secrets/interfaces";
 import ReferralsService from "src/services/ReferralsService";
 
-export const handler = async (event: SQSEvent): Promise<void> => {
+export const handler = async (event: SQSEvent): Promise<SQSBatchResponse> => {
     log.info("Processing referrals data", { event });
 
     const [tradingEngineServiceSecrets, usersServiceSecrets] =
@@ -23,12 +23,16 @@ export const handler = async (event: SQSEvent): Promise<void> => {
             ),
         ]);
 
+    const allFailedMessageIds: string[] = [];
+
     const bindEventToTrackingHandler = (event: SQSEvent) => {
         return async (connections: DatabaseConnections): Promise<void> => {
-            await ReferralsService.processUserReferralTracking(
-                connections,
-                event
-            );
+            const { failedMessageIds } =
+                await ReferralsService.processUserReferralTracking(
+                    connections,
+                    event
+                );
+            allFailedMessageIds.push(...failedMessageIds);
         };
     };
 
@@ -40,4 +44,10 @@ export const handler = async (event: SQSEvent): Promise<void> => {
         },
         scriptFunction: bindEventToTrackingHandler(event),
     });
+
+    return {
+        batchItemFailures: allFailedMessageIds.map((id) => ({
+            itemIdentifier: id,
+        })),
+    };
 };
