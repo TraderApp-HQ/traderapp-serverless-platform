@@ -14,6 +14,7 @@ import {
     DatabaseConnections,
     IBalances,
     IComputeBalanceInput,
+    IComputeRankResult,
     IRankCriteria,
     IReferralQueueMessage,
     IUpdateUserRecordInput,
@@ -96,60 +97,54 @@ export class ReferralsService {
     // Determines if the user meets the required rank referrals for a given rank.
     private hasRequiredRankReferrals(
         rank: ReferralRankType,
-        maxReferralRankRequirementMet: ReferralRankType
+        maxRankFromReferrals: ReferralRankType
     ): boolean {
-        return (
-            RANK_INDEX_MAP[maxReferralRankRequirementMet] >=
-            RANK_INDEX_MAP[rank]
-        );
+        return RANK_INDEX_MAP[maxRankFromReferrals] >= RANK_INDEX_MAP[rank];
     }
 
-    private getMaxReferralRankRequirementMet(
+    private determineMaxRankFromReferrals(
         referrals: IUser[]
     ): ReferralRankType {
         // Precompute the rank index for each referral
         const referralRankIndices = referrals.map((referral) =>
-            referral.referralRank ? RANK_INDEX_MAP[referral.referralRank] : -1
+            referral.referralRank &&
+            RANK_INDEX_MAP[referral.referralRank] !== undefined
+                ? RANK_INDEX_MAP[referral.referralRank]
+                : -1
         );
 
-        // Prepare an array to count referrals at each rank or higher
-        const countsAtOrAbove: number[] = new Array(RANK_ORDER.length).fill(0);
-
-        // For each referral, increment the count for all ranks at or below their rank
-
-        // Sort referralRankIndices in descending order
-        const sortedIndices = referralRankIndices
-            .filter((i) => i >= 0)
-            .sort((a, b) => b - a);
-
-        let runningCount = 0;
-        let currentIndex = RANK_ORDER.length - 1;
-
-        // Process from lowest to highest rank
-        for (let i = sortedIndices.length - 1; i >= 0; i--) {
-            const idx = sortedIndices[i];
-            while (currentIndex >= idx) {
-                countsAtOrAbove[currentIndex] = runningCount;
-                currentIndex--;
+        // Count referrals at each specific rank
+        const rankCounts = new Array(RANK_ORDER.length).fill(0);
+        referralRankIndices.forEach((rankIndex) => {
+            if (rankIndex >= 0) {
+                rankCounts[rankIndex]++;
             }
-            runningCount++;
-        }
-        // Fill in any remaining lower ranks
-        while (currentIndex >= 0) {
-            countsAtOrAbove[currentIndex] = runningCount;
-            currentIndex--;
+        });
+
+        // Calculate cumulative counts from highest to lowest rank
+        const countsAtOrAbove = new Array(RANK_ORDER.length).fill(0);
+        let cumulativeCount = 0;
+        for (let i = RANK_ORDER.length - 1; i >= 0; i--) {
+            cumulativeCount += rankCounts[i];
+            countsAtOrAbove[i] = cumulativeCount;
         }
 
         // Find the highest rank for which the requirement is met
-        let maxReferralRankRequirementMet: ReferralRankType =
-            ReferralRank.TA_RECRUIT;
+        let highestRankWithEnoughReferrals: number = -1;
         for (let rankIndex = 0; rankIndex < RANK_ORDER.length; rankIndex++) {
             if (countsAtOrAbove[rankIndex] >= REQUIRED_RANK_REFERRALS) {
-                maxReferralRankRequirementMet = RANK_ORDER[rankIndex];
+                highestRankWithEnoughReferrals = rankIndex;
             }
         }
 
-        return maxReferralRankRequirementMet;
+        // Return one rank higher as the qualified rank (or the highest rank if already at the top)
+        if (highestRankWithEnoughReferrals === -1) {
+            return ReferralRank.TA_RECRUIT; // Default to lowest rank if no requirements met
+        } else if (highestRankWithEnoughReferrals >= RANK_ORDER.length - 1) {
+            return RANK_ORDER[highestRankWithEnoughReferrals]; // Already at highest rank
+        } else {
+            return RANK_ORDER[highestRankWithEnoughReferrals + 1]; // Return one rank higher
+        }
     }
 
     public async processUserReferralTracking(
@@ -183,23 +178,22 @@ export class ReferralsService {
                                 userId: user.id,
                             });
 
-                        const maxReferralRankRequirementMet =
-                            this.getMaxReferralRankRequirementMet(referrals);
-
-                        const referralRank = this.computeRank({
-                            personalATC: balances.userBalance.availableBalance,
-                            communityATC: balances.communityBalance,
-                            communitySize: referrals.length,
-                            maxReferralRankRequirementMet,
-                            isTestReferralTracking,
-                        });
+                        const { rank, maxRankFromReferrals } = this.computeRank(
+                            {
+                                personalATC:
+                                    balances.userBalance.availableBalance,
+                                communityATC: balances.communityBalance,
+                                referrals,
+                                isTestReferralTracking,
+                            }
+                        );
 
                         await this.updateUserInfoInDb({
                             mongooseConnection: usersConnection,
                             balance: balances,
                             userId: user.id,
-                            maxReferralRankRequirementMet,
-                            referralRank,
+                            maxRankFromReferrals,
+                            referralRank: rank,
                         });
 
                         return {
@@ -271,116 +265,46 @@ export class ReferralsService {
         };
     }
 
-    public computeRank(criteria: IRankCriteria): ReferralRankType | null {
-        const {
-            personalATC,
-            communityATC,
-            communitySize,
-            maxReferralRankRequirementMet,
-            isTestReferralTracking,
-        } = criteria;
+    public computeRank(criteria: IRankCriteria): IComputeRankResult {
+        const { personalATC, communityATC, referrals, isTestReferralTracking } =
+            criteria;
 
-        switch (true) {
-            case this.hasRequiredRankReferrals(
-                ReferralRank.TA_FIELD_MARSHAL,
-                maxReferralRankRequirementMet
-            ) &&
-                personalATC >=
-                    RANK_REQUIREMENTS[ReferralRank.TA_FIELD_MARSHAL]
-                        .personalATC &&
-                communityATC >=
-                    RANK_REQUIREMENTS[ReferralRank.TA_FIELD_MARSHAL]
-                        .communityATC &&
+        const communitySize = referrals.length;
+        const maxRankFromReferrals =
+            this.determineMaxRankFromReferrals(referrals);
+
+        let rank: ReferralRankType | null = null;
+
+        // Reversed copy of ranks without the lowest rank
+        const descendingRanks = [...RANK_ORDER].reverse().slice(0, -1);
+
+        // Iterate through ranks from highest to lowest
+        for (const currentRank of descendingRanks) {
+            if (
+                this.hasRequiredRankReferrals(
+                    currentRank,
+                    maxRankFromReferrals
+                ) &&
+                personalATC >= RANK_REQUIREMENTS[currentRank].personalATC &&
+                communityATC >= RANK_REQUIREMENTS[currentRank].communityATC &&
                 communitySize >=
-                    this.getCommunitySize(
-                        ReferralRank.TA_FIELD_MARSHAL,
-                        isTestReferralTracking
-                    ):
-                return ReferralRank.TA_FIELD_MARSHAL;
-
-            case this.hasRequiredRankReferrals(
-                ReferralRank.TA_GENERAL,
-                maxReferralRankRequirementMet
-            ) &&
-                personalATC >=
-                    RANK_REQUIREMENTS[ReferralRank.TA_GENERAL].personalATC &&
-                communityATC >=
-                    RANK_REQUIREMENTS[ReferralRank.TA_GENERAL].communityATC &&
-                communitySize >=
-                    this.getCommunitySize(
-                        ReferralRank.TA_GENERAL,
-                        isTestReferralTracking
-                    ):
-                return ReferralRank.TA_GENERAL;
-
-            case this.hasRequiredRankReferrals(
-                ReferralRank.TA_COLONEL,
-                maxReferralRankRequirementMet
-            ) &&
-                personalATC >=
-                    RANK_REQUIREMENTS[ReferralRank.TA_COLONEL].personalATC &&
-                communityATC >=
-                    RANK_REQUIREMENTS[ReferralRank.TA_COLONEL].communityATC &&
-                communitySize >=
-                    this.getCommunitySize(
-                        ReferralRank.TA_COLONEL,
-                        isTestReferralTracking
-                    ):
-                return ReferralRank.TA_COLONEL;
-
-            case this.hasRequiredRankReferrals(
-                ReferralRank.TA_MAJOR,
-                maxReferralRankRequirementMet
-            ) &&
-                personalATC >=
-                    RANK_REQUIREMENTS[ReferralRank.TA_MAJOR].personalATC &&
-                communityATC >=
-                    RANK_REQUIREMENTS[ReferralRank.TA_MAJOR].communityATC &&
-                communitySize >=
-                    this.getCommunitySize(
-                        ReferralRank.TA_MAJOR,
-                        isTestReferralTracking
-                    ):
-                return ReferralRank.TA_MAJOR;
-
-            case this.hasRequiredRankReferrals(
-                ReferralRank.TA_CAPTAIN,
-                maxReferralRankRequirementMet
-            ) &&
-                personalATC >=
-                    RANK_REQUIREMENTS[ReferralRank.TA_CAPTAIN].personalATC &&
-                communityATC >=
-                    RANK_REQUIREMENTS[ReferralRank.TA_CAPTAIN].communityATC &&
-                communitySize >=
-                    this.getCommunitySize(
-                        ReferralRank.TA_CAPTAIN,
-                        isTestReferralTracking
-                    ):
-                return ReferralRank.TA_CAPTAIN;
-
-            case this.hasRequiredRankReferrals(
-                ReferralRank.TA_LIEUTENANT,
-                maxReferralRankRequirementMet
-            ) &&
-                personalATC >=
-                    RANK_REQUIREMENTS[ReferralRank.TA_LIEUTENANT].personalATC &&
-                communityATC >=
-                    RANK_REQUIREMENTS[ReferralRank.TA_LIEUTENANT]
-                        .communityATC &&
-                communitySize >=
-                    this.getCommunitySize(
-                        ReferralRank.TA_LIEUTENANT,
-                        isTestReferralTracking
-                    ):
-                return ReferralRank.TA_LIEUTENANT;
-
-            case personalATC >=
-                RANK_REQUIREMENTS[ReferralRank.TA_RECRUIT].personalATC:
-                return ReferralRank.TA_RECRUIT;
-
-            default:
-                return null;
+                    this.getCommunitySize(currentRank, isTestReferralTracking)
+            ) {
+                rank = currentRank;
+                break;
+            }
         }
+
+        // If no higher rank matched, check for TA_RECRUIT
+        if (
+            !rank &&
+            personalATC >=
+                RANK_REQUIREMENTS[ReferralRank.TA_RECRUIT].personalATC
+        ) {
+            rank = ReferralRank.TA_RECRUIT;
+        }
+
+        return { rank, maxRankFromReferrals };
     }
 
     public async updateUserInfoInDb({
@@ -388,7 +312,7 @@ export class ReferralsService {
         mongooseConnection,
         balance,
         referralRank,
-        maxReferralRankRequirementMet,
+        maxRankFromReferrals,
     }: IUpdateUserRecordInput): Promise<void> {
         await mongooseConnection
             .collection(UserServiceDbCollection.users)
@@ -399,7 +323,7 @@ export class ReferralsService {
                         personalATC: balance.userBalance.availableBalance,
                         communityATC: balance.communityBalance,
                         referralRank,
-                        maxReferralRankRequirementMet,
+                        maxRankFromReferrals,
                         isTestReferralTrackingInProgress: false,
                     },
                 }

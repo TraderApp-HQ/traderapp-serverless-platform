@@ -76,15 +76,19 @@ export interface IBalances {
 export interface IUpdateUserRecordInput extends IUserDbConnection {
     balance: IBalances;
     referralRank: ReferralRankType | null;
-    maxReferralRankRequirementMet: ReferralRankType;
+    maxRankFromReferrals: ReferralRankType;
 }
 
 export type ReferralRankType = (typeof ReferralRank)[keyof typeof ReferralRank];
 
+export interface IComputeRankResult {
+    rank: ReferralRankType | null;
+    maxRankFromReferrals: ReferralRankType;
+}
+
 export interface IRankCriteria {
     personalATC: number;
     communityATC: number;
-    communitySize: number;
-    maxReferralRankRequirementMet: ReferralRankType;
+    referrals: IUser[];
     isTestReferralTracking?: boolean;
 }
