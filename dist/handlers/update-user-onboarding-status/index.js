@@ -84351,16 +84351,19 @@ var UsersService = class {
   // Get user by ID
   async getUserById(userId) {
     try {
-      await this.initialize();
+      console.info("######### getting connection #########");
       const connection = await this.getConnection();
+      console.info("######### connection successful #########");
       const usersCollection = new MongoDBClient(
         connection,
         UsersServiceCollections.users
       );
+      console.info("######### usersCollection successful #########");
       const user = await usersCollection.findOne({ id: userId });
+      console.info("######### user successful #########", { user });
       return user;
     } catch (error) {
-      import_lambda_powertools_logger2.default.debug(`Failed to get user by ID ${userId}:`, { error });
+      import_lambda_powertools_logger2.default.error(`Failed to get user by ID ${userId}:`, { error });
       throw error;
     }
   }
@@ -84372,22 +84375,35 @@ var UsersService = class {
         connection,
         UsersServiceCollections.users
       );
+      console.info("######### connection to db successful #########");
+      console.info("######### queueMessages #########", {
+        queueMessages
+      });
       const successMessageIds = [];
       const failedMessageIds = [];
       const userOnboardingTaskResult = await Promise.allSettled(
         queueMessages.map(async (queue) => {
           try {
             const { userId, taskField } = queue.body;
+            console.info("##########userId##########", { userId });
+            console.info("##########taskField##########", {
+              taskField
+            });
             const user = await this.getUserById(userId);
+            console.info("##########user##########", { user });
             if (!user) {
               return {
                 messageId: queue.messageId,
                 success: false
               };
             }
+            console.info("##########user[taskField]##########", {
+              taskField,
+              taskFieldValue: user[taskField]
+            });
             if (taskField !== "showOnboardingSteps" /* SHOW_ONBOARDING_STEPS */ && !user[taskField]) {
               const updatedUser = await usersCollection.findOneAndUpdate(
-                { id: userId, [taskField]: false },
+                { id: userId },
                 { $set: { [taskField]: true } }
               );
               if (updatedUser && updatedUser.showOnboardingSteps) {
@@ -84428,7 +84444,7 @@ var UsersService = class {
               success: true
             };
           } catch (error) {
-            import_lambda_powertools_logger2.default.debug(
+            import_lambda_powertools_logger2.default.error(
               `Failed to update onboarding task (${queue.body.taskField}) for user ${queue.body.userId}:`,
               {
                 error

@@ -382,6 +382,8 @@ export class WalletsService {
                 queueMessage: IQueueMessageBody<ICryptopayWebhookEvent>;
             }[];
 
+            // check if first deposit has not been made so we can deduct activation fee
+
             // Step 5: Credit user wallets for transactions that need crediting
             const creditResults = await Promise.allSettled(
                 filteredTransactionsToCredit.map(
