@@ -34,6 +34,7 @@ export enum UserOnboardingStatusField {
 export type ReferralRankType = (typeof ReferralRank)[keyof typeof ReferralRank];
 
 export interface IUser {
+    _id?: string;
     id?: string;
     email: string;
     password: string;

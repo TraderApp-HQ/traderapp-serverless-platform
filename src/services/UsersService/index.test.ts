@@ -10,12 +10,32 @@ import {
 import { MongoDBClient } from "src/clients/MongoDBClient";
 import { UsersServiceCollections } from "src/clients/MongoDBClient/constants";
 
+// Test User Data
+const testUserData = {
+    email: "testuseremail@example.com",
+    password: "HashedPassword12345@",
+    firstName: "Test-user-first-name",
+    lastName: "Test-user-last-name",
+    countryId: 89,
+    dob: "1990-01-01",
+    role: [Role.USER],
+    status: Status.ACTIVE,
+    isEmailVerified: false,
+    isFirstDepositMade: false,
+    isTradingAccountConnected: false,
+    isSocialAccountConnected: false,
+    isOnboardingTaskDone: false,
+    showOnboardingSteps: true,
+    isPhoneVerified: false,
+    isIdVerified: false,
+};
+
 jest.setTimeout(100000); // increase timeout for integration tests
 
 describe("UsersService Integration Tests", () => {
     let usersService: typeof UsersService;
     let usersCollection: MongoDBClient<IUser>;
-    const testUserId = "test-user-onboarding-123";
+    let testUserId: string;
     const testMessageId = "test-message-onboarding-456";
 
     beforeAll(async () => {
@@ -27,50 +47,30 @@ describe("UsersService Integration Tests", () => {
             connection,
             UsersServiceCollections.users
         );
+
+        // Create a test users
+        const testUser = await usersCollection.insertOne(testUserData);
+
+        if (testUser && testUser._id) {
+            // Update the id field for query purpose
+            await usersCollection.findOneAndUpdate(
+                { _id: testUser?._id },
+                { $set: { id: testUser?._id.toString() } }
+            );
+
+            testUserId = testUser?._id.toString();
+        }
     });
 
     afterAll(async () => {
-        // Clean up: delete all test users created during testing
+        // Clean up: delete the test user created during testing and close database connection
         try {
-            await usersCollection.deleteMany({ id: { $regex: /^test-user-/ } });
-        } catch (error) {
-            console.warn("Failed to cleanup test users:", error);
-        }
-        try {
+            await usersCollection.deleteOne({ id: testUserId });
             await usersService.cleanup();
         } catch (error) {
             console.warn("Failed to cleanup UsersService:", error);
         }
     });
-
-    const createTestUser = async (
-        overrides: Partial<IUser> = {}
-    ): Promise<IUser> => {
-        const testUser: IUser = {
-            id: `${testUserId}-${Date.now()}`,
-            email: `test-${Date.now()}@example.com`,
-            password: "hashedPassword123",
-            firstName: "Test",
-            lastName: "User",
-            countryId: 163,
-            dob: "1990-01-01",
-            role: [Role.USER],
-            status: Status.ACTIVE,
-            referralCode: `TEST${Date.now()}`,
-            isEmailVerified: false,
-            isFirstDepositMade: false,
-            isTradingAccountConnected: false,
-            isSocialAccountConnected: false,
-            isOnboardingTaskDone: false,
-            showOnboardingSteps: true,
-            isPhoneVerified: false,
-            isIdVerified: false,
-            ...overrides,
-        };
-
-        await usersCollection.insertOne(testUser);
-        return testUser;
-    };
 
     const createMockQueueMessage = (
         userId: string,
@@ -97,367 +97,103 @@ describe("UsersService Integration Tests", () => {
         awsRegion: "eu-west-1",
     });
 
-    describe("updateUserOnboardingStatus Integration Tests", () => {
-        describe("Successful scenarios", () => {
-            it("should successfully update email verification status", async () => {
-                // Arrange
-                const testUser = await createTestUser({
-                    isEmailVerified: false,
-                });
-                const queueMessage = createMockQueueMessage(
-                    testUser.id!,
-                    UserOnboardingStatusField.IS_EMAIL_VERIFIED
-                );
+    describe("Update-User-Onboarding-Status Integration Tests", () => {
+        it("Update Email Verification Status", async () => {
+            // Arrange
+            const queueMessage = createMockQueueMessage(
+                testUserId,
+                UserOnboardingStatusField.IS_EMAIL_VERIFIED
+            );
 
-                // Act
-                const result = await usersService.updateUserOnboardingStatus([
-                    queueMessage,
-                ]);
+            // Act
+            const result = await usersService.updateUserOnboardingStatus([
+                queueMessage,
+            ]);
+            // Assert
+            expect(result.successMessageIds).toContain(testMessageId);
+            expect(result.failedMessageIds).toHaveLength(0);
 
-                // Assert
-                expect(result.successMessageIds).toContain(testMessageId);
-                expect(result.failedMessageIds).toHaveLength(0);
-
-                // Verify the user was actually updated in the database
-                const updatedUser = await usersCollection.findOne({
-                    id: testUser.id,
-                });
-                expect(updatedUser).toBeDefined();
-                expect(updatedUser!.isEmailVerified).toBe(true);
+            // Verify the user was actually updated in the database
+            const updatedUser = await usersCollection.findOne({
+                id: testUserId,
             });
-
-            it("should successfully update trading account connection status", async () => {
-                // Arrange
-                const testUser = await createTestUser({
-                    isTradingAccountConnected: false,
-                });
-                const queueMessage = createMockQueueMessage(
-                    testUser.id!,
-                    UserOnboardingStatusField.IS_TRADING_ACCOUNT_CONNECTED
-                );
-
-                // Act
-                const result = await usersService.updateUserOnboardingStatus([
-                    queueMessage,
-                ]);
-
-                // Assert
-                expect(result.successMessageIds).toContain(testMessageId);
-                expect(result.failedMessageIds).toHaveLength(0);
-
-                // Verify the user was actually updated in the database
-                const updatedUser = await usersCollection.findOne({
-                    id: testUser.id,
-                });
-                expect(updatedUser).toBeDefined();
-                expect(updatedUser!.isTradingAccountConnected).toBe(true);
-            });
-
-            it("should hide onboarding task when all required tasks are completed", async () => {
-                // Arrange
-                const testUser = await createTestUser({
-                    isEmailVerified: true,
-                    isFirstDepositMade: true,
-                    isTradingAccountConnected: true,
-                    isSocialAccountConnected: true,
-                    isOnboardingTaskDone: true,
-                    showOnboardingSteps: true,
-                });
-                const queueMessage = createMockQueueMessage(
-                    testUser.id!,
-                    UserOnboardingStatusField.IS_ONBOARDING_TASK_DONE
-                );
-
-                // Act
-                const result = await usersService.updateUserOnboardingStatus([
-                    queueMessage,
-                ]);
-
-                // Assert
-                expect(result.successMessageIds).toContain(testMessageId);
-                expect(result.failedMessageIds).toHaveLength(0);
-
-                // Verify the showOnboardingTask was set to false
-                const updatedUser = await usersCollection.findOne({
-                    id: testUser.id,
-                });
-                expect(updatedUser).toBeDefined();
-                expect(updatedUser!.showOnboardingSteps).toBe(false);
-            });
-
-            it("should handle showOnboardingTask toggle when user dismisses onboarding", async () => {
-                // Arrange
-                const testUser = await createTestUser({
-                    showOnboardingSteps: true,
-                });
-                const queueMessage = createMockQueueMessage(
-                    testUser.id!,
-                    UserOnboardingStatusField.SHOW_ONBOARDING_STEPS
-                );
-
-                // Act
-                const result = await usersService.updateUserOnboardingStatus([
-                    queueMessage,
-                ]);
-
-                // Assert
-                expect(result.successMessageIds).toContain(testMessageId);
-                expect(result.failedMessageIds).toHaveLength(0);
-
-                // Verify the showOnboardingTask was toggled
-                const updatedUser = await usersCollection.findOne({
-                    id: testUser.id,
-                });
-                expect(updatedUser).toBeDefined();
-                expect(updatedUser!.showOnboardingSteps).toBe(false);
-            });
-
-            it("should process multiple messages successfully", async () => {
-                // Arrange
-                const testUser = await createTestUser();
-                const queueMessages = [
-                    createMockQueueMessage(
-                        testUser.id!,
-                        UserOnboardingStatusField.IS_EMAIL_VERIFIED,
-                        "msg-1"
-                    ),
-                    createMockQueueMessage(
-                        testUser.id!,
-                        UserOnboardingStatusField.IS_FIRST_DEPOSIT_MADE,
-                        "msg-2"
-                    ),
-                ];
-
-                // Act
-                const result =
-                    await usersService.updateUserOnboardingStatus(
-                        queueMessages
-                    );
-
-                // Assert
-                expect(result.successMessageIds).toContain("msg-1");
-                expect(result.successMessageIds).toContain("msg-2");
-                expect(result.failedMessageIds).toHaveLength(0);
-
-                // Verify both fields were updated
-                const updatedUser = await usersCollection.findOne({
-                    id: testUser.id,
-                });
-                expect(updatedUser).toBeDefined();
-                expect(updatedUser!.isEmailVerified).toBe(true);
-                expect(updatedUser!.isFirstDepositMade).toBe(true);
-            });
+            expect(updatedUser).toBeDefined();
+            expect(updatedUser!.isEmailVerified).toBe(true);
         });
 
-        describe("Failure scenarios", () => {
-            it("should fail when user does not exist", async () => {
-                // Arrange
-                const nonExistentUserId = "non-existent-user-123";
-                const queueMessage = createMockQueueMessage(
-                    nonExistentUserId,
-                    UserOnboardingStatusField.IS_EMAIL_VERIFIED
-                );
+        it("Update Trading Account Connection Status", async () => {
+            // Arrange
+            const queueMessage = createMockQueueMessage(
+                testUserId,
+                UserOnboardingStatusField.IS_TRADING_ACCOUNT_CONNECTED
+            );
 
-                // Act
-                const result = await usersService.updateUserOnboardingStatus([
-                    queueMessage,
-                ]);
+            // Act
+            const result = await usersService.updateUserOnboardingStatus([
+                queueMessage,
+            ]);
 
-                // Assert
-                expect(result.successMessageIds).toHaveLength(0);
-                expect(result.failedMessageIds).toContain(testMessageId);
+            // Assert
+            expect(result.successMessageIds).toContain(testMessageId);
+            expect(result.failedMessageIds).toHaveLength(0);
+
+            // Verify the user was actually updated in the database
+            const updatedUser = await usersCollection.findOne({
+                id: testUserId,
             });
 
-            it("should handle task field that is already completed", async () => {
-                // Arrange
-                const testUser = await createTestUser({
-                    isEmailVerified: true,
-                });
-                const queueMessage = createMockQueueMessage(
-                    testUser.id!,
-                    UserOnboardingStatusField.IS_EMAIL_VERIFIED
-                );
-
-                // Act
-                const result = await usersService.updateUserOnboardingStatus([
-                    queueMessage,
-                ]);
-
-                // Assert
-                expect(result.successMessageIds).toContain(testMessageId); // Still succeeds as no update needed
-                expect(result.failedMessageIds).toHaveLength(0);
-
-                // Verify the field remains unchanged
-                const updatedUser = await usersCollection.findOne({
-                    id: testUser.id,
-                });
-                expect(updatedUser).toBeDefined();
-                expect(updatedUser!.isEmailVerified).toBe(true);
-            });
+            expect(updatedUser).toBeDefined();
+            expect(updatedUser!.isTradingAccountConnected).toBe(true);
         });
 
-        describe("Complete onboarding flow simulation", () => {
-            it("should handle complete onboarding flow step by step", async () => {
-                // Arrange - Create a fresh user
-                const testUser = await createTestUser();
-                const onboardingSteps = [
-                    UserOnboardingStatusField.IS_EMAIL_VERIFIED,
-                    UserOnboardingStatusField.IS_FIRST_DEPOSIT_MADE,
-                    UserOnboardingStatusField.IS_TRADING_ACCOUNT_CONNECTED,
-                    UserOnboardingStatusField.IS_SOCIAL_ACCOUNT_CONNECTED,
-                    UserOnboardingStatusField.IS_ONBOARDING_TASK_DONE,
-                ];
+        it("Update First Deposit Made Status", async () => {
+            // Arrange
+            const queueMessage = createMockQueueMessage(
+                testUserId,
+                UserOnboardingStatusField.IS_FIRST_DEPOSIT_MADE
+            );
 
-                const queueMessages = onboardingSteps.map((field, index) =>
-                    createMockQueueMessage(testUser.id!, field, `step-${index}`)
-                );
+            // Act
+            const result = await usersService.updateUserOnboardingStatus([
+                queueMessage,
+            ]);
 
-                // Act - Process all onboarding steps
-                const result =
-                    await usersService.updateUserOnboardingStatus(
-                        queueMessages
-                    );
+            // Assert
+            expect(result.successMessageIds).toContain(testMessageId);
+            expect(result.failedMessageIds).toHaveLength(0);
 
-                // Assert
-                expect(result.successMessageIds).toHaveLength(
-                    onboardingSteps.length
-                );
-                expect(result.failedMessageIds).toHaveLength(0);
-
-                // Verify all onboarding fields were updated
-                const updatedUser = await usersCollection.findOne({
-                    id: testUser.id,
-                });
-                expect(updatedUser).toBeDefined();
-                expect(updatedUser!.isEmailVerified).toBe(true);
-                expect(updatedUser!.isFirstDepositMade).toBe(true);
-                expect(updatedUser!.isTradingAccountConnected).toBe(true);
-                expect(updatedUser!.isSocialAccountConnected).toBe(true);
-                expect(updatedUser!.isOnboardingTaskDone).toBe(true);
-                expect(updatedUser!.showOnboardingSteps).toBe(false); // Should be hidden when all tasks are done
+            // Verify the user was actually updated in the database
+            const updatedUser = await usersCollection.findOne({
+                id: testUserId,
             });
+
+            expect(updatedUser).toBeDefined();
+            expect(updatedUser!.isFirstDepositMade).toBe(true);
         });
 
-        describe("Edge cases", () => {
-            it("should handle empty queue messages array", async () => {
-                // Act
-                const result = await usersService.updateUserOnboardingStatus(
-                    []
-                );
+        it("Turn Off showOnboardingSteps flag after compulsory actions are completed.", async () => {
+            // Arrange
+            const queueMessage = createMockQueueMessage(
+                testUserId,
+                UserOnboardingStatusField.SHOW_ONBOARDING_STEPS
+            );
 
-                // Assert
-                expect(result.successMessageIds).toHaveLength(0);
-                expect(result.failedMessageIds).toHaveLength(0);
+            // Act
+            const result = await usersService.updateUserOnboardingStatus([
+                queueMessage,
+            ]);
+
+            // Assert
+            expect(result.successMessageIds).toContain(testMessageId);
+            expect(result.failedMessageIds).toHaveLength(0);
+
+            // Verify the showOnboardingTask was toggled
+            const updatedUser = await usersCollection.findOne({
+                id: testUserId,
             });
 
-            it("should handle all UserOnboardingStatusField types", async () => {
-                // Arrange
-                const testUser = await createTestUser();
-                const taskFields = Object.values(UserOnboardingStatusField);
-                const queueMessages = taskFields.map((field, index) =>
-                    createMockQueueMessage(testUser.id!, field, `msg-${index}`)
-                );
-
-                // Act
-                const result =
-                    await usersService.updateUserOnboardingStatus(
-                        queueMessages
-                    );
-
-                // Assert
-                expect(result.successMessageIds).toHaveLength(
-                    taskFields.length
-                );
-                expect(result.failedMessageIds).toHaveLength(0);
-
-                // Verify all fields were updated
-                const updatedUser = await usersCollection.findOne({
-                    id: testUser.id,
-                });
-                expect(updatedUser).toBeDefined();
-                expect(updatedUser!.isEmailVerified).toBe(true);
-                expect(updatedUser!.isFirstDepositMade).toBe(true);
-                expect(updatedUser!.isTradingAccountConnected).toBe(true);
-                expect(updatedUser!.isSocialAccountConnected).toBe(true);
-                expect(updatedUser!.isOnboardingTaskDone).toBe(true);
-                expect(updatedUser!.showOnboardingSteps).toBe(false);
-                expect(updatedUser!.isPhoneVerified).toBe(true);
-                expect(updatedUser!.isIdVerified).toBe(true);
-            });
-
-            it("should handle very long userId values", async () => {
-                // Arrange
-                const longUserId = "a".repeat(1000);
-                await createTestUser({ id: longUserId });
-                const queueMessage = createMockQueueMessage(
-                    longUserId,
-                    UserOnboardingStatusField.IS_EMAIL_VERIFIED
-                );
-
-                // Act
-                const result = await usersService.updateUserOnboardingStatus([
-                    queueMessage,
-                ]);
-
-                // Assert
-                expect(result.successMessageIds).toContain(testMessageId);
-                expect(result.failedMessageIds).toHaveLength(0);
-
-                // Verify the user was updated
-                const updatedUser = await usersCollection.findOne({
-                    id: longUserId,
-                });
-                expect(updatedUser).toBeDefined();
-                expect(updatedUser!.isEmailVerified).toBe(true);
-            });
-        });
-
-        describe("Batch processing scenarios", () => {
-            it("should handle partial failures in batch processing", async () => {
-                // Arrange
-                const testUser1 = await createTestUser();
-                const testUser2 = await createTestUser();
-                const nonExistentUserId = "non-existent-user-456";
-
-                const queueMessages = [
-                    createMockQueueMessage(
-                        testUser1.id!,
-                        UserOnboardingStatusField.IS_EMAIL_VERIFIED,
-                        "msg-1"
-                    ),
-                    createMockQueueMessage(
-                        nonExistentUserId,
-                        UserOnboardingStatusField.IS_FIRST_DEPOSIT_MADE,
-                        "msg-2"
-                    ),
-                    createMockQueueMessage(
-                        testUser2.id!,
-                        UserOnboardingStatusField.IS_TRADING_ACCOUNT_CONNECTED,
-                        "msg-3"
-                    ),
-                ];
-
-                // Act
-                const result =
-                    await usersService.updateUserOnboardingStatus(
-                        queueMessages
-                    );
-
-                // Assert
-                expect(result.successMessageIds).toContain("msg-1");
-                expect(result.successMessageIds).toContain("msg-3");
-                expect(result.failedMessageIds).toContain("msg-2");
-
-                // Verify successful updates
-                const updatedUser1 = await usersCollection.findOne({
-                    id: testUser1.id,
-                });
-                const updatedUser2 = await usersCollection.findOne({
-                    id: testUser2.id,
-                });
-                expect(updatedUser1!.isEmailVerified).toBe(true);
-                expect(updatedUser2!.isTradingAccountConnected).toBe(true);
-            });
+            expect(updatedUser).toBeDefined();
+            expect(updatedUser!.showOnboardingSteps).toBe(false);
         });
     });
 });

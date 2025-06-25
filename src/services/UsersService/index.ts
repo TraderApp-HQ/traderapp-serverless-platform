@@ -94,19 +94,15 @@ class UsersService {
     // Get user by ID
     private async getUserById(userId: string): Promise<IUser | null> {
         try {
-            // await this.initialize();
-            console.info("######### getting connection #########");
             const connection = await this.getConnection();
-            console.info("######### connection successful #########");
             const usersCollection = new MongoDBClient<IUser>(
                 connection,
                 UsersServiceCollections.users
             );
-            console.info("######### usersCollection successful #########");
 
             // Find user by ID
             const user = await usersCollection.findOne({ id: userId });
-            console.info("######### user successful #########", { user });
+
             return user;
         } catch (error) {
             log.error(`Failed to get user by ID ${userId}:`, { error });
@@ -127,10 +123,6 @@ class UsersService {
                 connection,
                 UsersServiceCollections.users
             );
-            console.info("######### connection to db successful #########");
-            console.info("######### queueMessages #########", {
-                queueMessages,
-            });
 
             const successMessageIds: string[] = [];
             const failedMessageIds: string[] = [];
@@ -140,13 +132,9 @@ class UsersService {
                 queueMessages.map(async (queue) => {
                     try {
                         const { userId, taskField } = queue.body;
-                        console.info("##########userId##########", { userId });
-                        console.info("##########taskField##########", {
-                            taskField,
-                        });
+                        
                         // Get user
                         const user = await this.getUserById(userId);
-                        console.info("##########user##########", { user });
 
                         // Confirm user exists and ...
                         if (!user) {
@@ -157,10 +145,6 @@ class UsersService {
                         }
 
                         // Check that flag is not showOnboardingTask flag and flag is not turned on yet
-                        console.info("##########user[taskField]##########", {
-                            taskField: taskField,
-                            taskFieldValue: user[taskField],
-                        });
                         if (
                             taskField !==
                                 UserOnboardingStatusField.SHOW_ONBOARDING_STEPS &&
@@ -204,7 +188,6 @@ class UsersService {
                             await usersCollection.updateOne(
                                 {
                                     id: userId,
-                                    [taskField]: true,
                                     isEmailVerified: true,
                                     isFirstDepositMade: true,
                                     isTradingAccountConnected: true,
