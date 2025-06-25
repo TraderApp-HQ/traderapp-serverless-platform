@@ -1,5 +1,6 @@
-import mongoose from "mongoose";
 import log from "@dazn/lambda-powertools-logger";
+import "dotenv/config";
+import mongoose from "mongoose";
 import {
     CryptoPayClient,
     CryptopayWebhookEventStatus,
@@ -7,6 +8,12 @@ import {
 } from "src/clients/CryptoPayClient";
 import { MongoDBClient } from "src/clients/MongoDBClient";
 import { WalletsServiceCollections } from "src/clients/MongoDBClient/constants";
+import { publishMessageToQueue } from "src/clients/SQSClient/helpers";
+import { IQueueMessageBody } from "src/config/interfaces";
+import { SecretLocation } from "src/config/secrets/enums";
+import { getSecrets } from "src/config/secrets/helpers";
+import { IWalletsServiceSecrets } from "src/config/secrets/interfaces";
+import { UserOnboardingStatusField } from "src/types/users-service";
 import {
     ITransaction,
     IUserWallet,
@@ -16,11 +23,6 @@ import {
     IWalletType,
     TransactionStatus,
 } from "src/types/wallets-service";
-import { IQueueMessageBody } from "src/config/interfaces";
-import { SecretLocation } from "src/config/secrets/enums";
-import { getSecrets } from "src/config/secrets/helpers";
-import { IWalletsServiceSecrets } from "src/config/secrets/interfaces";
-import "dotenv/config";
 
 export class WalletsService {
     private connection: mongoose.Connection | null = null;
@@ -391,6 +393,25 @@ export class WalletsService {
                                     queueMessage.body.data.paid_amount ?? "0"
                                 ),
                             });
+                            // Publish user to queue for first deposit tracking if paid_amount is greater than $10
+                            if (
+                                parseFloat(
+                                    queueMessage.body.data.paid_amount ?? "0"
+                                ) > 10
+                            ) {
+                                await publishMessageToQueue({
+                                    queueUrl:
+                                        process.env
+                                            .UPDATE_USER_ONBOARDING_STATUS_QUEUE ??
+                                        "",
+                                    message: {
+                                        userId,
+                                        taskField:
+                                            UserOnboardingStatusField.IS_FIRST_DEPOSIT_MADE,
+                                    },
+                                });
+                            }
+
                             console.debug(
                                 `Successfully credited wallet for message ${messageId}`
                             );
