@@ -1,5 +1,5 @@
 npm run format:write
-# npm run compile
-# npm run clean
-# npx lint-staged
+npm run compile
+npm run clean
+npx lint-staged
 # npm run test

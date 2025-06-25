@@ -1,4 +1,4 @@
-import { logger } from "@traderapp/shared-resources";
+import log from "@dazn/lambda-powertools-logger";
 import "dotenv/config";
 import { IUpdateUserOnboardingStatusInput } from "src/types/users-service";
 import { QueueService } from "..";
@@ -26,8 +26,6 @@ export const publishMessageToQueue = async ({
         }
         await sqsClient.sendMessage(processedBody);
     } catch (error) {
-        logger.error(
-            `Error sending message to queue == ${JSON.stringify(error)}`
-        );
+        log.error(`Error sending message to queue == ${JSON.stringify(error)}`);
     }
 };
