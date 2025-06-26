@@ -109,7 +109,7 @@ export class ReferralsService {
         referrals: IUser[]
     ): ReferralRankType {
         // Converts each referral's rank into a numerical index for easier comparison
-        // If a referral doesn't have a valid rank, assigns -1 (invalid rank)
+        // If a referral doesn't have a rank (or has an invalid rank), assigns -1
         const referralRankIndices = referrals.map((referral) =>
             referral.referralRank &&
             RANK_INDEX_MAP[referral.referralRank] !== undefined
@@ -138,11 +138,16 @@ export class ReferralsService {
         }
 
         // Finds the highest rank where the user has at least 3 referrals at that rank or higher.
-        // Loops from lowest to highest rank, updating whenever the threshold (likely 3) is met.
+        // Loops from highest to lowest rank to check where threshold for REQUIRED_RANK_REFERRALS is first met.
         let highestRankWithEnoughReferrals: number = -1;
-        for (let rankIndex = 0; rankIndex < RANK_ORDER.length; rankIndex++) {
+        for (
+            let rankIndex = RANK_ORDER.length - 1;
+            rankIndex >= 0;
+            rankIndex--
+        ) {
             if (countsAtRankOrAbove[rankIndex] >= REQUIRED_RANK_REFERRALS) {
                 highestRankWithEnoughReferrals = rankIndex;
+                break;
             }
         }
 
@@ -289,11 +294,12 @@ export class ReferralsService {
 
         // Iterate through ranks from highest to lowest
         for (const currentRank of descendingRanks) {
+            const hasRequiredRankReferrals = this.hasRequiredRankReferrals(
+                currentRank,
+                maxRankFromReferrals
+            );
             if (
-                this.hasRequiredRankReferrals(
-                    currentRank,
-                    maxRankFromReferrals
-                ) &&
+                hasRequiredRankReferrals &&
                 personalATC >= RANK_REQUIREMENTS[currentRank].personalATC &&
                 communityATC >= RANK_REQUIREMENTS[currentRank].communityATC &&
                 communitySize >=
