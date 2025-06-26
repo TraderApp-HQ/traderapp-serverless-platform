@@ -94,7 +94,7 @@ export class ReferralsService {
             : RANK_REQUIREMENTS[rank].communitySize;
     }
 
-    // Determines if the user meets the required rank referrals for a given rank.
+    // Checks if the user has enough referrals at the given rank or at a higher rank
     private hasRequiredRankReferrals(
         rank: ReferralRankType,
         maxRankFromReferrals: ReferralRankType
@@ -102,10 +102,14 @@ export class ReferralsService {
         return RANK_INDEX_MAP[maxRankFromReferrals] >= RANK_INDEX_MAP[rank];
     }
 
+    // Calculates the highest rank a user qualifies for based solely on their referrals' ranks.
+    // It counts how many referrals a user has at each rank level and higher, then determines the highest rank where they have at least 3 referrals at that rank or above.
+    // Based on the business rule, having 3+ referrals at rank X qualifies the user for rank X+1, so this function returns that eligible rank.
     private determineMaxRankFromReferrals(
         referrals: IUser[]
     ): ReferralRankType {
-        // Precompute the rank index for each referral
+        // Converts each referral's rank into a numerical index for easier comparison
+        // If a referral doesn't have a valid rank, assigns -1 (invalid rank)
         const referralRankIndices = referrals.map((referral) =>
             referral.referralRank &&
             RANK_INDEX_MAP[referral.referralRank] !== undefined
@@ -113,26 +117,31 @@ export class ReferralsService {
                 : -1
         );
 
-        // Count referrals at each specific rank
+        // Creates an array where each position represents a rank
         const rankCounts = new Array(RANK_ORDER.length).fill(0);
+
+        // Counts how many referrals exist for each specific rank
         referralRankIndices.forEach((rankIndex) => {
             if (rankIndex >= 0) {
                 rankCounts[rankIndex]++;
             }
         });
 
-        // Calculate cumulative counts from highest to lowest rank
-        const countsAtOrAbove = new Array(RANK_ORDER.length).fill(0);
+        // Creates another array to track cumulative counts
+        // Starting from the highest rank, adds up the counts going downward
+        // Each position now shows how many referrals are at that rank OR higher
+        const countsAtRankOrAbove = new Array(RANK_ORDER.length).fill(0);
         let cumulativeCount = 0;
         for (let i = RANK_ORDER.length - 1; i >= 0; i--) {
             cumulativeCount += rankCounts[i];
-            countsAtOrAbove[i] = cumulativeCount;
+            countsAtRankOrAbove[i] = cumulativeCount;
         }
 
-        // Find the highest rank for which the requirement is met
+        // Finds the highest rank where the user has at least 3 referrals at that rank or higher.
+        // Loops from lowest to highest rank, updating whenever the threshold (likely 3) is met.
         let highestRankWithEnoughReferrals: number = -1;
         for (let rankIndex = 0; rankIndex < RANK_ORDER.length; rankIndex++) {
-            if (countsAtOrAbove[rankIndex] >= REQUIRED_RANK_REFERRALS) {
+            if (countsAtRankOrAbove[rankIndex] >= REQUIRED_RANK_REFERRALS) {
                 highestRankWithEnoughReferrals = rankIndex;
             }
         }
