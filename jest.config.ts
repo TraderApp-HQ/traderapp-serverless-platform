@@ -19,4 +19,5 @@ export default {
     collectCoverageFrom: ["src/**/*.ts"],
     testPathIgnorePatterns: ["/node_modules/", "/.aws-sam/"],
     moduleNameMapper: pathsToModuleNameMapper(compilerOptions.paths, { prefix: '<rootDir>/' }),  // This maps the 'src/*' paths for Jest
+    setupFiles: ["<rootDir>/jest.setup.ts"], // Added setup file for environment variables
 };
