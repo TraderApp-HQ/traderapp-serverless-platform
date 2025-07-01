@@ -23,7 +23,7 @@ __export(users_service_exports, {
   ReferralRank: () => ReferralRank,
   Role: () => Role,
   Status: () => Status,
-  UserOnboardingStatusField: () => UserOnboardingStatusField
+  UserOnboardingChecklist: () => UserOnboardingChecklist
 });
 module.exports = __toCommonJS(users_service_exports);
 var ReferralRank = {
@@ -47,21 +47,21 @@ var Status = /* @__PURE__ */ ((Status2) => {
   Status2["INACTIVE"] = "INACTIVE";
   return Status2;
 })(Status || {});
-var UserOnboardingStatusField = /* @__PURE__ */ ((UserOnboardingStatusField2) => {
-  UserOnboardingStatusField2["IS_EMAIL_VERIFIED"] = "isEmailVerified";
-  UserOnboardingStatusField2["IS_FIRST_DEPOSIT_MADE"] = "isFirstDepositMade";
-  UserOnboardingStatusField2["IS_TRADING_ACCOUNT_CONNECTED"] = "isTradingAccountConnected";
-  UserOnboardingStatusField2["IS_SOCIAL_ACCOUNT_CONNECTED"] = "isSocialAccountConnected";
-  UserOnboardingStatusField2["IS_ONBOARDING_TASK_DONE"] = "isOnboardingTaskDone";
-  UserOnboardingStatusField2["SHOW_ONBOARDING_STEPS"] = "showOnboardingSteps";
-  UserOnboardingStatusField2["IS_PHONE_VERIFIED"] = "isPhoneVerified";
-  UserOnboardingStatusField2["IS_ID_VERIFIED"] = "isIdVerified";
-  return UserOnboardingStatusField2;
-})(UserOnboardingStatusField || {});
+var UserOnboardingChecklist = /* @__PURE__ */ ((UserOnboardingChecklist2) => {
+  UserOnboardingChecklist2["IS_EMAIL_VERIFIED"] = "isEmailVerified";
+  UserOnboardingChecklist2["IS_FIRST_DEPOSIT_MADE"] = "isFirstDepositMade";
+  UserOnboardingChecklist2["IS_TRADING_ACCOUNT_CONNECTED"] = "isTradingAccountConnected";
+  UserOnboardingChecklist2["IS_SOCIAL_ACCOUNT_CONNECTED"] = "isSocialAccountConnected";
+  UserOnboardingChecklist2["IS_ONBOARDING_TASK_DONE"] = "isOnboardingTaskDone";
+  UserOnboardingChecklist2["SHOW_ONBOARDING_STEPS"] = "showOnboardingSteps";
+  UserOnboardingChecklist2["IS_PHONE_VERIFIED"] = "isPhoneVerified";
+  UserOnboardingChecklist2["IS_ID_VERIFIED"] = "isIdVerified";
+  return UserOnboardingChecklist2;
+})(UserOnboardingChecklist || {});
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   ReferralRank,
   Role,
   Status,
-  UserOnboardingStatusField
+  UserOnboardingChecklist
 });

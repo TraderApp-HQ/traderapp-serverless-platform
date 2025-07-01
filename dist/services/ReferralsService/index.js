@@ -65290,15 +65290,13 @@ var require_lambda_powertools_logger = __commonJS({
   }
 });
 
-// src/helpers/referrals-helpers.ts
-var referrals_helpers_exports = {};
-__export(referrals_helpers_exports, {
-  computeRank: () => computeRank,
-  computeUserAndReferralsBalances: () => computeUserAndReferralsBalances,
-  getTotalUsdtBalanceFromDb: () => getTotalUsdtBalanceFromDb,
-  updateUserBalanceInDb: () => updateUserBalanceInDb
+// src/services/ReferralsService/index.ts
+var ReferralsService_exports = {};
+__export(ReferralsService_exports, {
+  ReferralsService: () => ReferralsService,
+  default: () => ReferralsService_default
 });
-module.exports = __toCommonJS(referrals_helpers_exports);
+module.exports = __toCommonJS(ReferralsService_exports);
 var import_mongoose = __toESM(require_mongoose2());
 var import_lambda_powertools_logger = __toESM(require_lambda_powertools_logger());
 
@@ -65356,8 +65354,19 @@ var RANK_REQUIREMENTS = {
     testCommunitySize: 12
   }
 };
-
-// src/helpers/referrals-helpers.ts
+var RANK_ORDER = [
+  ReferralRank.TA_RECRUIT,
+  ReferralRank.TA_LIEUTENANT,
+  ReferralRank.TA_CAPTAIN,
+  ReferralRank.TA_MAJOR,
+  ReferralRank.TA_COLONEL,
+  ReferralRank.TA_GENERAL,
+  ReferralRank.TA_FIELD_MARSHAL
+];
+var RANK_INDEX_MAP = Object.fromEntries(
+  RANK_ORDER.map((r, i) => [r, i])
+);
+var REQUIRED_RANK_REFERRALS = 3;
 var TradingEngineServiceDbCollection = {
   userTradingAccountsCollection: "user-trading-accounts",
   userTradingAccountBalanceCollection: "user-trading-account-balances"
@@ -65365,116 +65374,242 @@ var TradingEngineServiceDbCollection = {
 var UserServiceDbCollection = {
   users: "users"
 };
-var getTotalUsdtBalanceFromDb = async ({
-  userId,
-  mongooseConnection
-}) => {
-  try {
-    const tradingAccounts = await mongooseConnection.collection(
-      TradingEngineServiceDbCollection.userTradingAccountsCollection
-    ).find({ userId, connectionStatus: { $ne: "ARCHIVED" } }).toArray();
-    if (!tradingAccounts.length) {
-      return {
-        availableBalance: 0,
-        lockedBalance: 0
-      };
-    }
-    const tradingAccountIds = tradingAccounts.map(
-      (account) => new import_mongoose.default.Types.ObjectId(account._id)
-    );
-    const balances = await mongooseConnection.collection(
-      TradingEngineServiceDbCollection.userTradingAccountBalanceCollection
-    ).find({
-      tradingAccountId: { $in: tradingAccountIds },
-      currency: "USDT"
-    }).toArray();
-    const totalBalance = balances.reduce(
-      (total, balance) => ({
-        availableBalance: total.availableBalance + (balance.availableBalance || 0),
-        lockedBalance: total.lockedBalance + (balance.lockedBalance || 0)
-      }),
-      { availableBalance: 0, lockedBalance: 0 }
-    );
-    return totalBalance;
-  } catch (error) {
-    import_lambda_powertools_logger.default.error("Failed to get total USDT balance", { error, userId });
-    throw new Error(`Failed to get total USDT balance: ${error}`);
-  }
+
+// src/config/sqs/helpers.ts
+var parseQueueMessagesBody = (event) => {
+  const queueMessages = event.Records.map((record) => {
+    return {
+      ...record,
+      body: JSON.parse(record.body)
+    };
+  });
+  return queueMessages;
 };
-var updateUserBalanceInDb = async ({
-  userId,
-  mongooseConnection,
-  balance,
-  referralRank
-}) => {
-  await mongooseConnection.collection(UserServiceDbCollection.users).updateOne(
-    { id: userId },
-    {
-      $set: {
-        personalATC: balance.userBalance.availableBalance,
-        communityATC: balance.communityBalance,
-        referralRank,
-        isTestReferralTrackingInProgress: false
+var getParsedQueueMessagesBody = (event) => {
+  return parseQueueMessagesBody(event);
+};
+
+// src/services/ReferralsService/index.ts
+var ReferralsService = class {
+  constructor() {
+  }
+  async getTotalUsdtBalanceFromDb({
+    userId,
+    mongooseConnection
+  }) {
+    try {
+      const tradingAccounts = await mongooseConnection.collection(
+        TradingEngineServiceDbCollection.userTradingAccountsCollection
+      ).find({ userId, connectionStatus: { $ne: "ARCHIVED" } }).toArray();
+      if (!tradingAccounts.length) {
+        return {
+          availableBalance: 0,
+          lockedBalance: 0
+        };
+      }
+      const tradingAccountIds = tradingAccounts.map(
+        (account) => new import_mongoose.default.Types.ObjectId(account._id)
+      );
+      const balances = await mongooseConnection.collection(
+        TradingEngineServiceDbCollection.userTradingAccountBalanceCollection
+      ).find({
+        tradingAccountId: { $in: tradingAccountIds },
+        currency: "USDT"
+      }).toArray();
+      const totalBalance = balances.reduce(
+        (total, balance) => ({
+          availableBalance: total.availableBalance + (balance.availableBalance || 0),
+          lockedBalance: total.lockedBalance + (balance.lockedBalance || 0)
+        }),
+        { availableBalance: 0, lockedBalance: 0 }
+      );
+      return totalBalance;
+    } catch (error) {
+      import_lambda_powertools_logger.default.error("Failed to get total USDT balance", { error, userId });
+      throw new Error(`Failed to get total USDT balance: ${error}`);
+    }
+  }
+  getCommunitySize(rank, isTestReferralTracking = false) {
+    return isTestReferralTracking ? RANK_REQUIREMENTS[rank].testCommunitySize : RANK_REQUIREMENTS[rank].communitySize;
+  }
+  // Checks if the user has enough referrals at the given rank or at a higher rank
+  hasRequiredRankReferrals(rank, maxRankFromReferrals) {
+    return RANK_INDEX_MAP[maxRankFromReferrals] >= RANK_INDEX_MAP[rank];
+  }
+  // Calculates the highest rank a user qualifies for based solely on their referrals' ranks.
+  // It counts how many referrals a user has at each rank level and higher, then determines the highest rank where they have at least 3 referrals at that rank or above.
+  // Based on the business rule, having 3+ referrals at rank X qualifies the user for rank X+1, so this function returns that eligible rank.
+  determineMaxRankFromReferrals(referrals) {
+    const referralRankIndices = referrals.map(
+      (referral) => referral.referralRank && RANK_INDEX_MAP[referral.referralRank] !== void 0 ? RANK_INDEX_MAP[referral.referralRank] : -1
+    );
+    const rankCounts = new Array(RANK_ORDER.length).fill(0);
+    referralRankIndices.forEach((rankIndex) => {
+      if (rankIndex >= 0) {
+        rankCounts[rankIndex]++;
+      }
+    });
+    const countsAtRankOrAbove = new Array(RANK_ORDER.length).fill(0);
+    let cumulativeCount = 0;
+    for (let i = RANK_ORDER.length - 1; i >= 0; i--) {
+      cumulativeCount += rankCounts[i];
+      countsAtRankOrAbove[i] = cumulativeCount;
+    }
+    let highestRankWithEnoughReferrals = -1;
+    for (let rankIndex = RANK_ORDER.length - 1; rankIndex >= 0; rankIndex--) {
+      if (countsAtRankOrAbove[rankIndex] >= REQUIRED_RANK_REFERRALS) {
+        highestRankWithEnoughReferrals = rankIndex;
+        break;
       }
     }
-  );
-};
-async function computeUserAndReferralsBalances({
-  tradingEngineConnection,
-  referrals,
-  userId
-}) {
-  const [userBalance, ...referralBalances] = await Promise.all([
-    getTotalUsdtBalanceFromDb({
-      userId,
-      mongooseConnection: tradingEngineConnection
-    }),
-    ...referrals.map(
-      (ref) => getTotalUsdtBalanceFromDb({
-        userId: ref.id,
-        mongooseConnection: tradingEngineConnection
-      })
-    )
-  ]);
-  const sumReferralBalance = referralBalances.reduce(
-    (total, balance) => total + balance.availableBalance,
-    0
-  );
-  return {
-    userBalance,
-    communityBalance: sumReferralBalance
-  };
-}
-function computeRank(criteria) {
-  const { personalATC, communityATC, communitySize, isTestReferralTracking } = criteria;
-  const getCommunitySize = (rank) => {
-    return isTestReferralTracking ? RANK_REQUIREMENTS[rank].testCommunitySize : RANK_REQUIREMENTS[rank].communitySize;
-  };
-  switch (true) {
-    case (personalATC >= RANK_REQUIREMENTS[ReferralRank.TA_FIELD_MARSHAL].personalATC && communityATC >= RANK_REQUIREMENTS[ReferralRank.TA_FIELD_MARSHAL].communityATC && communitySize >= getCommunitySize(ReferralRank.TA_FIELD_MARSHAL)):
-      return ReferralRank.TA_FIELD_MARSHAL;
-    case (personalATC >= RANK_REQUIREMENTS[ReferralRank.TA_GENERAL].personalATC && communityATC >= RANK_REQUIREMENTS[ReferralRank.TA_GENERAL].communityATC && communitySize >= getCommunitySize(ReferralRank.TA_GENERAL)):
-      return ReferralRank.TA_GENERAL;
-    case (personalATC >= RANK_REQUIREMENTS[ReferralRank.TA_COLONEL].personalATC && communityATC >= RANK_REQUIREMENTS[ReferralRank.TA_COLONEL].communityATC && communitySize >= getCommunitySize(ReferralRank.TA_COLONEL)):
-      return ReferralRank.TA_COLONEL;
-    case (personalATC >= RANK_REQUIREMENTS[ReferralRank.TA_MAJOR].personalATC && communityATC >= RANK_REQUIREMENTS[ReferralRank.TA_MAJOR].communityATC && communitySize >= getCommunitySize(ReferralRank.TA_MAJOR)):
-      return ReferralRank.TA_MAJOR;
-    case (personalATC >= RANK_REQUIREMENTS[ReferralRank.TA_CAPTAIN].personalATC && communityATC >= RANK_REQUIREMENTS[ReferralRank.TA_CAPTAIN].communityATC && communitySize >= getCommunitySize(ReferralRank.TA_CAPTAIN)):
-      return ReferralRank.TA_CAPTAIN;
-    case (personalATC >= RANK_REQUIREMENTS[ReferralRank.TA_LIEUTENANT].personalATC && communityATC >= RANK_REQUIREMENTS[ReferralRank.TA_LIEUTENANT].communityATC && communitySize >= getCommunitySize(ReferralRank.TA_LIEUTENANT)):
-      return ReferralRank.TA_LIEUTENANT;
-    case personalATC >= RANK_REQUIREMENTS[ReferralRank.TA_RECRUIT].personalATC:
+    if (highestRankWithEnoughReferrals === -1) {
       return ReferralRank.TA_RECRUIT;
-    default:
-      return null;
+    } else if (highestRankWithEnoughReferrals >= RANK_ORDER.length - 1) {
+      return RANK_ORDER[highestRankWithEnoughReferrals];
+    } else {
+      return RANK_ORDER[highestRankWithEnoughReferrals + 1];
+    }
   }
-}
+  async processUserReferralTracking(connections, event) {
+    const queueMessages = getParsedQueueMessagesBody(event);
+    const {
+      tradingEngine: tradingEngineConnection,
+      users: usersConnection
+    } = connections;
+    const successMessageIds = [];
+    const failedMessageIds = [];
+    try {
+      const processingResults = await Promise.allSettled(
+        queueMessages.map(async (queueMessage) => {
+          try {
+            const { referrals, user, isTestReferralTracking } = queueMessage.body;
+            const balances = await this.computeUserAndReferralsBalances({
+              tradingEngineConnection,
+              referrals,
+              userId: user.id
+            });
+            const { rank, maxRankFromReferrals } = this.computeRank(
+              {
+                personalATC: balances.userBalance.availableBalance,
+                communityATC: balances.communityBalance,
+                referrals,
+                isTestReferralTracking
+              }
+            );
+            await this.updateUserInfoInDb({
+              mongooseConnection: usersConnection,
+              balance: balances,
+              userId: user.id,
+              maxRankFromReferrals,
+              referralRank: rank
+            });
+            return {
+              messageId: queueMessage.messageId,
+              success: true
+            };
+          } catch (error) {
+            import_lambda_powertools_logger.default.error(
+              `Failed to process referral message ${queueMessage.messageId}:`,
+              { error }
+            );
+            return {
+              messageId: queueMessage.messageId,
+              success: false
+            };
+          }
+        })
+      );
+      processingResults.forEach((result) => {
+        if (result.status === "fulfilled" && result.value.success) {
+          successMessageIds.push(result.value.messageId);
+        } else {
+          const messageId = result.status === "fulfilled" ? result.value.messageId : "unknown";
+          failedMessageIds.push(messageId);
+        }
+      });
+      return { successMessageIds, failedMessageIds };
+    } catch (error) {
+      import_lambda_powertools_logger.default.error("Error in processUserReferralTracking:", {
+        error
+      });
+      return {
+        successMessageIds: [],
+        failedMessageIds: queueMessages.map((qm) => qm.messageId)
+      };
+    }
+  }
+  async computeUserAndReferralsBalances({
+    tradingEngineConnection,
+    referrals,
+    userId
+  }) {
+    const [userBalance, ...referralBalances] = await Promise.all([
+      this.getTotalUsdtBalanceFromDb({
+        userId,
+        mongooseConnection: tradingEngineConnection
+      }),
+      ...referrals.map(
+        (ref) => this.getTotalUsdtBalanceFromDb({
+          userId: ref.id,
+          mongooseConnection: tradingEngineConnection
+        })
+      )
+    ]);
+    const sumReferralBalance = referralBalances.reduce(
+      (total, balance) => total + balance.availableBalance,
+      0
+    );
+    return {
+      userBalance,
+      communityBalance: sumReferralBalance
+    };
+  }
+  computeRank(criteria) {
+    const { personalATC, communityATC, referrals, isTestReferralTracking } = criteria;
+    const communitySize = referrals.length;
+    const maxRankFromReferrals = this.determineMaxRankFromReferrals(referrals);
+    let rank = null;
+    const descendingRanks = [...RANK_ORDER].reverse().slice(0, -1);
+    for (const currentRank of descendingRanks) {
+      const hasRequiredRankReferrals = this.hasRequiredRankReferrals(
+        currentRank,
+        maxRankFromReferrals
+      );
+      if (hasRequiredRankReferrals && personalATC >= RANK_REQUIREMENTS[currentRank].personalATC && communityATC >= RANK_REQUIREMENTS[currentRank].communityATC && communitySize >= this.getCommunitySize(currentRank, isTestReferralTracking)) {
+        rank = currentRank;
+        break;
+      }
+    }
+    if (!rank && personalATC >= RANK_REQUIREMENTS[ReferralRank.TA_RECRUIT].personalATC) {
+      rank = ReferralRank.TA_RECRUIT;
+    }
+    return { rank, maxRankFromReferrals };
+  }
+  async updateUserInfoInDb({
+    userId,
+    mongooseConnection,
+    balance,
+    referralRank,
+    maxRankFromReferrals
+  }) {
+    await mongooseConnection.collection(UserServiceDbCollection.users).updateOne(
+      { id: userId },
+      {
+        $set: {
+          personalATC: balance.userBalance.availableBalance,
+          communityATC: balance.communityBalance,
+          referralRank,
+          maxRankFromReferrals,
+          isTestReferralTrackingInProgress: false
+        }
+      }
+    );
+  }
+};
+var ReferralsService_default = new ReferralsService();
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
-  computeRank,
-  computeUserAndReferralsBalances,
-  getTotalUsdtBalanceFromDb,
-  updateUserBalanceInDb
+  ReferralsService
 });
 /*! Bundled license information:
 

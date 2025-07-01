@@ -8,8 +8,8 @@ import { getSecrets } from "src/config/secrets/helpers";
 import { IUsersServiceSecrets } from "src/config/secrets/interfaces";
 import {
     IUser,
-    IUpdateUserOnboardingStatusInput,
-    UserOnboardingStatusField,
+    ITrackUserOnboardingChecklistInput,
+    UserOnboardingChecklist,
 } from "src/types/users-service";
 
 class UsersService {
@@ -111,8 +111,8 @@ class UsersService {
     }
 
     // Update user onboarding task
-    public async updateUserOnboardingStatus(
-        queueMessages: IQueueMessageBody<IUpdateUserOnboardingStatusInput>[]
+    public async trackUserOnboardingChecklist(
+        queueMessages: IQueueMessageBody<ITrackUserOnboardingChecklistInput>[]
     ): Promise<{
         successMessageIds: string[];
         failedMessageIds: string[];
@@ -131,8 +131,8 @@ class UsersService {
             const userOnboardingTaskResult = await Promise.allSettled(
                 queueMessages.map(async (queue) => {
                     try {
-                        const { userId, taskField } = queue.body;
-                        
+                        const { userId, onboardingChecklistItem } = queue.body;
+
                         // Get user
                         const user = await this.getUserById(userId);
 
@@ -146,15 +146,19 @@ class UsersService {
 
                         // Check that flag is not showOnboardingTask flag and flag is not turned on yet
                         if (
-                            taskField !==
-                                UserOnboardingStatusField.SHOW_ONBOARDING_STEPS &&
-                            !user[taskField]
+                            onboardingChecklistItem !==
+                                UserOnboardingChecklist.SHOW_ONBOARDING_STEPS &&
+                            !user[onboardingChecklistItem]
                         ) {
                             // Update the user onboarding task field
                             const updatedUser =
                                 await usersCollection.findOneAndUpdate(
                                     { id: userId },
-                                    { $set: { [taskField]: true } }
+                                    {
+                                        $set: {
+                                            [onboardingChecklistItem]: true,
+                                        },
+                                    }
                                 );
 
                             // After the selected field is updated, confirm if other fields have been updated and and update the showOnboardingTask field to false
@@ -181,9 +185,9 @@ class UsersService {
 
                             // The block below accounts for manual dismisal of the onboarding tasks using the optional dismiss button after the comulsory tasks are completed.
                         } else if (
-                            taskField ===
-                                UserOnboardingStatusField.SHOW_ONBOARDING_STEPS &&
-                            user[taskField]
+                            onboardingChecklistItem ===
+                                UserOnboardingChecklist.SHOW_ONBOARDING_STEPS &&
+                            user[onboardingChecklistItem]
                         ) {
                             await usersCollection.updateOne(
                                 {
@@ -194,7 +198,7 @@ class UsersService {
                                 },
                                 {
                                     $set: {
-                                        [taskField]: false,
+                                        [onboardingChecklistItem]: false,
                                     },
                                 }
                             );
@@ -206,7 +210,7 @@ class UsersService {
                         };
                     } catch (error) {
                         log.error(
-                            `Failed to update onboarding task (${queue.body.taskField}) for user ${queue.body.userId}:`,
+                            `Failed to update onboarding task (${queue.body.onboardingChecklistItem}) for user ${queue.body.userId}:`,
                             {
                                 error,
                             }

@@ -13,7 +13,7 @@ import { IQueueMessageBody } from "src/config/interfaces";
 import { SecretLocation } from "src/config/secrets/enums";
 import { getSecrets } from "src/config/secrets/helpers";
 import { IWalletsServiceSecrets } from "src/config/secrets/interfaces";
-import { UserOnboardingStatusField } from "src/types/users-service";
+import { UserOnboardingChecklist } from "src/types/users-service";
 import {
     ITransaction,
     IUserWallet,
@@ -404,12 +404,12 @@ export class WalletsService {
                                 await publishMessageToQueue({
                                     queueUrl:
                                         process.env
-                                            .UPDATE_USER_ONBOARDING_STATUS_QUEUE ??
+                                            .TRACK_USER_ONBOARDING_CHECKLIST_QUEUE ??
                                         "",
                                     message: {
                                         userId,
-                                        taskField:
-                                            UserOnboardingStatusField.IS_FIRST_DEPOSIT_MADE,
+                                        onboardingChecklistItem:
+                                            UserOnboardingChecklist.IS_FIRST_DEPOSIT_MADE,
                                     },
                                 });
                             }

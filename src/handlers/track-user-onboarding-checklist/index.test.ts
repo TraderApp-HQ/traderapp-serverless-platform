@@ -1,8 +1,8 @@
 import log from "@dazn/lambda-powertools-logger";
 import UsersService from "src/services/UsersService";
-import { UserOnboardingStatusField } from "src/types/users-service";
 import { handler as updateUserOnboardingStatus } from ".";
 import { SQSEvent } from "aws-lambda";
+import { UserOnboardingChecklist } from "src/types/users-service";
 
 // Test data
 const mockSingleMessageSQSEvent = {
@@ -12,8 +12,8 @@ const mockSingleMessageSQSEvent = {
             body: JSON.stringify({
                 body: {
                     userId: "123abc456def789ghi",
-                    taskField:
-                        UserOnboardingStatusField.IS_TRADING_ACCOUNT_CONNECTED,
+                    onboardingChecklistItem:
+                        UserOnboardingChecklist.IS_TRADING_ACCOUNT_CONNECTED,
                 },
             }),
         },
@@ -25,13 +25,13 @@ jest.mock("src/services/UsersService");
 jest.mock("@dazn/lambda-powertools-logger");
 
 describe("update-user-onboarding-status Lambda Handler", () => {
-    const mockUpdateUserOnboardingStatus = jest.fn();
+    const mockTrackUserOnboardingChecklist = jest.fn();
     const mockLogInfo = jest.fn();
 
     beforeAll(() => {
-        // Mock the updateUserOnboardingStatus method of UsersService
-        (UsersService.updateUserOnboardingStatus as jest.Mock) =
-            mockUpdateUserOnboardingStatus;
+        // Mock the trackUserOnboardingChecklist method of UsersService
+        (UsersService.trackUserOnboardingChecklist as jest.Mock) =
+            mockTrackUserOnboardingChecklist;
         // Mock log.info
         (log.info as jest.Mock) = mockLogInfo;
     });
@@ -43,7 +43,7 @@ describe("update-user-onboarding-status Lambda Handler", () => {
     // Successful Scenarios
     it("should process SQS event with single message successfully", async () => {
         // Arrange
-        mockUpdateUserOnboardingStatus.mockResolvedValueOnce({
+        mockTrackUserOnboardingChecklist.mockResolvedValueOnce({
             successMessageIds: ["test-message-id-1"],
             failedMessageIds: [],
         });
@@ -54,15 +54,15 @@ describe("update-user-onboarding-status Lambda Handler", () => {
         );
 
         // Assert
-        expect(mockUpdateUserOnboardingStatus).toHaveBeenCalledTimes(1);
-        expect(mockUpdateUserOnboardingStatus).toHaveBeenCalledWith([
+        expect(mockTrackUserOnboardingChecklist).toHaveBeenCalledTimes(1);
+        expect(mockTrackUserOnboardingChecklist).toHaveBeenCalledWith([
             {
                 messageId: "test-message-id-1",
                 body: {
                     body: {
                         userId: "123abc456def789ghi",
-                        taskField:
-                            UserOnboardingStatusField.IS_TRADING_ACCOUNT_CONNECTED,
+                        onboardingChecklistItem:
+                            UserOnboardingChecklist.IS_TRADING_ACCOUNT_CONNECTED,
                     },
                 },
             },

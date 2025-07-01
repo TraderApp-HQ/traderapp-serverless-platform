@@ -16279,7 +16279,7 @@ var require_URLSearchParams = __commonJS({
         return;
       }
       const ctorRegistry = utils.initCtorRegistry(globalObject);
-      class URLSearchParams {
+      class URLSearchParams2 {
         constructor() {
           const args = [];
           {
@@ -16594,7 +16594,7 @@ var require_URLSearchParams = __commonJS({
           return esValue[implSymbol]["size"];
         }
       }
-      Object.defineProperties(URLSearchParams.prototype, {
+      Object.defineProperties(URLSearchParams2.prototype, {
         append: { enumerable: true },
         delete: { enumerable: true },
         get: { enumerable: true },
@@ -16609,9 +16609,9 @@ var require_URLSearchParams = __commonJS({
         forEach: { enumerable: true },
         size: { enumerable: true },
         [Symbol.toStringTag]: { value: "URLSearchParams", configurable: true },
-        [Symbol.iterator]: { value: URLSearchParams.prototype.entries, configurable: true, writable: true }
+        [Symbol.iterator]: { value: URLSearchParams2.prototype.entries, configurable: true, writable: true }
       });
-      ctorRegistry[interfaceName] = URLSearchParams;
+      ctorRegistry[interfaceName] = URLSearchParams2;
       ctorRegistry["URLSearchParams Iterator"] = Object.create(ctorRegistry["%IteratorPrototype%"], {
         [Symbol.toStringTag]: {
           configurable: true,
@@ -16638,7 +16638,7 @@ var require_URLSearchParams = __commonJS({
       Object.defineProperty(globalObject, interfaceName, {
         configurable: true,
         writable: true,
-        value: URLSearchParams
+        value: URLSearchParams2
       });
     };
     var Impl = require_URLSearchParams_impl();
@@ -16651,7 +16651,7 @@ var require_URL_impl = __commonJS({
     "use strict";
     var usm = require_url_state_machine();
     var urlencoded = require_urlencoded();
-    var URLSearchParams = require_URLSearchParams();
+    var URLSearchParams2 = require_URLSearchParams();
     exports2.implementation = class URLImpl {
       // Unlike the spec, we duplicate some code between the constructor and canParse, because we want to give useful error
       // messages in the constructor that distinguish between the different causes of failure.
@@ -16669,7 +16669,7 @@ var require_URL_impl = __commonJS({
         }
         const query = parsedURL.query !== null ? parsedURL.query : "";
         this._url = parsedURL;
-        this._query = URLSearchParams.createImpl(globalObject, [query], { doNotStripQMark: true });
+        this._query = URLSearchParams2.createImpl(globalObject, [query], { doNotStripQMark: true });
         this._query._url = this;
       }
       static parse(globalObject, input, base) {
@@ -17239,9 +17239,9 @@ var require_webidl2js_wrapper = __commonJS({
   "node_modules/whatwg-url/webidl2js-wrapper.js"(exports2) {
     "use strict";
     var URL3 = require_URL();
-    var URLSearchParams = require_URLSearchParams();
+    var URLSearchParams2 = require_URLSearchParams();
     exports2.URL = URL3;
-    exports2.URLSearchParams = URLSearchParams;
+    exports2.URLSearchParams = URLSearchParams2;
   }
 });
 
@@ -17249,12 +17249,12 @@ var require_webidl2js_wrapper = __commonJS({
 var require_whatwg_url = __commonJS({
   "node_modules/whatwg-url/index.js"(exports2) {
     "use strict";
-    var { URL: URL3, URLSearchParams } = require_webidl2js_wrapper();
+    var { URL: URL3, URLSearchParams: URLSearchParams2 } = require_webidl2js_wrapper();
     var urlStateMachine = require_url_state_machine();
     var percentEncoding = require_percent_encoding();
     var sharedGlobalObject = { Array, Object, Promise, String, TypeError };
     URL3.install(sharedGlobalObject, ["Window"]);
-    URLSearchParams.install(sharedGlobalObject, ["Window"]);
+    URLSearchParams2.install(sharedGlobalObject, ["Window"]);
     exports2.URL = sharedGlobalObject.URL;
     exports2.URLSearchParams = sharedGlobalObject.URLSearchParams;
     exports2.parseURL = urlStateMachine.parseURL;
@@ -38291,7 +38291,7 @@ var require_document2 = __commonJS({
     var ObjectExpectedError = require_objectExpected();
     var ObjectParameterError = require_objectParameter();
     var ParallelValidateError = require_parallelValidate();
-    var Schema = require_schema2();
+    var Schema2 = require_schema2();
     var StrictModeError = require_strict();
     var ValidationError = require_validation();
     var ValidatorError = require_validator();
@@ -38350,7 +38350,7 @@ var require_document2 = __commonJS({
       }
       options = Object.assign({}, options);
       if (this.$__schema == null) {
-        const _schema = utils.isObject(fields) && !fields.instanceOfSchema ? new Schema(fields) : fields;
+        const _schema = utils.isObject(fields) && !fields.instanceOfSchema ? new Schema2(fields) : fields;
         this.$__setSchema(_schema);
         fields = skipId;
         skipId = options;
@@ -48693,9 +48693,9 @@ var require_schema2 = __commonJS({
     var isPOJO = utils.isPOJO;
     var id = 0;
     var numberRE = /^\d+$/;
-    function Schema(obj, options) {
-      if (!(this instanceof Schema)) {
-        return new Schema(obj, options);
+    function Schema2(obj, options) {
+      if (!(this instanceof Schema2)) {
+        return new Schema2(obj, options);
       }
       this.obj = obj;
       this.paths = {};
@@ -48805,34 +48805,34 @@ var require_schema2 = __commonJS({
         }(prop));
       }
     }
-    Schema.prototype = Object.create(EventEmitter.prototype);
-    Schema.prototype.constructor = Schema;
-    Schema.prototype.instanceOfSchema = true;
-    Object.defineProperty(Schema.prototype, "$schemaType", {
+    Schema2.prototype = Object.create(EventEmitter.prototype);
+    Schema2.prototype.constructor = Schema2;
+    Schema2.prototype.instanceOfSchema = true;
+    Object.defineProperty(Schema2.prototype, "$schemaType", {
       configurable: false,
       enumerable: false,
       writable: true
     });
-    Object.defineProperty(Schema.prototype, "childSchemas", {
+    Object.defineProperty(Schema2.prototype, "childSchemas", {
       configurable: false,
       enumerable: true,
       writable: true
     });
-    Object.defineProperty(Schema.prototype, "virtuals", {
+    Object.defineProperty(Schema2.prototype, "virtuals", {
       configurable: false,
       enumerable: true,
       writable: true
     });
-    Schema.prototype.obj;
-    Schema.prototype.paths;
-    Schema.prototype.tree;
-    Schema.prototype.clone = function() {
+    Schema2.prototype.obj;
+    Schema2.prototype.paths;
+    Schema2.prototype.tree;
+    Schema2.prototype.clone = function() {
       const s3 = this._clone();
       s3.on("init", (v6) => this.emit("init", v6));
       return s3;
     };
-    Schema.prototype._clone = function _clone(Constructor) {
-      Constructor = Constructor || (this.base == null ? Schema : this.base.Schema);
+    Schema2.prototype._clone = function _clone(Constructor) {
+      Constructor = Constructor || (this.base == null ? Schema2 : this.base.Schema);
       const s3 = new Constructor({}, this._userProvidedOptions);
       s3.base = this.base;
       s3.obj = this.obj;
@@ -48892,8 +48892,8 @@ var require_schema2 = __commonJS({
       s3.encryptedFields = clone(this.encryptedFields);
       return s3;
     };
-    Schema.prototype.pick = function(paths, options) {
-      const newSchema = new Schema({}, options || this.options);
+    Schema2.prototype.pick = function(paths, options) {
+      const newSchema = new Schema2({}, options || this.options);
       if (!Array.isArray(paths)) {
         throw new MongooseError('Schema#pick() only accepts an array argument, got "' + typeof paths + '"');
       }
@@ -48922,8 +48922,8 @@ var require_schema2 = __commonJS({
       }
       return newSchema;
     };
-    Schema.prototype.omit = function(paths, options) {
-      const newSchema = new Schema(this, options || this.options);
+    Schema2.prototype.omit = function(paths, options) {
+      const newSchema = new Schema2(this, options || this.options);
       if (!Array.isArray(paths)) {
         throw new MongooseError(
           'Schema#omit() only accepts an array argument, got "' + typeof paths + '"'
@@ -48937,7 +48937,7 @@ var require_schema2 = __commonJS({
       }
       return newSchema;
     };
-    Schema.prototype.defaultOptions = function(options) {
+    Schema2.prototype.defaultOptions = function(options) {
       this._userProvidedOptions = options == null ? {} : clone(options);
       const baseOptions = this.base && this.base.options || {};
       const strict = "strict" in baseOptions ? baseOptions.strict : true;
@@ -48980,12 +48980,12 @@ var require_schema2 = __commonJS({
       }
       return options;
     };
-    Schema.prototype.discriminator = function(name, schema, options) {
+    Schema2.prototype.discriminator = function(name, schema, options) {
       this._applyDiscriminators = this._applyDiscriminators || /* @__PURE__ */ new Map();
       this._applyDiscriminators.set(name, { schema, options });
       return this;
     };
-    Schema.prototype._defaultToObjectOptions = function(json) {
+    Schema2.prototype._defaultToObjectOptions = function(json) {
       const path = json ? "toJSON" : "toObject";
       if (this._defaultToObjectOptionsMap && this._defaultToObjectOptionsMap[path]) {
         return this._defaultToObjectOptionsMap[path];
@@ -48997,7 +48997,7 @@ var require_schema2 = __commonJS({
       this._defaultToObjectOptionsMap[path] = defaultOptions;
       return defaultOptions;
     };
-    Schema.prototype.encryptionType = function encryptionType(encryptionType) {
+    Schema2.prototype.encryptionType = function encryptionType(encryptionType) {
       if (arguments.length === 0) {
         return this.options.encryptionType;
       }
@@ -49006,8 +49006,8 @@ var require_schema2 = __commonJS({
       }
       this.options.encryptionType = encryptionType;
     };
-    Schema.prototype.add = function add(obj, prefix) {
-      if (obj instanceof Schema || obj != null && obj.instanceOfSchema) {
+    Schema2.prototype.add = function add(obj, prefix) {
+      if (obj instanceof Schema2 || obj != null && obj.instanceOfSchema) {
         merge(this, obj);
         return this;
       }
@@ -49034,7 +49034,7 @@ var require_schema2 = __commonJS({
         }
         let isMongooseTypeString = false;
         if (typeof val2 === "string") {
-          const MongooseTypes2 = this.base != null ? this.base.Schema.Types : Schema.Types;
+          const MongooseTypes2 = this.base != null ? this.base.Schema.Types : Schema2.Types;
           const upperVal = val2.charAt(0).toUpperCase() + val2.substring(1);
           isMongooseTypeString = MongooseTypes2[upperVal] != null;
         }
@@ -49086,7 +49086,7 @@ var require_schema2 = __commonJS({
             if (this._userProvidedOptions.toJSON != null) {
               childSchemaOptions.toJSON = utils.omit(this._userProvidedOptions.toJSON, ["transform"]);
             }
-            const _schema = new Schema(_typeDef, childSchemaOptions);
+            const _schema = new Schema2(_typeDef, childSchemaOptions);
             _schema.$implicitlyCreated = true;
             const schemaWrappedPath = Object.assign({}, val2, { [typeKey]: _schema });
             this.path(prefix + key, schemaWrappedPath);
@@ -49127,23 +49127,23 @@ var require_schema2 = __commonJS({
       aliasFields(this, aliasObj);
       return this;
     };
-    Schema.prototype._addEncryptedField = function _addEncryptedField(path, fieldConfig) {
+    Schema2.prototype._addEncryptedField = function _addEncryptedField(path, fieldConfig) {
       const type = this.path(path).autoEncryptionType();
       if (type == null) {
         throw new Error(`Invalid BSON type for FLE field: '${path}'`);
       }
       this.encryptedFields[path] = clone(fieldConfig);
     };
-    Schema.prototype._removeEncryptedField = function _removeEncryptedField(path) {
+    Schema2.prototype._removeEncryptedField = function _removeEncryptedField(path) {
       delete this.encryptedFields[path];
     };
-    Schema.prototype._hasEncryptedFields = function _hasEncryptedFields() {
+    Schema2.prototype._hasEncryptedFields = function _hasEncryptedFields() {
       return Object.keys(this.encryptedFields).length > 0;
     };
-    Schema.prototype._hasEncryptedField = function _hasEncryptedField(path) {
+    Schema2.prototype._hasEncryptedField = function _hasEncryptedField(path) {
       return path in this.encryptedFields;
     };
-    Schema.prototype._buildEncryptedFields = function() {
+    Schema2.prototype._buildEncryptedFields = function() {
       const fields = Object.entries(this.encryptedFields).map(
         ([path, config]) => {
           const bsonType = this.path(path).autoEncryptionType();
@@ -49152,7 +49152,7 @@ var require_schema2 = __commonJS({
       );
       return { fields };
     };
-    Schema.prototype._buildSchemaMap = function() {
+    Schema2.prototype._buildSchemaMap = function() {
       function buildNestedPath(path, object, value) {
         let i3 = 0, component = path[i3];
         for (; i3 < path.length - 1; ++i3, component = path[i3]) {
@@ -49180,11 +49180,11 @@ var require_schema2 = __commonJS({
         properties
       };
     };
-    Schema.prototype.alias = function alias(path, alias) {
+    Schema2.prototype.alias = function alias(path, alias) {
       aliasFields(this, { [path]: alias });
       return this;
     };
-    Schema.prototype.removeIndex = function removeIndex(index) {
+    Schema2.prototype.removeIndex = function removeIndex(index) {
       if (arguments.length > 1) {
         throw new Error("removeIndex() takes only 1 argument");
       }
@@ -49206,22 +49206,22 @@ var require_schema2 = __commonJS({
       }
       return this;
     };
-    Schema.prototype.clearIndexes = function clearIndexes() {
+    Schema2.prototype.clearIndexes = function clearIndexes() {
       this._indexes.length = 0;
       return this;
     };
-    Schema.prototype.searchIndex = function searchIndex(description) {
+    Schema2.prototype.searchIndex = function searchIndex(description) {
       this._searchIndexes.push(description);
       return this;
     };
-    Schema.reserved = /* @__PURE__ */ Object.create(null);
-    Schema.prototype.reserved = Schema.reserved;
-    var reserved = Schema.reserved;
+    Schema2.reserved = /* @__PURE__ */ Object.create(null);
+    Schema2.prototype.reserved = Schema2.reserved;
+    var reserved = Schema2.reserved;
     reserved["prototype"] = // EventEmitter
     reserved.emit = reserved.listeners = reserved.removeListener = // document properties and functions
     reserved.collection = reserved.errors = reserved.get = reserved.init = reserved.isModified = reserved.isNew = reserved.populated = reserved.remove = reserved.save = reserved.toObject = reserved.validate = 1;
     reserved.collection = 1;
-    Schema.prototype.path = function(path, obj) {
+    Schema2.prototype.path = function(path, obj) {
       if (obj === void 0) {
         if (this.paths[path] != null) {
           return this.paths[path];
@@ -49369,7 +49369,7 @@ var require_schema2 = __commonJS({
       }
       return this;
     };
-    Schema.prototype._gatherChildSchemas = function _gatherChildSchemas() {
+    Schema2.prototype._gatherChildSchemas = function _gatherChildSchemas() {
       const childSchemas = [];
       for (const path of Object.keys(this.paths)) {
         if (typeof path !== "string") {
@@ -49432,13 +49432,13 @@ var require_schema2 = __commonJS({
       }
       return null;
     }
-    Object.defineProperty(Schema.prototype, "base", {
+    Object.defineProperty(Schema2.prototype, "base", {
       configurable: true,
       enumerable: false,
       writable: true,
       value: null
     });
-    Schema.prototype.interpretAsType = function(path, obj, options) {
+    Schema2.prototype.interpretAsType = function(path, obj, options) {
       if (obj instanceof SchemaType) {
         if (obj.path === path) {
           return obj;
@@ -49447,7 +49447,7 @@ var require_schema2 = __commonJS({
         clone2.path = path;
         return clone2;
       }
-      const MongooseTypes2 = this.base != null ? this.base.Schema.Types : Schema.Types;
+      const MongooseTypes2 = this.base != null ? this.base.Schema.Types : Schema2.Types;
       const Types = this.base != null ? this.base.Types : require_types();
       if (!utils.isPOJO(obj) && !(obj instanceof SchemaTypeOptions)) {
         const constructorName = utils.getFunctionName(obj.constructor);
@@ -49473,9 +49473,9 @@ var require_schema2 = __commonJS({
       if (Array.isArray(type) || type === Array || type === "array" || type === MongooseTypes2.Array) {
         let cast = type === Array || type === "array" ? obj.cast || obj.of : type[0];
         if (cast && cast.instanceOfSchema) {
-          if (!(cast instanceof Schema)) {
+          if (!(cast instanceof Schema2)) {
             if (this.options._isMerging) {
-              cast = new Schema(cast);
+              cast = new Schema2(cast);
             } else {
               throw new TypeError("Schema for array path `" + path + `\` is from a different copy of the Mongoose module. Please make sure you're using the same version of Mongoose everywhere with \`npm list mongoose\`. If you are still getting this error, please add \`new Schema()\` around the path: ${path}: new Schema(...)`);
             }
@@ -49483,9 +49483,9 @@ var require_schema2 = __commonJS({
           return new MongooseTypes2.DocumentArray(path, cast, obj);
         }
         if (cast && cast[options.typeKey] && cast[options.typeKey].instanceOfSchema) {
-          if (!(cast[options.typeKey] instanceof Schema)) {
+          if (!(cast[options.typeKey] instanceof Schema2)) {
             if (this.options._isMerging) {
-              cast[options.typeKey] = new Schema(cast[options.typeKey]);
+              cast[options.typeKey] = new Schema2(cast[options.typeKey]);
             } else {
               throw new TypeError("Schema for array path `" + path + `\` is from a different copy of the Mongoose module. Please make sure you're using the same version of Mongoose everywhere with \`npm list mongoose\`. If you are still getting this error, please add \`new Schema()\` around the path: ${path}: new Schema(...)`);
             }
@@ -49523,10 +49523,10 @@ var require_schema2 = __commonJS({
             }
             if (this._userProvidedOptions.hasOwnProperty("_id")) {
               childSchemaOptions._id = this._userProvidedOptions._id;
-            } else if (Schema.Types.DocumentArray.defaultOptions._id != null) {
-              childSchemaOptions._id = Schema.Types.DocumentArray.defaultOptions._id;
+            } else if (Schema2.Types.DocumentArray.defaultOptions._id != null) {
+              childSchemaOptions._id = Schema2.Types.DocumentArray.defaultOptions._id;
             }
-            const childSchema = new Schema(castFromTypeKey, childSchemaOptions);
+            const childSchema = new Schema2(castFromTypeKey, childSchemaOptions);
             childSchema.$implicitlyCreated = true;
             return new MongooseTypes2.DocumentArray(path, childSchema, obj);
           } else {
@@ -49592,7 +49592,7 @@ var require_schema2 = __commonJS({
       if (utils.hasUserDefinedProperty(obj, "of")) {
         const isInlineSchema = utils.isPOJO(obj.of) && Object.keys(obj.of).length > 0 && !utils.hasUserDefinedProperty(obj.of, schema.options.typeKey);
         if (isInlineSchema) {
-          _mapType = { [schema.options.typeKey]: new Schema(obj.of) };
+          _mapType = { [schema.options.typeKey]: new Schema2(obj.of) };
         } else if (utils.isPOJO(obj.of)) {
           _mapType = Object.assign({}, obj.of);
         } else {
@@ -49612,7 +49612,7 @@ var require_schema2 = __commonJS({
       }
       schemaType.$__schemaType = schema.interpretAsType(mapPath, _mapType, options);
     }
-    Schema.prototype.eachPath = function(fn) {
+    Schema2.prototype.eachPath = function(fn) {
       const keys = Object.keys(this.paths);
       const len = keys.length;
       for (let i3 = 0; i3 < len; ++i3) {
@@ -49620,7 +49620,7 @@ var require_schema2 = __commonJS({
       }
       return this;
     };
-    Schema.prototype.requiredPaths = function requiredPaths(invalidate) {
+    Schema2.prototype.requiredPaths = function requiredPaths(invalidate) {
       if (this._requiredpaths && !invalidate) {
         return this._requiredpaths;
       }
@@ -49636,14 +49636,14 @@ var require_schema2 = __commonJS({
       this._requiredpaths = ret;
       return this._requiredpaths;
     };
-    Schema.prototype.indexedPaths = function indexedPaths() {
+    Schema2.prototype.indexedPaths = function indexedPaths() {
       if (this._indexedpaths) {
         return this._indexedpaths;
       }
       this._indexedpaths = this.indexes();
       return this._indexedpaths;
     };
-    Schema.prototype.pathType = function(path) {
+    Schema2.prototype.pathType = function(path) {
       if (this.paths.hasOwnProperty(path)) {
         return "real";
       }
@@ -49670,7 +49670,7 @@ var require_schema2 = __commonJS({
       }
       return "adhocOrUndefined";
     };
-    Schema.prototype.hasMixedParent = function(path) {
+    Schema2.prototype.hasMixedParent = function(path) {
       const subpaths = path.split(/\./g);
       path = "";
       for (let i3 = 0; i3 < subpaths.length; ++i3) {
@@ -49681,7 +49681,7 @@ var require_schema2 = __commonJS({
       }
       return null;
     };
-    Schema.prototype.setupTimestamp = function(timestamps) {
+    Schema2.prototype.setupTimestamp = function(timestamps) {
       return setupTimestamps(this, timestamps);
     };
     function getPositionalPathType(self2, path, cleanPath) {
@@ -49735,11 +49735,11 @@ var require_schema2 = __commonJS({
       getPositionalPathType(self2, path, cleanPath);
       return self2.subpaths[cleanPath];
     }
-    Schema.prototype.queue = function(name, args) {
+    Schema2.prototype.queue = function(name, args) {
       this.callQueue.push([name, args]);
       return this;
     };
-    Schema.prototype.pre = function(name) {
+    Schema2.prototype.pre = function(name) {
       if (name instanceof RegExp) {
         const remainingArgs = Array.prototype.slice.call(arguments, 1);
         for (const fn of hookNames) {
@@ -49759,7 +49759,7 @@ var require_schema2 = __commonJS({
       this.s.hooks.pre.apply(this.s.hooks, arguments);
       return this;
     };
-    Schema.prototype.post = function(name) {
+    Schema2.prototype.post = function(name) {
       if (name instanceof RegExp) {
         const remainingArgs = Array.prototype.slice.call(arguments, 1);
         for (const fn of hookNames) {
@@ -49779,7 +49779,7 @@ var require_schema2 = __commonJS({
       this.s.hooks.post.apply(this.s.hooks, arguments);
       return this;
     };
-    Schema.prototype.plugin = function(fn, opts) {
+    Schema2.prototype.plugin = function(fn, opts) {
       if (typeof fn !== "function") {
         throw new Error('First param to `schema.plugin()` must be a function, got "' + typeof fn + '"');
       }
@@ -49794,7 +49794,7 @@ var require_schema2 = __commonJS({
       fn(this, opts);
       return this;
     };
-    Schema.prototype.method = function(name, fn, options) {
+    Schema2.prototype.method = function(name, fn, options) {
       if (typeof name !== "string") {
         for (const i3 in name) {
           this.methods[i3] = name[i3];
@@ -49806,7 +49806,7 @@ var require_schema2 = __commonJS({
       }
       return this;
     };
-    Schema.prototype.static = function(name, fn) {
+    Schema2.prototype.static = function(name, fn) {
       if (typeof name !== "string") {
         for (const i3 in name) {
           this.statics[i3] = name[i3];
@@ -49816,7 +49816,7 @@ var require_schema2 = __commonJS({
       }
       return this;
     };
-    Schema.prototype.index = function(fields, options) {
+    Schema2.prototype.index = function(fields, options) {
       fields || (fields = {});
       options || (options = {});
       if (options.expires) {
@@ -49842,7 +49842,7 @@ var require_schema2 = __commonJS({
       this._indexes.push([fields, options]);
       return this;
     };
-    Schema.prototype.set = function(key, value, tags) {
+    Schema2.prototype.set = function(key, value, tags) {
       if (arguments.length === 1) {
         return this.options[key];
       }
@@ -49906,11 +49906,11 @@ var require_schema2 = __commonJS({
         _propagateOptionsToImplicitlyCreatedSchemas(schema, options);
       }
     }
-    Schema.prototype.get = function(key) {
+    Schema2.prototype.get = function(key) {
       return this.options[key];
     };
     var indexTypes = "2d 2dsphere hashed text".split(" ");
-    Object.defineProperty(Schema, "indexTypes", {
+    Object.defineProperty(Schema2, "indexTypes", {
       get: function() {
         return indexTypes;
       },
@@ -49918,10 +49918,10 @@ var require_schema2 = __commonJS({
         throw new Error("Cannot overwrite Schema.indexTypes");
       }
     });
-    Schema.prototype.indexes = function() {
+    Schema2.prototype.indexes = function() {
       return getIndexes(this);
     };
-    Schema.prototype.virtual = function(name, options) {
+    Schema2.prototype.virtual = function(name, options) {
       if (name instanceof VirtualType || getConstructorName(name) === "VirtualType") {
         return this.virtual(name.path, name.options);
       }
@@ -50018,10 +50018,10 @@ var require_schema2 = __commonJS({
       }
       return virtuals[name];
     };
-    Schema.prototype.virtualpath = function(name) {
+    Schema2.prototype.virtualpath = function(name) {
       return this.virtuals.hasOwnProperty(name) ? this.virtuals[name] : null;
     };
-    Schema.prototype.remove = function(path) {
+    Schema2.prototype.remove = function(path) {
       if (typeof path === "string") {
         path = [path];
       }
@@ -50059,7 +50059,7 @@ var require_schema2 = __commonJS({
       }
       delete branch[last];
     }
-    Schema.prototype.removeVirtual = function(path) {
+    Schema2.prototype.removeVirtual = function(path) {
       if (typeof path === "string") {
         path = [path];
       }
@@ -50081,7 +50081,7 @@ var require_schema2 = __commonJS({
       }
       return this;
     };
-    Schema.prototype.loadClass = function(model, virtualsOnly) {
+    Schema2.prototype.loadClass = function(model, virtualsOnly) {
       if (model === Object.prototype || model === Function.prototype || model.prototype.hasOwnProperty("$isMongooseModelPrototype") || model.prototype.hasOwnProperty("$isMongooseDocumentPrototype")) {
         return this;
       }
@@ -50122,7 +50122,7 @@ var require_schema2 = __commonJS({
       }, this);
       return this;
     };
-    Schema.prototype._getSchema = function(path) {
+    Schema2.prototype._getSchema = function(path) {
       const _this = this;
       const pathschema = _this.path(path);
       const resultPath = [];
@@ -50198,7 +50198,7 @@ var require_schema2 = __commonJS({
       }
       return search(parts, _this);
     };
-    Schema.prototype._getPathType = function(path) {
+    Schema2.prototype._getPathType = function(path) {
       const _this = this;
       const pathschema = _this.path(path);
       if (pathschema) {
@@ -50237,7 +50237,7 @@ var require_schema2 = __commonJS({
       }
       return search(path.split("."), _this);
     };
-    Schema.prototype._transformDuplicateKeyError = function _transformDuplicateKeyError(error) {
+    Schema2.prototype._transformDuplicateKeyError = function _transformDuplicateKeyError(error) {
       if (!this._duplicateKeyErrorMessagesByPath) {
         return error;
       }
@@ -50261,10 +50261,10 @@ var require_schema2 = __commonJS({
     function isArrayFilter(piece) {
       return piece.startsWith("$[") && piece.endsWith("]");
     }
-    Schema.prototype._preCompile = function _preCompile() {
+    Schema2.prototype._preCompile = function _preCompile() {
       this.plugin(idGetter, { deduplicate: true });
     };
-    Schema.prototype.toJSONSchema = function toJSONSchema(options) {
+    Schema2.prototype.toJSONSchema = function toJSONSchema(options) {
       const useBsonType = options?.useBsonType ?? false;
       const result = useBsonType ? { required: [], properties: {} } : { type: "object", required: [], properties: {} };
       for (const path of Object.keys(this.paths)) {
@@ -50314,8 +50314,8 @@ var require_schema2 = __commonJS({
       }
       return result;
     };
-    module2.exports = exports2 = Schema;
-    Schema.Types = MongooseTypes = require_schema();
+    module2.exports = exports2 = Schema2;
+    Schema2.Types = MongooseTypes = require_schema();
     exports2.ObjectId = MongooseTypes.ObjectId;
   }
 });
@@ -51554,7 +51554,7 @@ var require_connection2 = __commonJS({
     "use strict";
     var ChangeStream = require_changeStream();
     var EventEmitter = require("events").EventEmitter;
-    var Schema = require_schema2();
+    var Schema2 = require_schema2();
     var STATES = require_connectionState();
     var MongooseBulkWriteError = require_bulkWriteError();
     var MongooseError = require_error2();
@@ -52209,7 +52209,7 @@ var require_connection2 = __commonJS({
       }
       if (utils.isObject(schema)) {
         if (!schema.instanceOfSchema) {
-          schema = new Schema(schema);
+          schema = new Schema2(schema);
         } else if (!(schema instanceof this.base.Schema)) {
           schema = schema._clone(this.base.Schema);
         }
@@ -52587,7 +52587,7 @@ var require_connection3 = __commonJS({
     var processConnectionOptions = require_processConnectionOptions();
     var setTimeout2 = require_timers().setTimeout;
     var utils = require_utils3();
-    var Schema = require_schema2();
+    var Schema2 = require_schema2();
     function NativeConnection() {
       MongooseConnection.apply(this, arguments);
       this._listening = false;
@@ -52785,7 +52785,7 @@ var require_connection3 = __commonJS({
         const { schema, collection: { collectionName } } = model;
         const namespace = `${this.$dbName}.${collectionName}`;
         const mappings = schema.encryptionType() === "csfle" ? csfleMappings : qeMappings;
-        mappings[namespace] ?? (mappings[namespace] = new Schema({}, { encryptionType: schema.encryptionType() }));
+        mappings[namespace] ?? (mappings[namespace] = new Schema2({}, { encryptionType: schema.encryptionType() }));
         const isNonRootDiscriminator = schema.discriminatorMapping && !schema.discriminatorMapping.isRoot;
         if (isNonRootDiscriminator) {
           const rootSchema = schema._baseSchema;
@@ -61996,7 +61996,7 @@ var require_model = __commonJS({
     var OverwriteModelError = require_overwriteModel();
     var Query = require_query();
     var SaveOptions = require_saveOptions();
-    var Schema = require_schema2();
+    var Schema2 = require_schema2();
     var ValidationError = require_validation();
     var VersionError = require_version();
     var ParallelSaveError = require_parallelSave();
@@ -62058,7 +62058,7 @@ var require_model = __commonJS({
       bson: true
     });
     function Model(doc, fields, skipId) {
-      if (fields instanceof Schema) {
+      if (fields instanceof Schema2) {
         throw new TypeError("2nd argument to `Model` constructor must be a POJO or string, **not** a schema. Make sure you're calling `mongoose.model()`, not `mongoose.Model()`.");
       }
       if (typeof doc === "string") {
@@ -62472,9 +62472,9 @@ var require_model = __commonJS({
       const overwriteModels = typeof options.overwriteModels === "boolean" ? options.overwriteModels : false;
       _checkContext(this, "discriminator");
       if (utils.isObject(schema) && !schema.instanceOfSchema) {
-        schema = new Schema(schema);
+        schema = new Schema2(schema);
       }
-      if (schema instanceof Schema && clone2) {
+      if (schema instanceof Schema2 && clone2) {
         schema = schema.clone();
       }
       schema = discriminator(this, name, schema, value, mergePlugins, options.mergeHooks, overwriteModels);
@@ -64731,7 +64731,7 @@ var require_browserDocument = __commonJS({
     var NodeJSDocument = require_document2();
     var EventEmitter = require("events").EventEmitter;
     var MongooseError = require_error2();
-    var Schema = require_schema2();
+    var Schema2 = require_schema2();
     var ObjectId2 = require_objectid();
     var ValidationError = MongooseError.ValidationError;
     var applyHooks = require_applyHooks();
@@ -64741,7 +64741,7 @@ var require_browserDocument = __commonJS({
         return new Document(obj, schema, fields, skipId, skipInit);
       }
       if (isObject(schema) && !schema.instanceOfSchema) {
-        schema = new Schema(schema);
+        schema = new Schema2(schema);
       }
       schema = this.schema || schema;
       if (!this.schema && schema.options._id) {
@@ -64812,7 +64812,7 @@ var require_mongoose = __commonJS({
     var Document = require_document2();
     var EventEmitter = require("events").EventEmitter;
     var Kareem = require_kareem();
-    var Schema = require_schema2();
+    var Schema2 = require_schema2();
     var SchemaType = require_schemaType();
     var SchemaTypes = require_schema();
     var VirtualType = require_virtualType();
@@ -64863,12 +64863,12 @@ var require_mongoose = __commonJS({
         const _this = this;
         this.Schema = function() {
           this.base = _this;
-          return Schema.apply(this, arguments);
+          return Schema2.apply(this, arguments);
         };
-        this.Schema.prototype = Object.create(Schema.prototype);
-        Object.assign(this.Schema, Schema);
+        this.Schema.prototype = Object.create(Schema2.prototype);
+        Object.assign(this.Schema, Schema2);
         this.Schema.base = this;
-        this.Schema.Types = Object.assign({}, Schema.Types);
+        this.Schema.Types = Object.assign({}, Schema2.Types);
       } else {
         for (const key of ["Schema", "model"]) {
           this[key] = Mongoose.prototype[key];
@@ -65044,10 +65044,10 @@ var require_mongoose = __commonJS({
         }
         return model3;
       }
-      if (utils.isObject(schema) && !(schema instanceof Schema)) {
-        schema = new Schema(schema);
+      if (utils.isObject(schema) && !(schema instanceof Schema2)) {
+        schema = new Schema2(schema);
       }
-      if (schema && !(schema instanceof Schema)) {
+      if (schema && !(schema instanceof Schema2)) {
         throw new _mongoose.Error("The 2nd parameter to `mongoose.model()` should be a schema or a POJO");
       }
       options = options || {};
@@ -65174,9 +65174,9 @@ var require_mongoose = __commonJS({
     });
     Mongoose.prototype.version = pkg.version;
     Mongoose.prototype.Mongoose = Mongoose;
-    Mongoose.prototype.Schema = Schema;
+    Mongoose.prototype.Schema = Schema2;
     Mongoose.prototype.SchemaType = SchemaType;
-    Mongoose.prototype.SchemaTypes = Schema.Types;
+    Mongoose.prototype.SchemaTypes = Schema2.Types;
     Mongoose.prototype.VirtualType = VirtualType;
     Mongoose.prototype.Types = Types;
     Mongoose.prototype.Query = Query;
@@ -65435,8 +65435,8 @@ var require_dist_cjs2 = __commonJS({
     __export2(src_exports, {
       Field: () => Field,
       Fields: () => Fields,
-      HttpRequest: () => HttpRequest7,
-      HttpResponse: () => HttpResponse2,
+      HttpRequest: () => HttpRequest10,
+      HttpResponse: () => HttpResponse4,
       IHttpRequest: () => import_types5.HttpRequest,
       getHttpHandlerExtensionConfiguration: () => getHttpHandlerExtensionConfiguration3,
       isValidHostname: () => isValidHostname,
@@ -65560,7 +65560,7 @@ var require_dist_cjs2 = __commonJS({
       }
     }, __name(_a3, "Fields"), _a3);
     var _a4;
-    var HttpRequest7 = (_a4 = class {
+    var HttpRequest10 = (_a4 = class {
       constructor(options) {
         this.method = options.method || "GET";
         this.hostname = options.hostname || "localhost";
@@ -65621,7 +65621,7 @@ var require_dist_cjs2 = __commonJS({
     }
     __name(cloneQuery, "cloneQuery");
     var _a5;
-    var HttpResponse2 = (_a5 = class {
+    var HttpResponse4 = (_a5 = class {
       constructor(options) {
         this.statusCode = options.statusCode;
         this.reason = options.reason;
@@ -65673,13 +65673,13 @@ var require_dist_cjs3 = __commonJS({
       resolveHostHeaderConfig: () => resolveHostHeaderConfig3
     });
     module2.exports = __toCommonJS2(index_exports);
-    var import_protocol_http11 = require_dist_cjs2();
+    var import_protocol_http15 = require_dist_cjs2();
     function resolveHostHeaderConfig3(input) {
       return input;
     }
     __name(resolveHostHeaderConfig3, "resolveHostHeaderConfig");
     var hostHeaderMiddleware = /* @__PURE__ */ __name((options) => (next) => async (args) => {
-      if (!import_protocol_http11.HttpRequest.isInstance(args.request)) return next(args);
+      if (!import_protocol_http15.HttpRequest.isInstance(args.request)) return next(args);
       const { request } = args;
       const { handlerProtocol = "" } = options.requestHandler.metadata || {};
       if (handlerProtocol.indexOf("h2") >= 0 && !request.headers[":authority"]) {
@@ -65739,12 +65739,12 @@ var require_dist_cjs4 = __commonJS({
     var loggerMiddleware = /* @__PURE__ */ __name(() => (next, context) => async (args) => {
       try {
         const response = await next(args);
-        const { clientName, commandName, logger, dynamoDbDocumentClientOptions = {} } = context;
+        const { clientName, commandName, logger: logger3, dynamoDbDocumentClientOptions = {} } = context;
         const { overrideInputFilterSensitiveLog, overrideOutputFilterSensitiveLog } = dynamoDbDocumentClientOptions;
         const inputFilterSensitiveLog = overrideInputFilterSensitiveLog ?? context.inputFilterSensitiveLog;
         const outputFilterSensitiveLog = overrideOutputFilterSensitiveLog ?? context.outputFilterSensitiveLog;
         const { $metadata, ...outputWithoutMetadata } = response.output;
-        logger?.info?.({
+        logger3?.info?.({
           clientName,
           commandName,
           input: inputFilterSensitiveLog(args.input),
@@ -65753,10 +65753,10 @@ var require_dist_cjs4 = __commonJS({
         });
         return response;
       } catch (error) {
-        const { clientName, commandName, logger, dynamoDbDocumentClientOptions = {} } = context;
+        const { clientName, commandName, logger: logger3, dynamoDbDocumentClientOptions = {} } = context;
         const { overrideInputFilterSensitiveLog } = dynamoDbDocumentClientOptions;
         const inputFilterSensitiveLog = overrideInputFilterSensitiveLog ?? context.inputFilterSensitiveLog;
-        logger?.error?.({
+        logger3?.error?.({
           clientName,
           commandName,
           input: inputFilterSensitiveLog(args.input),
@@ -65809,13 +65809,13 @@ var require_dist_cjs5 = __commonJS({
       recursionDetectionMiddleware: () => recursionDetectionMiddleware
     });
     module2.exports = __toCommonJS2(index_exports);
-    var import_protocol_http11 = require_dist_cjs2();
+    var import_protocol_http15 = require_dist_cjs2();
     var TRACE_ID_HEADER_NAME = "X-Amzn-Trace-Id";
     var ENV_LAMBDA_FUNCTION_NAME = "AWS_LAMBDA_FUNCTION_NAME";
     var ENV_TRACE_ID = "_X_AMZN_TRACE_ID";
     var recursionDetectionMiddleware = /* @__PURE__ */ __name((options) => (next) => async (args) => {
       const { request } = args;
-      if (!import_protocol_http11.HttpRequest.isInstance(request) || options.runtime !== "node") {
+      if (!import_protocol_http15.HttpRequest.isInstance(request) || options.runtime !== "node") {
         return next(args);
       }
       const traceIdHeader = Object.keys(request.headers ?? {}).find((h3) => h3.toLowerCase() === TRACE_ID_HEADER_NAME.toLowerCase()) ?? TRACE_ID_HEADER_NAME;
@@ -65880,12 +65880,12 @@ var require_dist_cjs6 = __commonJS({
     var __toCommonJS2 = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
     var src_exports = {};
     __export2(src_exports, {
-      getSmithyContext: () => getSmithyContext6,
+      getSmithyContext: () => getSmithyContext8,
       normalizeProvider: () => normalizeProvider4
     });
     module2.exports = __toCommonJS2(src_exports);
     var import_types5 = require_dist_cjs();
-    var getSmithyContext6 = /* @__PURE__ */ __name((context) => context[import_types5.SMITHY_CONTEXT_KEY] || (context[import_types5.SMITHY_CONTEXT_KEY] = {}), "getSmithyContext");
+    var getSmithyContext8 = /* @__PURE__ */ __name((context) => context[import_types5.SMITHY_CONTEXT_KEY] || (context[import_types5.SMITHY_CONTEXT_KEY] = {}), "getSmithyContext");
     var normalizeProvider4 = /* @__PURE__ */ __name((input) => {
       if (typeof input === "function")
         return input;
@@ -66026,7 +66026,7 @@ var require_dist_cjs7 = __commonJS({
       serializerMiddlewareOption: () => serializerMiddlewareOption2
     });
     module2.exports = __toCommonJS2(src_exports);
-    var import_protocol_http11 = require_dist_cjs2();
+    var import_protocol_http15 = require_dist_cjs2();
     var deserializerMiddleware = /* @__PURE__ */ __name((options, deserializer) => (next, context) => async (args) => {
       const { response } = await next(args);
       try {
@@ -66056,7 +66056,7 @@ var require_dist_cjs7 = __commonJS({
             }
           }
           try {
-            if (import_protocol_http11.HttpResponse.isInstance(response)) {
+            if (import_protocol_http15.HttpResponse.isInstance(response)) {
               const { headers = {} } = response;
               const headerEntries = Object.entries(headers);
               error.$metadata = {
@@ -66351,7 +66351,7 @@ var require_fromBase64 = __commonJS({
     exports2.fromBase64 = void 0;
     var util_buffer_from_1 = require_dist_cjs9();
     var BASE64_REGEX = /^[A-Za-z0-9+/]*={0,2}$/;
-    var fromBase644 = (input) => {
+    var fromBase645 = (input) => {
       if (input.length * 3 % 4 !== 0) {
         throw new TypeError(`Incorrect padding on base64 string.`);
       }
@@ -66361,7 +66361,7 @@ var require_fromBase64 = __commonJS({
       const buffer = (0, util_buffer_from_1.fromString)(input, "base64");
       return new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
     };
-    exports2.fromBase64 = fromBase644;
+    exports2.fromBase64 = fromBase645;
   }
 });
 
@@ -66388,26 +66388,26 @@ var require_dist_cjs10 = __commonJS({
     var __toCommonJS2 = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
     var src_exports = {};
     __export2(src_exports, {
-      fromUtf8: () => fromUtf83,
+      fromUtf8: () => fromUtf84,
       toUint8Array: () => toUint8Array,
-      toUtf8: () => toUtf83
+      toUtf8: () => toUtf85
     });
     module2.exports = __toCommonJS2(src_exports);
     var import_util_buffer_from = require_dist_cjs9();
-    var fromUtf83 = /* @__PURE__ */ __name((input) => {
+    var fromUtf84 = /* @__PURE__ */ __name((input) => {
       const buf = (0, import_util_buffer_from.fromString)(input, "utf8");
       return new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength / Uint8Array.BYTES_PER_ELEMENT);
     }, "fromUtf8");
     var toUint8Array = /* @__PURE__ */ __name((data) => {
       if (typeof data === "string") {
-        return fromUtf83(data);
+        return fromUtf84(data);
       }
       if (ArrayBuffer.isView(data)) {
         return new Uint8Array(data.buffer, data.byteOffset, data.byteLength / Uint8Array.BYTES_PER_ELEMENT);
       }
       return new Uint8Array(data);
     }, "toUint8Array");
-    var toUtf83 = /* @__PURE__ */ __name((input) => {
+    var toUtf85 = /* @__PURE__ */ __name((input) => {
       if (typeof input === "string") {
         return input;
       }
@@ -66427,7 +66427,7 @@ var require_toBase64 = __commonJS({
     exports2.toBase64 = void 0;
     var util_buffer_from_1 = require_dist_cjs9();
     var util_utf8_1 = require_dist_cjs10();
-    var toBase644 = (_input) => {
+    var toBase645 = (_input) => {
       let input;
       if (typeof _input === "string") {
         input = (0, util_utf8_1.fromUtf8)(_input);
@@ -66439,7 +66439,7 @@ var require_toBase64 = __commonJS({
       }
       return (0, util_buffer_from_1.fromArrayBuffer)(input.buffer, input.byteOffset, input.byteLength).toString("base64");
     };
-    exports2.toBase64 = toBase644;
+    exports2.toBase64 = toBase645;
   }
 });
 
@@ -66602,7 +66602,7 @@ var require_createChecksumStream = __commonJS({
   "node_modules/@smithy/util-stream/dist-cjs/checksum/createChecksumStream.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.createChecksumStream = void 0;
+    exports2.createChecksumStream = createChecksumStream2;
     var stream_type_check_1 = require_stream_type_check();
     var ChecksumStream_1 = require_ChecksumStream();
     var createChecksumStream_browser_1 = require_createChecksumStream_browser();
@@ -66612,7 +66612,6 @@ var require_createChecksumStream = __commonJS({
       }
       return new ChecksumStream_1.ChecksumStream(init);
     }
-    exports2.createChecksumStream = createChecksumStream2;
   }
 });
 
@@ -66662,9 +66661,14 @@ var require_createBufferedReadableStream = __commonJS({
   "node_modules/@smithy/util-stream/dist-cjs/createBufferedReadableStream.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.modeOf = exports2.sizeOf = exports2.flush = exports2.merge = exports2.createBufferedReadable = exports2.createBufferedReadableStream = void 0;
+    exports2.createBufferedReadable = void 0;
+    exports2.createBufferedReadableStream = createBufferedReadableStream;
+    exports2.merge = merge;
+    exports2.flush = flush;
+    exports2.sizeOf = sizeOf;
+    exports2.modeOf = modeOf;
     var ByteArrayCollector_1 = require_ByteArrayCollector();
-    function createBufferedReadableStream(upstream, size, logger) {
+    function createBufferedReadableStream(upstream, size, logger3) {
       const reader = upstream.getReader();
       let streamBufferingLoggedWarning = false;
       let bytesSeen = 0;
@@ -66702,7 +66706,7 @@ var require_createBufferedReadableStream = __commonJS({
             const newSize = merge(buffers, mode, chunk);
             if (!streamBufferingLoggedWarning && bytesSeen > size * 2) {
               streamBufferingLoggedWarning = true;
-              logger === null || logger === void 0 ? void 0 : logger.warn(`@smithy/util-stream - stream chunk size ${chunkSize} is below threshold of ${size}, automatically buffering.`);
+              logger3 === null || logger3 === void 0 ? void 0 : logger3.warn(`@smithy/util-stream - stream chunk size ${chunkSize} is below threshold of ${size}, automatically buffering.`);
             }
             if (newSize >= size) {
               controller.enqueue(flush(buffers, mode));
@@ -66716,7 +66720,6 @@ var require_createBufferedReadableStream = __commonJS({
         pull
       });
     }
-    exports2.createBufferedReadableStream = createBufferedReadableStream;
     exports2.createBufferedReadable = createBufferedReadableStream;
     function merge(buffers, mode, chunk) {
       switch (mode) {
@@ -66729,7 +66732,6 @@ var require_createBufferedReadableStream = __commonJS({
           return sizeOf(buffers[mode]);
       }
     }
-    exports2.merge = merge;
     function flush(buffers, mode) {
       switch (mode) {
         case 0:
@@ -66742,12 +66744,10 @@ var require_createBufferedReadableStream = __commonJS({
       }
       throw new Error(`@smithy/util-stream - invalid index ${mode} given to flush()`);
     }
-    exports2.flush = flush;
     function sizeOf(chunk) {
       var _a2, _b;
       return (_b = (_a2 = chunk === null || chunk === void 0 ? void 0 : chunk.byteLength) !== null && _a2 !== void 0 ? _a2 : chunk === null || chunk === void 0 ? void 0 : chunk.length) !== null && _b !== void 0 ? _b : 0;
     }
-    exports2.sizeOf = sizeOf;
     function modeOf(chunk, allowBuffer = true) {
       if (allowBuffer && typeof Buffer !== "undefined" && chunk instanceof Buffer) {
         return 2;
@@ -66760,7 +66760,6 @@ var require_createBufferedReadableStream = __commonJS({
       }
       return -1;
     }
-    exports2.modeOf = modeOf;
   }
 });
 
@@ -66769,14 +66768,14 @@ var require_createBufferedReadable = __commonJS({
   "node_modules/@smithy/util-stream/dist-cjs/createBufferedReadable.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.createBufferedReadable = void 0;
+    exports2.createBufferedReadable = createBufferedReadable2;
     var node_stream_1 = require("node:stream");
     var ByteArrayCollector_1 = require_ByteArrayCollector();
     var createBufferedReadableStream_1 = require_createBufferedReadableStream();
     var stream_type_check_1 = require_stream_type_check();
-    function createBufferedReadable2(upstream, size, logger) {
+    function createBufferedReadable2(upstream, size, logger3) {
       if ((0, stream_type_check_1.isReadableStream)(upstream)) {
-        return (0, createBufferedReadableStream_1.createBufferedReadableStream)(upstream, size, logger);
+        return (0, createBufferedReadableStream_1.createBufferedReadableStream)(upstream, size, logger3);
       }
       const downstream = new node_stream_1.Readable({ read() {
       } });
@@ -66809,7 +66808,7 @@ var require_createBufferedReadable = __commonJS({
           const newSize = (0, createBufferedReadableStream_1.merge)(buffers, mode, chunk);
           if (!streamBufferingLoggedWarning && bytesSeen > size * 2) {
             streamBufferingLoggedWarning = true;
-            logger === null || logger === void 0 ? void 0 : logger.warn(`@smithy/util-stream - stream chunk size ${chunkSize} is below threshold of ${size}, automatically buffering.`);
+            logger3 === null || logger3 === void 0 ? void 0 : logger3.warn(`@smithy/util-stream - stream chunk size ${chunkSize} is below threshold of ${size}, automatically buffering.`);
           }
           if (newSize >= size) {
             downstream.push((0, createBufferedReadableStream_1.flush)(buffers, mode));
@@ -66827,7 +66826,6 @@ var require_createBufferedReadable = __commonJS({
       });
       return downstream;
     }
-    exports2.createBufferedReadable = createBufferedReadable2;
   }
 });
 
@@ -66874,7 +66872,7 @@ var require_headStream_browser = __commonJS({
   "node_modules/@smithy/util-stream/dist-cjs/headStream.browser.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.headStream = void 0;
+    exports2.headStream = headStream2;
     async function headStream2(stream, bytes) {
       var _a2;
       let byteLengthCounter = 0;
@@ -66906,7 +66904,6 @@ var require_headStream_browser = __commonJS({
       }
       return collected;
     }
-    exports2.headStream = headStream2;
   }
 });
 
@@ -67087,7 +67084,7 @@ var require_dist_cjs14 = __commonJS({
       streamCollector: () => streamCollector3
     });
     module2.exports = __toCommonJS2(src_exports);
-    var import_protocol_http11 = require_dist_cjs2();
+    var import_protocol_http15 = require_dist_cjs2();
     var import_querystring_builder = require_dist_cjs13();
     var import_http = require("http");
     var import_https = require("https");
@@ -67271,7 +67268,7 @@ var require_dist_cjs14 = __commonJS({
        * @param logger - channel for the warning.
        * @returns timestamp of last emitted warning.
        */
-      static checkSocketUsage(agent, socketWarningTimestamp, logger = console) {
+      static checkSocketUsage(agent, socketWarningTimestamp, logger3 = console) {
         const { sockets, requests, maxSockets } = agent;
         if (typeof maxSockets !== "number" || maxSockets === Infinity) {
           return socketWarningTimestamp;
@@ -67285,7 +67282,7 @@ var require_dist_cjs14 = __commonJS({
             const socketsInUse = sockets[origin]?.length ?? 0;
             const requestsEnqueued = requests[origin]?.length ?? 0;
             if (socketsInUse >= maxSockets && requestsEnqueued >= 2 * maxSockets) {
-              logger?.warn?.(
+              logger3?.warn?.(
                 `@smithy/node-http-handler:WARN - socket usage at capacity=${socketsInUse} and ${requestsEnqueued} additional requests are enqueued.
 See https://docs.aws.amazon.com/sdk-for-javascript/v3/developer-guide/node-configuring-maxsockets.html
 or increase socketAcquisitionWarningTimeout=(millis) in the NodeHttpHandler config.`
@@ -67394,7 +67391,7 @@ or increase socketAcquisitionWarningTimeout=(millis) in the NodeHttpHandler conf
           };
           const requestFunc = isSSL ? import_https.request : import_http.request;
           const req = requestFunc(nodeHttpsOptions, (res) => {
-            const httpResponse = new import_protocol_http11.HttpResponse({
+            const httpResponse = new import_protocol_http15.HttpResponse({
               statusCode: res.statusCode || -1,
               reason: res.statusMessage,
               headers: getTransformedHeaders(res.headers),
@@ -67670,7 +67667,7 @@ or increase socketAcquisitionWarningTimeout=(millis) in the NodeHttpHandler conf
           });
           session.ref();
           req.on("response", (headers) => {
-            const httpResponse = new import_protocol_http11.HttpResponse({
+            const httpResponse = new import_protocol_http15.HttpResponse({
               statusCode: headers[":status"] || -1,
               headers: getTransformedHeaders(headers),
               body: req
@@ -67831,7 +67828,7 @@ var require_dist_cjs15 = __commonJS({
       streamCollector: () => streamCollector3
     });
     module2.exports = __toCommonJS2(src_exports);
-    var import_protocol_http11 = require_dist_cjs2();
+    var import_protocol_http15 = require_dist_cjs2();
     var import_querystring_builder = require_dist_cjs13();
     function createRequest(url, requestOptions) {
       return new Request(url, requestOptions);
@@ -67942,7 +67939,7 @@ var require_dist_cjs15 = __commonJS({
             const hasReadableStream = response.body != void 0;
             if (!hasReadableStream) {
               return response.blob().then((body2) => ({
-                response: new import_protocol_http11.HttpResponse({
+                response: new import_protocol_http15.HttpResponse({
                   headers: transformedHeaders,
                   reason: response.statusText,
                   statusCode: response.status,
@@ -67951,7 +67948,7 @@ var require_dist_cjs15 = __commonJS({
               }));
             }
             return {
-              response: new import_protocol_http11.HttpResponse({
+              response: new import_protocol_http15.HttpResponse({
                 headers: transformedHeaders,
                 reason: response.statusText,
                 statusCode: response.status,
@@ -67992,7 +67989,7 @@ var require_dist_cjs15 = __commonJS({
         return this.config ?? {};
       }
     }, __name(_a2, "FetchHttpHandler"), _a2);
-    var import_util_base643 = require_dist_cjs11();
+    var import_util_base645 = require_dist_cjs11();
     var streamCollector3 = /* @__PURE__ */ __name(async (stream) => {
       if (typeof Blob === "function" && stream instanceof Blob || stream.constructor?.name === "Blob") {
         if (Blob.prototype.arrayBuffer !== void 0) {
@@ -68004,7 +68001,7 @@ var require_dist_cjs15 = __commonJS({
     }, "streamCollector");
     async function collectBlob(blob) {
       const base64 = await readToBase64(blob);
-      const arrayBuffer = (0, import_util_base643.fromBase64)(base64);
+      const arrayBuffer = (0, import_util_base645.fromBase64)(base64);
       return new Uint8Array(arrayBuffer);
     }
     __name(collectBlob, "collectBlob");
@@ -68127,7 +68124,7 @@ var require_sdk_stream_mixin_browser = __commonJS({
     var util_utf8_1 = require_dist_cjs10();
     var stream_type_check_1 = require_stream_type_check();
     var ERR_MSG_STREAM_HAS_BEEN_TRANSFORMED = "The stream has already been transformed.";
-    var sdkStreamMixin2 = (stream) => {
+    var sdkStreamMixin3 = (stream) => {
       var _a2, _b;
       if (!isBlobInstance(stream) && !(0, stream_type_check_1.isReadableStream)(stream)) {
         const name = ((_b = (_a2 = stream === null || stream === void 0 ? void 0 : stream.__proto__) === null || _a2 === void 0 ? void 0 : _a2.constructor) === null || _b === void 0 ? void 0 : _b.name) || stream;
@@ -68178,7 +68175,7 @@ var require_sdk_stream_mixin_browser = __commonJS({
         }
       });
     };
-    exports2.sdkStreamMixin = sdkStreamMixin2;
+    exports2.sdkStreamMixin = sdkStreamMixin3;
     var isBlobInstance = (stream) => typeof Blob === "function" && stream instanceof Blob;
   }
 });
@@ -68194,7 +68191,7 @@ var require_sdk_stream_mixin = __commonJS({
     var stream_1 = require("stream");
     var sdk_stream_mixin_browser_1 = require_sdk_stream_mixin_browser();
     var ERR_MSG_STREAM_HAS_BEEN_TRANSFORMED = "The stream has already been transformed.";
-    var sdkStreamMixin2 = (stream) => {
+    var sdkStreamMixin3 = (stream) => {
       var _a2, _b;
       if (!(stream instanceof stream_1.Readable)) {
         try {
@@ -68238,7 +68235,7 @@ var require_sdk_stream_mixin = __commonJS({
         }
       });
     };
-    exports2.sdkStreamMixin = sdkStreamMixin2;
+    exports2.sdkStreamMixin = sdkStreamMixin3;
   }
 });
 
@@ -68247,7 +68244,7 @@ var require_splitStream_browser = __commonJS({
   "node_modules/@smithy/util-stream/dist-cjs/splitStream.browser.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.splitStream = void 0;
+    exports2.splitStream = splitStream2;
     async function splitStream2(stream) {
       if (typeof stream.stream === "function") {
         stream = stream.stream();
@@ -68255,7 +68252,6 @@ var require_splitStream_browser = __commonJS({
       const readableStream = stream;
       return readableStream.tee();
     }
-    exports2.splitStream = splitStream2;
   }
 });
 
@@ -68264,7 +68260,7 @@ var require_splitStream = __commonJS({
   "node_modules/@smithy/util-stream/dist-cjs/splitStream.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.splitStream = void 0;
+    exports2.splitStream = splitStream2;
     var stream_1 = require("stream");
     var splitStream_browser_1 = require_splitStream_browser();
     var stream_type_check_1 = require_stream_type_check();
@@ -68278,7 +68274,6 @@ var require_splitStream = __commonJS({
       stream.pipe(stream2);
       return [stream1, stream2];
     }
-    exports2.splitStream = splitStream2;
   }
 });
 
@@ -68309,20 +68304,20 @@ var require_dist_cjs17 = __commonJS({
       Uint8ArrayBlobAdapter: () => Uint8ArrayBlobAdapter2
     });
     module2.exports = __toCommonJS2(src_exports);
-    var import_util_base643 = require_dist_cjs11();
-    var import_util_utf83 = require_dist_cjs10();
+    var import_util_base645 = require_dist_cjs11();
+    var import_util_utf85 = require_dist_cjs10();
     function transformToString(payload, encoding = "utf-8") {
       if (encoding === "base64") {
-        return (0, import_util_base643.toBase64)(payload);
+        return (0, import_util_base645.toBase64)(payload);
       }
-      return (0, import_util_utf83.toUtf8)(payload);
+      return (0, import_util_utf85.toUtf8)(payload);
     }
     __name(transformToString, "transformToString");
     function transformFromString(str, encoding) {
       if (encoding === "base64") {
-        return Uint8ArrayBlobAdapter2.mutate((0, import_util_base643.fromBase64)(str));
+        return Uint8ArrayBlobAdapter2.mutate((0, import_util_base645.fromBase64)(str));
       }
-      return Uint8ArrayBlobAdapter2.mutate((0, import_util_utf83.fromUtf8)(str));
+      return Uint8ArrayBlobAdapter2.mutate((0, import_util_utf85.fromUtf8)(str));
     }
     __name(transformFromString, "transformFromString");
     var _a2;
@@ -68395,6 +68390,1626 @@ var init_extended_encode_uri_component = __esm({
   }
 });
 
+// node_modules/@smithy/core/dist-es/submodules/schema/deref.js
+var deref;
+var init_deref = __esm({
+  "node_modules/@smithy/core/dist-es/submodules/schema/deref.js"() {
+    deref = (schemaRef) => {
+      if (typeof schemaRef === "function") {
+        return schemaRef();
+      }
+      return schemaRef;
+    };
+  }
+});
+
+// node_modules/@smithy/core/dist-es/submodules/schema/middleware/schemaDeserializationMiddleware.js
+var import_protocol_http2, import_util_middleware3;
+var init_schemaDeserializationMiddleware = __esm({
+  "node_modules/@smithy/core/dist-es/submodules/schema/middleware/schemaDeserializationMiddleware.js"() {
+    import_protocol_http2 = __toESM(require_dist_cjs2());
+    import_util_middleware3 = __toESM(require_dist_cjs6());
+  }
+});
+
+// node_modules/@smithy/core/dist-es/submodules/schema/middleware/schemaSerializationMiddleware.js
+var import_util_middleware4;
+var init_schemaSerializationMiddleware = __esm({
+  "node_modules/@smithy/core/dist-es/submodules/schema/middleware/schemaSerializationMiddleware.js"() {
+    import_util_middleware4 = __toESM(require_dist_cjs6());
+  }
+});
+
+// node_modules/@smithy/core/dist-es/submodules/schema/middleware/getSchemaSerdePlugin.js
+var init_getSchemaSerdePlugin = __esm({
+  "node_modules/@smithy/core/dist-es/submodules/schema/middleware/getSchemaSerdePlugin.js"() {
+    init_schemaDeserializationMiddleware();
+    init_schemaSerializationMiddleware();
+  }
+});
+
+// node_modules/@smithy/core/dist-es/submodules/schema/TypeRegistry.js
+var TypeRegistry;
+var init_TypeRegistry = __esm({
+  "node_modules/@smithy/core/dist-es/submodules/schema/TypeRegistry.js"() {
+    TypeRegistry = class _TypeRegistry {
+      constructor(namespace, schemas = /* @__PURE__ */ new Map()) {
+        this.namespace = namespace;
+        this.schemas = schemas;
+      }
+      static for(namespace) {
+        if (!_TypeRegistry.registries.has(namespace)) {
+          _TypeRegistry.registries.set(namespace, new _TypeRegistry(namespace));
+        }
+        return _TypeRegistry.registries.get(namespace);
+      }
+      register(shapeId, schema) {
+        const qualifiedName = this.normalizeShapeId(shapeId);
+        const registry = _TypeRegistry.for(this.getNamespace(shapeId));
+        registry.schemas.set(qualifiedName, schema);
+      }
+      getSchema(shapeId) {
+        const id = this.normalizeShapeId(shapeId);
+        if (!this.schemas.has(id)) {
+          throw new Error(`@smithy/core/schema - schema not found for ${id}`);
+        }
+        return this.schemas.get(id);
+      }
+      getBaseException() {
+        for (const [id, schema] of this.schemas.entries()) {
+          if (id.startsWith("smithy.ts.sdk.synthetic.") && id.endsWith("ServiceException")) {
+            return schema;
+          }
+        }
+        return void 0;
+      }
+      find(predicate) {
+        return [...this.schemas.values()].find(predicate);
+      }
+      destroy() {
+        _TypeRegistry.registries.delete(this.namespace);
+        this.schemas.clear();
+      }
+      normalizeShapeId(shapeId) {
+        if (shapeId.includes("#")) {
+          return shapeId;
+        }
+        return this.namespace + "#" + shapeId;
+      }
+      getNamespace(shapeId) {
+        return this.normalizeShapeId(shapeId).split("#")[0];
+      }
+    };
+    TypeRegistry.registries = /* @__PURE__ */ new Map();
+  }
+});
+
+// node_modules/@smithy/core/dist-es/submodules/schema/schemas/Schema.js
+var Schema;
+var init_Schema = __esm({
+  "node_modules/@smithy/core/dist-es/submodules/schema/schemas/Schema.js"() {
+    Schema = class {
+      constructor(name, traits) {
+        this.name = name;
+        this.traits = traits;
+      }
+    };
+  }
+});
+
+// node_modules/@smithy/core/dist-es/submodules/schema/schemas/ListSchema.js
+var ListSchema;
+var init_ListSchema = __esm({
+  "node_modules/@smithy/core/dist-es/submodules/schema/schemas/ListSchema.js"() {
+    init_TypeRegistry();
+    init_Schema();
+    ListSchema = class extends Schema {
+      constructor(name, traits, valueSchema) {
+        super(name, traits);
+        this.name = name;
+        this.traits = traits;
+        this.valueSchema = valueSchema;
+      }
+    };
+  }
+});
+
+// node_modules/@smithy/core/dist-es/submodules/schema/schemas/MapSchema.js
+var MapSchema;
+var init_MapSchema = __esm({
+  "node_modules/@smithy/core/dist-es/submodules/schema/schemas/MapSchema.js"() {
+    init_TypeRegistry();
+    init_Schema();
+    MapSchema = class extends Schema {
+      constructor(name, traits, keySchema, valueSchema) {
+        super(name, traits);
+        this.name = name;
+        this.traits = traits;
+        this.keySchema = keySchema;
+        this.valueSchema = valueSchema;
+      }
+    };
+  }
+});
+
+// node_modules/@smithy/core/dist-es/submodules/schema/schemas/OperationSchema.js
+var init_OperationSchema = __esm({
+  "node_modules/@smithy/core/dist-es/submodules/schema/schemas/OperationSchema.js"() {
+    init_TypeRegistry();
+    init_Schema();
+  }
+});
+
+// node_modules/@smithy/core/dist-es/submodules/schema/schemas/StructureSchema.js
+var StructureSchema;
+var init_StructureSchema = __esm({
+  "node_modules/@smithy/core/dist-es/submodules/schema/schemas/StructureSchema.js"() {
+    init_TypeRegistry();
+    init_Schema();
+    StructureSchema = class extends Schema {
+      constructor(name, traits, memberNames, memberList) {
+        super(name, traits);
+        this.name = name;
+        this.traits = traits;
+        this.memberNames = memberNames;
+        this.memberList = memberList;
+        this.members = {};
+        for (let i3 = 0; i3 < memberNames.length; ++i3) {
+          this.members[memberNames[i3]] = Array.isArray(memberList[i3]) ? memberList[i3] : [memberList[i3], 0];
+        }
+      }
+    };
+  }
+});
+
+// node_modules/@smithy/core/dist-es/submodules/schema/schemas/ErrorSchema.js
+var init_ErrorSchema = __esm({
+  "node_modules/@smithy/core/dist-es/submodules/schema/schemas/ErrorSchema.js"() {
+    init_TypeRegistry();
+    init_StructureSchema();
+  }
+});
+
+// node_modules/@smithy/core/dist-es/submodules/schema/schemas/sentinels.js
+var SCHEMA;
+var init_sentinels = __esm({
+  "node_modules/@smithy/core/dist-es/submodules/schema/schemas/sentinels.js"() {
+    SCHEMA = {
+      BLOB: 21,
+      STREAMING_BLOB: 42,
+      BOOLEAN: 2,
+      STRING: 0,
+      NUMERIC: 1,
+      BIG_INTEGER: 17,
+      BIG_DECIMAL: 19,
+      DOCUMENT: 15,
+      TIMESTAMP_DEFAULT: 4,
+      TIMESTAMP_DATE_TIME: 5,
+      TIMESTAMP_HTTP_DATE: 6,
+      TIMESTAMP_EPOCH_SECONDS: 7,
+      LIST_MODIFIER: 64,
+      MAP_MODIFIER: 128
+    };
+  }
+});
+
+// node_modules/@smithy/core/dist-es/submodules/schema/schemas/SimpleSchema.js
+var SimpleSchema;
+var init_SimpleSchema = __esm({
+  "node_modules/@smithy/core/dist-es/submodules/schema/schemas/SimpleSchema.js"() {
+    init_TypeRegistry();
+    init_Schema();
+    SimpleSchema = class extends Schema {
+      constructor(name, schemaRef, traits) {
+        super(name, traits);
+        this.name = name;
+        this.schemaRef = schemaRef;
+        this.traits = traits;
+      }
+    };
+  }
+});
+
+// node_modules/@smithy/core/dist-es/submodules/schema/schemas/NormalizedSchema.js
+var NormalizedSchema;
+var init_NormalizedSchema = __esm({
+  "node_modules/@smithy/core/dist-es/submodules/schema/schemas/NormalizedSchema.js"() {
+    init_deref();
+    init_ListSchema();
+    init_MapSchema();
+    init_sentinels();
+    init_SimpleSchema();
+    init_StructureSchema();
+    NormalizedSchema = class _NormalizedSchema {
+      constructor(ref, memberName) {
+        this.ref = ref;
+        this.memberName = memberName;
+        const traitStack = [];
+        let _ref = ref;
+        let schema = ref;
+        this._isMemberSchema = false;
+        while (Array.isArray(_ref)) {
+          traitStack.push(_ref[1]);
+          _ref = _ref[0];
+          schema = deref(_ref);
+          this._isMemberSchema = true;
+        }
+        if (traitStack.length > 0) {
+          this.memberTraits = {};
+          for (let i3 = traitStack.length - 1; i3 >= 0; --i3) {
+            const traitSet = traitStack[i3];
+            Object.assign(this.memberTraits, _NormalizedSchema.translateTraits(traitSet));
+          }
+        } else {
+          this.memberTraits = 0;
+        }
+        if (schema instanceof _NormalizedSchema) {
+          this.name = schema.name;
+          this.traits = schema.traits;
+          this._isMemberSchema = schema._isMemberSchema;
+          this.schema = schema.schema;
+          this.memberTraits = Object.assign({}, schema.getMemberTraits(), this.getMemberTraits());
+          this.normalizedTraits = void 0;
+          this.ref = schema.ref;
+          this.memberName = memberName ?? schema.memberName;
+          return;
+        }
+        this.schema = deref(schema);
+        if (this.schema && typeof this.schema === "object") {
+          this.traits = this.schema?.traits ?? {};
+        } else {
+          this.traits = 0;
+        }
+        this.name = (typeof this.schema === "object" ? this.schema?.name : void 0) ?? this.memberName ?? this.getSchemaName();
+        if (this._isMemberSchema && !memberName) {
+          throw new Error(`@smithy/core/schema - NormalizedSchema member schema ${this.getName(true)} must initialize with memberName argument.`);
+        }
+      }
+      static of(ref, memberName) {
+        if (ref instanceof _NormalizedSchema) {
+          return ref;
+        }
+        return new _NormalizedSchema(ref, memberName);
+      }
+      static translateTraits(indicator) {
+        if (typeof indicator === "object") {
+          return indicator;
+        }
+        indicator = indicator | 0;
+        const traits = {};
+        if ((indicator & 1) === 1) {
+          traits.httpLabel = 1;
+        }
+        if ((indicator >> 1 & 1) === 1) {
+          traits.idempotent = 1;
+        }
+        if ((indicator >> 2 & 1) === 1) {
+          traits.idempotencyToken = 1;
+        }
+        if ((indicator >> 3 & 1) === 1) {
+          traits.sensitive = 1;
+        }
+        if ((indicator >> 4 & 1) === 1) {
+          traits.httpPayload = 1;
+        }
+        if ((indicator >> 5 & 1) === 1) {
+          traits.httpResponseCode = 1;
+        }
+        if ((indicator >> 6 & 1) === 1) {
+          traits.httpQueryParams = 1;
+        }
+        return traits;
+      }
+      static memberFrom(memberSchema, memberName) {
+        if (memberSchema instanceof _NormalizedSchema) {
+          memberSchema.memberName = memberName;
+          memberSchema._isMemberSchema = true;
+          return memberSchema;
+        }
+        return new _NormalizedSchema(memberSchema, memberName);
+      }
+      getSchema() {
+        if (this.schema instanceof _NormalizedSchema) {
+          return this.schema = this.schema.getSchema();
+        }
+        if (this.schema instanceof SimpleSchema) {
+          return deref(this.schema.schemaRef);
+        }
+        return deref(this.schema);
+      }
+      getName(withNamespace = false) {
+        if (!withNamespace) {
+          if (this.name && this.name.includes("#")) {
+            return this.name.split("#")[1];
+          }
+        }
+        return this.name || void 0;
+      }
+      getMemberName() {
+        if (!this.isMemberSchema()) {
+          throw new Error(`@smithy/core/schema - cannot get member name on non-member schema: ${this.getName(true)}`);
+        }
+        return this.memberName;
+      }
+      isMemberSchema() {
+        return this._isMemberSchema;
+      }
+      isUnitSchema() {
+        return this.getSchema() === "unit";
+      }
+      isListSchema() {
+        const inner = this.getSchema();
+        if (typeof inner === "number") {
+          return inner >= SCHEMA.LIST_MODIFIER && inner < SCHEMA.MAP_MODIFIER;
+        }
+        return inner instanceof ListSchema;
+      }
+      isMapSchema() {
+        const inner = this.getSchema();
+        if (typeof inner === "number") {
+          return inner >= SCHEMA.MAP_MODIFIER && inner <= 255;
+        }
+        return inner instanceof MapSchema;
+      }
+      isDocumentSchema() {
+        return this.getSchema() === SCHEMA.DOCUMENT;
+      }
+      isStructSchema() {
+        const inner = this.getSchema();
+        return inner !== null && typeof inner === "object" && "members" in inner || inner instanceof StructureSchema;
+      }
+      isBlobSchema() {
+        return this.getSchema() === SCHEMA.BLOB || this.getSchema() === SCHEMA.STREAMING_BLOB;
+      }
+      isTimestampSchema() {
+        const schema = this.getSchema();
+        return typeof schema === "number" && schema >= SCHEMA.TIMESTAMP_DEFAULT && schema <= SCHEMA.TIMESTAMP_EPOCH_SECONDS;
+      }
+      isStringSchema() {
+        return this.getSchema() === SCHEMA.STRING;
+      }
+      isBooleanSchema() {
+        return this.getSchema() === SCHEMA.BOOLEAN;
+      }
+      isNumericSchema() {
+        return this.getSchema() === SCHEMA.NUMERIC;
+      }
+      isBigIntegerSchema() {
+        return this.getSchema() === SCHEMA.BIG_INTEGER;
+      }
+      isBigDecimalSchema() {
+        return this.getSchema() === SCHEMA.BIG_DECIMAL;
+      }
+      isStreaming() {
+        const streaming = !!this.getMergedTraits().streaming;
+        if (streaming) {
+          return true;
+        }
+        return this.getSchema() === SCHEMA.STREAMING_BLOB;
+      }
+      getMergedTraits() {
+        if (this.normalizedTraits) {
+          return this.normalizedTraits;
+        }
+        this.normalizedTraits = {
+          ...this.getOwnTraits(),
+          ...this.getMemberTraits()
+        };
+        return this.normalizedTraits;
+      }
+      getMemberTraits() {
+        return _NormalizedSchema.translateTraits(this.memberTraits);
+      }
+      getOwnTraits() {
+        return _NormalizedSchema.translateTraits(this.traits);
+      }
+      getKeySchema() {
+        if (this.isDocumentSchema()) {
+          return _NormalizedSchema.memberFrom([SCHEMA.DOCUMENT, 0], "key");
+        }
+        if (!this.isMapSchema()) {
+          throw new Error(`@smithy/core/schema - cannot get key schema for non-map schema: ${this.getName(true)}`);
+        }
+        const schema = this.getSchema();
+        if (typeof schema === "number") {
+          return _NormalizedSchema.memberFrom([63 & schema, 0], "key");
+        }
+        return _NormalizedSchema.memberFrom([schema.keySchema, 0], "key");
+      }
+      getValueSchema() {
+        const schema = this.getSchema();
+        if (typeof schema === "number") {
+          if (this.isMapSchema()) {
+            return _NormalizedSchema.memberFrom([63 & schema, 0], "value");
+          } else if (this.isListSchema()) {
+            return _NormalizedSchema.memberFrom([63 & schema, 0], "member");
+          }
+        }
+        if (schema && typeof schema === "object") {
+          if (this.isStructSchema()) {
+            throw new Error(`cannot call getValueSchema() with StructureSchema ${this.getName(true)}`);
+          }
+          const collection = schema;
+          if ("valueSchema" in collection) {
+            if (this.isMapSchema()) {
+              return _NormalizedSchema.memberFrom([collection.valueSchema, 0], "value");
+            } else if (this.isListSchema()) {
+              return _NormalizedSchema.memberFrom([collection.valueSchema, 0], "member");
+            }
+          }
+        }
+        if (this.isDocumentSchema()) {
+          return _NormalizedSchema.memberFrom([SCHEMA.DOCUMENT, 0], "value");
+        }
+        throw new Error(`@smithy/core/schema - the schema ${this.getName(true)} does not have a value member.`);
+      }
+      getMemberSchema(member) {
+        if (this.isStructSchema()) {
+          const struct = this.getSchema();
+          if (!(member in struct.members)) {
+            throw new Error(`@smithy/core/schema - the schema ${this.getName(true)} does not have a member with name=${member}.`);
+          }
+          return _NormalizedSchema.memberFrom(struct.members[member], member);
+        }
+        if (this.isDocumentSchema()) {
+          return _NormalizedSchema.memberFrom([SCHEMA.DOCUMENT, 0], member);
+        }
+        throw new Error(`@smithy/core/schema - the schema ${this.getName(true)} does not have members.`);
+      }
+      getMemberSchemas() {
+        const { schema } = this;
+        const struct = schema;
+        if (!struct || typeof struct !== "object") {
+          return {};
+        }
+        if ("members" in struct) {
+          const buffer = {};
+          for (const member of struct.memberNames) {
+            buffer[member] = this.getMemberSchema(member);
+          }
+          return buffer;
+        }
+        return {};
+      }
+      *structIterator() {
+        if (this.isUnitSchema()) {
+          return;
+        }
+        if (!this.isStructSchema()) {
+          throw new Error("@smithy/core/schema - cannot acquire structIterator on non-struct schema.");
+        }
+        const struct = this.getSchema();
+        for (let i3 = 0; i3 < struct.memberNames.length; ++i3) {
+          yield [struct.memberNames[i3], _NormalizedSchema.memberFrom([struct.memberList[i3], 0], struct.memberNames[i3])];
+        }
+      }
+      getSchemaName() {
+        const schema = this.getSchema();
+        if (typeof schema === "number") {
+          const _schema = 63 & schema;
+          const container = 192 & schema;
+          const type = Object.entries(SCHEMA).find(([, value]) => {
+            return value === _schema;
+          })?.[0] ?? "Unknown";
+          switch (container) {
+            case SCHEMA.MAP_MODIFIER:
+              return `${type}Map`;
+            case SCHEMA.LIST_MODIFIER:
+              return `${type}List`;
+            case 0:
+              return type;
+          }
+        }
+        return "Unknown";
+      }
+    };
+  }
+});
+
+// node_modules/@smithy/core/dist-es/submodules/schema/index.js
+var init_schema = __esm({
+  "node_modules/@smithy/core/dist-es/submodules/schema/index.js"() {
+    init_deref();
+    init_getSchemaSerdePlugin();
+    init_ListSchema();
+    init_MapSchema();
+    init_OperationSchema();
+    init_ErrorSchema();
+    init_NormalizedSchema();
+    init_Schema();
+    init_SimpleSchema();
+    init_StructureSchema();
+    init_sentinels();
+    init_TypeRegistry();
+  }
+});
+
+// node_modules/@smithy/core/dist-es/submodules/serde/copyDocumentWithTransform.js
+var copyDocumentWithTransform2;
+var init_copyDocumentWithTransform = __esm({
+  "node_modules/@smithy/core/dist-es/submodules/serde/copyDocumentWithTransform.js"() {
+    init_schema();
+    copyDocumentWithTransform2 = (source, schemaRef, transform = (_2) => _2) => {
+      const ns = NormalizedSchema.of(schemaRef);
+      switch (typeof source) {
+        case "undefined":
+        case "boolean":
+        case "number":
+        case "string":
+        case "bigint":
+        case "symbol":
+          return transform(source, ns);
+        case "function":
+        case "object":
+          if (source === null) {
+            return transform(null, ns);
+          }
+          if (Array.isArray(source)) {
+            const newArray = new Array(source.length);
+            let i3 = 0;
+            for (const item of source) {
+              newArray[i3++] = copyDocumentWithTransform2(item, ns.getValueSchema(), transform);
+            }
+            return transform(newArray, ns);
+          }
+          if ("byteLength" in source) {
+            const newBytes = new Uint8Array(source.byteLength);
+            newBytes.set(source, 0);
+            return transform(newBytes, ns);
+          }
+          if (source instanceof Date) {
+            return transform(source, ns);
+          }
+          const newObject = {};
+          if (ns.isMapSchema()) {
+            for (const key of Object.keys(source)) {
+              newObject[key] = copyDocumentWithTransform2(source[key], ns.getValueSchema(), transform);
+            }
+          } else if (ns.isStructSchema()) {
+            for (const [key, memberSchema] of ns.structIterator()) {
+              newObject[key] = copyDocumentWithTransform2(source[key], memberSchema, transform);
+            }
+          } else if (ns.isDocumentSchema()) {
+            for (const key of Object.keys(source)) {
+              newObject[key] = copyDocumentWithTransform2(source[key], ns.getValueSchema(), transform);
+            }
+          }
+          return transform(newObject, ns);
+        default:
+          return transform(source, ns);
+      }
+    };
+  }
+});
+
+// node_modules/@smithy/core/dist-es/submodules/serde/parse-utils.js
+var parseBoolean2, expectBoolean2, expectNumber2, MAX_FLOAT, expectFloat322, expectLong2, expectInt2, expectInt322, expectShort2, expectByte2, expectSizedInt, castInt, expectNonNull2, expectObject2, expectString2, expectUnion2, strictParseDouble2, strictParseFloat2, strictParseFloat322, NUMBER_REGEX, parseNumber, limitedParseDouble2, handleFloat2, limitedParseFloat2, limitedParseFloat322, parseFloatString, strictParseLong2, strictParseInt2, strictParseInt322, strictParseShort2, strictParseByte2, stackTraceWarning, logger2;
+var init_parse_utils = __esm({
+  "node_modules/@smithy/core/dist-es/submodules/serde/parse-utils.js"() {
+    parseBoolean2 = (value) => {
+      switch (value) {
+        case "true":
+          return true;
+        case "false":
+          return false;
+        default:
+          throw new Error(`Unable to parse boolean value "${value}"`);
+      }
+    };
+    expectBoolean2 = (value) => {
+      if (value === null || value === void 0) {
+        return void 0;
+      }
+      if (typeof value === "number") {
+        if (value === 0 || value === 1) {
+          logger2.warn(stackTraceWarning(`Expected boolean, got ${typeof value}: ${value}`));
+        }
+        if (value === 0) {
+          return false;
+        }
+        if (value === 1) {
+          return true;
+        }
+      }
+      if (typeof value === "string") {
+        const lower = value.toLowerCase();
+        if (lower === "false" || lower === "true") {
+          logger2.warn(stackTraceWarning(`Expected boolean, got ${typeof value}: ${value}`));
+        }
+        if (lower === "false") {
+          return false;
+        }
+        if (lower === "true") {
+          return true;
+        }
+      }
+      if (typeof value === "boolean") {
+        return value;
+      }
+      throw new TypeError(`Expected boolean, got ${typeof value}: ${value}`);
+    };
+    expectNumber2 = (value) => {
+      if (value === null || value === void 0) {
+        return void 0;
+      }
+      if (typeof value === "string") {
+        const parsed = parseFloat(value);
+        if (!Number.isNaN(parsed)) {
+          if (String(parsed) !== String(value)) {
+            logger2.warn(stackTraceWarning(`Expected number but observed string: ${value}`));
+          }
+          return parsed;
+        }
+      }
+      if (typeof value === "number") {
+        return value;
+      }
+      throw new TypeError(`Expected number, got ${typeof value}: ${value}`);
+    };
+    MAX_FLOAT = Math.ceil(2 ** 127 * (2 - 2 ** -23));
+    expectFloat322 = (value) => {
+      const expected = expectNumber2(value);
+      if (expected !== void 0 && !Number.isNaN(expected) && expected !== Infinity && expected !== -Infinity) {
+        if (Math.abs(expected) > MAX_FLOAT) {
+          throw new TypeError(`Expected 32-bit float, got ${value}`);
+        }
+      }
+      return expected;
+    };
+    expectLong2 = (value) => {
+      if (value === null || value === void 0) {
+        return void 0;
+      }
+      if (Number.isInteger(value) && !Number.isNaN(value)) {
+        return value;
+      }
+      throw new TypeError(`Expected integer, got ${typeof value}: ${value}`);
+    };
+    expectInt2 = expectLong2;
+    expectInt322 = (value) => expectSizedInt(value, 32);
+    expectShort2 = (value) => expectSizedInt(value, 16);
+    expectByte2 = (value) => expectSizedInt(value, 8);
+    expectSizedInt = (value, size) => {
+      const expected = expectLong2(value);
+      if (expected !== void 0 && castInt(expected, size) !== expected) {
+        throw new TypeError(`Expected ${size}-bit integer, got ${value}`);
+      }
+      return expected;
+    };
+    castInt = (value, size) => {
+      switch (size) {
+        case 32:
+          return Int32Array.of(value)[0];
+        case 16:
+          return Int16Array.of(value)[0];
+        case 8:
+          return Int8Array.of(value)[0];
+      }
+    };
+    expectNonNull2 = (value, location) => {
+      if (value === null || value === void 0) {
+        if (location) {
+          throw new TypeError(`Expected a non-null value for ${location}`);
+        }
+        throw new TypeError("Expected a non-null value");
+      }
+      return value;
+    };
+    expectObject2 = (value) => {
+      if (value === null || value === void 0) {
+        return void 0;
+      }
+      if (typeof value === "object" && !Array.isArray(value)) {
+        return value;
+      }
+      const receivedType = Array.isArray(value) ? "array" : typeof value;
+      throw new TypeError(`Expected object, got ${receivedType}: ${value}`);
+    };
+    expectString2 = (value) => {
+      if (value === null || value === void 0) {
+        return void 0;
+      }
+      if (typeof value === "string") {
+        return value;
+      }
+      if (["boolean", "number", "bigint"].includes(typeof value)) {
+        logger2.warn(stackTraceWarning(`Expected string, got ${typeof value}: ${value}`));
+        return String(value);
+      }
+      throw new TypeError(`Expected string, got ${typeof value}: ${value}`);
+    };
+    expectUnion2 = (value) => {
+      if (value === null || value === void 0) {
+        return void 0;
+      }
+      const asObject = expectObject2(value);
+      const setKeys = Object.entries(asObject).filter(([, v6]) => v6 != null).map(([k3]) => k3);
+      if (setKeys.length === 0) {
+        throw new TypeError(`Unions must have exactly one non-null member. None were found.`);
+      }
+      if (setKeys.length > 1) {
+        throw new TypeError(`Unions must have exactly one non-null member. Keys ${setKeys} were not null.`);
+      }
+      return asObject;
+    };
+    strictParseDouble2 = (value) => {
+      if (typeof value == "string") {
+        return expectNumber2(parseNumber(value));
+      }
+      return expectNumber2(value);
+    };
+    strictParseFloat2 = strictParseDouble2;
+    strictParseFloat322 = (value) => {
+      if (typeof value == "string") {
+        return expectFloat322(parseNumber(value));
+      }
+      return expectFloat322(value);
+    };
+    NUMBER_REGEX = /(-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?)|(-?Infinity)|(NaN)/g;
+    parseNumber = (value) => {
+      const matches = value.match(NUMBER_REGEX);
+      if (matches === null || matches[0].length !== value.length) {
+        throw new TypeError(`Expected real number, got implicit NaN`);
+      }
+      return parseFloat(value);
+    };
+    limitedParseDouble2 = (value) => {
+      if (typeof value == "string") {
+        return parseFloatString(value);
+      }
+      return expectNumber2(value);
+    };
+    handleFloat2 = limitedParseDouble2;
+    limitedParseFloat2 = limitedParseDouble2;
+    limitedParseFloat322 = (value) => {
+      if (typeof value == "string") {
+        return parseFloatString(value);
+      }
+      return expectFloat322(value);
+    };
+    parseFloatString = (value) => {
+      switch (value) {
+        case "NaN":
+          return NaN;
+        case "Infinity":
+          return Infinity;
+        case "-Infinity":
+          return -Infinity;
+        default:
+          throw new Error(`Unable to parse float value: ${value}`);
+      }
+    };
+    strictParseLong2 = (value) => {
+      if (typeof value === "string") {
+        return expectLong2(parseNumber(value));
+      }
+      return expectLong2(value);
+    };
+    strictParseInt2 = strictParseLong2;
+    strictParseInt322 = (value) => {
+      if (typeof value === "string") {
+        return expectInt322(parseNumber(value));
+      }
+      return expectInt322(value);
+    };
+    strictParseShort2 = (value) => {
+      if (typeof value === "string") {
+        return expectShort2(parseNumber(value));
+      }
+      return expectShort2(value);
+    };
+    strictParseByte2 = (value) => {
+      if (typeof value === "string") {
+        return expectByte2(parseNumber(value));
+      }
+      return expectByte2(value);
+    };
+    stackTraceWarning = (message) => {
+      return String(new TypeError(message).stack || message).split("\n").slice(0, 5).filter((s3) => !s3.includes("stackTraceWarning")).join("\n");
+    };
+    logger2 = {
+      warn: console.warn
+    };
+  }
+});
+
+// node_modules/@smithy/core/dist-es/submodules/serde/date-utils.js
+function dateToUtcString2(date) {
+  const year = date.getUTCFullYear();
+  const month = date.getUTCMonth();
+  const dayOfWeek = date.getUTCDay();
+  const dayOfMonthInt = date.getUTCDate();
+  const hoursInt = date.getUTCHours();
+  const minutesInt = date.getUTCMinutes();
+  const secondsInt = date.getUTCSeconds();
+  const dayOfMonthString = dayOfMonthInt < 10 ? `0${dayOfMonthInt}` : `${dayOfMonthInt}`;
+  const hoursString = hoursInt < 10 ? `0${hoursInt}` : `${hoursInt}`;
+  const minutesString = minutesInt < 10 ? `0${minutesInt}` : `${minutesInt}`;
+  const secondsString = secondsInt < 10 ? `0${secondsInt}` : `${secondsInt}`;
+  return `${DAYS[dayOfWeek]}, ${dayOfMonthString} ${MONTHS[month]} ${year} ${hoursString}:${minutesString}:${secondsString} GMT`;
+}
+var DAYS, MONTHS, RFC3339, parseRfc3339DateTime2, RFC3339_WITH_OFFSET, parseRfc3339DateTimeWithOffset2, IMF_FIXDATE, RFC_850_DATE, ASC_TIME, parseRfc7231DateTime2, parseEpochTimestamp2, buildDate, parseTwoDigitYear, FIFTY_YEARS_IN_MILLIS, adjustRfc850Year, parseMonthByShortName, DAYS_IN_MONTH, validateDayOfMonth, isLeapYear, parseDateValue, parseMilliseconds, parseOffsetToMilliseconds, stripLeadingZeroes;
+var init_date_utils = __esm({
+  "node_modules/@smithy/core/dist-es/submodules/serde/date-utils.js"() {
+    init_parse_utils();
+    DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    RFC3339 = new RegExp(/^(\d{4})-(\d{2})-(\d{2})[tT](\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?[zZ]$/);
+    parseRfc3339DateTime2 = (value) => {
+      if (value === null || value === void 0) {
+        return void 0;
+      }
+      if (typeof value !== "string") {
+        throw new TypeError("RFC-3339 date-times must be expressed as strings");
+      }
+      const match = RFC3339.exec(value);
+      if (!match) {
+        throw new TypeError("Invalid RFC-3339 date-time value");
+      }
+      const [_2, yearStr, monthStr, dayStr, hours, minutes, seconds, fractionalMilliseconds] = match;
+      const year = strictParseShort2(stripLeadingZeroes(yearStr));
+      const month = parseDateValue(monthStr, "month", 1, 12);
+      const day = parseDateValue(dayStr, "day", 1, 31);
+      return buildDate(year, month, day, { hours, minutes, seconds, fractionalMilliseconds });
+    };
+    RFC3339_WITH_OFFSET = new RegExp(/^(\d{4})-(\d{2})-(\d{2})[tT](\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?(([-+]\d{2}\:\d{2})|[zZ])$/);
+    parseRfc3339DateTimeWithOffset2 = (value) => {
+      if (value === null || value === void 0) {
+        return void 0;
+      }
+      if (typeof value !== "string") {
+        throw new TypeError("RFC-3339 date-times must be expressed as strings");
+      }
+      const match = RFC3339_WITH_OFFSET.exec(value);
+      if (!match) {
+        throw new TypeError("Invalid RFC-3339 date-time value");
+      }
+      const [_2, yearStr, monthStr, dayStr, hours, minutes, seconds, fractionalMilliseconds, offsetStr] = match;
+      const year = strictParseShort2(stripLeadingZeroes(yearStr));
+      const month = parseDateValue(monthStr, "month", 1, 12);
+      const day = parseDateValue(dayStr, "day", 1, 31);
+      const date = buildDate(year, month, day, { hours, minutes, seconds, fractionalMilliseconds });
+      if (offsetStr.toUpperCase() != "Z") {
+        date.setTime(date.getTime() - parseOffsetToMilliseconds(offsetStr));
+      }
+      return date;
+    };
+    IMF_FIXDATE = new RegExp(/^(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun), (\d{2}) (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) (\d{4}) (\d{1,2}):(\d{2}):(\d{2})(?:\.(\d+))? GMT$/);
+    RFC_850_DATE = new RegExp(/^(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday), (\d{2})-(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)-(\d{2}) (\d{1,2}):(\d{2}):(\d{2})(?:\.(\d+))? GMT$/);
+    ASC_TIME = new RegExp(/^(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun) (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) ( [1-9]|\d{2}) (\d{1,2}):(\d{2}):(\d{2})(?:\.(\d+))? (\d{4})$/);
+    parseRfc7231DateTime2 = (value) => {
+      if (value === null || value === void 0) {
+        return void 0;
+      }
+      if (typeof value !== "string") {
+        throw new TypeError("RFC-7231 date-times must be expressed as strings");
+      }
+      let match = IMF_FIXDATE.exec(value);
+      if (match) {
+        const [_2, dayStr, monthStr, yearStr, hours, minutes, seconds, fractionalMilliseconds] = match;
+        return buildDate(strictParseShort2(stripLeadingZeroes(yearStr)), parseMonthByShortName(monthStr), parseDateValue(dayStr, "day", 1, 31), { hours, minutes, seconds, fractionalMilliseconds });
+      }
+      match = RFC_850_DATE.exec(value);
+      if (match) {
+        const [_2, dayStr, monthStr, yearStr, hours, minutes, seconds, fractionalMilliseconds] = match;
+        return adjustRfc850Year(buildDate(parseTwoDigitYear(yearStr), parseMonthByShortName(monthStr), parseDateValue(dayStr, "day", 1, 31), {
+          hours,
+          minutes,
+          seconds,
+          fractionalMilliseconds
+        }));
+      }
+      match = ASC_TIME.exec(value);
+      if (match) {
+        const [_2, monthStr, dayStr, hours, minutes, seconds, fractionalMilliseconds, yearStr] = match;
+        return buildDate(strictParseShort2(stripLeadingZeroes(yearStr)), parseMonthByShortName(monthStr), parseDateValue(dayStr.trimLeft(), "day", 1, 31), { hours, minutes, seconds, fractionalMilliseconds });
+      }
+      throw new TypeError("Invalid RFC-7231 date-time value");
+    };
+    parseEpochTimestamp2 = (value) => {
+      if (value === null || value === void 0) {
+        return void 0;
+      }
+      let valueAsDouble;
+      if (typeof value === "number") {
+        valueAsDouble = value;
+      } else if (typeof value === "string") {
+        valueAsDouble = strictParseDouble2(value);
+      } else if (typeof value === "object" && value.tag === 1) {
+        valueAsDouble = value.value;
+      } else {
+        throw new TypeError("Epoch timestamps must be expressed as floating point numbers or their string representation");
+      }
+      if (Number.isNaN(valueAsDouble) || valueAsDouble === Infinity || valueAsDouble === -Infinity) {
+        throw new TypeError("Epoch timestamps must be valid, non-Infinite, non-NaN numerics");
+      }
+      return new Date(Math.round(valueAsDouble * 1e3));
+    };
+    buildDate = (year, month, day, time) => {
+      const adjustedMonth = month - 1;
+      validateDayOfMonth(year, adjustedMonth, day);
+      return new Date(Date.UTC(year, adjustedMonth, day, parseDateValue(time.hours, "hour", 0, 23), parseDateValue(time.minutes, "minute", 0, 59), parseDateValue(time.seconds, "seconds", 0, 60), parseMilliseconds(time.fractionalMilliseconds)));
+    };
+    parseTwoDigitYear = (value) => {
+      const thisYear = (/* @__PURE__ */ new Date()).getUTCFullYear();
+      const valueInThisCentury = Math.floor(thisYear / 100) * 100 + strictParseShort2(stripLeadingZeroes(value));
+      if (valueInThisCentury < thisYear) {
+        return valueInThisCentury + 100;
+      }
+      return valueInThisCentury;
+    };
+    FIFTY_YEARS_IN_MILLIS = 50 * 365 * 24 * 60 * 60 * 1e3;
+    adjustRfc850Year = (input) => {
+      if (input.getTime() - (/* @__PURE__ */ new Date()).getTime() > FIFTY_YEARS_IN_MILLIS) {
+        return new Date(Date.UTC(input.getUTCFullYear() - 100, input.getUTCMonth(), input.getUTCDate(), input.getUTCHours(), input.getUTCMinutes(), input.getUTCSeconds(), input.getUTCMilliseconds()));
+      }
+      return input;
+    };
+    parseMonthByShortName = (value) => {
+      const monthIdx = MONTHS.indexOf(value);
+      if (monthIdx < 0) {
+        throw new TypeError(`Invalid month: ${value}`);
+      }
+      return monthIdx + 1;
+    };
+    DAYS_IN_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    validateDayOfMonth = (year, month, day) => {
+      let maxDays = DAYS_IN_MONTH[month];
+      if (month === 1 && isLeapYear(year)) {
+        maxDays = 29;
+      }
+      if (day > maxDays) {
+        throw new TypeError(`Invalid day for ${MONTHS[month]} in ${year}: ${day}`);
+      }
+    };
+    isLeapYear = (year) => {
+      return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+    };
+    parseDateValue = (value, type, lower, upper) => {
+      const dateVal = strictParseByte2(stripLeadingZeroes(value));
+      if (dateVal < lower || dateVal > upper) {
+        throw new TypeError(`${type} must be between ${lower} and ${upper}, inclusive`);
+      }
+      return dateVal;
+    };
+    parseMilliseconds = (value) => {
+      if (value === null || value === void 0) {
+        return 0;
+      }
+      return strictParseFloat322("0." + value) * 1e3;
+    };
+    parseOffsetToMilliseconds = (value) => {
+      const directionStr = value[0];
+      let direction = 1;
+      if (directionStr == "+") {
+        direction = 1;
+      } else if (directionStr == "-") {
+        direction = -1;
+      } else {
+        throw new TypeError(`Offset direction, ${directionStr}, must be "+" or "-"`);
+      }
+      const hour = Number(value.substring(1, 3));
+      const minute = Number(value.substring(4, 6));
+      return direction * (hour * 60 + minute) * 60 * 1e3;
+    };
+    stripLeadingZeroes = (value) => {
+      let idx = 0;
+      while (idx < value.length - 1 && value.charAt(idx) === "0") {
+        idx++;
+      }
+      if (idx === 0) {
+        return value;
+      }
+      return value.slice(idx);
+    };
+  }
+});
+
+// node_modules/@smithy/core/dist-es/submodules/serde/lazy-json.js
+var LazyJsonString2;
+var init_lazy_json = __esm({
+  "node_modules/@smithy/core/dist-es/submodules/serde/lazy-json.js"() {
+    LazyJsonString2 = function LazyJsonString3(val2) {
+      const str = Object.assign(new String(val2), {
+        deserializeJSON() {
+          return JSON.parse(String(val2));
+        },
+        toString() {
+          return String(val2);
+        },
+        toJSON() {
+          return String(val2);
+        }
+      });
+      return str;
+    };
+    LazyJsonString2.from = (object) => {
+      if (object && typeof object === "object" && (object instanceof LazyJsonString2 || "deserializeJSON" in object)) {
+        return object;
+      } else if (typeof object === "string" || Object.getPrototypeOf(object) === String.prototype) {
+        return LazyJsonString2(String(object));
+      }
+      return LazyJsonString2(JSON.stringify(object));
+    };
+    LazyJsonString2.fromObject = LazyJsonString2.from;
+  }
+});
+
+// node_modules/@smithy/core/dist-es/submodules/serde/quote-header.js
+function quoteHeader2(part) {
+  if (part.includes(",") || part.includes('"')) {
+    part = `"${part.replace(/"/g, '\\"')}"`;
+  }
+  return part;
+}
+var init_quote_header = __esm({
+  "node_modules/@smithy/core/dist-es/submodules/serde/quote-header.js"() {
+  }
+});
+
+// node_modules/@smithy/core/dist-es/submodules/serde/split-every.js
+function splitEvery2(value, delimiter, numDelimiters) {
+  if (numDelimiters <= 0 || !Number.isInteger(numDelimiters)) {
+    throw new Error("Invalid number of delimiters (" + numDelimiters + ") for splitEvery.");
+  }
+  const segments = value.split(delimiter);
+  if (numDelimiters === 1) {
+    return segments;
+  }
+  const compoundSegments = [];
+  let currentSegment = "";
+  for (let i3 = 0; i3 < segments.length; i3++) {
+    if (currentSegment === "") {
+      currentSegment = segments[i3];
+    } else {
+      currentSegment += delimiter + segments[i3];
+    }
+    if ((i3 + 1) % numDelimiters === 0) {
+      compoundSegments.push(currentSegment);
+      currentSegment = "";
+    }
+  }
+  if (currentSegment !== "") {
+    compoundSegments.push(currentSegment);
+  }
+  return compoundSegments;
+}
+var init_split_every = __esm({
+  "node_modules/@smithy/core/dist-es/submodules/serde/split-every.js"() {
+  }
+});
+
+// node_modules/@smithy/core/dist-es/submodules/serde/split-header.js
+var splitHeader2;
+var init_split_header = __esm({
+  "node_modules/@smithy/core/dist-es/submodules/serde/split-header.js"() {
+    splitHeader2 = (value) => {
+      const z2 = value.length;
+      const values = [];
+      let withinQuotes = false;
+      let prevChar = void 0;
+      let anchor = 0;
+      for (let i3 = 0; i3 < z2; ++i3) {
+        const char = value[i3];
+        switch (char) {
+          case `"`:
+            if (prevChar !== "\\") {
+              withinQuotes = !withinQuotes;
+            }
+            break;
+          case ",":
+            if (!withinQuotes) {
+              values.push(value.slice(anchor, i3));
+              anchor = i3 + 1;
+            }
+            break;
+          default:
+        }
+        prevChar = char;
+      }
+      values.push(value.slice(anchor));
+      return values.map((v6) => {
+        v6 = v6.trim();
+        const z3 = v6.length;
+        if (z3 < 2) {
+          return v6;
+        }
+        if (v6[0] === `"` && v6[z3 - 1] === `"`) {
+          v6 = v6.slice(1, z3 - 1);
+        }
+        return v6.replace(/\\"/g, '"');
+      });
+    };
+  }
+});
+
+// node_modules/@smithy/core/dist-es/submodules/serde/value/NumericValue.js
+function nv2(string) {
+  return new NumericValue2(string, "bigDecimal");
+}
+var NumericValue2;
+var init_NumericValue = __esm({
+  "node_modules/@smithy/core/dist-es/submodules/serde/value/NumericValue.js"() {
+    NumericValue2 = class {
+      constructor(string, type) {
+        this.string = string;
+        this.type = type;
+      }
+    };
+  }
+});
+
+// node_modules/@smithy/core/dist-es/submodules/serde/index.js
+var serde_exports = {};
+__export(serde_exports, {
+  LazyJsonString: () => LazyJsonString2,
+  NumericValue: () => NumericValue2,
+  copyDocumentWithTransform: () => copyDocumentWithTransform2,
+  dateToUtcString: () => dateToUtcString2,
+  expectBoolean: () => expectBoolean2,
+  expectByte: () => expectByte2,
+  expectFloat32: () => expectFloat322,
+  expectInt: () => expectInt2,
+  expectInt32: () => expectInt322,
+  expectLong: () => expectLong2,
+  expectNonNull: () => expectNonNull2,
+  expectNumber: () => expectNumber2,
+  expectObject: () => expectObject2,
+  expectShort: () => expectShort2,
+  expectString: () => expectString2,
+  expectUnion: () => expectUnion2,
+  handleFloat: () => handleFloat2,
+  limitedParseDouble: () => limitedParseDouble2,
+  limitedParseFloat: () => limitedParseFloat2,
+  limitedParseFloat32: () => limitedParseFloat322,
+  logger: () => logger2,
+  nv: () => nv2,
+  parseBoolean: () => parseBoolean2,
+  parseEpochTimestamp: () => parseEpochTimestamp2,
+  parseRfc3339DateTime: () => parseRfc3339DateTime2,
+  parseRfc3339DateTimeWithOffset: () => parseRfc3339DateTimeWithOffset2,
+  parseRfc7231DateTime: () => parseRfc7231DateTime2,
+  quoteHeader: () => quoteHeader2,
+  splitEvery: () => splitEvery2,
+  splitHeader: () => splitHeader2,
+  strictParseByte: () => strictParseByte2,
+  strictParseDouble: () => strictParseDouble2,
+  strictParseFloat: () => strictParseFloat2,
+  strictParseFloat32: () => strictParseFloat322,
+  strictParseInt: () => strictParseInt2,
+  strictParseInt32: () => strictParseInt322,
+  strictParseLong: () => strictParseLong2,
+  strictParseShort: () => strictParseShort2
+});
+var init_serde = __esm({
+  "node_modules/@smithy/core/dist-es/submodules/serde/index.js"() {
+    init_copyDocumentWithTransform();
+    init_date_utils();
+    init_lazy_json();
+    init_parse_utils();
+    init_quote_header();
+    init_split_every();
+    init_split_header();
+    init_NumericValue();
+  }
+});
+
+// node_modules/@smithy/core/dist-es/submodules/protocols/HttpProtocol.js
+var import_protocol_http3, import_util_stream2, HttpProtocol;
+var init_HttpProtocol = __esm({
+  "node_modules/@smithy/core/dist-es/submodules/protocols/HttpProtocol.js"() {
+    init_schema();
+    init_serde();
+    import_protocol_http3 = __toESM(require_dist_cjs2());
+    import_util_stream2 = __toESM(require_dist_cjs17());
+    init_collect_stream_body();
+    HttpProtocol = class {
+      constructor(options) {
+        this.options = options;
+      }
+      getRequestType() {
+        return import_protocol_http3.HttpRequest;
+      }
+      getResponseType() {
+        return import_protocol_http3.HttpResponse;
+      }
+      setSerdeContext(serdeContext) {
+        this.serdeContext = serdeContext;
+        this.serializer.setSerdeContext(serdeContext);
+        this.deserializer.setSerdeContext(serdeContext);
+        if (this.getPayloadCodec()) {
+          this.getPayloadCodec().setSerdeContext(serdeContext);
+        }
+      }
+      updateServiceEndpoint(request, endpoint) {
+        if ("url" in endpoint) {
+          request.protocol = endpoint.url.protocol;
+          request.hostname = endpoint.url.hostname;
+          request.port = endpoint.url.port ? Number(endpoint.url.port) : void 0;
+          request.path = endpoint.url.pathname;
+          request.fragment = endpoint.url.hash || void 0;
+          request.username = endpoint.url.username || void 0;
+          request.password = endpoint.url.password || void 0;
+          for (const [k3, v6] of endpoint.url.searchParams.entries()) {
+            if (!request.query) {
+              request.query = {};
+            }
+            request.query[k3] = v6;
+          }
+          return request;
+        } else {
+          request.protocol = endpoint.protocol;
+          request.hostname = endpoint.hostname;
+          request.port = endpoint.port ? Number(endpoint.port) : void 0;
+          request.path = endpoint.path;
+          request.query = {
+            ...endpoint.query
+          };
+          return request;
+        }
+      }
+      setHostPrefix(request, operationSchema, input) {
+        const operationNs = NormalizedSchema.of(operationSchema);
+        const inputNs = NormalizedSchema.of(operationSchema.input);
+        if (operationNs.getMergedTraits().endpoint) {
+          let hostPrefix = operationNs.getMergedTraits().endpoint?.[0];
+          if (typeof hostPrefix === "string") {
+            const hostLabelInputs = [...inputNs.structIterator()].filter(([, member]) => member.getMergedTraits().hostLabel);
+            for (const [name] of hostLabelInputs) {
+              const replacement = input[name];
+              if (typeof replacement !== "string") {
+                throw new Error(`@smithy/core/schema - ${name} in input must be a string as hostLabel.`);
+              }
+              hostPrefix = hostPrefix.replace(`{${name}}`, replacement);
+            }
+            request.hostname = hostPrefix + request.hostname;
+          }
+        }
+      }
+      deserializeMetadata(output) {
+        return {
+          httpStatusCode: output.statusCode,
+          requestId: output.headers["x-amzn-requestid"] ?? output.headers["x-amzn-request-id"] ?? output.headers["x-amz-request-id"],
+          extendedRequestId: output.headers["x-amz-id-2"],
+          cfId: output.headers["x-amz-cf-id"]
+        };
+      }
+      async deserializeHttpMessage(schema, context, response, arg4, arg5) {
+        let dataObject;
+        if (arg4 instanceof Set) {
+          dataObject = arg5;
+        } else {
+          dataObject = arg4;
+        }
+        const deserializer = this.deserializer;
+        const ns = NormalizedSchema.of(schema);
+        const nonHttpBindingMembers = [];
+        for (const [memberName, memberSchema] of ns.structIterator()) {
+          const memberTraits = memberSchema.getMemberTraits();
+          if (memberTraits.httpPayload) {
+            const isStreaming = memberSchema.isStreaming();
+            if (isStreaming) {
+              const isEventStream = memberSchema.isStructSchema();
+              if (isEventStream) {
+                const context2 = this.serdeContext;
+                if (!context2.eventStreamMarshaller) {
+                  throw new Error("@smithy/core - HttpProtocol: eventStreamMarshaller missing in serdeContext.");
+                }
+                const memberSchemas = memberSchema.getMemberSchemas();
+                dataObject[memberName] = context2.eventStreamMarshaller.deserialize(response.body, async (event) => {
+                  const unionMember = Object.keys(event).find((key) => {
+                    return key !== "__type";
+                  }) ?? "";
+                  if (unionMember in memberSchemas) {
+                    const eventStreamSchema = memberSchemas[unionMember];
+                    return {
+                      [unionMember]: await deserializer.read(eventStreamSchema, event[unionMember].body)
+                    };
+                  } else {
+                    return {
+                      $unknown: event
+                    };
+                  }
+                });
+              } else {
+                dataObject[memberName] = (0, import_util_stream2.sdkStreamMixin)(response.body);
+              }
+            } else if (response.body) {
+              const bytes = await collectBody2(response.body, context);
+              if (bytes.byteLength > 0) {
+                dataObject[memberName] = await deserializer.read(memberSchema, bytes);
+              }
+            }
+          } else if (memberTraits.httpHeader) {
+            const key = String(memberTraits.httpHeader).toLowerCase();
+            const value = response.headers[key];
+            if (null != value) {
+              if (memberSchema.isListSchema()) {
+                const headerListValueSchema = memberSchema.getValueSchema();
+                let sections;
+                if (headerListValueSchema.isTimestampSchema() && headerListValueSchema.getSchema() === SCHEMA.TIMESTAMP_DEFAULT) {
+                  sections = splitEvery2(value, ",", 2);
+                } else {
+                  sections = splitHeader2(value);
+                }
+                const list = [];
+                for (const section of sections) {
+                  list.push(await deserializer.read([headerListValueSchema, { httpHeader: key }], section.trim()));
+                }
+                dataObject[memberName] = list;
+              } else {
+                dataObject[memberName] = await deserializer.read(memberSchema, value);
+              }
+            }
+          } else if (memberTraits.httpPrefixHeaders !== void 0) {
+            dataObject[memberName] = {};
+            for (const [header, value] of Object.entries(response.headers)) {
+              if (header.startsWith(memberTraits.httpPrefixHeaders)) {
+                dataObject[memberName][header.slice(memberTraits.httpPrefixHeaders.length)] = await deserializer.read([memberSchema.getValueSchema(), { httpHeader: header }], value);
+              }
+            }
+          } else if (memberTraits.httpResponseCode) {
+            dataObject[memberName] = response.statusCode;
+          } else {
+            nonHttpBindingMembers.push(memberName);
+          }
+        }
+        return nonHttpBindingMembers;
+      }
+    };
+  }
+});
+
+// node_modules/@smithy/core/dist-es/submodules/protocols/HttpBindingProtocol.js
+var import_protocol_http4, HttpBindingProtocol;
+var init_HttpBindingProtocol = __esm({
+  "node_modules/@smithy/core/dist-es/submodules/protocols/HttpBindingProtocol.js"() {
+    init_schema();
+    import_protocol_http4 = __toESM(require_dist_cjs2());
+    init_collect_stream_body();
+    init_extended_encode_uri_component();
+    init_HttpProtocol();
+    HttpBindingProtocol = class extends HttpProtocol {
+      async serializeRequest(operationSchema, input, context) {
+        const serializer = this.serializer;
+        const query = {};
+        const headers = {};
+        const endpoint = await context.endpoint();
+        const ns = NormalizedSchema.of(operationSchema?.input);
+        const schema = ns.getSchema();
+        let hasNonHttpBindingMember = false;
+        let payload;
+        const request = new import_protocol_http4.HttpRequest({
+          protocol: "",
+          hostname: "",
+          port: void 0,
+          path: "",
+          fragment: void 0,
+          query,
+          headers,
+          body: void 0
+        });
+        if (endpoint) {
+          this.updateServiceEndpoint(request, endpoint);
+          this.setHostPrefix(request, operationSchema, input);
+          const opTraits = NormalizedSchema.translateTraits(operationSchema.traits);
+          if (opTraits.http) {
+            request.method = opTraits.http[0];
+            const [path, search] = opTraits.http[1].split("?");
+            if (request.path == "/") {
+              request.path = path;
+            } else {
+              request.path += path;
+            }
+            const traitSearchParams = new URLSearchParams(search ?? "");
+            Object.assign(query, Object.fromEntries(traitSearchParams));
+          }
+        }
+        const _input = {
+          ...input
+        };
+        for (const memberName of Object.keys(_input)) {
+          const memberNs = ns.getMemberSchema(memberName);
+          if (memberNs === void 0) {
+            continue;
+          }
+          const memberTraits = memberNs.getMergedTraits();
+          const inputMember = _input[memberName];
+          if (memberTraits.httpPayload) {
+            const isStreaming = memberNs.isStreaming();
+            if (isStreaming) {
+              const isEventStream = memberNs.isStructSchema();
+              if (isEventStream) {
+                throw new Error("serialization of event streams is not yet implemented");
+              } else {
+                payload = inputMember;
+              }
+            } else {
+              serializer.write(memberNs, inputMember);
+              payload = serializer.flush();
+            }
+          } else if (memberTraits.httpLabel) {
+            serializer.write(memberNs, inputMember);
+            const replacement = serializer.flush();
+            if (request.path.includes(`{${memberName}+}`)) {
+              request.path = request.path.replace(`{${memberName}+}`, replacement.split("/").map(extendedEncodeURIComponent2).join("/"));
+            } else if (request.path.includes(`{${memberName}}`)) {
+              request.path = request.path.replace(`{${memberName}}`, extendedEncodeURIComponent2(replacement));
+            }
+            delete _input[memberName];
+          } else if (memberTraits.httpHeader) {
+            serializer.write(memberNs, inputMember);
+            headers[memberTraits.httpHeader.toLowerCase()] = String(serializer.flush());
+            delete _input[memberName];
+          } else if (typeof memberTraits.httpPrefixHeaders === "string") {
+            for (const [key, val2] of Object.entries(inputMember)) {
+              const amalgam = memberTraits.httpPrefixHeaders + key;
+              serializer.write([memberNs.getValueSchema(), { httpHeader: amalgam }], val2);
+              headers[amalgam.toLowerCase()] = serializer.flush();
+            }
+            delete _input[memberName];
+          } else if (memberTraits.httpQuery || memberTraits.httpQueryParams) {
+            this.serializeQuery(memberNs, inputMember, query);
+            delete _input[memberName];
+          } else {
+            hasNonHttpBindingMember = true;
+          }
+        }
+        if (hasNonHttpBindingMember && input) {
+          serializer.write(schema, _input);
+          payload = serializer.flush();
+        }
+        request.headers = headers;
+        request.query = query;
+        request.body = payload;
+        return request;
+      }
+      serializeQuery(ns, data, query) {
+        const serializer = this.serializer;
+        const traits = ns.getMergedTraits();
+        if (traits.httpQueryParams) {
+          for (const [key, val2] of Object.entries(data)) {
+            if (!(key in query)) {
+              this.serializeQuery(NormalizedSchema.of([
+                ns.getValueSchema(),
+                {
+                  ...traits,
+                  httpQuery: key,
+                  httpQueryParams: void 0
+                }
+              ]), val2, query);
+            }
+          }
+          return;
+        }
+        if (ns.isListSchema()) {
+          const sparse = !!ns.getMergedTraits().sparse;
+          const buffer = [];
+          for (const item of data) {
+            serializer.write([ns.getValueSchema(), traits], item);
+            const serializable = serializer.flush();
+            if (sparse || serializable !== void 0) {
+              buffer.push(serializable);
+            }
+          }
+          query[traits.httpQuery] = buffer;
+        } else {
+          serializer.write([ns, traits], data);
+          query[traits.httpQuery] = serializer.flush();
+        }
+      }
+      async deserializeResponse(operationSchema, context, response) {
+        const deserializer = this.deserializer;
+        const ns = NormalizedSchema.of(operationSchema.output);
+        const dataObject = {};
+        if (response.statusCode >= 300) {
+          const bytes = await collectBody2(response.body, context);
+          if (bytes.byteLength > 0) {
+            Object.assign(dataObject, await deserializer.read(SCHEMA.DOCUMENT, bytes));
+          }
+          await this.handleError(operationSchema, context, response, dataObject, this.deserializeMetadata(response));
+          throw new Error("@smithy/core/protocols - HTTP Protocol error handler failed to throw.");
+        }
+        for (const header in response.headers) {
+          const value = response.headers[header];
+          delete response.headers[header];
+          response.headers[header.toLowerCase()] = value;
+        }
+        const nonHttpBindingMembers = await this.deserializeHttpMessage(ns, context, response, dataObject);
+        if (nonHttpBindingMembers.length) {
+          const bytes = await collectBody2(response.body, context);
+          if (bytes.byteLength > 0) {
+            const dataFromBody = await deserializer.read(ns, bytes);
+            for (const member of nonHttpBindingMembers) {
+              dataObject[member] = dataFromBody[member];
+            }
+          }
+        }
+        const output = {
+          $metadata: this.deserializeMetadata(response),
+          ...dataObject
+        };
+        return output;
+      }
+    };
+  }
+});
+
+// node_modules/@smithy/core/dist-es/submodules/protocols/RpcProtocol.js
+var import_protocol_http5, RpcProtocol;
+var init_RpcProtocol = __esm({
+  "node_modules/@smithy/core/dist-es/submodules/protocols/RpcProtocol.js"() {
+    init_schema();
+    import_protocol_http5 = __toESM(require_dist_cjs2());
+    init_collect_stream_body();
+    init_HttpProtocol();
+    RpcProtocol = class extends HttpProtocol {
+      async serializeRequest(operationSchema, input, context) {
+        const serializer = this.serializer;
+        const query = {};
+        const headers = {};
+        const endpoint = await context.endpoint();
+        const ns = NormalizedSchema.of(operationSchema?.input);
+        const schema = ns.getSchema();
+        let payload;
+        const request = new import_protocol_http5.HttpRequest({
+          protocol: "",
+          hostname: "",
+          port: void 0,
+          path: "/",
+          fragment: void 0,
+          query,
+          headers,
+          body: void 0
+        });
+        if (endpoint) {
+          this.updateServiceEndpoint(request, endpoint);
+          this.setHostPrefix(request, operationSchema, input);
+        }
+        const _input = {
+          ...input
+        };
+        if (input) {
+          serializer.write(schema, _input);
+          payload = serializer.flush();
+        }
+        request.headers = headers;
+        request.query = query;
+        request.body = payload;
+        request.method = "POST";
+        return request;
+      }
+      async deserializeResponse(operationSchema, context, response) {
+        const deserializer = this.deserializer;
+        const ns = NormalizedSchema.of(operationSchema.output);
+        const dataObject = {};
+        if (response.statusCode >= 300) {
+          const bytes2 = await collectBody2(response.body, context);
+          if (bytes2.byteLength > 0) {
+            Object.assign(dataObject, await deserializer.read(SCHEMA.DOCUMENT, bytes2));
+          }
+          await this.handleError(operationSchema, context, response, dataObject, this.deserializeMetadata(response));
+          throw new Error("@smithy/core/protocols - RPC Protocol error handler failed to throw.");
+        }
+        for (const header in response.headers) {
+          const value = response.headers[header];
+          delete response.headers[header];
+          response.headers[header.toLowerCase()] = value;
+        }
+        const bytes = await collectBody2(response.body, context);
+        if (bytes.byteLength > 0) {
+          Object.assign(dataObject, await deserializer.read(ns, bytes));
+        }
+        const output = {
+          $metadata: this.deserializeMetadata(response),
+          ...dataObject
+        };
+        return output;
+      }
+    };
+  }
+});
+
 // node_modules/@smithy/core/dist-es/submodules/protocols/resolve-path.js
 var resolvedPath2;
 var init_resolve_path = __esm({
@@ -68419,10 +70034,10 @@ var init_resolve_path = __esm({
 function requestBuilder(input, context) {
   return new RequestBuilder(input, context);
 }
-var import_protocol_http2, RequestBuilder;
+var import_protocol_http6, RequestBuilder;
 var init_requestBuilder = __esm({
   "node_modules/@smithy/core/dist-es/submodules/protocols/requestBuilder.js"() {
-    import_protocol_http2 = __toESM(require_dist_cjs2());
+    import_protocol_http6 = __toESM(require_dist_cjs2());
     init_resolve_path();
     RequestBuilder = class {
       constructor(input, context) {
@@ -68442,7 +70057,7 @@ var init_requestBuilder = __esm({
         for (const resolvePath of this.resolvePathStack) {
           resolvePath(this.path);
         }
-        return new import_protocol_http2.HttpRequest({
+        return new import_protocol_http6.HttpRequest({
           protocol,
           hostname: this.hostname || hostname,
           port,
@@ -68489,11 +70104,281 @@ var init_requestBuilder = __esm({
   }
 });
 
+// node_modules/@smithy/core/dist-es/submodules/protocols/serde/determineTimestampFormat.js
+function determineTimestampFormat(ns, settings) {
+  if (settings.timestampFormat.useTrait) {
+    if (ns.isTimestampSchema() && (ns.getSchema() === SCHEMA.TIMESTAMP_DATE_TIME || ns.getSchema() === SCHEMA.TIMESTAMP_HTTP_DATE || ns.getSchema() === SCHEMA.TIMESTAMP_EPOCH_SECONDS)) {
+      return ns.getSchema();
+    }
+  }
+  const { httpLabel, httpPrefixHeaders, httpHeader, httpQuery } = ns.getMergedTraits();
+  const bindingFormat = settings.httpBindings ? typeof httpPrefixHeaders === "string" || Boolean(httpHeader) ? SCHEMA.TIMESTAMP_HTTP_DATE : Boolean(httpQuery) || Boolean(httpLabel) ? SCHEMA.TIMESTAMP_DATE_TIME : void 0 : void 0;
+  return bindingFormat ?? settings.timestampFormat.default;
+}
+var init_determineTimestampFormat = __esm({
+  "node_modules/@smithy/core/dist-es/submodules/protocols/serde/determineTimestampFormat.js"() {
+    init_schema();
+  }
+});
+
+// node_modules/@smithy/core/dist-es/submodules/protocols/serde/FromStringShapeDeserializer.js
+var import_util_base64, import_util_utf8, FromStringShapeDeserializer;
+var init_FromStringShapeDeserializer = __esm({
+  "node_modules/@smithy/core/dist-es/submodules/protocols/serde/FromStringShapeDeserializer.js"() {
+    init_schema();
+    init_serde();
+    import_util_base64 = __toESM(require_dist_cjs11());
+    import_util_utf8 = __toESM(require_dist_cjs10());
+    init_determineTimestampFormat();
+    FromStringShapeDeserializer = class {
+      constructor(settings) {
+        this.settings = settings;
+      }
+      setSerdeContext(serdeContext) {
+        this.serdeContext = serdeContext;
+      }
+      read(_schema, data) {
+        const ns = NormalizedSchema.of(_schema);
+        if (ns.isListSchema()) {
+          return splitHeader2(data).map((item) => this.read(ns.getValueSchema(), item));
+        }
+        if (ns.isBlobSchema()) {
+          return (this.serdeContext?.base64Decoder ?? import_util_base64.fromBase64)(data);
+        }
+        if (ns.isTimestampSchema()) {
+          const format = determineTimestampFormat(ns, this.settings);
+          switch (format) {
+            case SCHEMA.TIMESTAMP_DATE_TIME:
+              return parseRfc3339DateTimeWithOffset2(data);
+            case SCHEMA.TIMESTAMP_HTTP_DATE:
+              return parseRfc7231DateTime2(data);
+            case SCHEMA.TIMESTAMP_EPOCH_SECONDS:
+              return parseEpochTimestamp2(data);
+            default:
+              console.warn("Missing timestamp format, parsing value with Date constructor:", data);
+              return new Date(data);
+          }
+        }
+        if (ns.isStringSchema()) {
+          const mediaType = ns.getMergedTraits().mediaType;
+          let intermediateValue = data;
+          if (mediaType) {
+            if (ns.getMergedTraits().httpHeader) {
+              intermediateValue = this.base64ToUtf8(intermediateValue);
+            }
+            const isJson = mediaType === "application/json" || mediaType.endsWith("+json");
+            if (isJson) {
+              intermediateValue = LazyJsonString2.from(intermediateValue);
+            }
+            return intermediateValue;
+          }
+        }
+        switch (true) {
+          case ns.isNumericSchema():
+            return Number(data);
+          case ns.isBigIntegerSchema():
+            return BigInt(data);
+          case ns.isBigDecimalSchema():
+            return new NumericValue2(data, "bigDecimal");
+          case ns.isBooleanSchema():
+            return String(data).toLowerCase() === "true";
+        }
+        return data;
+      }
+      base64ToUtf8(base64String) {
+        return (this.serdeContext?.utf8Encoder ?? import_util_utf8.toUtf8)((this.serdeContext?.base64Decoder ?? import_util_base64.fromBase64)(base64String));
+      }
+    };
+  }
+});
+
+// node_modules/@smithy/core/dist-es/submodules/protocols/serde/HttpInterceptingShapeDeserializer.js
+var import_util_utf82, HttpInterceptingShapeDeserializer;
+var init_HttpInterceptingShapeDeserializer = __esm({
+  "node_modules/@smithy/core/dist-es/submodules/protocols/serde/HttpInterceptingShapeDeserializer.js"() {
+    init_schema();
+    import_util_utf82 = __toESM(require_dist_cjs10());
+    init_FromStringShapeDeserializer();
+    HttpInterceptingShapeDeserializer = class {
+      constructor(codecDeserializer, codecSettings) {
+        this.codecDeserializer = codecDeserializer;
+        this.stringDeserializer = new FromStringShapeDeserializer(codecSettings);
+      }
+      setSerdeContext(serdeContext) {
+        this.stringDeserializer.setSerdeContext(serdeContext);
+        this.codecDeserializer.setSerdeContext(serdeContext);
+        this.serdeContext = serdeContext;
+      }
+      read(schema, data) {
+        const ns = NormalizedSchema.of(schema);
+        const traits = ns.getMergedTraits();
+        const toString = this.serdeContext?.utf8Encoder ?? import_util_utf82.toUtf8;
+        if (traits.httpHeader || traits.httpResponseCode) {
+          return this.stringDeserializer.read(ns, toString(data));
+        }
+        if (traits.httpPayload) {
+          if (ns.isBlobSchema()) {
+            const toBytes = this.serdeContext?.utf8Decoder ?? import_util_utf82.fromUtf8;
+            if (typeof data === "string") {
+              return toBytes(data);
+            }
+            return data;
+          } else if (ns.isStringSchema()) {
+            if ("byteLength" in data) {
+              return toString(data);
+            }
+            return data;
+          }
+        }
+        return this.codecDeserializer.read(ns, data);
+      }
+    };
+  }
+});
+
+// node_modules/@smithy/core/dist-es/submodules/protocols/serde/ToStringShapeSerializer.js
+var import_util_base642, ToStringShapeSerializer;
+var init_ToStringShapeSerializer = __esm({
+  "node_modules/@smithy/core/dist-es/submodules/protocols/serde/ToStringShapeSerializer.js"() {
+    init_schema();
+    init_serde();
+    import_util_base642 = __toESM(require_dist_cjs11());
+    init_determineTimestampFormat();
+    ToStringShapeSerializer = class {
+      constructor(settings) {
+        this.settings = settings;
+        this.stringBuffer = "";
+        this.serdeContext = void 0;
+      }
+      setSerdeContext(serdeContext) {
+        this.serdeContext = serdeContext;
+      }
+      write(schema, value) {
+        const ns = NormalizedSchema.of(schema);
+        switch (typeof value) {
+          case "object":
+            if (value === null) {
+              this.stringBuffer = "null";
+              return;
+            }
+            if (ns.isTimestampSchema()) {
+              if (!(value instanceof Date)) {
+                throw new Error(`@smithy/core/protocols - received non-Date value ${value} when schema expected Date in ${ns.getName(true)}`);
+              }
+              const format = determineTimestampFormat(ns, this.settings);
+              switch (format) {
+                case SCHEMA.TIMESTAMP_DATE_TIME:
+                  this.stringBuffer = value.toISOString().replace(".000Z", "Z");
+                  break;
+                case SCHEMA.TIMESTAMP_HTTP_DATE:
+                  this.stringBuffer = dateToUtcString2(value);
+                  break;
+                case SCHEMA.TIMESTAMP_EPOCH_SECONDS:
+                  this.stringBuffer = String(value.getTime() / 1e3);
+                  break;
+                default:
+                  console.warn("Missing timestamp format, using epoch seconds", value);
+                  this.stringBuffer = String(value.getTime() / 1e3);
+              }
+              return;
+            }
+            if (ns.isBlobSchema() && "byteLength" in value) {
+              this.stringBuffer = (this.serdeContext?.base64Encoder ?? import_util_base642.toBase64)(value);
+              return;
+            }
+            if (ns.isListSchema() && Array.isArray(value)) {
+              let buffer = "";
+              for (const item of value) {
+                this.write([ns.getValueSchema(), ns.getMergedTraits()], item);
+                const headerItem = this.flush();
+                const serialized = ns.getValueSchema().isTimestampSchema() ? headerItem : quoteHeader2(headerItem);
+                if (buffer !== "") {
+                  buffer += ", ";
+                }
+                buffer += serialized;
+              }
+              this.stringBuffer = buffer;
+              return;
+            }
+            this.stringBuffer = JSON.stringify(value, null, 2);
+            break;
+          case "string":
+            const mediaType = ns.getMergedTraits().mediaType;
+            let intermediateValue = value;
+            if (mediaType) {
+              const isJson = mediaType === "application/json" || mediaType.endsWith("+json");
+              if (isJson) {
+                intermediateValue = LazyJsonString2.from(intermediateValue);
+              }
+              if (ns.getMergedTraits().httpHeader) {
+                this.stringBuffer = (this.serdeContext?.base64Encoder ?? import_util_base642.toBase64)(intermediateValue.toString());
+                return;
+              }
+            }
+            this.stringBuffer = value;
+            break;
+          default:
+            this.stringBuffer = String(value);
+        }
+      }
+      flush() {
+        const buffer = this.stringBuffer;
+        this.stringBuffer = "";
+        return buffer;
+      }
+    };
+  }
+});
+
+// node_modules/@smithy/core/dist-es/submodules/protocols/serde/HttpInterceptingShapeSerializer.js
+var HttpInterceptingShapeSerializer;
+var init_HttpInterceptingShapeSerializer = __esm({
+  "node_modules/@smithy/core/dist-es/submodules/protocols/serde/HttpInterceptingShapeSerializer.js"() {
+    init_schema();
+    init_ToStringShapeSerializer();
+    HttpInterceptingShapeSerializer = class {
+      constructor(codecSerializer, codecSettings, stringSerializer = new ToStringShapeSerializer(codecSettings)) {
+        this.codecSerializer = codecSerializer;
+        this.stringSerializer = stringSerializer;
+      }
+      setSerdeContext(serdeContext) {
+        this.codecSerializer.setSerdeContext(serdeContext);
+        this.stringSerializer.setSerdeContext(serdeContext);
+      }
+      write(schema, value) {
+        const ns = NormalizedSchema.of(schema);
+        const traits = ns.getMergedTraits();
+        if (traits.httpHeader || traits.httpLabel || traits.httpQuery) {
+          this.stringSerializer.write(ns, value);
+          this.buffer = this.stringSerializer.flush();
+          return;
+        }
+        return this.codecSerializer.write(ns, value);
+      }
+      flush() {
+        if (this.buffer !== void 0) {
+          const buffer = this.buffer;
+          this.buffer = void 0;
+          return buffer;
+        }
+        return this.codecSerializer.flush();
+      }
+    };
+  }
+});
+
 // node_modules/@smithy/core/dist-es/submodules/protocols/index.js
 var protocols_exports = {};
 __export(protocols_exports, {
+  FromStringShapeDeserializer: () => FromStringShapeDeserializer,
+  HttpBindingProtocol: () => HttpBindingProtocol,
+  HttpInterceptingShapeDeserializer: () => HttpInterceptingShapeDeserializer,
+  HttpInterceptingShapeSerializer: () => HttpInterceptingShapeSerializer,
   RequestBuilder: () => RequestBuilder,
+  RpcProtocol: () => RpcProtocol,
+  ToStringShapeSerializer: () => ToStringShapeSerializer,
   collectBody: () => collectBody2,
+  determineTimestampFormat: () => determineTimestampFormat,
   extendedEncodeURIComponent: () => extendedEncodeURIComponent2,
   requestBuilder: () => requestBuilder,
   resolvedPath: () => resolvedPath2
@@ -68502,8 +70387,15 @@ var init_protocols = __esm({
   "node_modules/@smithy/core/dist-es/submodules/protocols/index.js"() {
     init_collect_stream_body();
     init_extended_encode_uri_component();
+    init_HttpBindingProtocol();
+    init_RpcProtocol();
     init_requestBuilder();
     init_resolve_path();
+    init_FromStringShapeDeserializer();
+    init_HttpInterceptingShapeDeserializer();
+    init_HttpInterceptingShapeSerializer();
+    init_ToStringShapeSerializer();
+    init_determineTimestampFormat();
   }
 });
 
@@ -68551,10 +70443,10 @@ var init_DefaultIdentityProviderConfig = __esm({
 });
 
 // node_modules/@smithy/core/dist-es/util-identity-and-auth/httpAuthSchemes/httpApiKeyAuth.js
-var import_protocol_http3, import_types4, HttpApiKeyAuthSigner;
+var import_protocol_http7, import_types4, HttpApiKeyAuthSigner;
 var init_httpApiKeyAuth = __esm({
   "node_modules/@smithy/core/dist-es/util-identity-and-auth/httpAuthSchemes/httpApiKeyAuth.js"() {
-    import_protocol_http3 = __toESM(require_dist_cjs2());
+    import_protocol_http7 = __toESM(require_dist_cjs2());
     import_types4 = __toESM(require_dist_cjs());
     HttpApiKeyAuthSigner = class {
       async sign(httpRequest, identity, signingProperties) {
@@ -68570,7 +70462,7 @@ var init_httpApiKeyAuth = __esm({
         if (!identity.apiKey) {
           throw new Error("request could not be signed with `apiKey` since the `apiKey` is not defined");
         }
-        const clonedRequest = import_protocol_http3.HttpRequest.clone(httpRequest);
+        const clonedRequest = import_protocol_http7.HttpRequest.clone(httpRequest);
         if (signingProperties.in === import_types4.HttpApiKeyAuthLocation.QUERY) {
           clonedRequest.query[signingProperties.name] = identity.apiKey;
         } else if (signingProperties.in === import_types4.HttpApiKeyAuthLocation.HEADER) {
@@ -68585,13 +70477,13 @@ var init_httpApiKeyAuth = __esm({
 });
 
 // node_modules/@smithy/core/dist-es/util-identity-and-auth/httpAuthSchemes/httpBearerAuth.js
-var import_protocol_http4, HttpBearerAuthSigner;
+var import_protocol_http8, HttpBearerAuthSigner;
 var init_httpBearerAuth = __esm({
   "node_modules/@smithy/core/dist-es/util-identity-and-auth/httpAuthSchemes/httpBearerAuth.js"() {
-    import_protocol_http4 = __toESM(require_dist_cjs2());
+    import_protocol_http8 = __toESM(require_dist_cjs2());
     HttpBearerAuthSigner = class {
       async sign(httpRequest, identity, signingProperties) {
-        const clonedRequest = import_protocol_http4.HttpRequest.clone(httpRequest);
+        const clonedRequest = import_protocol_http8.HttpRequest.clone(httpRequest);
         if (!identity.token) {
           throw new Error("request could not be signed with `token` since the `token` is not defined");
         }
@@ -69177,7 +71069,7 @@ var require_dist_cjs18 = __commonJS({
       throw new EndpointError2(`Rules evaluation failed`);
     }, "evaluateRules");
     var resolveEndpoint4 = /* @__PURE__ */ __name((ruleSetObject, options) => {
-      const { endpointParams, logger } = options;
+      const { endpointParams, logger: logger3 } = options;
       const { parameters, rules } = ruleSetObject;
       options.logger?.debug?.(`${debugId} Initial EndpointParams: ${toDebugString(endpointParams)}`);
       const paramsWithDefault = Object.entries(parameters).filter(([, v6]) => v6.default != null).map(([k3, v6]) => [k3, v6.default]);
@@ -69192,7 +71084,7 @@ var require_dist_cjs18 = __commonJS({
           throw new EndpointError2(`Missing required parameter: '${requiredParam}'`);
         }
       }
-      const endpoint = evaluateRules(rules, { endpointParams, logger, referenceRecord: {} });
+      const endpoint = evaluateRules(rules, { endpointParams, logger: logger3, referenceRecord: {} });
       options.logger?.debug?.(`${debugId} Resolved endpoint: ${toDebugString(endpoint)}`);
       return endpoint;
     }, "resolveEndpoint");
@@ -69669,11 +71561,11 @@ var init_client = __esm({
 });
 
 // node_modules/@aws-sdk/core/dist-es/submodules/httpAuthSchemes/utils/getDateHeader.js
-var import_protocol_http5, getDateHeader;
+var import_protocol_http9, getDateHeader;
 var init_getDateHeader = __esm({
   "node_modules/@aws-sdk/core/dist-es/submodules/httpAuthSchemes/utils/getDateHeader.js"() {
-    import_protocol_http5 = __toESM(require_dist_cjs2());
-    getDateHeader = (response) => import_protocol_http5.HttpResponse.isInstance(response) ? response.headers?.date ?? response.headers?.Date : void 0;
+    import_protocol_http9 = __toESM(require_dist_cjs2());
+    getDateHeader = (response) => import_protocol_http9.HttpResponse.isInstance(response) ? response.headers?.date ?? response.headers?.Date : void 0;
   }
 });
 
@@ -69719,10 +71611,10 @@ var init_utils = __esm({
 });
 
 // node_modules/@aws-sdk/core/dist-es/submodules/httpAuthSchemes/aws_sdk/AwsSdkSigV4Signer.js
-var import_protocol_http6, throwSigningPropertyError, validateSigningProperties, AwsSdkSigV4Signer, AWSSDKSigV4Signer;
+var import_protocol_http10, throwSigningPropertyError, validateSigningProperties, AwsSdkSigV4Signer, AWSSDKSigV4Signer;
 var init_AwsSdkSigV4Signer = __esm({
   "node_modules/@aws-sdk/core/dist-es/submodules/httpAuthSchemes/aws_sdk/AwsSdkSigV4Signer.js"() {
-    import_protocol_http6 = __toESM(require_dist_cjs2());
+    import_protocol_http10 = __toESM(require_dist_cjs2());
     init_utils();
     throwSigningPropertyError = (name, property) => {
       if (!property) {
@@ -69749,7 +71641,7 @@ var init_AwsSdkSigV4Signer = __esm({
     };
     AwsSdkSigV4Signer = class {
       async sign(httpRequest, identity, signingProperties) {
-        if (!import_protocol_http6.HttpRequest.isInstance(httpRequest)) {
+        if (!import_protocol_http10.HttpRequest.isInstance(httpRequest)) {
           throw new Error("The request is not an instance of `HttpRequest` and cannot be signed");
         }
         const validatedProps = await validateSigningProperties(signingProperties);
@@ -69798,15 +71690,15 @@ var init_AwsSdkSigV4Signer = __esm({
 });
 
 // node_modules/@aws-sdk/core/dist-es/submodules/httpAuthSchemes/aws_sdk/AwsSdkSigV4ASigner.js
-var import_protocol_http7, AwsSdkSigV4ASigner;
+var import_protocol_http11, AwsSdkSigV4ASigner;
 var init_AwsSdkSigV4ASigner = __esm({
   "node_modules/@aws-sdk/core/dist-es/submodules/httpAuthSchemes/aws_sdk/AwsSdkSigV4ASigner.js"() {
-    import_protocol_http7 = __toESM(require_dist_cjs2());
+    import_protocol_http11 = __toESM(require_dist_cjs2());
     init_utils();
     init_AwsSdkSigV4Signer();
     AwsSdkSigV4ASigner = class extends AwsSdkSigV4Signer {
       async sign(httpRequest, identity, signingProperties) {
-        if (!import_protocol_http7.HttpRequest.isInstance(httpRequest)) {
+        if (!import_protocol_http11.HttpRequest.isInstance(httpRequest)) {
           throw new Error("The request is not an instance of `HttpRequest` and cannot be signed");
         }
         const { config, signer, signingRegion, signingRegionSet, signingName } = await validateSigningProperties(signingProperties);
@@ -69902,20 +71794,20 @@ var require_dist_cjs20 = __commonJS({
     var _a2;
     var ProviderError2 = (_a2 = class extends Error {
       constructor(message, options = true) {
-        let logger;
+        let logger3;
         let tryNextLink = true;
         if (typeof options === "boolean") {
-          logger = void 0;
+          logger3 = void 0;
           tryNextLink = options;
         } else if (options != null && typeof options === "object") {
-          logger = options.logger;
+          logger3 = options.logger;
           tryNextLink = options.tryNextLink ?? true;
         }
         super(message);
         this.name = "ProviderError";
         this.tryNextLink = tryNextLink;
         Object.setPrototypeOf(this, _a2.prototype);
-        logger?.debug?.(`@smithy/property-provider ${tryNextLink ? "->" : "(!)"} ${message}`);
+        logger3?.debug?.(`@smithy/property-provider ${tryNextLink ? "->" : "(!)"} ${message}`);
       }
       /**
        * @deprecated use new operator.
@@ -70154,7 +72046,7 @@ var require_dist_cjs21 = __commonJS({
     var KEY_TYPE_IDENTIFIER = "aws4_request";
     var MAX_PRESIGNED_TTL = 60 * 60 * 24 * 7;
     var import_util_hex_encoding = require_dist_cjs16();
-    var import_util_utf83 = require_dist_cjs10();
+    var import_util_utf86 = require_dist_cjs10();
     var signingKeyCache = {};
     var cacheQueue = [];
     var createScope = /* @__PURE__ */ __name((shortDate, region, service) => `${shortDate}/${region}/${service}/${KEY_TYPE_IDENTIFIER}`, "createScope");
@@ -70182,7 +72074,7 @@ var require_dist_cjs21 = __commonJS({
     }, "clearCredentialCache");
     var hmac = /* @__PURE__ */ __name((ctor, secret, data) => {
       const hash = new ctor(secret);
-      hash.update((0, import_util_utf83.toUint8Array)(data));
+      hash.update((0, import_util_utf86.toUint8Array)(data));
       return hash.digest();
     }, "hmac");
     var getCanonicalHeaders = /* @__PURE__ */ __name(({ headers }, unsignableHeaders, signableHeaders) => {
@@ -70363,9 +72255,9 @@ var require_dist_cjs21 = __commonJS({
       }
       return false;
     }, "hasHeader");
-    var import_protocol_http11 = require_dist_cjs2();
+    var import_protocol_http15 = require_dist_cjs2();
     var moveHeadersToQuery = /* @__PURE__ */ __name((request, options = {}) => {
-      const { headers, query = {} } = import_protocol_http11.HttpRequest.clone(request);
+      const { headers, query = {} } = import_protocol_http15.HttpRequest.clone(request);
       for (const name of Object.keys(headers)) {
         const lname = name.toLowerCase();
         if (lname.slice(0, 6) === "x-amz-" && !options.unhoistableHeaders?.has(lname) || options.hoistableHeaders?.has(lname)) {
@@ -70380,7 +72272,7 @@ var require_dist_cjs21 = __commonJS({
       };
     }, "moveHeadersToQuery");
     var prepareRequest = /* @__PURE__ */ __name((request) => {
-      request = import_protocol_http11.HttpRequest.clone(request);
+      request = import_protocol_http15.HttpRequest.clone(request);
       for (const headerName of Object.keys(request.headers)) {
         if (GENERATED_HEADERS.indexOf(headerName.toLowerCase()) > -1) {
           delete request.headers[headerName];
@@ -70388,8 +72280,8 @@ var require_dist_cjs21 = __commonJS({
       }
       return request;
     }, "prepareRequest");
-    var import_util_middleware5 = require_dist_cjs6();
-    var import_util_utf84 = require_dist_cjs10();
+    var import_util_middleware7 = require_dist_cjs6();
+    var import_util_utf842 = require_dist_cjs10();
     var import_util_uri_escape = require_dist_cjs12();
     var getCanonicalQuery = /* @__PURE__ */ __name(({ query = {} }) => {
       const keys = [];
@@ -70436,8 +72328,8 @@ var require_dist_cjs21 = __commonJS({
         this.sha256 = sha256;
         this.uriEscapePath = uriEscapePath;
         this.applyChecksum = typeof applyChecksum === "boolean" ? applyChecksum : true;
-        this.regionProvider = (0, import_util_middleware5.normalizeProvider)(region);
-        this.credentialProvider = (0, import_util_middleware5.normalizeProvider)(credentials);
+        this.regionProvider = (0, import_util_middleware7.normalizeProvider)(region);
+        this.credentialProvider = (0, import_util_middleware7.normalizeProvider)(credentials);
       }
       createCanonicalRequest(request, canonicalHeaders, payloadHash) {
         const sortedHeaders = Object.keys(canonicalHeaders).sort();
@@ -70451,7 +72343,7 @@ ${payloadHash}`;
       }
       async createStringToSign(longDate, credentialScope, canonicalRequest, algorithmIdentifier) {
         const hash = new this.sha256();
-        hash.update((0, import_util_utf84.toUint8Array)(canonicalRequest));
+        hash.update((0, import_util_utf842.toUint8Array)(canonicalRequest));
         const hashedRequest = await hash.digest();
         return `${algorithmIdentifier}
 ${longDate}
@@ -71199,12 +73091,12 @@ var require_dist_cjs23 = __commonJS({
       }
       return to;
     };
+    var __reExport = (target, mod, secondTarget) => (__copyProps2(target, mod, "default"), secondTarget && __copyProps2(secondTarget, mod, "default"));
     var __toCommonJS2 = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
     var src_exports = {};
     __export2(src_exports, {
       Client: () => Client,
       Command: () => Command,
-      LazyJsonString: () => LazyJsonString,
       NoOpLogger: () => NoOpLogger3,
       SENSITIVE_STRING: () => SENSITIVE_STRING3,
       ServiceException: () => ServiceException,
@@ -71212,54 +73104,20 @@ var require_dist_cjs23 = __commonJS({
       collectBody: () => import_protocols2.collectBody,
       convertMap: () => convertMap,
       createAggregatedClient: () => createAggregatedClient3,
-      dateToUtcString: () => dateToUtcString,
       decorateServiceException: () => decorateServiceException,
       emitWarningIfUnsupportedVersion: () => emitWarningIfUnsupportedVersion4,
-      expectBoolean: () => expectBoolean,
-      expectByte: () => expectByte,
-      expectFloat32: () => expectFloat32,
-      expectInt: () => expectInt,
-      expectInt32: () => expectInt32,
-      expectLong: () => expectLong,
-      expectNonNull: () => expectNonNull,
-      expectNumber: () => expectNumber,
-      expectObject: () => expectObject,
-      expectShort: () => expectShort,
-      expectString: () => expectString,
-      expectUnion: () => expectUnion2,
       extendedEncodeURIComponent: () => import_protocols2.extendedEncodeURIComponent,
       getArrayIfSingleItem: () => getArrayIfSingleItem,
       getDefaultClientConfiguration: () => getDefaultClientConfiguration,
       getDefaultExtensionConfiguration: () => getDefaultExtensionConfiguration3,
       getValueFromTextNode: () => getValueFromTextNode2,
-      handleFloat: () => handleFloat,
       isSerializableHeaderValue: () => isSerializableHeaderValue,
-      limitedParseDouble: () => limitedParseDouble,
-      limitedParseFloat: () => limitedParseFloat,
-      limitedParseFloat32: () => limitedParseFloat32,
       loadConfigsForDefaultMode: () => loadConfigsForDefaultMode3,
-      logger: () => logger,
       map: () => map2,
-      parseBoolean: () => parseBoolean,
-      parseEpochTimestamp: () => parseEpochTimestamp,
-      parseRfc3339DateTime: () => parseRfc3339DateTime,
-      parseRfc3339DateTimeWithOffset: () => parseRfc3339DateTimeWithOffset,
-      parseRfc7231DateTime: () => parseRfc7231DateTime,
-      quoteHeader: () => quoteHeader,
       resolveDefaultRuntimeConfig: () => resolveDefaultRuntimeConfig3,
       resolvedPath: () => import_protocols2.resolvedPath,
       serializeDateTime: () => serializeDateTime,
       serializeFloat: () => serializeFloat,
-      splitEvery: () => splitEvery,
-      splitHeader: () => splitHeader,
-      strictParseByte: () => strictParseByte,
-      strictParseDouble: () => strictParseDouble,
-      strictParseFloat: () => strictParseFloat,
-      strictParseFloat32: () => strictParseFloat32,
-      strictParseInt: () => strictParseInt,
-      strictParseInt32: () => strictParseInt32,
-      strictParseLong: () => strictParseLong,
-      strictParseShort: () => strictParseShort,
       take: () => take2,
       throwDefaultError: () => throwDefaultError3,
       withBaseException: () => withBaseException3
@@ -71342,9 +73200,9 @@ var require_dist_cjs23 = __commonJS({
           this.middlewareStack.use(mw);
         }
         const stack = clientStack.concat(this.middlewareStack);
-        const { logger: logger2 } = configuration;
+        const { logger: logger3 } = configuration;
         const handlerExecutionContext = {
-          logger: logger2,
+          logger: logger3,
           clientName,
           commandName,
           inputFilterSensitiveLog,
@@ -71447,6 +73305,14 @@ var require_dist_cjs23 = __commonJS({
         return this;
       }
       /**
+       * Sets input/output schema for the operation.
+       */
+      sc(operation) {
+        this._operationSchema = operation;
+        this._smithyContext.operationSchema = operation;
+        return this;
+      }
+      /**
        * @returns a Command class with the classBuilder properties.
        */
       build() {
@@ -71463,6 +73329,7 @@ var require_dist_cjs23 = __commonJS({
             this.deserialize = closure._deserializer;
             this.input = input ?? {};
             closure._init(this);
+            this.schema = closure._operationSchema;
           }
           /**
            * @public
@@ -71508,456 +73375,6 @@ var require_dist_cjs23 = __commonJS({
         Client2.prototype[methodName] = methodImpl;
       }
     }, "createAggregatedClient");
-    var parseBoolean = /* @__PURE__ */ __name((value) => {
-      switch (value) {
-        case "true":
-          return true;
-        case "false":
-          return false;
-        default:
-          throw new Error(`Unable to parse boolean value "${value}"`);
-      }
-    }, "parseBoolean");
-    var expectBoolean = /* @__PURE__ */ __name((value) => {
-      if (value === null || value === void 0) {
-        return void 0;
-      }
-      if (typeof value === "number") {
-        if (value === 0 || value === 1) {
-          logger.warn(stackTraceWarning(`Expected boolean, got ${typeof value}: ${value}`));
-        }
-        if (value === 0) {
-          return false;
-        }
-        if (value === 1) {
-          return true;
-        }
-      }
-      if (typeof value === "string") {
-        const lower = value.toLowerCase();
-        if (lower === "false" || lower === "true") {
-          logger.warn(stackTraceWarning(`Expected boolean, got ${typeof value}: ${value}`));
-        }
-        if (lower === "false") {
-          return false;
-        }
-        if (lower === "true") {
-          return true;
-        }
-      }
-      if (typeof value === "boolean") {
-        return value;
-      }
-      throw new TypeError(`Expected boolean, got ${typeof value}: ${value}`);
-    }, "expectBoolean");
-    var expectNumber = /* @__PURE__ */ __name((value) => {
-      if (value === null || value === void 0) {
-        return void 0;
-      }
-      if (typeof value === "string") {
-        const parsed = parseFloat(value);
-        if (!Number.isNaN(parsed)) {
-          if (String(parsed) !== String(value)) {
-            logger.warn(stackTraceWarning(`Expected number but observed string: ${value}`));
-          }
-          return parsed;
-        }
-      }
-      if (typeof value === "number") {
-        return value;
-      }
-      throw new TypeError(`Expected number, got ${typeof value}: ${value}`);
-    }, "expectNumber");
-    var MAX_FLOAT = Math.ceil(2 ** 127 * (2 - 2 ** -23));
-    var expectFloat32 = /* @__PURE__ */ __name((value) => {
-      const expected = expectNumber(value);
-      if (expected !== void 0 && !Number.isNaN(expected) && expected !== Infinity && expected !== -Infinity) {
-        if (Math.abs(expected) > MAX_FLOAT) {
-          throw new TypeError(`Expected 32-bit float, got ${value}`);
-        }
-      }
-      return expected;
-    }, "expectFloat32");
-    var expectLong = /* @__PURE__ */ __name((value) => {
-      if (value === null || value === void 0) {
-        return void 0;
-      }
-      if (Number.isInteger(value) && !Number.isNaN(value)) {
-        return value;
-      }
-      throw new TypeError(`Expected integer, got ${typeof value}: ${value}`);
-    }, "expectLong");
-    var expectInt = expectLong;
-    var expectInt32 = /* @__PURE__ */ __name((value) => expectSizedInt(value, 32), "expectInt32");
-    var expectShort = /* @__PURE__ */ __name((value) => expectSizedInt(value, 16), "expectShort");
-    var expectByte = /* @__PURE__ */ __name((value) => expectSizedInt(value, 8), "expectByte");
-    var expectSizedInt = /* @__PURE__ */ __name((value, size) => {
-      const expected = expectLong(value);
-      if (expected !== void 0 && castInt(expected, size) !== expected) {
-        throw new TypeError(`Expected ${size}-bit integer, got ${value}`);
-      }
-      return expected;
-    }, "expectSizedInt");
-    var castInt = /* @__PURE__ */ __name((value, size) => {
-      switch (size) {
-        case 32:
-          return Int32Array.of(value)[0];
-        case 16:
-          return Int16Array.of(value)[0];
-        case 8:
-          return Int8Array.of(value)[0];
-      }
-    }, "castInt");
-    var expectNonNull = /* @__PURE__ */ __name((value, location) => {
-      if (value === null || value === void 0) {
-        if (location) {
-          throw new TypeError(`Expected a non-null value for ${location}`);
-        }
-        throw new TypeError("Expected a non-null value");
-      }
-      return value;
-    }, "expectNonNull");
-    var expectObject = /* @__PURE__ */ __name((value) => {
-      if (value === null || value === void 0) {
-        return void 0;
-      }
-      if (typeof value === "object" && !Array.isArray(value)) {
-        return value;
-      }
-      const receivedType = Array.isArray(value) ? "array" : typeof value;
-      throw new TypeError(`Expected object, got ${receivedType}: ${value}`);
-    }, "expectObject");
-    var expectString = /* @__PURE__ */ __name((value) => {
-      if (value === null || value === void 0) {
-        return void 0;
-      }
-      if (typeof value === "string") {
-        return value;
-      }
-      if (["boolean", "number", "bigint"].includes(typeof value)) {
-        logger.warn(stackTraceWarning(`Expected string, got ${typeof value}: ${value}`));
-        return String(value);
-      }
-      throw new TypeError(`Expected string, got ${typeof value}: ${value}`);
-    }, "expectString");
-    var expectUnion2 = /* @__PURE__ */ __name((value) => {
-      if (value === null || value === void 0) {
-        return void 0;
-      }
-      const asObject = expectObject(value);
-      const setKeys = Object.entries(asObject).filter(([, v6]) => v6 != null).map(([k3]) => k3);
-      if (setKeys.length === 0) {
-        throw new TypeError(`Unions must have exactly one non-null member. None were found.`);
-      }
-      if (setKeys.length > 1) {
-        throw new TypeError(`Unions must have exactly one non-null member. Keys ${setKeys} were not null.`);
-      }
-      return asObject;
-    }, "expectUnion");
-    var strictParseDouble = /* @__PURE__ */ __name((value) => {
-      if (typeof value == "string") {
-        return expectNumber(parseNumber(value));
-      }
-      return expectNumber(value);
-    }, "strictParseDouble");
-    var strictParseFloat = strictParseDouble;
-    var strictParseFloat32 = /* @__PURE__ */ __name((value) => {
-      if (typeof value == "string") {
-        return expectFloat32(parseNumber(value));
-      }
-      return expectFloat32(value);
-    }, "strictParseFloat32");
-    var NUMBER_REGEX = /(-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?)|(-?Infinity)|(NaN)/g;
-    var parseNumber = /* @__PURE__ */ __name((value) => {
-      const matches = value.match(NUMBER_REGEX);
-      if (matches === null || matches[0].length !== value.length) {
-        throw new TypeError(`Expected real number, got implicit NaN`);
-      }
-      return parseFloat(value);
-    }, "parseNumber");
-    var limitedParseDouble = /* @__PURE__ */ __name((value) => {
-      if (typeof value == "string") {
-        return parseFloatString(value);
-      }
-      return expectNumber(value);
-    }, "limitedParseDouble");
-    var handleFloat = limitedParseDouble;
-    var limitedParseFloat = limitedParseDouble;
-    var limitedParseFloat32 = /* @__PURE__ */ __name((value) => {
-      if (typeof value == "string") {
-        return parseFloatString(value);
-      }
-      return expectFloat32(value);
-    }, "limitedParseFloat32");
-    var parseFloatString = /* @__PURE__ */ __name((value) => {
-      switch (value) {
-        case "NaN":
-          return NaN;
-        case "Infinity":
-          return Infinity;
-        case "-Infinity":
-          return -Infinity;
-        default:
-          throw new Error(`Unable to parse float value: ${value}`);
-      }
-    }, "parseFloatString");
-    var strictParseLong = /* @__PURE__ */ __name((value) => {
-      if (typeof value === "string") {
-        return expectLong(parseNumber(value));
-      }
-      return expectLong(value);
-    }, "strictParseLong");
-    var strictParseInt = strictParseLong;
-    var strictParseInt32 = /* @__PURE__ */ __name((value) => {
-      if (typeof value === "string") {
-        return expectInt32(parseNumber(value));
-      }
-      return expectInt32(value);
-    }, "strictParseInt32");
-    var strictParseShort = /* @__PURE__ */ __name((value) => {
-      if (typeof value === "string") {
-        return expectShort(parseNumber(value));
-      }
-      return expectShort(value);
-    }, "strictParseShort");
-    var strictParseByte = /* @__PURE__ */ __name((value) => {
-      if (typeof value === "string") {
-        return expectByte(parseNumber(value));
-      }
-      return expectByte(value);
-    }, "strictParseByte");
-    var stackTraceWarning = /* @__PURE__ */ __name((message) => {
-      return String(new TypeError(message).stack || message).split("\n").slice(0, 5).filter((s3) => !s3.includes("stackTraceWarning")).join("\n");
-    }, "stackTraceWarning");
-    var logger = {
-      warn: console.warn
-    };
-    var DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-    var MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    function dateToUtcString(date) {
-      const year = date.getUTCFullYear();
-      const month = date.getUTCMonth();
-      const dayOfWeek = date.getUTCDay();
-      const dayOfMonthInt = date.getUTCDate();
-      const hoursInt = date.getUTCHours();
-      const minutesInt = date.getUTCMinutes();
-      const secondsInt = date.getUTCSeconds();
-      const dayOfMonthString = dayOfMonthInt < 10 ? `0${dayOfMonthInt}` : `${dayOfMonthInt}`;
-      const hoursString = hoursInt < 10 ? `0${hoursInt}` : `${hoursInt}`;
-      const minutesString = minutesInt < 10 ? `0${minutesInt}` : `${minutesInt}`;
-      const secondsString = secondsInt < 10 ? `0${secondsInt}` : `${secondsInt}`;
-      return `${DAYS[dayOfWeek]}, ${dayOfMonthString} ${MONTHS[month]} ${year} ${hoursString}:${minutesString}:${secondsString} GMT`;
-    }
-    __name(dateToUtcString, "dateToUtcString");
-    var RFC3339 = new RegExp(/^(\d{4})-(\d{2})-(\d{2})[tT](\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?[zZ]$/);
-    var parseRfc3339DateTime = /* @__PURE__ */ __name((value) => {
-      if (value === null || value === void 0) {
-        return void 0;
-      }
-      if (typeof value !== "string") {
-        throw new TypeError("RFC-3339 date-times must be expressed as strings");
-      }
-      const match = RFC3339.exec(value);
-      if (!match) {
-        throw new TypeError("Invalid RFC-3339 date-time value");
-      }
-      const [_2, yearStr, monthStr, dayStr, hours, minutes, seconds, fractionalMilliseconds] = match;
-      const year = strictParseShort(stripLeadingZeroes(yearStr));
-      const month = parseDateValue(monthStr, "month", 1, 12);
-      const day = parseDateValue(dayStr, "day", 1, 31);
-      return buildDate(year, month, day, { hours, minutes, seconds, fractionalMilliseconds });
-    }, "parseRfc3339DateTime");
-    var RFC3339_WITH_OFFSET = new RegExp(
-      /^(\d{4})-(\d{2})-(\d{2})[tT](\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?(([-+]\d{2}\:\d{2})|[zZ])$/
-    );
-    var parseRfc3339DateTimeWithOffset = /* @__PURE__ */ __name((value) => {
-      if (value === null || value === void 0) {
-        return void 0;
-      }
-      if (typeof value !== "string") {
-        throw new TypeError("RFC-3339 date-times must be expressed as strings");
-      }
-      const match = RFC3339_WITH_OFFSET.exec(value);
-      if (!match) {
-        throw new TypeError("Invalid RFC-3339 date-time value");
-      }
-      const [_2, yearStr, monthStr, dayStr, hours, minutes, seconds, fractionalMilliseconds, offsetStr] = match;
-      const year = strictParseShort(stripLeadingZeroes(yearStr));
-      const month = parseDateValue(monthStr, "month", 1, 12);
-      const day = parseDateValue(dayStr, "day", 1, 31);
-      const date = buildDate(year, month, day, { hours, minutes, seconds, fractionalMilliseconds });
-      if (offsetStr.toUpperCase() != "Z") {
-        date.setTime(date.getTime() - parseOffsetToMilliseconds(offsetStr));
-      }
-      return date;
-    }, "parseRfc3339DateTimeWithOffset");
-    var IMF_FIXDATE = new RegExp(
-      /^(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun), (\d{2}) (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) (\d{4}) (\d{1,2}):(\d{2}):(\d{2})(?:\.(\d+))? GMT$/
-    );
-    var RFC_850_DATE = new RegExp(
-      /^(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday), (\d{2})-(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)-(\d{2}) (\d{1,2}):(\d{2}):(\d{2})(?:\.(\d+))? GMT$/
-    );
-    var ASC_TIME = new RegExp(
-      /^(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun) (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) ( [1-9]|\d{2}) (\d{1,2}):(\d{2}):(\d{2})(?:\.(\d+))? (\d{4})$/
-    );
-    var parseRfc7231DateTime = /* @__PURE__ */ __name((value) => {
-      if (value === null || value === void 0) {
-        return void 0;
-      }
-      if (typeof value !== "string") {
-        throw new TypeError("RFC-7231 date-times must be expressed as strings");
-      }
-      let match = IMF_FIXDATE.exec(value);
-      if (match) {
-        const [_2, dayStr, monthStr, yearStr, hours, minutes, seconds, fractionalMilliseconds] = match;
-        return buildDate(
-          strictParseShort(stripLeadingZeroes(yearStr)),
-          parseMonthByShortName(monthStr),
-          parseDateValue(dayStr, "day", 1, 31),
-          { hours, minutes, seconds, fractionalMilliseconds }
-        );
-      }
-      match = RFC_850_DATE.exec(value);
-      if (match) {
-        const [_2, dayStr, monthStr, yearStr, hours, minutes, seconds, fractionalMilliseconds] = match;
-        return adjustRfc850Year(
-          buildDate(parseTwoDigitYear(yearStr), parseMonthByShortName(monthStr), parseDateValue(dayStr, "day", 1, 31), {
-            hours,
-            minutes,
-            seconds,
-            fractionalMilliseconds
-          })
-        );
-      }
-      match = ASC_TIME.exec(value);
-      if (match) {
-        const [_2, monthStr, dayStr, hours, minutes, seconds, fractionalMilliseconds, yearStr] = match;
-        return buildDate(
-          strictParseShort(stripLeadingZeroes(yearStr)),
-          parseMonthByShortName(monthStr),
-          parseDateValue(dayStr.trimLeft(), "day", 1, 31),
-          { hours, minutes, seconds, fractionalMilliseconds }
-        );
-      }
-      throw new TypeError("Invalid RFC-7231 date-time value");
-    }, "parseRfc7231DateTime");
-    var parseEpochTimestamp = /* @__PURE__ */ __name((value) => {
-      if (value === null || value === void 0) {
-        return void 0;
-      }
-      let valueAsDouble;
-      if (typeof value === "number") {
-        valueAsDouble = value;
-      } else if (typeof value === "string") {
-        valueAsDouble = strictParseDouble(value);
-      } else if (typeof value === "object" && value.tag === 1) {
-        valueAsDouble = value.value;
-      } else {
-        throw new TypeError("Epoch timestamps must be expressed as floating point numbers or their string representation");
-      }
-      if (Number.isNaN(valueAsDouble) || valueAsDouble === Infinity || valueAsDouble === -Infinity) {
-        throw new TypeError("Epoch timestamps must be valid, non-Infinite, non-NaN numerics");
-      }
-      return new Date(Math.round(valueAsDouble * 1e3));
-    }, "parseEpochTimestamp");
-    var buildDate = /* @__PURE__ */ __name((year, month, day, time) => {
-      const adjustedMonth = month - 1;
-      validateDayOfMonth(year, adjustedMonth, day);
-      return new Date(
-        Date.UTC(
-          year,
-          adjustedMonth,
-          day,
-          parseDateValue(time.hours, "hour", 0, 23),
-          parseDateValue(time.minutes, "minute", 0, 59),
-          // seconds can go up to 60 for leap seconds
-          parseDateValue(time.seconds, "seconds", 0, 60),
-          parseMilliseconds(time.fractionalMilliseconds)
-        )
-      );
-    }, "buildDate");
-    var parseTwoDigitYear = /* @__PURE__ */ __name((value) => {
-      const thisYear = (/* @__PURE__ */ new Date()).getUTCFullYear();
-      const valueInThisCentury = Math.floor(thisYear / 100) * 100 + strictParseShort(stripLeadingZeroes(value));
-      if (valueInThisCentury < thisYear) {
-        return valueInThisCentury + 100;
-      }
-      return valueInThisCentury;
-    }, "parseTwoDigitYear");
-    var FIFTY_YEARS_IN_MILLIS = 50 * 365 * 24 * 60 * 60 * 1e3;
-    var adjustRfc850Year = /* @__PURE__ */ __name((input) => {
-      if (input.getTime() - (/* @__PURE__ */ new Date()).getTime() > FIFTY_YEARS_IN_MILLIS) {
-        return new Date(
-          Date.UTC(
-            input.getUTCFullYear() - 100,
-            input.getUTCMonth(),
-            input.getUTCDate(),
-            input.getUTCHours(),
-            input.getUTCMinutes(),
-            input.getUTCSeconds(),
-            input.getUTCMilliseconds()
-          )
-        );
-      }
-      return input;
-    }, "adjustRfc850Year");
-    var parseMonthByShortName = /* @__PURE__ */ __name((value) => {
-      const monthIdx = MONTHS.indexOf(value);
-      if (monthIdx < 0) {
-        throw new TypeError(`Invalid month: ${value}`);
-      }
-      return monthIdx + 1;
-    }, "parseMonthByShortName");
-    var DAYS_IN_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-    var validateDayOfMonth = /* @__PURE__ */ __name((year, month, day) => {
-      let maxDays = DAYS_IN_MONTH[month];
-      if (month === 1 && isLeapYear(year)) {
-        maxDays = 29;
-      }
-      if (day > maxDays) {
-        throw new TypeError(`Invalid day for ${MONTHS[month]} in ${year}: ${day}`);
-      }
-    }, "validateDayOfMonth");
-    var isLeapYear = /* @__PURE__ */ __name((year) => {
-      return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
-    }, "isLeapYear");
-    var parseDateValue = /* @__PURE__ */ __name((value, type, lower, upper) => {
-      const dateVal = strictParseByte(stripLeadingZeroes(value));
-      if (dateVal < lower || dateVal > upper) {
-        throw new TypeError(`${type} must be between ${lower} and ${upper}, inclusive`);
-      }
-      return dateVal;
-    }, "parseDateValue");
-    var parseMilliseconds = /* @__PURE__ */ __name((value) => {
-      if (value === null || value === void 0) {
-        return 0;
-      }
-      return strictParseFloat32("0." + value) * 1e3;
-    }, "parseMilliseconds");
-    var parseOffsetToMilliseconds = /* @__PURE__ */ __name((value) => {
-      const directionStr = value[0];
-      let direction = 1;
-      if (directionStr == "+") {
-        direction = 1;
-      } else if (directionStr == "-") {
-        direction = -1;
-      } else {
-        throw new TypeError(`Offset direction, ${directionStr}, must be "+" or "-"`);
-      }
-      const hour = Number(value.substring(1, 3));
-      const minute = Number(value.substring(4, 6));
-      return direction * (hour * 60 + minute) * 60 * 1e3;
-    }, "parseOffsetToMilliseconds");
-    var stripLeadingZeroes = /* @__PURE__ */ __name((value) => {
-      let idx = 0;
-      while (idx < value.length - 1 && value.charAt(idx) === "0") {
-        idx++;
-      }
-      if (idx === 0) {
-        return value;
-      }
-      return value.slice(idx);
-    }, "stripLeadingZeroes");
     var _a5;
     var ServiceException = (_a5 = class extends Error {
       constructor(options) {
@@ -72124,29 +73541,6 @@ var require_dist_cjs23 = __commonJS({
     var isSerializableHeaderValue = /* @__PURE__ */ __name((value) => {
       return value != null;
     }, "isSerializableHeaderValue");
-    var LazyJsonString = /* @__PURE__ */ __name(function LazyJsonString2(val2) {
-      const str = Object.assign(new String(val2), {
-        deserializeJSON() {
-          return JSON.parse(String(val2));
-        },
-        toString() {
-          return String(val2);
-        },
-        toJSON() {
-          return String(val2);
-        }
-      });
-      return str;
-    }, "LazyJsonString");
-    LazyJsonString.from = (object) => {
-      if (object && typeof object === "object" && (object instanceof LazyJsonString || "deserializeJSON" in object)) {
-        return object;
-      } else if (typeof object === "string" || Object.getPrototypeOf(object) === String.prototype) {
-        return LazyJsonString(String(object));
-      }
-      return LazyJsonString(JSON.stringify(object));
-    };
-    LazyJsonString.fromObject = LazyJsonString.from;
     var _a6;
     var NoOpLogger3 = (_a6 = class {
       trace() {
@@ -72253,13 +73647,6 @@ var require_dist_cjs23 = __commonJS({
     }, "applyInstruction");
     var nonNullish = /* @__PURE__ */ __name((_2) => _2 != null, "nonNullish");
     var pass = /* @__PURE__ */ __name((_2) => _2, "pass");
-    function quoteHeader(part) {
-      if (part.includes(",") || part.includes('"')) {
-        part = `"${part.replace(/"/g, '\\"')}"`;
-      }
-      return part;
-    }
-    __name(quoteHeader, "quoteHeader");
     var serializeFloat = /* @__PURE__ */ __name((value) => {
       if (value !== value) {
         return "NaN";
@@ -72293,70 +73680,7 @@ var require_dist_cjs23 = __commonJS({
       }
       return obj;
     }, "_json");
-    function splitEvery(value, delimiter, numDelimiters) {
-      if (numDelimiters <= 0 || !Number.isInteger(numDelimiters)) {
-        throw new Error("Invalid number of delimiters (" + numDelimiters + ") for splitEvery.");
-      }
-      const segments = value.split(delimiter);
-      if (numDelimiters === 1) {
-        return segments;
-      }
-      const compoundSegments = [];
-      let currentSegment = "";
-      for (let i3 = 0; i3 < segments.length; i3++) {
-        if (currentSegment === "") {
-          currentSegment = segments[i3];
-        } else {
-          currentSegment += delimiter + segments[i3];
-        }
-        if ((i3 + 1) % numDelimiters === 0) {
-          compoundSegments.push(currentSegment);
-          currentSegment = "";
-        }
-      }
-      if (currentSegment !== "") {
-        compoundSegments.push(currentSegment);
-      }
-      return compoundSegments;
-    }
-    __name(splitEvery, "splitEvery");
-    var splitHeader = /* @__PURE__ */ __name((value) => {
-      const z2 = value.length;
-      const values = [];
-      let withinQuotes = false;
-      let prevChar = void 0;
-      let anchor = 0;
-      for (let i3 = 0; i3 < z2; ++i3) {
-        const char = value[i3];
-        switch (char) {
-          case `"`:
-            if (prevChar !== "\\") {
-              withinQuotes = !withinQuotes;
-            }
-            break;
-          case ",":
-            if (!withinQuotes) {
-              values.push(value.slice(anchor, i3));
-              anchor = i3 + 1;
-            }
-            break;
-          default:
-        }
-        prevChar = char;
-      }
-      values.push(value.slice(anchor));
-      return values.map((v6) => {
-        v6 = v6.trim();
-        const z22 = v6.length;
-        if (z22 < 2) {
-          return v6;
-        }
-        if (v6[0] === `"` && v6[z22 - 1] === `"`) {
-          v6 = v6.slice(1, z22 - 1);
-        }
-        return v6.replace(/\\"/g, '"');
-      });
-    }, "splitHeader");
+    __reExport(src_exports, (init_serde(), __toCommonJS(serde_exports)), module2.exports);
   }
 });
 
@@ -74257,11 +75581,11 @@ var require_dist_cjs24 = __commonJS({
         userAgentAppId: /* @__PURE__ */ __name(async () => {
           const appId = await normalizedAppIdProvider();
           if (!isValidUserAgentAppId(appId)) {
-            const logger = input.logger?.constructor?.name === "NoOpLogger" || !input.logger ? console : input.logger;
+            const logger3 = input.logger?.constructor?.name === "NoOpLogger" || !input.logger ? console : input.logger;
             if (typeof appId !== "string") {
-              logger?.warn("userAgentAppId must be a string or undefined.");
+              logger3?.warn("userAgentAppId must be a string or undefined.");
             } else if (appId.length > 50) {
-              logger?.warn("The provided userAgentAppId exceeds the maximum length of 50 characters.");
+              logger3?.warn("The provided userAgentAppId exceeds the maximum length of 50 characters.");
             }
           }
           return appId;
@@ -74270,7 +75594,7 @@ var require_dist_cjs24 = __commonJS({
     }
     __name(resolveUserAgentConfig3, "resolveUserAgentConfig");
     var import_util_endpoints5 = require_dist_cjs19();
-    var import_protocol_http11 = require_dist_cjs2();
+    var import_protocol_http15 = require_dist_cjs2();
     var import_core22 = (init_dist_es2(), __toCommonJS(dist_es_exports2));
     var ACCOUNT_ID_ENDPOINT_REGEX = /\d{12}\.ddb/;
     async function checkFeatures(context, config, args) {
@@ -74346,7 +75670,7 @@ var require_dist_cjs24 = __commonJS({
     __name(encodeFeatures, "encodeFeatures");
     var userAgentMiddleware = /* @__PURE__ */ __name((options) => (next, context) => async (args) => {
       const { request } = args;
-      if (!import_protocol_http11.HttpRequest.isInstance(request)) {
+      if (!import_protocol_http15.HttpRequest.isInstance(request)) {
         return next(args);
       }
       const { headers } = request;
@@ -74530,14 +75854,14 @@ var require_dist_cjs26 = __commonJS({
       configFileSelector: (profile) => (0, import_util_config_provider.booleanSelector)(profile, CONFIG_USE_FIPS_ENDPOINT, import_util_config_provider.SelectorType.CONFIG),
       default: false
     };
-    var import_util_middleware5 = require_dist_cjs6();
+    var import_util_middleware7 = require_dist_cjs6();
     var resolveCustomEndpointsConfig = /* @__PURE__ */ __name((input) => {
       const { tls, endpoint, urlParser, useDualstackEndpoint } = input;
       return Object.assign(input, {
         tls: tls ?? true,
-        endpoint: (0, import_util_middleware5.normalizeProvider)(typeof endpoint === "string" ? urlParser(endpoint) : endpoint),
+        endpoint: (0, import_util_middleware7.normalizeProvider)(typeof endpoint === "string" ? urlParser(endpoint) : endpoint),
         isCustomEndpoint: true,
-        useDualstackEndpoint: (0, import_util_middleware5.normalizeProvider)(useDualstackEndpoint ?? false)
+        useDualstackEndpoint: (0, import_util_middleware7.normalizeProvider)(useDualstackEndpoint ?? false)
       });
     }, "resolveCustomEndpointsConfig");
     var getEndpointFromRegion = /* @__PURE__ */ __name(async (input) => {
@@ -74556,11 +75880,11 @@ var require_dist_cjs26 = __commonJS({
       return input.urlParser(`${tls ? "https:" : "http:"}//${hostname}`);
     }, "getEndpointFromRegion");
     var resolveEndpointsConfig = /* @__PURE__ */ __name((input) => {
-      const useDualstackEndpoint = (0, import_util_middleware5.normalizeProvider)(input.useDualstackEndpoint ?? false);
+      const useDualstackEndpoint = (0, import_util_middleware7.normalizeProvider)(input.useDualstackEndpoint ?? false);
       const { endpoint, useFipsEndpoint, urlParser, tls } = input;
       return Object.assign(input, {
         tls: tls ?? true,
-        endpoint: endpoint ? (0, import_util_middleware5.normalizeProvider)(typeof endpoint === "string" ? urlParser(endpoint) : endpoint) : () => getEndpointFromRegion({ ...input, useDualstackEndpoint, useFipsEndpoint }),
+        endpoint: endpoint ? (0, import_util_middleware7.normalizeProvider)(typeof endpoint === "string" ? urlParser(endpoint) : endpoint) : () => getEndpointFromRegion({ ...input, useDualstackEndpoint, useFipsEndpoint }),
         isCustomEndpoint: !!endpoint,
         useDualstackEndpoint
       });
@@ -74679,12 +76003,12 @@ var require_dist_cjs27 = __commonJS({
       getContentLengthPlugin: () => getContentLengthPlugin3
     });
     module2.exports = __toCommonJS2(src_exports);
-    var import_protocol_http11 = require_dist_cjs2();
+    var import_protocol_http15 = require_dist_cjs2();
     var CONTENT_LENGTH_HEADER = "content-length";
     function contentLengthMiddleware(bodyLengthChecker) {
       return (next) => async (args) => {
         const request = args.request;
-        if (import_protocol_http11.HttpRequest.isInstance(request)) {
+        if (import_protocol_http15.HttpRequest.isInstance(request)) {
           const { body, headers } = request;
           if (body && Object.keys(headers).map((str) => str.toLowerCase()).indexOf(CONTENT_LENGTH_HEADER) === -1) {
             try {
@@ -75047,8 +76371,8 @@ var require_dist_cjs29 = __commonJS({
     var isFunction = /* @__PURE__ */ __name((func) => typeof func === "function", "isFunction");
     var fromStatic = /* @__PURE__ */ __name((defaultValue) => isFunction(defaultValue) ? async () => await defaultValue() : (0, import_property_provider2.fromStatic)(defaultValue), "fromStatic");
     var loadConfig = /* @__PURE__ */ __name(({ environmentVariableSelector, configFileSelector, default: defaultValue }, configuration = {}) => {
-      const { signingName, logger } = configuration;
-      const envOptions = { signingName, logger };
+      const { signingName, logger: logger3 } = configuration;
+      const envOptions = { signingName, logger: logger3 };
       return (0, import_property_provider2.memoize)(
         (0, import_property_provider2.chain)(
           fromEnv(environmentVariableSelector, envOptions),
@@ -75375,7 +76699,7 @@ var require_dist_cjs32 = __commonJS({
       return endpointParams;
     }, "resolveParams");
     var import_core17 = (init_dist_es(), __toCommonJS(dist_es_exports));
-    var import_util_middleware5 = require_dist_cjs6();
+    var import_util_middleware7 = require_dist_cjs6();
     var endpointMiddleware = /* @__PURE__ */ __name(({
       config,
       instructions
@@ -75400,7 +76724,7 @@ var require_dist_cjs32 = __commonJS({
         if (authScheme) {
           context["signing_region"] = authScheme.signingRegion;
           context["signing_service"] = authScheme.signingName;
-          const smithyContext = (0, import_util_middleware5.getSmithyContext)(context);
+          const smithyContext = (0, import_util_middleware7.getSmithyContext)(context);
           const httpAuthOption = smithyContext?.selectedHttpAuthScheme?.httpAuthOption;
           if (httpAuthOption) {
             httpAuthOption.signingProperties = Object.assign(
@@ -75445,14 +76769,14 @@ var require_dist_cjs32 = __commonJS({
     var resolveEndpointConfig3 = /* @__PURE__ */ __name((input) => {
       const tls = input.tls ?? true;
       const { endpoint, useDualstackEndpoint, useFipsEndpoint } = input;
-      const customEndpointProvider = endpoint != null ? async () => toEndpointV1(await (0, import_util_middleware5.normalizeProvider)(endpoint)()) : void 0;
+      const customEndpointProvider = endpoint != null ? async () => toEndpointV1(await (0, import_util_middleware7.normalizeProvider)(endpoint)()) : void 0;
       const isCustomEndpoint = !!endpoint;
       const resolvedConfig = Object.assign(input, {
         endpoint: customEndpointProvider,
         tls,
         isCustomEndpoint,
-        useDualstackEndpoint: (0, import_util_middleware5.normalizeProvider)(useDualstackEndpoint ?? false),
-        useFipsEndpoint: (0, import_util_middleware5.normalizeProvider)(useFipsEndpoint ?? false)
+        useDualstackEndpoint: (0, import_util_middleware7.normalizeProvider)(useDualstackEndpoint ?? false),
+        useFipsEndpoint: (0, import_util_middleware7.normalizeProvider)(useFipsEndpoint ?? false)
       });
       let configuredEndpointPromise = void 0;
       resolvedConfig.serviceConfiguredEndpoint = async () => {
@@ -76280,7 +77604,7 @@ var require_dist_cjs35 = __commonJS({
       retryMiddlewareOptions: () => retryMiddlewareOptions
     });
     module2.exports = __toCommonJS2(src_exports);
-    var import_protocol_http11 = require_dist_cjs2();
+    var import_protocol_http15 = require_dist_cjs2();
     var import_uuid = (init_esm_node(), __toCommonJS(esm_node_exports));
     var import_util_retry3 = require_dist_cjs34();
     var getDefaultRetryQuota = /* @__PURE__ */ __name((initialRetryTokens, options) => {
@@ -76353,12 +77677,12 @@ var require_dist_cjs35 = __commonJS({
         let totalDelay = 0;
         const maxAttempts = await this.getMaxAttempts();
         const { request } = args;
-        if (import_protocol_http11.HttpRequest.isInstance(request)) {
+        if (import_protocol_http15.HttpRequest.isInstance(request)) {
           request.headers[import_util_retry3.INVOCATION_ID_HEADER] = (0, import_uuid.v4)();
         }
         while (true) {
           try {
-            if (import_protocol_http11.HttpRequest.isInstance(request)) {
+            if (import_protocol_http15.HttpRequest.isInstance(request)) {
               request.headers[import_util_retry3.REQUEST_HEADER] = `attempt=${attempts + 1}; max=${maxAttempts}`;
             }
             if (options?.beforeRequest) {
@@ -76398,7 +77722,7 @@ var require_dist_cjs35 = __commonJS({
       }
     }, __name(_a2, "StandardRetryStrategy"), _a2);
     var getDelayFromRetryAfterHeader = /* @__PURE__ */ __name((response) => {
-      if (!import_protocol_http11.HttpResponse.isInstance(response))
+      if (!import_protocol_http15.HttpResponse.isInstance(response))
         return;
       const retryAfterHeaderName = Object.keys(response.headers).find((key) => key.toLowerCase() === "retry-after");
       if (!retryAfterHeaderName)
@@ -76429,7 +77753,7 @@ var require_dist_cjs35 = __commonJS({
         });
       }
     }, __name(_a3, "AdaptiveRetryStrategy"), _a3);
-    var import_util_middleware5 = require_dist_cjs6();
+    var import_util_middleware7 = require_dist_cjs6();
     var ENV_MAX_ATTEMPTS = "AWS_MAX_ATTEMPTS";
     var CONFIG_MAX_ATTEMPTS = "max_attempts";
     var NODE_MAX_ATTEMPT_CONFIG_OPTIONS3 = {
@@ -76457,14 +77781,14 @@ var require_dist_cjs35 = __commonJS({
     };
     var resolveRetryConfig3 = /* @__PURE__ */ __name((input) => {
       const { retryStrategy, retryMode: _retryMode, maxAttempts: _maxAttempts } = input;
-      const maxAttempts = (0, import_util_middleware5.normalizeProvider)(_maxAttempts ?? import_util_retry3.DEFAULT_MAX_ATTEMPTS);
+      const maxAttempts = (0, import_util_middleware7.normalizeProvider)(_maxAttempts ?? import_util_retry3.DEFAULT_MAX_ATTEMPTS);
       return Object.assign(input, {
         maxAttempts,
         retryStrategy: async () => {
           if (retryStrategy) {
             return retryStrategy;
           }
-          const retryMode = await (0, import_util_middleware5.normalizeProvider)(_retryMode)();
+          const retryMode = await (0, import_util_middleware7.normalizeProvider)(_retryMode)();
           if (retryMode === import_util_retry3.RETRY_MODES.ADAPTIVE) {
             return new import_util_retry3.AdaptiveRetryStrategy(maxAttempts);
           }
@@ -76481,7 +77805,7 @@ var require_dist_cjs35 = __commonJS({
     };
     var omitRetryHeadersMiddleware = /* @__PURE__ */ __name(() => (next) => async (args) => {
       const { request } = args;
-      if (import_protocol_http11.HttpRequest.isInstance(request)) {
+      if (import_protocol_http15.HttpRequest.isInstance(request)) {
         delete request.headers[import_util_retry3.INVOCATION_ID_HEADER];
         delete request.headers[import_util_retry3.REQUEST_HEADER];
       }
@@ -76511,7 +77835,7 @@ var require_dist_cjs35 = __commonJS({
         let attempts = 0;
         let totalRetryDelay = 0;
         const { request } = args;
-        const isRequest = import_protocol_http11.HttpRequest.isInstance(request);
+        const isRequest = import_protocol_http15.HttpRequest.isInstance(request);
         if (isRequest) {
           request.headers[import_util_retry3.INVOCATION_ID_HEADER] = (0, import_uuid.v4)();
         }
@@ -76591,7 +77915,7 @@ var require_dist_cjs35 = __commonJS({
       }
     }), "getRetryPlugin");
     var getRetryAfterHint = /* @__PURE__ */ __name((response) => {
-      if (!import_protocol_http11.HttpResponse.isInstance(response))
+      if (!import_protocol_http15.HttpResponse.isInstance(response))
         return;
       const retryAfterHeaderName = Object.keys(response.headers).find((key) => key.toLowerCase() === "retry-after");
       if (!retryAfterHeaderName)
@@ -77493,7 +78817,7 @@ var require_dist_cjs37 = __commonJS({
       "http:": true,
       "https:": true
     };
-    var getCmdsUri = /* @__PURE__ */ __name(async ({ logger }) => {
+    var getCmdsUri = /* @__PURE__ */ __name(async ({ logger: logger3 }) => {
       if (process.env[ENV_CMDS_RELATIVE_URI]) {
         return {
           hostname: CMDS_IP,
@@ -77505,13 +78829,13 @@ var require_dist_cjs37 = __commonJS({
         if (!parsed.hostname || !(parsed.hostname in GREENGRASS_HOSTS)) {
           throw new import_property_provider2.CredentialsProviderError(`${parsed.hostname} is not a valid container metadata service hostname`, {
             tryNextLink: false,
-            logger
+            logger: logger3
           });
         }
         if (!parsed.protocol || !(parsed.protocol in GREENGRASS_PROTOCOLS)) {
           throw new import_property_provider2.CredentialsProviderError(`${parsed.protocol} is not a valid container metadata service protocol`, {
             tryNextLink: false,
-            logger
+            logger: logger3
           });
         }
         return {
@@ -77523,7 +78847,7 @@ var require_dist_cjs37 = __commonJS({
         `The container metadata credential provider cannot be used unless the ${ENV_CMDS_RELATIVE_URI} or ${ENV_CMDS_FULL_URI} environment variable is set`,
         {
           tryNextLink: false,
-          logger
+          logger: logger3
         }
       );
     }, "getCmdsUri");
@@ -77579,10 +78903,10 @@ var require_dist_cjs37 = __commonJS({
     var STATIC_STABILITY_REFRESH_INTERVAL_SECONDS = 5 * 60;
     var STATIC_STABILITY_REFRESH_INTERVAL_JITTER_WINDOW_SECONDS = 5 * 60;
     var STATIC_STABILITY_DOC_URL = "https://docs.aws.amazon.com/sdkref/latest/guide/feature-static-credentials.html";
-    var getExtendedInstanceMetadataCredentials = /* @__PURE__ */ __name((credentials, logger) => {
+    var getExtendedInstanceMetadataCredentials = /* @__PURE__ */ __name((credentials, logger3) => {
       const refreshInterval = STATIC_STABILITY_REFRESH_INTERVAL_SECONDS + Math.floor(Math.random() * STATIC_STABILITY_REFRESH_INTERVAL_JITTER_WINDOW_SECONDS);
       const newExpiration = new Date(Date.now() + refreshInterval * 1e3);
-      logger.warn(
+      logger3.warn(
         `Attempting credential expiration extension due to a credential service availability issue. A refresh of these credentials will be attempted after ${new Date(newExpiration)}.
 For more information, please visit: ` + STATIC_STABILITY_DOC_URL
       );
@@ -77594,19 +78918,19 @@ For more information, please visit: ` + STATIC_STABILITY_DOC_URL
       };
     }, "getExtendedInstanceMetadataCredentials");
     var staticStabilityProvider = /* @__PURE__ */ __name((provider, options = {}) => {
-      const logger = options?.logger || console;
+      const logger3 = options?.logger || console;
       let pastCredentials;
       return async () => {
         let credentials;
         try {
           credentials = await provider();
           if (credentials.expiration && credentials.expiration.getTime() < Date.now()) {
-            credentials = getExtendedInstanceMetadataCredentials(credentials, logger);
+            credentials = getExtendedInstanceMetadataCredentials(credentials, logger3);
           }
         } catch (e3) {
           if (pastCredentials) {
-            logger.warn("Credential renew failed: ", e3);
-            credentials = getExtendedInstanceMetadataCredentials(pastCredentials, logger);
+            logger3.warn("Credential renew failed: ", e3);
+            credentials = getExtendedInstanceMetadataCredentials(pastCredentials, logger3);
           } else {
             throw e3;
           }
@@ -77623,7 +78947,7 @@ For more information, please visit: ` + STATIC_STABILITY_DOC_URL
     var fromInstanceMetadata = /* @__PURE__ */ __name((init = {}) => staticStabilityProvider(getInstanceMetadataProvider(init), { logger: init.logger }), "fromInstanceMetadata");
     var getInstanceMetadataProvider = /* @__PURE__ */ __name((init = {}) => {
       let disableFetchToken = false;
-      const { logger, profile } = init;
+      const { logger: logger3, profile } = init;
       const { timeout, maxRetries } = providerConfigFromInit(init);
       const getCredentials = /* @__PURE__ */ __name(async (maxRetries2, options) => {
         const isImdsV1Fallback = disableFetchToken || options.headers?.[X_AWS_EC2_METADATA_TOKEN] == null;
@@ -77697,7 +79021,7 @@ For more information, please visit: ` + STATIC_STABILITY_DOC_URL
       return async () => {
         const endpoint = await getInstanceMetadataEndpoint();
         if (disableFetchToken) {
-          logger?.debug("AWS SDK Instance Metadata", "using v1 fallback (no token fetch)");
+          logger3?.debug("AWS SDK Instance Metadata", "using v1 fallback (no token fetch)");
           return getCredentials(maxRetries, { ...endpoint, timeout });
         } else {
           let token;
@@ -77711,7 +79035,7 @@ For more information, please visit: ` + STATIC_STABILITY_DOC_URL
             } else if (error.message === "TimeoutError" || [403, 404, 405].includes(error.statusCode)) {
               disableFetchToken = true;
             }
-            logger?.debug("AWS SDK Instance Metadata", "using v1 fallback (initial)");
+            logger3?.debug("AWS SDK Instance Metadata", "using v1 fallback (initial)");
             return getCredentials(maxRetries, { ...endpoint, timeout });
           }
           return getCredentials(maxRetries, {
@@ -77760,7 +79084,7 @@ var require_checkUrl = __commonJS({
     var ECS_CONTAINER_HOST = "169.254.170.2";
     var EKS_CONTAINER_HOST_IPv4 = "169.254.170.23";
     var EKS_CONTAINER_HOST_IPv6 = "[fd00:ec2::23]";
-    var checkUrl = (url, logger) => {
+    var checkUrl = (url, logger3) => {
       if (url.protocol === "https:") {
         return;
       }
@@ -77787,7 +79111,7 @@ var require_checkUrl = __commonJS({
       throw new property_provider_1.CredentialsProviderError(`URL not accepted. It must either be HTTPS or match one of the following:
   - loopback CIDR 127.0.0.0/8 or [::1/128]
   - ECS container host 169.254.170.2
-  - EKS container host 169.254.170.23 or [fd00:ec2::23]`, { logger });
+  - EKS container host 169.254.170.23 or [fd00:ec2::23]`, { logger: logger3 });
     };
     exports2.checkUrl = checkUrl;
   }
@@ -77817,13 +79141,13 @@ var require_requestHelpers = __commonJS({
         fragment: url.hash
       });
     }
-    async function getCredentials(response, logger) {
+    async function getCredentials(response, logger3) {
       const stream = (0, util_stream_1.sdkStreamMixin)(response.body);
       const str = await stream.transformToString();
       if (response.statusCode === 200) {
         const parsed = JSON.parse(str);
         if (typeof parsed.AccessKeyId !== "string" || typeof parsed.SecretAccessKey !== "string" || typeof parsed.Token !== "string" || typeof parsed.Expiration !== "string") {
-          throw new property_provider_1.CredentialsProviderError("HTTP credential provider response not of the required format, an object matching: { AccessKeyId: string, SecretAccessKey: string, Token: string, Expiration: string(rfc3339) }", { logger });
+          throw new property_provider_1.CredentialsProviderError("HTTP credential provider response not of the required format, an object matching: { AccessKeyId: string, SecretAccessKey: string, Token: string, Expiration: string(rfc3339) }", { logger: logger3 });
         }
         return {
           accessKeyId: parsed.AccessKeyId,
@@ -77838,12 +79162,12 @@ var require_requestHelpers = __commonJS({
           parsedBody = JSON.parse(str);
         } catch (e3) {
         }
-        throw Object.assign(new property_provider_1.CredentialsProviderError(`Server responded with status: ${response.statusCode}`, { logger }), {
+        throw Object.assign(new property_provider_1.CredentialsProviderError(`Server responded with status: ${response.statusCode}`, { logger: logger3 }), {
           Code: parsedBody.Code,
           Message: parsedBody.Message
         });
       }
-      throw new property_provider_1.CredentialsProviderError(`Server responded with status: ${response.statusCode}`, { logger });
+      throw new property_provider_1.CredentialsProviderError(`Server responded with status: ${response.statusCode}`, { logger: logger3 });
     }
   }
 });
@@ -78240,7 +79564,7 @@ var require_dist_cjs40 = __commonJS({
     });
     module2.exports = __toCommonJS2(src_exports);
     var import_util_buffer_from = require_dist_cjs9();
-    var import_util_utf83 = require_dist_cjs10();
+    var import_util_utf85 = require_dist_cjs10();
     var import_buffer = require("buffer");
     var import_crypto5 = require("crypto");
     var _a2;
@@ -78251,7 +79575,7 @@ var require_dist_cjs40 = __commonJS({
         this.reset();
       }
       update(toHash, encoding) {
-        this.hash.update((0, import_util_utf83.toUint8Array)(castSourceData(toHash, encoding)));
+        this.hash.update((0, import_util_utf85.toUint8Array)(castSourceData(toHash, encoding)));
       }
       digest() {
         return Promise.resolve(this.hash.digest());
@@ -78751,7 +80075,7 @@ var require_dist_cjs44 = __commonJS({
     };
     var import_runtimeConfig5 = require_runtimeConfig();
     var import_region_config_resolver3 = require_dist_cjs43();
-    var import_protocol_http11 = require_dist_cjs2();
+    var import_protocol_http15 = require_dist_cjs2();
     var import_smithy_client25 = require_dist_cjs23();
     var getHttpAuthExtensionConfiguration3 = /* @__PURE__ */ __name((runtimeConfig) => {
       const _httpAuthSchemes = runtimeConfig.httpAuthSchemes;
@@ -78794,7 +80118,7 @@ var require_dist_cjs44 = __commonJS({
       const extensionConfiguration = Object.assign(
         (0, import_region_config_resolver3.getAwsRegionExtensionConfiguration)(runtimeConfig),
         (0, import_smithy_client25.getDefaultExtensionConfiguration)(runtimeConfig),
-        (0, import_protocol_http11.getHttpHandlerExtensionConfiguration)(runtimeConfig),
+        (0, import_protocol_http15.getHttpHandlerExtensionConfiguration)(runtimeConfig),
         getHttpAuthExtensionConfiguration3(runtimeConfig)
       );
       extensions.forEach((extension) => extension.configure(extensionConfiguration));
@@ -78802,7 +80126,7 @@ var require_dist_cjs44 = __commonJS({
         runtimeConfig,
         (0, import_region_config_resolver3.resolveAwsRegionExtensionConfiguration)(extensionConfiguration),
         (0, import_smithy_client25.resolveDefaultRuntimeConfig)(extensionConfiguration),
-        (0, import_protocol_http11.resolveHttpHandlerRuntimeConfig)(extensionConfiguration),
+        (0, import_protocol_http15.resolveHttpHandlerRuntimeConfig)(extensionConfiguration),
         resolveHttpAuthRuntimeConfig3(extensionConfiguration)
       );
     }, "resolveRuntimeExtensions");
@@ -79223,15 +80547,15 @@ function createSmithyApiNoAuthHttpAuthOption(authParameters) {
     schemeId: "smithy.api#noAuth"
   };
 }
-var import_util_middleware3, defaultSSOOIDCHttpAuthSchemeParametersProvider, defaultSSOOIDCHttpAuthSchemeProvider, resolveHttpAuthSchemeConfig;
+var import_util_middleware5, defaultSSOOIDCHttpAuthSchemeParametersProvider, defaultSSOOIDCHttpAuthSchemeProvider, resolveHttpAuthSchemeConfig;
 var init_httpAuthSchemeProvider = __esm({
   "node_modules/@aws-sdk/nested-clients/dist-es/submodules/sso-oidc/auth/httpAuthSchemeProvider.js"() {
     init_dist_es2();
-    import_util_middleware3 = __toESM(require_dist_cjs6());
+    import_util_middleware5 = __toESM(require_dist_cjs6());
     defaultSSOOIDCHttpAuthSchemeParametersProvider = async (config, context, input) => {
       return {
-        operation: (0, import_util_middleware3.getSmithyContext)(context).operation,
-        region: await (0, import_util_middleware3.normalizeProvider)(config.region)() || (() => {
+        operation: (0, import_util_middleware5.getSmithyContext)(context).operation,
+        region: await (0, import_util_middleware5.normalizeProvider)(config.region)() || (() => {
           throw new Error("expected `region` to be configured for `aws.auth#sigv4`");
         })()
       };
@@ -79252,7 +80576,7 @@ var init_httpAuthSchemeProvider = __esm({
     resolveHttpAuthSchemeConfig = (config) => {
       const config_0 = resolveAwsSdkSigV4Config(config);
       return Object.assign(config_0, {
-        authSchemePreference: (0, import_util_middleware3.normalizeProvider)(config.authSchemePreference ?? [])
+        authSchemePreference: (0, import_util_middleware5.normalizeProvider)(config.authSchemePreference ?? [])
       });
     };
   }
@@ -79455,22 +80779,22 @@ var init_endpointResolver = __esm({
 });
 
 // node_modules/@aws-sdk/nested-clients/dist-es/submodules/sso-oidc/runtimeConfig.shared.js
-var import_smithy_client4, import_url_parser, import_util_base64, import_util_utf8, getRuntimeConfig;
+var import_smithy_client4, import_url_parser, import_util_base643, import_util_utf83, getRuntimeConfig;
 var init_runtimeConfig_shared = __esm({
   "node_modules/@aws-sdk/nested-clients/dist-es/submodules/sso-oidc/runtimeConfig.shared.js"() {
     init_dist_es2();
     init_dist_es();
     import_smithy_client4 = __toESM(require_dist_cjs23());
     import_url_parser = __toESM(require_dist_cjs31());
-    import_util_base64 = __toESM(require_dist_cjs11());
-    import_util_utf8 = __toESM(require_dist_cjs10());
+    import_util_base643 = __toESM(require_dist_cjs11());
+    import_util_utf83 = __toESM(require_dist_cjs10());
     init_httpAuthSchemeProvider();
     init_endpointResolver();
     getRuntimeConfig = (config) => {
       return {
         apiVersion: "2019-06-10",
-        base64Decoder: config?.base64Decoder ?? import_util_base64.fromBase64,
-        base64Encoder: config?.base64Encoder ?? import_util_base64.toBase64,
+        base64Decoder: config?.base64Decoder ?? import_util_base643.fromBase64,
+        base64Encoder: config?.base64Encoder ?? import_util_base643.toBase64,
         disableHostPrefix: config?.disableHostPrefix ?? false,
         endpointProvider: config?.endpointProvider ?? defaultEndpointResolver,
         extensions: config?.extensions ?? [],
@@ -79490,8 +80814,8 @@ var init_runtimeConfig_shared = __esm({
         logger: config?.logger ?? new import_smithy_client4.NoOpLogger(),
         serviceId: config?.serviceId ?? "SSO OIDC",
         urlParser: config?.urlParser ?? import_url_parser.parseUrl,
-        utf8Decoder: config?.utf8Decoder ?? import_util_utf8.fromUtf8,
-        utf8Encoder: config?.utf8Encoder ?? import_util_utf8.toUtf8
+        utf8Decoder: config?.utf8Decoder ?? import_util_utf83.fromUtf8,
+        utf8Encoder: config?.utf8Encoder ?? import_util_utf83.toUtf8
       };
     };
   }
@@ -79592,17 +80916,17 @@ var init_httpAuthExtensionConfiguration = __esm({
 });
 
 // node_modules/@aws-sdk/nested-clients/dist-es/submodules/sso-oidc/runtimeExtensions.js
-var import_region_config_resolver, import_protocol_http8, import_smithy_client7, resolveRuntimeExtensions;
+var import_region_config_resolver, import_protocol_http12, import_smithy_client7, resolveRuntimeExtensions;
 var init_runtimeExtensions = __esm({
   "node_modules/@aws-sdk/nested-clients/dist-es/submodules/sso-oidc/runtimeExtensions.js"() {
     import_region_config_resolver = __toESM(require_dist_cjs43());
-    import_protocol_http8 = __toESM(require_dist_cjs2());
+    import_protocol_http12 = __toESM(require_dist_cjs2());
     import_smithy_client7 = __toESM(require_dist_cjs23());
     init_httpAuthExtensionConfiguration();
     resolveRuntimeExtensions = (runtimeConfig, extensions) => {
-      const extensionConfiguration = Object.assign((0, import_region_config_resolver.getAwsRegionExtensionConfiguration)(runtimeConfig), (0, import_smithy_client7.getDefaultExtensionConfiguration)(runtimeConfig), (0, import_protocol_http8.getHttpHandlerExtensionConfiguration)(runtimeConfig), getHttpAuthExtensionConfiguration(runtimeConfig));
+      const extensionConfiguration = Object.assign((0, import_region_config_resolver.getAwsRegionExtensionConfiguration)(runtimeConfig), (0, import_smithy_client7.getDefaultExtensionConfiguration)(runtimeConfig), (0, import_protocol_http12.getHttpHandlerExtensionConfiguration)(runtimeConfig), getHttpAuthExtensionConfiguration(runtimeConfig));
       extensions.forEach((extension) => extension.configure(extensionConfiguration));
-      return Object.assign(runtimeConfig, (0, import_region_config_resolver.resolveAwsRegionExtensionConfiguration)(extensionConfiguration), (0, import_smithy_client7.resolveDefaultRuntimeConfig)(extensionConfiguration), (0, import_protocol_http8.resolveHttpHandlerRuntimeConfig)(extensionConfiguration), resolveHttpAuthRuntimeConfig(extensionConfiguration));
+      return Object.assign(runtimeConfig, (0, import_region_config_resolver.resolveAwsRegionExtensionConfiguration)(extensionConfiguration), (0, import_smithy_client7.resolveDefaultRuntimeConfig)(extensionConfiguration), (0, import_protocol_http12.resolveHttpHandlerRuntimeConfig)(extensionConfiguration), resolveHttpAuthRuntimeConfig(extensionConfiguration));
     };
   }
 });
@@ -80387,8 +81711,8 @@ var require_dist_cjs45 = __commonJS({
         return existingToken;
       }
     }, "fromSso");
-    var fromStatic = /* @__PURE__ */ __name(({ token, logger }) => async () => {
-      logger?.debug("@aws-sdk/token-providers - fromStatic");
+    var fromStatic = /* @__PURE__ */ __name(({ token, logger: logger3 }) => async () => {
+      logger3?.debug("@aws-sdk/token-providers - fromStatic");
       if (!token || !token.token) {
         throw new import_property_provider2.TokenProviderError(`Please pass a valid token to fromStatic`, false);
       }
@@ -80464,7 +81788,7 @@ var require_dist_cjs46 = __commonJS({
       clientConfig,
       parentClientConfig,
       profile,
-      logger
+      logger: logger3
     }) => {
       let token;
       const refreshMessage = `To refresh this SSO session run aws sso login with the corresponding profile.`;
@@ -80478,7 +81802,7 @@ var require_dist_cjs46 = __commonJS({
         } catch (e3) {
           throw new import_property_provider2.CredentialsProviderError(e3.message, {
             tryNextLink: SHOULD_FAIL_CREDENTIAL_CHAIN,
-            logger
+            logger: logger3
           });
         }
       } else {
@@ -80487,14 +81811,14 @@ var require_dist_cjs46 = __commonJS({
         } catch (e3) {
           throw new import_property_provider2.CredentialsProviderError(`The SSO session associated with this profile is invalid. ${refreshMessage}`, {
             tryNextLink: SHOULD_FAIL_CREDENTIAL_CHAIN,
-            logger
+            logger: logger3
           });
         }
       }
       if (new Date(token.expiresAt).getTime() - Date.now() <= 0) {
         throw new import_property_provider2.CredentialsProviderError(`The SSO session associated with this profile has expired. ${refreshMessage}`, {
           tryNextLink: SHOULD_FAIL_CREDENTIAL_CHAIN,
-          logger
+          logger: logger3
         });
       }
       const { accessToken } = token;
@@ -80517,7 +81841,7 @@ var require_dist_cjs46 = __commonJS({
       } catch (e3) {
         throw new import_property_provider2.CredentialsProviderError(e3, {
           tryNextLink: SHOULD_FAIL_CREDENTIAL_CHAIN,
-          logger
+          logger: logger3
         });
       }
       const {
@@ -80526,7 +81850,7 @@ var require_dist_cjs46 = __commonJS({
       if (!accessKeyId || !secretAccessKey || !sessionToken || !expiration) {
         throw new import_property_provider2.CredentialsProviderError("SSO returns an invalid temporary credential.", {
           tryNextLink: SHOULD_FAIL_CREDENTIAL_CHAIN,
-          logger
+          logger: logger3
         });
       }
       const credentials = {
@@ -80544,7 +81868,7 @@ var require_dist_cjs46 = __commonJS({
       }
       return credentials;
     }, "resolveSSOCredentials");
-    var validateSsoProfile = /* @__PURE__ */ __name((profile, logger) => {
+    var validateSsoProfile = /* @__PURE__ */ __name((profile, logger3) => {
       const { sso_start_url, sso_account_id, sso_region, sso_role_name } = profile;
       if (!sso_start_url || !sso_account_id || !sso_region || !sso_role_name) {
         throw new import_property_provider2.CredentialsProviderError(
@@ -80552,7 +81876,7 @@ var require_dist_cjs46 = __commonJS({
             ", "
           )}
 Reference: https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-sso.html`,
-          { tryNextLink: false, logger }
+          { tryNextLink: false, logger: logger3 }
         );
       }
       return profile;
@@ -80652,16 +81976,16 @@ function createSmithyApiNoAuthHttpAuthOption2(authParameters) {
     schemeId: "smithy.api#noAuth"
   };
 }
-var import_util_middleware4, defaultSTSHttpAuthSchemeParametersProvider, defaultSTSHttpAuthSchemeProvider, resolveStsAuthConfig, resolveHttpAuthSchemeConfig2;
+var import_util_middleware6, defaultSTSHttpAuthSchemeParametersProvider, defaultSTSHttpAuthSchemeProvider, resolveStsAuthConfig, resolveHttpAuthSchemeConfig2;
 var init_httpAuthSchemeProvider2 = __esm({
   "node_modules/@aws-sdk/nested-clients/dist-es/submodules/sts/auth/httpAuthSchemeProvider.js"() {
     init_dist_es2();
-    import_util_middleware4 = __toESM(require_dist_cjs6());
+    import_util_middleware6 = __toESM(require_dist_cjs6());
     init_STSClient();
     defaultSTSHttpAuthSchemeParametersProvider = async (config, context, input) => {
       return {
-        operation: (0, import_util_middleware4.getSmithyContext)(context).operation,
-        region: await (0, import_util_middleware4.normalizeProvider)(config.region)() || (() => {
+        operation: (0, import_util_middleware6.getSmithyContext)(context).operation,
+        region: await (0, import_util_middleware6.normalizeProvider)(config.region)() || (() => {
           throw new Error("expected `region` to be configured for `aws.auth#sigv4`");
         })()
       };
@@ -80686,7 +82010,7 @@ var init_httpAuthSchemeProvider2 = __esm({
       const config_0 = resolveStsAuthConfig(config);
       const config_1 = resolveAwsSdkSigV4Config(config_0);
       return Object.assign(config_1, {
-        authSchemePreference: (0, import_util_middleware4.normalizeProvider)(config.authSchemePreference ?? [])
+        authSchemePreference: (0, import_util_middleware6.normalizeProvider)(config.authSchemePreference ?? [])
       });
     };
   }
@@ -80781,22 +82105,22 @@ var init_endpointResolver2 = __esm({
 });
 
 // node_modules/@aws-sdk/nested-clients/dist-es/submodules/sts/runtimeConfig.shared.js
-var import_smithy_client14, import_url_parser2, import_util_base642, import_util_utf82, getRuntimeConfig3;
+var import_smithy_client14, import_url_parser2, import_util_base644, import_util_utf84, getRuntimeConfig3;
 var init_runtimeConfig_shared2 = __esm({
   "node_modules/@aws-sdk/nested-clients/dist-es/submodules/sts/runtimeConfig.shared.js"() {
     init_dist_es2();
     init_dist_es();
     import_smithy_client14 = __toESM(require_dist_cjs23());
     import_url_parser2 = __toESM(require_dist_cjs31());
-    import_util_base642 = __toESM(require_dist_cjs11());
-    import_util_utf82 = __toESM(require_dist_cjs10());
+    import_util_base644 = __toESM(require_dist_cjs11());
+    import_util_utf84 = __toESM(require_dist_cjs10());
     init_httpAuthSchemeProvider2();
     init_endpointResolver2();
     getRuntimeConfig3 = (config) => {
       return {
         apiVersion: "2011-06-15",
-        base64Decoder: config?.base64Decoder ?? import_util_base642.fromBase64,
-        base64Encoder: config?.base64Encoder ?? import_util_base642.toBase64,
+        base64Decoder: config?.base64Decoder ?? import_util_base644.fromBase64,
+        base64Encoder: config?.base64Encoder ?? import_util_base644.toBase64,
         disableHostPrefix: config?.disableHostPrefix ?? false,
         endpointProvider: config?.endpointProvider ?? defaultEndpointResolver2,
         extensions: config?.extensions ?? [],
@@ -80816,8 +82140,8 @@ var init_runtimeConfig_shared2 = __esm({
         logger: config?.logger ?? new import_smithy_client14.NoOpLogger(),
         serviceId: config?.serviceId ?? "STS",
         urlParser: config?.urlParser ?? import_url_parser2.parseUrl,
-        utf8Decoder: config?.utf8Decoder ?? import_util_utf82.fromUtf8,
-        utf8Encoder: config?.utf8Encoder ?? import_util_utf82.toUtf8
+        utf8Decoder: config?.utf8Decoder ?? import_util_utf84.fromUtf8,
+        utf8Encoder: config?.utf8Encoder ?? import_util_utf84.toUtf8
       };
     };
   }
@@ -80931,17 +82255,17 @@ var init_httpAuthExtensionConfiguration2 = __esm({
 });
 
 // node_modules/@aws-sdk/nested-clients/dist-es/submodules/sts/runtimeExtensions.js
-var import_region_config_resolver2, import_protocol_http9, import_smithy_client17, resolveRuntimeExtensions2;
+var import_region_config_resolver2, import_protocol_http13, import_smithy_client17, resolveRuntimeExtensions2;
 var init_runtimeExtensions2 = __esm({
   "node_modules/@aws-sdk/nested-clients/dist-es/submodules/sts/runtimeExtensions.js"() {
     import_region_config_resolver2 = __toESM(require_dist_cjs43());
-    import_protocol_http9 = __toESM(require_dist_cjs2());
+    import_protocol_http13 = __toESM(require_dist_cjs2());
     import_smithy_client17 = __toESM(require_dist_cjs23());
     init_httpAuthExtensionConfiguration2();
     resolveRuntimeExtensions2 = (runtimeConfig, extensions) => {
-      const extensionConfiguration = Object.assign((0, import_region_config_resolver2.getAwsRegionExtensionConfiguration)(runtimeConfig), (0, import_smithy_client17.getDefaultExtensionConfiguration)(runtimeConfig), (0, import_protocol_http9.getHttpHandlerExtensionConfiguration)(runtimeConfig), getHttpAuthExtensionConfiguration2(runtimeConfig));
+      const extensionConfiguration = Object.assign((0, import_region_config_resolver2.getAwsRegionExtensionConfiguration)(runtimeConfig), (0, import_smithy_client17.getDefaultExtensionConfiguration)(runtimeConfig), (0, import_protocol_http13.getHttpHandlerExtensionConfiguration)(runtimeConfig), getHttpAuthExtensionConfiguration2(runtimeConfig));
       extensions.forEach((extension) => extension.configure(extensionConfiguration));
-      return Object.assign(runtimeConfig, (0, import_region_config_resolver2.resolveAwsRegionExtensionConfiguration)(extensionConfiguration), (0, import_smithy_client17.resolveDefaultRuntimeConfig)(extensionConfiguration), (0, import_protocol_http9.resolveHttpHandlerRuntimeConfig)(extensionConfiguration), resolveHttpAuthRuntimeConfig2(extensionConfiguration));
+      return Object.assign(runtimeConfig, (0, import_region_config_resolver2.resolveAwsRegionExtensionConfiguration)(extensionConfiguration), (0, import_smithy_client17.resolveDefaultRuntimeConfig)(extensionConfiguration), (0, import_protocol_http13.resolveHttpHandlerRuntimeConfig)(extensionConfiguration), resolveHttpAuthRuntimeConfig2(extensionConfiguration));
     };
   }
 });
@@ -81124,11 +82448,11 @@ var init_models_02 = __esm({
 });
 
 // node_modules/@aws-sdk/nested-clients/dist-es/submodules/sts/protocols/Aws_query.js
-var import_protocol_http10, import_smithy_client21, se_AssumeRoleCommand, se_AssumeRoleWithWebIdentityCommand, de_AssumeRoleCommand, de_AssumeRoleWithWebIdentityCommand, de_CommandError2, de_ExpiredTokenExceptionRes2, de_IDPCommunicationErrorExceptionRes, de_IDPRejectedClaimExceptionRes, de_InvalidIdentityTokenExceptionRes, de_MalformedPolicyDocumentExceptionRes, de_PackedPolicyTooLargeExceptionRes, de_RegionDisabledExceptionRes, se_AssumeRoleRequest, se_AssumeRoleWithWebIdentityRequest, se_policyDescriptorListType, se_PolicyDescriptorType, se_ProvidedContext, se_ProvidedContextsListType, se_Tag, se_tagKeyListType, se_tagListType, de_AssumedRoleUser, de_AssumeRoleResponse, de_AssumeRoleWithWebIdentityResponse, de_Credentials, de_ExpiredTokenException, de_IDPCommunicationErrorException, de_IDPRejectedClaimException, de_InvalidIdentityTokenException, de_MalformedPolicyDocumentException, de_PackedPolicyTooLargeException, de_RegionDisabledException, deserializeMetadata2, throwDefaultError2, buildHttpRpcRequest, SHARED_HEADERS, _, _A, _AKI, _AR, _ARI, _ARU, _ARWWI, _Ar, _Au, _C, _CA, _DS, _E, _EI, _K, _P, _PA, _PAr, _PC, _PI, _PPS, _Pr, _RA, _RSN, _SAK, _SFWIT, _SI, _SN, _ST, _T, _TC, _TTK, _V, _Va, _WIT, _a, _m, buildFormUrlencodedString, loadQueryErrorCode;
+var import_protocol_http14, import_smithy_client21, se_AssumeRoleCommand, se_AssumeRoleWithWebIdentityCommand, de_AssumeRoleCommand, de_AssumeRoleWithWebIdentityCommand, de_CommandError2, de_ExpiredTokenExceptionRes2, de_IDPCommunicationErrorExceptionRes, de_IDPRejectedClaimExceptionRes, de_InvalidIdentityTokenExceptionRes, de_MalformedPolicyDocumentExceptionRes, de_PackedPolicyTooLargeExceptionRes, de_RegionDisabledExceptionRes, se_AssumeRoleRequest, se_AssumeRoleWithWebIdentityRequest, se_policyDescriptorListType, se_PolicyDescriptorType, se_ProvidedContext, se_ProvidedContextsListType, se_Tag, se_tagKeyListType, se_tagListType, de_AssumedRoleUser, de_AssumeRoleResponse, de_AssumeRoleWithWebIdentityResponse, de_Credentials, de_ExpiredTokenException, de_IDPCommunicationErrorException, de_IDPRejectedClaimException, de_InvalidIdentityTokenException, de_MalformedPolicyDocumentException, de_PackedPolicyTooLargeException, de_RegionDisabledException, deserializeMetadata2, throwDefaultError2, buildHttpRpcRequest, SHARED_HEADERS, _, _A, _AKI, _AR, _ARI, _ARU, _ARWWI, _Ar, _Au, _C, _CA, _DS, _E, _EI, _K, _P, _PA, _PAr, _PC, _PI, _PPS, _Pr, _RA, _RSN, _SAK, _SFWIT, _SI, _SN, _ST, _T, _TC, _TTK, _V, _Va, _WIT, _a, _m, buildFormUrlencodedString, loadQueryErrorCode;
 var init_Aws_query = __esm({
   "node_modules/@aws-sdk/nested-clients/dist-es/submodules/sts/protocols/Aws_query.js"() {
     init_dist_es2();
-    import_protocol_http10 = __toESM(require_dist_cjs2());
+    import_protocol_http14 = __toESM(require_dist_cjs2());
     import_smithy_client21 = __toESM(require_dist_cjs23());
     init_models_02();
     init_STSServiceException();
@@ -81601,7 +82925,7 @@ var init_Aws_query = __esm({
       if (body !== void 0) {
         contents.body = body;
       }
-      return new import_protocol_http10.HttpRequest(contents);
+      return new import_protocol_http14.HttpRequest(contents);
     };
     SHARED_HEADERS = {
       "content-type": "application/x-www-form-urlencoded"
@@ -81757,7 +83081,7 @@ var init_defaultStsRoleAssumers = __esm({
       return async (sourceCreds, params) => {
         closureSourceCreds = sourceCreds;
         if (!stsClient) {
-          const { logger = stsOptions?.parentClientConfig?.logger, region, requestHandler = stsOptions?.parentClientConfig?.requestHandler, credentialProviderLogger } = stsOptions;
+          const { logger: logger3 = stsOptions?.parentClientConfig?.logger, region, requestHandler = stsOptions?.parentClientConfig?.requestHandler, credentialProviderLogger } = stsOptions;
           const resolvedRegion = await resolveRegion(region, stsOptions?.parentClientConfig?.region, credentialProviderLogger);
           const isCompatibleRequestHandler = !isH2(requestHandler);
           stsClient = new STSClient2({
@@ -81765,7 +83089,7 @@ var init_defaultStsRoleAssumers = __esm({
             credentialDefaultProvider: () => async () => closureSourceCreds,
             region: resolvedRegion,
             requestHandler: isCompatibleRequestHandler ? requestHandler : void 0,
-            logger
+            logger: logger3
           });
         }
         const { Credentials, AssumedRoleUser } = await stsClient.send(new AssumeRoleCommand(params));
@@ -81789,14 +83113,14 @@ var init_defaultStsRoleAssumers = __esm({
       let stsClient;
       return async (params) => {
         if (!stsClient) {
-          const { logger = stsOptions?.parentClientConfig?.logger, region, requestHandler = stsOptions?.parentClientConfig?.requestHandler, credentialProviderLogger } = stsOptions;
+          const { logger: logger3 = stsOptions?.parentClientConfig?.logger, region, requestHandler = stsOptions?.parentClientConfig?.requestHandler, credentialProviderLogger } = stsOptions;
           const resolvedRegion = await resolveRegion(region, stsOptions?.parentClientConfig?.region, credentialProviderLogger);
           const isCompatibleRequestHandler = !isH2(requestHandler);
           stsClient = new STSClient2({
             profile: stsOptions?.parentClientConfig?.profile,
             region: resolvedRegion,
             requestHandler: isCompatibleRequestHandler ? requestHandler : void 0,
-            logger
+            logger: logger3
           });
         }
         const { Credentials, AssumedRoleUser } = await stsClient.send(new AssumeRoleWithWebIdentityCommand(params));
@@ -81950,7 +83274,7 @@ var require_dist_cjs47 = __commonJS({
       (0, import_client3.setCredentialFeature)(credentials, "CREDENTIALS_PROCESS", "w");
       return credentials;
     }, "getValidatedProcessCredentials");
-    var resolveProcessCredentials = /* @__PURE__ */ __name(async (profileName, profiles, logger) => {
+    var resolveProcessCredentials = /* @__PURE__ */ __name(async (profileName, profiles, logger3) => {
       const profile = profiles[profileName];
       if (profiles[profileName]) {
         const credentialProcess = profile["credential_process"];
@@ -81966,14 +83290,14 @@ var require_dist_cjs47 = __commonJS({
             }
             return getValidatedProcessCredentials(profileName, data, profiles);
           } catch (error) {
-            throw new import_property_provider2.CredentialsProviderError(error.message, { logger });
+            throw new import_property_provider2.CredentialsProviderError(error.message, { logger: logger3 });
           }
         } else {
-          throw new import_property_provider2.CredentialsProviderError(`Profile ${profileName} did not contain credential_process.`, { logger });
+          throw new import_property_provider2.CredentialsProviderError(`Profile ${profileName} did not contain credential_process.`, { logger: logger3 });
         }
       } else {
         throw new import_property_provider2.CredentialsProviderError(`Profile ${profileName} could not be found in shared credentials file.`, {
-          logger
+          logger: logger3
         });
       }
     }, "resolveProcessCredentials");
@@ -82166,21 +83490,21 @@ var require_dist_cjs49 = __commonJS({
     var import_shared_ini_file_loader = require_dist_cjs28();
     var import_client3 = (init_client(), __toCommonJS(client_exports));
     var import_property_provider2 = require_dist_cjs20();
-    var resolveCredentialSource = /* @__PURE__ */ __name((credentialSource, profileName, logger) => {
+    var resolveCredentialSource = /* @__PURE__ */ __name((credentialSource, profileName, logger3) => {
       const sourceProvidersMap = {
         EcsContainer: /* @__PURE__ */ __name(async (options) => {
           const { fromHttp } = await Promise.resolve().then(() => __toESM2(require_dist_cjs38()));
           const { fromContainerMetadata } = await Promise.resolve().then(() => __toESM2(require_dist_cjs37()));
-          logger?.debug("@aws-sdk/credential-provider-ini - credential_source is EcsContainer");
+          logger3?.debug("@aws-sdk/credential-provider-ini - credential_source is EcsContainer");
           return async () => (0, import_property_provider2.chain)(fromHttp(options ?? {}), fromContainerMetadata(options))().then(setNamedProvider);
         }, "EcsContainer"),
         Ec2InstanceMetadata: /* @__PURE__ */ __name(async (options) => {
-          logger?.debug("@aws-sdk/credential-provider-ini - credential_source is Ec2InstanceMetadata");
+          logger3?.debug("@aws-sdk/credential-provider-ini - credential_source is Ec2InstanceMetadata");
           const { fromInstanceMetadata } = await Promise.resolve().then(() => __toESM2(require_dist_cjs37()));
           return async () => fromInstanceMetadata(options)().then(setNamedProvider);
         }, "Ec2InstanceMetadata"),
         Environment: /* @__PURE__ */ __name(async (options) => {
-          logger?.debug("@aws-sdk/credential-provider-ini - credential_source is Environment");
+          logger3?.debug("@aws-sdk/credential-provider-ini - credential_source is Environment");
           const { fromEnv } = await Promise.resolve().then(() => __toESM2(require_dist_cjs36()));
           return async () => fromEnv(options)().then(setNamedProvider);
         }, "Environment")
@@ -82190,25 +83514,25 @@ var require_dist_cjs49 = __commonJS({
       } else {
         throw new import_property_provider2.CredentialsProviderError(
           `Unsupported credential source in profile ${profileName}. Got ${credentialSource}, expected EcsContainer or Ec2InstanceMetadata or Environment.`,
-          { logger }
+          { logger: logger3 }
         );
       }
     }, "resolveCredentialSource");
     var setNamedProvider = /* @__PURE__ */ __name((creds) => (0, import_client3.setCredentialFeature)(creds, "CREDENTIALS_PROFILE_NAMED_PROVIDER", "p"), "setNamedProvider");
-    var isAssumeRoleProfile = /* @__PURE__ */ __name((arg, { profile = "default", logger } = {}) => {
-      return Boolean(arg) && typeof arg === "object" && typeof arg.role_arn === "string" && ["undefined", "string"].indexOf(typeof arg.role_session_name) > -1 && ["undefined", "string"].indexOf(typeof arg.external_id) > -1 && ["undefined", "string"].indexOf(typeof arg.mfa_serial) > -1 && (isAssumeRoleWithSourceProfile(arg, { profile, logger }) || isCredentialSourceProfile(arg, { profile, logger }));
+    var isAssumeRoleProfile = /* @__PURE__ */ __name((arg, { profile = "default", logger: logger3 } = {}) => {
+      return Boolean(arg) && typeof arg === "object" && typeof arg.role_arn === "string" && ["undefined", "string"].indexOf(typeof arg.role_session_name) > -1 && ["undefined", "string"].indexOf(typeof arg.external_id) > -1 && ["undefined", "string"].indexOf(typeof arg.mfa_serial) > -1 && (isAssumeRoleWithSourceProfile(arg, { profile, logger: logger3 }) || isCredentialSourceProfile(arg, { profile, logger: logger3 }));
     }, "isAssumeRoleProfile");
-    var isAssumeRoleWithSourceProfile = /* @__PURE__ */ __name((arg, { profile, logger }) => {
+    var isAssumeRoleWithSourceProfile = /* @__PURE__ */ __name((arg, { profile, logger: logger3 }) => {
       const withSourceProfile = typeof arg.source_profile === "string" && typeof arg.credential_source === "undefined";
       if (withSourceProfile) {
-        logger?.debug?.(`    ${profile} isAssumeRoleWithSourceProfile source_profile=${arg.source_profile}`);
+        logger3?.debug?.(`    ${profile} isAssumeRoleWithSourceProfile source_profile=${arg.source_profile}`);
       }
       return withSourceProfile;
     }, "isAssumeRoleWithSourceProfile");
-    var isCredentialSourceProfile = /* @__PURE__ */ __name((arg, { profile, logger }) => {
+    var isCredentialSourceProfile = /* @__PURE__ */ __name((arg, { profile, logger: logger3 }) => {
       const withProviderProfile = typeof arg.credential_source === "string" && typeof arg.source_profile === "undefined";
       if (withProviderProfile) {
-        logger?.debug?.(`    ${profile} isCredentialSourceProfile credential_source=${arg.credential_source}`);
+        logger3?.debug?.(`    ${profile} isCredentialSourceProfile credential_source=${arg.credential_source}`);
       }
       return withProviderProfile;
     }, "isCredentialSourceProfile");
@@ -82770,7 +84094,7 @@ var require_dist_cjs51 = __commonJS({
     };
     var import_runtimeConfig5 = require_runtimeConfig2();
     var import_region_config_resolver3 = require_dist_cjs43();
-    var import_protocol_http11 = require_dist_cjs2();
+    var import_protocol_http15 = require_dist_cjs2();
     var import_smithy_client25 = require_dist_cjs23();
     var getHttpAuthExtensionConfiguration3 = /* @__PURE__ */ __name((runtimeConfig) => {
       const _httpAuthSchemes = runtimeConfig.httpAuthSchemes;
@@ -82813,7 +84137,7 @@ var require_dist_cjs51 = __commonJS({
       const extensionConfiguration = Object.assign(
         (0, import_region_config_resolver3.getAwsRegionExtensionConfiguration)(runtimeConfig),
         (0, import_smithy_client25.getDefaultExtensionConfiguration)(runtimeConfig),
-        (0, import_protocol_http11.getHttpHandlerExtensionConfiguration)(runtimeConfig),
+        (0, import_protocol_http15.getHttpHandlerExtensionConfiguration)(runtimeConfig),
         getHttpAuthExtensionConfiguration3(runtimeConfig)
       );
       extensions.forEach((extension) => extension.configure(extensionConfiguration));
@@ -82821,7 +84145,7 @@ var require_dist_cjs51 = __commonJS({
         runtimeConfig,
         (0, import_region_config_resolver3.resolveAwsRegionExtensionConfiguration)(extensionConfiguration),
         (0, import_smithy_client25.resolveDefaultRuntimeConfig)(extensionConfiguration),
-        (0, import_protocol_http11.resolveHttpHandlerRuntimeConfig)(extensionConfiguration),
+        (0, import_protocol_http15.resolveHttpHandlerRuntimeConfig)(extensionConfiguration),
         resolveHttpAuthRuntimeConfig3(extensionConfiguration)
       );
     }, "resolveRuntimeExtensions");
@@ -83961,7 +85285,7 @@ var require_dist_cjs51 = __commonJS({
       if (body !== void 0) {
         contents.body = body;
       }
-      return new import_protocol_http11.HttpRequest(contents);
+      return new import_protocol_http15.HttpRequest(contents);
     }, "buildHttpRpcRequest");
     function sharedHeaders(operation) {
       return {
@@ -84261,19 +85585,6 @@ var getSecrets = async (secretName) => {
   return JSON.parse(response.SecretString || "{}");
 };
 
-// src/types/users-service.ts
-var UserOnboardingStatusField = /* @__PURE__ */ ((UserOnboardingStatusField2) => {
-  UserOnboardingStatusField2["IS_EMAIL_VERIFIED"] = "isEmailVerified";
-  UserOnboardingStatusField2["IS_FIRST_DEPOSIT_MADE"] = "isFirstDepositMade";
-  UserOnboardingStatusField2["IS_TRADING_ACCOUNT_CONNECTED"] = "isTradingAccountConnected";
-  UserOnboardingStatusField2["IS_SOCIAL_ACCOUNT_CONNECTED"] = "isSocialAccountConnected";
-  UserOnboardingStatusField2["IS_ONBOARDING_TASK_DONE"] = "isOnboardingTaskDone";
-  UserOnboardingStatusField2["SHOW_ONBOARDING_STEPS"] = "showOnboardingSteps";
-  UserOnboardingStatusField2["IS_PHONE_VERIFIED"] = "isPhoneVerified";
-  UserOnboardingStatusField2["IS_ID_VERIFIED"] = "isIdVerified";
-  return UserOnboardingStatusField2;
-})(UserOnboardingStatusField || {});
-
 // src/services/UsersService/index.ts
 var UsersService = class {
   constructor() {
@@ -84342,16 +85653,12 @@ var UsersService = class {
   // Get user by ID
   async getUserById(userId) {
     try {
-      console.info("######### getting connection #########");
       const connection = await this.getConnection();
-      console.info("######### connection successful #########");
       const usersCollection = new MongoDBClient(
         connection,
         UsersServiceCollections.users
       );
-      console.info("######### usersCollection successful #########");
       const user = await usersCollection.findOne({ id: userId });
-      console.info("######### user successful #########", { user });
       return user;
     } catch (error) {
       import_lambda_powertools_logger2.default.error(`Failed to get user by ID ${userId}:`, { error });
@@ -84359,43 +85666,34 @@ var UsersService = class {
     }
   }
   // Update user onboarding task
-  async updateUserOnboardingStatus(queueMessages) {
+  async trackUserOnboardingChecklist(queueMessages) {
     try {
       const connection = await this.getConnection();
       const usersCollection = new MongoDBClient(
         connection,
         UsersServiceCollections.users
       );
-      console.info("######### connection to db successful #########");
-      console.info("######### queueMessages #########", {
-        queueMessages
-      });
       const successMessageIds = [];
       const failedMessageIds = [];
       const userOnboardingTaskResult = await Promise.allSettled(
         queueMessages.map(async (queue) => {
           try {
-            const { userId, taskField } = queue.body;
-            console.info("##########userId##########", { userId });
-            console.info("##########taskField##########", {
-              taskField
-            });
+            const { userId, onboardingChecklistItem } = queue.body;
             const user = await this.getUserById(userId);
-            console.info("##########user##########", { user });
             if (!user) {
               return {
                 messageId: queue.messageId,
                 success: false
               };
             }
-            console.info("##########user[taskField]##########", {
-              taskField,
-              taskFieldValue: user[taskField]
-            });
-            if (taskField !== "showOnboardingSteps" /* SHOW_ONBOARDING_STEPS */ && !user[taskField]) {
+            if (onboardingChecklistItem !== "showOnboardingSteps" /* SHOW_ONBOARDING_STEPS */ && !user[onboardingChecklistItem]) {
               const updatedUser = await usersCollection.findOneAndUpdate(
                 { id: userId },
-                { $set: { [taskField]: true } }
+                {
+                  $set: {
+                    [onboardingChecklistItem]: true
+                  }
+                }
               );
               if (updatedUser && updatedUser.showOnboardingSteps) {
                 await usersCollection.updateOne(
@@ -84414,18 +85712,17 @@ var UsersService = class {
                   }
                 );
               }
-            } else if (taskField === "showOnboardingSteps" /* SHOW_ONBOARDING_STEPS */ && user[taskField]) {
+            } else if (onboardingChecklistItem === "showOnboardingSteps" /* SHOW_ONBOARDING_STEPS */ && user[onboardingChecklistItem]) {
               await usersCollection.updateOne(
                 {
                   id: userId,
-                  [taskField]: true,
                   isEmailVerified: true,
                   isFirstDepositMade: true,
                   isTradingAccountConnected: true
                 },
                 {
                   $set: {
-                    [taskField]: false
+                    [onboardingChecklistItem]: false
                   }
                 }
               );
@@ -84436,7 +85733,7 @@ var UsersService = class {
             };
           } catch (error) {
             import_lambda_powertools_logger2.default.error(
-              `Failed to update onboarding task (${queue.body.taskField}) for user ${queue.body.userId}:`,
+              `Failed to update onboarding task (${queue.body.onboardingChecklistItem}) for user ${queue.body.userId}:`,
               {
                 error
               }
@@ -84482,11 +85779,29 @@ var UsersService = class {
 var UsersService_default = new UsersService();
 
 // src/services/UsersService/index.test.ts
+var testUserData = {
+  email: "testuseremail@example.com",
+  password: "HashedPassword12345@",
+  firstName: "Test-user-first-name",
+  lastName: "Test-user-last-name",
+  countryId: 89,
+  dob: "1990-01-01",
+  role: ["USER" /* USER */],
+  status: "ACTIVE" /* ACTIVE */,
+  isEmailVerified: false,
+  isFirstDepositMade: false,
+  isTradingAccountConnected: false,
+  isSocialAccountConnected: false,
+  isOnboardingTaskDone: false,
+  showOnboardingSteps: true,
+  isPhoneVerified: false,
+  isIdVerified: false
+};
 jest.setTimeout(1e5);
 describe("UsersService Integration Tests", () => {
   let usersService;
   let usersCollection;
-  const testUserId = "test-user-onboarding-123";
+  let testUserId;
   const testMessageId = "test-message-onboarding-456";
   beforeAll(async () => {
     usersService = UsersService_default;
@@ -84496,49 +85811,28 @@ describe("UsersService Integration Tests", () => {
       connection,
       UsersServiceCollections.users
     );
+    const testUser = await usersCollection.insertOne(testUserData);
+    if (testUser && testUser._id) {
+      await usersCollection.findOneAndUpdate(
+        { _id: testUser?._id },
+        { $set: { id: testUser?._id.toString() } }
+      );
+      testUserId = testUser?._id.toString();
+    }
   });
   afterAll(async () => {
     try {
-      await usersCollection.deleteMany({ id: { $regex: /^test-user-/ } });
-    } catch (error) {
-      console.warn("Failed to cleanup test users:", error);
-    }
-    try {
+      await usersCollection.deleteOne({ id: testUserId });
       await usersService.cleanup();
     } catch (error) {
       console.warn("Failed to cleanup UsersService:", error);
     }
   });
-  const createTestUser = async (overrides = {}) => {
-    const testUser = {
-      id: `${testUserId}-${Date.now()}`,
-      email: `test-${Date.now()}@example.com`,
-      password: "hashedPassword123",
-      firstName: "Test",
-      lastName: "User",
-      countryId: 163,
-      dob: "1990-01-01",
-      role: ["USER" /* USER */],
-      status: "ACTIVE" /* ACTIVE */,
-      referralCode: `TEST${Date.now()}`,
-      isEmailVerified: false,
-      isFirstDepositMade: false,
-      isTradingAccountConnected: false,
-      isSocialAccountConnected: false,
-      isOnboardingTaskDone: false,
-      showOnboardingSteps: true,
-      isPhoneVerified: false,
-      isIdVerified: false,
-      ...overrides
-    };
-    await usersCollection.insertOne(testUser);
-    return testUser;
-  };
-  const createMockQueueMessage = (userId, taskField, messageId = testMessageId) => ({
+  const createMockQueueMessage = (userId, onboardingChecklistItem, messageId = testMessageId) => ({
     messageId,
     body: {
       userId,
-      taskField
+      onboardingChecklistItem
     },
     receiptHandle: "AQEB",
     attributes: {
@@ -84550,275 +85844,73 @@ describe("UsersService Integration Tests", () => {
     messageAttributes: {},
     md5OfBody: "f2e9098bc1e087904f2aa7237833e167",
     eventSource: "aws:sqs",
-    eventSourceARN: "arn:aws:sqs:eu-west-1:575439814610:dev-updateUserOnboardingStatusQueue",
+    eventSourceARN: "arn:aws:sqs:eu-west-1:575439814610:dev-trackUserOnboardingChecklistQueue",
     awsRegion: "eu-west-1"
   });
-  describe("updateUserOnboardingStatus Integration Tests", () => {
-    describe("Successful scenarios", () => {
-      it("should successfully update email verification status", async () => {
-        const testUser = await createTestUser({
-          isEmailVerified: false
-        });
-        const queueMessage = createMockQueueMessage(
-          testUser.id,
-          "isEmailVerified" /* IS_EMAIL_VERIFIED */
-        );
-        const result = await usersService.updateUserOnboardingStatus([
-          queueMessage
-        ]);
-        expect(result.successMessageIds).toContain(testMessageId);
-        expect(result.failedMessageIds).toHaveLength(0);
-        const updatedUser = await usersCollection.findOne({
-          id: testUser.id
-        });
-        expect(updatedUser).toBeDefined();
-        expect(updatedUser.isEmailVerified).toBe(true);
+  describe("Track-User-Onboarding-Checklist Integration Tests", () => {
+    it("Update Email Verification Status", async () => {
+      const queueMessage = createMockQueueMessage(
+        testUserId,
+        "isEmailVerified" /* IS_EMAIL_VERIFIED */
+      );
+      const result = await usersService.trackUserOnboardingChecklist([
+        queueMessage
+      ]);
+      expect(result.successMessageIds).toContain(testMessageId);
+      expect(result.failedMessageIds).toHaveLength(0);
+      const updatedUser = await usersCollection.findOne({
+        id: testUserId
       });
-      it("should successfully update trading account connection status", async () => {
-        const testUser = await createTestUser({
-          isTradingAccountConnected: false
-        });
-        const queueMessage = createMockQueueMessage(
-          testUser.id,
-          "isTradingAccountConnected" /* IS_TRADING_ACCOUNT_CONNECTED */
-        );
-        const result = await usersService.updateUserOnboardingStatus([
-          queueMessage
-        ]);
-        expect(result.successMessageIds).toContain(testMessageId);
-        expect(result.failedMessageIds).toHaveLength(0);
-        const updatedUser = await usersCollection.findOne({
-          id: testUser.id
-        });
-        expect(updatedUser).toBeDefined();
-        expect(updatedUser.isTradingAccountConnected).toBe(true);
-      });
-      it("should hide onboarding task when all required tasks are completed", async () => {
-        const testUser = await createTestUser({
-          isEmailVerified: true,
-          isFirstDepositMade: true,
-          isTradingAccountConnected: true,
-          isSocialAccountConnected: true,
-          isOnboardingTaskDone: true,
-          showOnboardingSteps: true
-        });
-        const queueMessage = createMockQueueMessage(
-          testUser.id,
-          "isOnboardingTaskDone" /* IS_ONBOARDING_TASK_DONE */
-        );
-        const result = await usersService.updateUserOnboardingStatus([
-          queueMessage
-        ]);
-        expect(result.successMessageIds).toContain(testMessageId);
-        expect(result.failedMessageIds).toHaveLength(0);
-        const updatedUser = await usersCollection.findOne({
-          id: testUser.id
-        });
-        expect(updatedUser).toBeDefined();
-        expect(updatedUser.showOnboardingSteps).toBe(false);
-      });
-      it("should handle showOnboardingTask toggle when user dismisses onboarding", async () => {
-        const testUser = await createTestUser({
-          showOnboardingSteps: true
-        });
-        const queueMessage = createMockQueueMessage(
-          testUser.id,
-          "showOnboardingSteps" /* SHOW_ONBOARDING_STEPS */
-        );
-        const result = await usersService.updateUserOnboardingStatus([
-          queueMessage
-        ]);
-        expect(result.successMessageIds).toContain(testMessageId);
-        expect(result.failedMessageIds).toHaveLength(0);
-        const updatedUser = await usersCollection.findOne({
-          id: testUser.id
-        });
-        expect(updatedUser).toBeDefined();
-        expect(updatedUser.showOnboardingSteps).toBe(false);
-      });
-      it("should process multiple messages successfully", async () => {
-        const testUser = await createTestUser();
-        const queueMessages = [
-          createMockQueueMessage(
-            testUser.id,
-            "isEmailVerified" /* IS_EMAIL_VERIFIED */,
-            "msg-1"
-          ),
-          createMockQueueMessage(
-            testUser.id,
-            "isFirstDepositMade" /* IS_FIRST_DEPOSIT_MADE */,
-            "msg-2"
-          )
-        ];
-        const result = await usersService.updateUserOnboardingStatus(
-          queueMessages
-        );
-        expect(result.successMessageIds).toContain("msg-1");
-        expect(result.successMessageIds).toContain("msg-2");
-        expect(result.failedMessageIds).toHaveLength(0);
-        const updatedUser = await usersCollection.findOne({
-          id: testUser.id
-        });
-        expect(updatedUser).toBeDefined();
-        expect(updatedUser.isEmailVerified).toBe(true);
-        expect(updatedUser.isFirstDepositMade).toBe(true);
-      });
+      expect(updatedUser).toBeDefined();
+      expect(updatedUser.isEmailVerified).toBe(true);
     });
-    describe("Failure scenarios", () => {
-      it("should fail when user does not exist", async () => {
-        const nonExistentUserId = "non-existent-user-123";
-        const queueMessage = createMockQueueMessage(
-          nonExistentUserId,
-          "isEmailVerified" /* IS_EMAIL_VERIFIED */
-        );
-        const result = await usersService.updateUserOnboardingStatus([
-          queueMessage
-        ]);
-        expect(result.successMessageIds).toHaveLength(0);
-        expect(result.failedMessageIds).toContain(testMessageId);
+    it("Update Trading Account Connection Status", async () => {
+      const queueMessage = createMockQueueMessage(
+        testUserId,
+        "isTradingAccountConnected" /* IS_TRADING_ACCOUNT_CONNECTED */
+      );
+      const result = await usersService.trackUserOnboardingChecklist([
+        queueMessage
+      ]);
+      expect(result.successMessageIds).toContain(testMessageId);
+      expect(result.failedMessageIds).toHaveLength(0);
+      const updatedUser = await usersCollection.findOne({
+        id: testUserId
       });
-      it("should handle task field that is already completed", async () => {
-        const testUser = await createTestUser({
-          isEmailVerified: true
-        });
-        const queueMessage = createMockQueueMessage(
-          testUser.id,
-          "isEmailVerified" /* IS_EMAIL_VERIFIED */
-        );
-        const result = await usersService.updateUserOnboardingStatus([
-          queueMessage
-        ]);
-        expect(result.successMessageIds).toContain(testMessageId);
-        expect(result.failedMessageIds).toHaveLength(0);
-        const updatedUser = await usersCollection.findOne({
-          id: testUser.id
-        });
-        expect(updatedUser).toBeDefined();
-        expect(updatedUser.isEmailVerified).toBe(true);
-      });
+      expect(updatedUser).toBeDefined();
+      expect(updatedUser.isTradingAccountConnected).toBe(true);
     });
-    describe("Complete onboarding flow simulation", () => {
-      it("should handle complete onboarding flow step by step", async () => {
-        const testUser = await createTestUser();
-        const onboardingSteps = [
-          "isEmailVerified" /* IS_EMAIL_VERIFIED */,
-          "isFirstDepositMade" /* IS_FIRST_DEPOSIT_MADE */,
-          "isTradingAccountConnected" /* IS_TRADING_ACCOUNT_CONNECTED */,
-          "isSocialAccountConnected" /* IS_SOCIAL_ACCOUNT_CONNECTED */,
-          "isOnboardingTaskDone" /* IS_ONBOARDING_TASK_DONE */
-        ];
-        const queueMessages = onboardingSteps.map(
-          (field, index) => createMockQueueMessage(testUser.id, field, `step-${index}`)
-        );
-        const result = await usersService.updateUserOnboardingStatus(
-          queueMessages
-        );
-        expect(result.successMessageIds).toHaveLength(
-          onboardingSteps.length
-        );
-        expect(result.failedMessageIds).toHaveLength(0);
-        const updatedUser = await usersCollection.findOne({
-          id: testUser.id
-        });
-        expect(updatedUser).toBeDefined();
-        expect(updatedUser.isEmailVerified).toBe(true);
-        expect(updatedUser.isFirstDepositMade).toBe(true);
-        expect(updatedUser.isTradingAccountConnected).toBe(true);
-        expect(updatedUser.isSocialAccountConnected).toBe(true);
-        expect(updatedUser.isOnboardingTaskDone).toBe(true);
-        expect(updatedUser.showOnboardingSteps).toBe(false);
+    it("Update First Deposit Made Status", async () => {
+      const queueMessage = createMockQueueMessage(
+        testUserId,
+        "isFirstDepositMade" /* IS_FIRST_DEPOSIT_MADE */
+      );
+      const result = await usersService.trackUserOnboardingChecklist([
+        queueMessage
+      ]);
+      expect(result.successMessageIds).toContain(testMessageId);
+      expect(result.failedMessageIds).toHaveLength(0);
+      const updatedUser = await usersCollection.findOne({
+        id: testUserId
       });
+      expect(updatedUser).toBeDefined();
+      expect(updatedUser.isFirstDepositMade).toBe(true);
     });
-    describe("Edge cases", () => {
-      it("should handle empty queue messages array", async () => {
-        const result = await usersService.updateUserOnboardingStatus(
-          []
-        );
-        expect(result.successMessageIds).toHaveLength(0);
-        expect(result.failedMessageIds).toHaveLength(0);
+    it("Turn Off showOnboardingSteps flag after compulsory actions are completed.", async () => {
+      const queueMessage = createMockQueueMessage(
+        testUserId,
+        "showOnboardingSteps" /* SHOW_ONBOARDING_STEPS */
+      );
+      const result = await usersService.trackUserOnboardingChecklist([
+        queueMessage
+      ]);
+      expect(result.successMessageIds).toContain(testMessageId);
+      expect(result.failedMessageIds).toHaveLength(0);
+      const updatedUser = await usersCollection.findOne({
+        id: testUserId
       });
-      it("should handle all UserOnboardingStatusField types", async () => {
-        const testUser = await createTestUser();
-        const taskFields = Object.values(UserOnboardingStatusField);
-        const queueMessages = taskFields.map(
-          (field, index) => createMockQueueMessage(testUser.id, field, `msg-${index}`)
-        );
-        const result = await usersService.updateUserOnboardingStatus(
-          queueMessages
-        );
-        expect(result.successMessageIds).toHaveLength(
-          taskFields.length
-        );
-        expect(result.failedMessageIds).toHaveLength(0);
-        const updatedUser = await usersCollection.findOne({
-          id: testUser.id
-        });
-        expect(updatedUser).toBeDefined();
-        expect(updatedUser.isEmailVerified).toBe(true);
-        expect(updatedUser.isFirstDepositMade).toBe(true);
-        expect(updatedUser.isTradingAccountConnected).toBe(true);
-        expect(updatedUser.isSocialAccountConnected).toBe(true);
-        expect(updatedUser.isOnboardingTaskDone).toBe(true);
-        expect(updatedUser.showOnboardingSteps).toBe(false);
-        expect(updatedUser.isPhoneVerified).toBe(true);
-        expect(updatedUser.isIdVerified).toBe(true);
-      });
-      it("should handle very long userId values", async () => {
-        const longUserId = "a".repeat(1e3);
-        await createTestUser({ id: longUserId });
-        const queueMessage = createMockQueueMessage(
-          longUserId,
-          "isEmailVerified" /* IS_EMAIL_VERIFIED */
-        );
-        const result = await usersService.updateUserOnboardingStatus([
-          queueMessage
-        ]);
-        expect(result.successMessageIds).toContain(testMessageId);
-        expect(result.failedMessageIds).toHaveLength(0);
-        const updatedUser = await usersCollection.findOne({
-          id: longUserId
-        });
-        expect(updatedUser).toBeDefined();
-        expect(updatedUser.isEmailVerified).toBe(true);
-      });
-    });
-    describe("Batch processing scenarios", () => {
-      it("should handle partial failures in batch processing", async () => {
-        const testUser1 = await createTestUser();
-        const testUser2 = await createTestUser();
-        const nonExistentUserId = "non-existent-user-456";
-        const queueMessages = [
-          createMockQueueMessage(
-            testUser1.id,
-            "isEmailVerified" /* IS_EMAIL_VERIFIED */,
-            "msg-1"
-          ),
-          createMockQueueMessage(
-            nonExistentUserId,
-            "isFirstDepositMade" /* IS_FIRST_DEPOSIT_MADE */,
-            "msg-2"
-          ),
-          createMockQueueMessage(
-            testUser2.id,
-            "isTradingAccountConnected" /* IS_TRADING_ACCOUNT_CONNECTED */,
-            "msg-3"
-          )
-        ];
-        const result = await usersService.updateUserOnboardingStatus(
-          queueMessages
-        );
-        expect(result.successMessageIds).toContain("msg-1");
-        expect(result.successMessageIds).toContain("msg-3");
-        expect(result.failedMessageIds).toContain("msg-2");
-        const updatedUser1 = await usersCollection.findOne({
-          id: testUser1.id
-        });
-        const updatedUser2 = await usersCollection.findOne({
-          id: testUser2.id
-        });
-        expect(updatedUser1.isEmailVerified).toBe(true);
-        expect(updatedUser2.isTradingAccountConnected).toBe(true);
-      });
+      expect(updatedUser).toBeDefined();
+      expect(updatedUser.showOnboardingSteps).toBe(false);
     });
   });
 });

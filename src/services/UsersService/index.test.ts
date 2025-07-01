@@ -1,11 +1,11 @@
 import UsersService from ".";
 import { IQueueMessageBody } from "src/config/interfaces";
 import {
-    IUpdateUserOnboardingStatusInput,
-    UserOnboardingStatusField,
+    ITrackUserOnboardingChecklistInput,
     IUser,
     Role,
     Status,
+    UserOnboardingChecklist,
 } from "src/types/users-service";
 import { MongoDBClient } from "src/clients/MongoDBClient";
 import { UsersServiceCollections } from "src/clients/MongoDBClient/constants";
@@ -74,13 +74,13 @@ describe("UsersService Integration Tests", () => {
 
     const createMockQueueMessage = (
         userId: string,
-        taskField: UserOnboardingStatusField,
+        onboardingChecklistItem: UserOnboardingChecklist,
         messageId: string = testMessageId
-    ): IQueueMessageBody<IUpdateUserOnboardingStatusInput> => ({
+    ): IQueueMessageBody<ITrackUserOnboardingChecklistInput> => ({
         messageId,
         body: {
             userId,
-            taskField,
+            onboardingChecklistItem,
         },
         receiptHandle: "AQEB",
         attributes: {
@@ -93,20 +93,20 @@ describe("UsersService Integration Tests", () => {
         md5OfBody: "f2e9098bc1e087904f2aa7237833e167",
         eventSource: "aws:sqs",
         eventSourceARN:
-            "arn:aws:sqs:eu-west-1:575439814610:dev-updateUserOnboardingStatusQueue",
+            "arn:aws:sqs:eu-west-1:575439814610:dev-trackUserOnboardingChecklistQueue",
         awsRegion: "eu-west-1",
     });
 
-    describe("Update-User-Onboarding-Status Integration Tests", () => {
+    describe("Track-User-Onboarding-Checklist Integration Tests", () => {
         it("Update Email Verification Status", async () => {
             // Arrange
             const queueMessage = createMockQueueMessage(
                 testUserId,
-                UserOnboardingStatusField.IS_EMAIL_VERIFIED
+                UserOnboardingChecklist.IS_EMAIL_VERIFIED
             );
 
             // Act
-            const result = await usersService.updateUserOnboardingStatus([
+            const result = await usersService.trackUserOnboardingChecklist([
                 queueMessage,
             ]);
             // Assert
@@ -125,11 +125,11 @@ describe("UsersService Integration Tests", () => {
             // Arrange
             const queueMessage = createMockQueueMessage(
                 testUserId,
-                UserOnboardingStatusField.IS_TRADING_ACCOUNT_CONNECTED
+                UserOnboardingChecklist.IS_TRADING_ACCOUNT_CONNECTED
             );
 
             // Act
-            const result = await usersService.updateUserOnboardingStatus([
+            const result = await usersService.trackUserOnboardingChecklist([
                 queueMessage,
             ]);
 
@@ -150,11 +150,11 @@ describe("UsersService Integration Tests", () => {
             // Arrange
             const queueMessage = createMockQueueMessage(
                 testUserId,
-                UserOnboardingStatusField.IS_FIRST_DEPOSIT_MADE
+                UserOnboardingChecklist.IS_FIRST_DEPOSIT_MADE
             );
 
             // Act
-            const result = await usersService.updateUserOnboardingStatus([
+            const result = await usersService.trackUserOnboardingChecklist([
                 queueMessage,
             ]);
 
@@ -175,11 +175,11 @@ describe("UsersService Integration Tests", () => {
             // Arrange
             const queueMessage = createMockQueueMessage(
                 testUserId,
-                UserOnboardingStatusField.SHOW_ONBOARDING_STEPS
+                UserOnboardingChecklist.SHOW_ONBOARDING_STEPS
             );
 
             // Act
-            const result = await usersService.updateUserOnboardingStatus([
+            const result = await usersService.trackUserOnboardingChecklist([
                 queueMessage,
             ]);
 

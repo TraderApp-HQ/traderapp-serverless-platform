@@ -20,7 +20,7 @@ export enum Status {
     INACTIVE = "INACTIVE",
 }
 
-export enum UserOnboardingStatusField {
+export enum UserOnboardingChecklist {
     IS_EMAIL_VERIFIED = "isEmailVerified",
     IS_FIRST_DEPOSIT_MADE = "isFirstDepositMade",
     IS_TRADING_ACCOUNT_CONNECTED = "isTradingAccountConnected",
@@ -65,7 +65,7 @@ export interface IUser {
     isTestReferralTrackingInProgress?: boolean;
 }
 
-export interface IUpdateUserOnboardingStatusInput {
+export interface ITrackUserOnboardingChecklistInput {
     userId: string;
-    taskField: UserOnboardingStatusField;
+    onboardingChecklistItem: UserOnboardingChecklist;
 }

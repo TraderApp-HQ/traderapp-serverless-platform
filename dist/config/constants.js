@@ -20,8 +20,13 @@ var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: tru
 // src/config/constants.ts
 var constants_exports = {};
 __export(constants_exports, {
+  RANK_INDEX_MAP: () => RANK_INDEX_MAP,
+  RANK_ORDER: () => RANK_ORDER,
   RANK_REQUIREMENTS: () => RANK_REQUIREMENTS,
-  ReferralRank: () => ReferralRank
+  REQUIRED_RANK_REFERRALS: () => REQUIRED_RANK_REFERRALS,
+  ReferralRank: () => ReferralRank,
+  TradingEngineServiceDbCollection: () => TradingEngineServiceDbCollection,
+  UserServiceDbCollection: () => UserServiceDbCollection
 });
 module.exports = __toCommonJS(constants_exports);
 var ReferralRank = {
@@ -77,8 +82,33 @@ var RANK_REQUIREMENTS = {
     testCommunitySize: 12
   }
 };
+var RANK_ORDER = [
+  ReferralRank.TA_RECRUIT,
+  ReferralRank.TA_LIEUTENANT,
+  ReferralRank.TA_CAPTAIN,
+  ReferralRank.TA_MAJOR,
+  ReferralRank.TA_COLONEL,
+  ReferralRank.TA_GENERAL,
+  ReferralRank.TA_FIELD_MARSHAL
+];
+var RANK_INDEX_MAP = Object.fromEntries(
+  RANK_ORDER.map((r, i) => [r, i])
+);
+var REQUIRED_RANK_REFERRALS = 3;
+var TradingEngineServiceDbCollection = {
+  userTradingAccountsCollection: "user-trading-accounts",
+  userTradingAccountBalanceCollection: "user-trading-account-balances"
+};
+var UserServiceDbCollection = {
+  users: "users"
+};
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
+  RANK_INDEX_MAP,
+  RANK_ORDER,
   RANK_REQUIREMENTS,
-  ReferralRank
+  REQUIRED_RANK_REFERRALS,
+  ReferralRank,
+  TradingEngineServiceDbCollection,
+  UserServiceDbCollection
 });

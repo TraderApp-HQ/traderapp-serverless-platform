@@ -1,11 +1,11 @@
 import log from "@dazn/lambda-powertools-logger";
 import "dotenv/config";
-import { IUpdateUserOnboardingStatusInput } from "src/types/users-service";
+import { ITrackUserOnboardingChecklistInput } from "src/types/users-service";
 import { QueueService } from "..";
 
 interface QueueInput {
     queueUrl: string;
-    message: string | IUpdateUserOnboardingStatusInput;
+    message: string | ITrackUserOnboardingChecklistInput;
     awsRegion?: string;
 }
 
