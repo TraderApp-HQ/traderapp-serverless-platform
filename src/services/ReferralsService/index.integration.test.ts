@@ -121,29 +121,63 @@ describe("ReferralsService Integration Tests", () => {
     };
 
     const createSQSEvent = (
-        messageId: string,
-        queueMessage: IReferralQueueMessage
+        messageId: string | string[],
+        queueMessage: IReferralQueueMessage | IReferralQueueMessage[]
     ): SQSEvent => {
+        const defaultSqsAttributes = {
+            ApproximateReceiveCount: "1",
+            SentTimestamp: "1234567890000",
+            SenderId: "test-sender",
+            ApproximateFirstReceiveTimestamp: "1234567890000",
+        };
+        // Handle single message case (backward compatibility)
+        if (typeof messageId === "string" && !Array.isArray(queueMessage)) {
+            return {
+                Records: [
+                    {
+                        messageId: messageId,
+                        receiptHandle: "test-receipt-handle",
+                        body: JSON.stringify(queueMessage),
+                        attributes: { ...defaultSqsAttributes },
+                        messageAttributes: {},
+                        md5OfBody: "test-md5",
+                        eventSource: "aws:sqs",
+                        eventSourceARN:
+                            "arn:aws:sqs:us-east-1:123456789012:test-queue",
+                        awsRegion: "us-east-1",
+                    } as SQSRecord,
+                ],
+            };
+        }
+
+        // Handle multiple messages case
+        const messageIds = Array.isArray(messageId) ? messageId : [messageId];
+        const queueMessages = Array.isArray(queueMessage)
+            ? queueMessage
+            : [queueMessage];
+
+        if (messageIds.length !== queueMessages.length) {
+            throw new Error(
+                "messageId and queueMessage arrays must have the same length"
+            );
+        }
+
         return {
-            Records: [
-                {
-                    messageId: messageId,
-                    receiptHandle: "test-receipt-handle",
-                    body: JSON.stringify(queueMessage),
-                    attributes: {
-                        ApproximateReceiveCount: "1",
-                        SentTimestamp: "1234567890000",
-                        SenderId: "test-sender",
-                        ApproximateFirstReceiveTimestamp: "1234567890000",
-                    },
-                    messageAttributes: {},
-                    md5OfBody: "test-md5",
-                    eventSource: "aws:sqs",
-                    eventSourceARN:
-                        "arn:aws:sqs:us-east-1:123456789012:test-queue",
-                    awsRegion: "us-east-1",
-                } as SQSRecord,
-            ],
+            Records: messageIds.map(
+                (id, index) =>
+                    ({
+                        messageId: id,
+                        receiptHandle: `test-receipt-${index + 1}`,
+                        body: JSON.stringify(queueMessages[index]),
+                        attributes: { ...defaultSqsAttributes },
+                        messageAttributes: {},
+                        md5OfBody: `test-md5-${index + 1}`,
+                        eventSource: "aws:sqs",
+                        eventSourceARN:
+                            "arn:aws:sqs:us-east-1:123456789012:test-queue",
+                        awsRegion: "us-east-1",
+                    }) as SQSRecord
+            ),
         };
     };
 
@@ -417,74 +451,27 @@ describe("ReferralsService Integration Tests", () => {
                 } as IUser);
             }
 
-            // Create batch SQS event with multiple messages (all should succeed)
-            const batchSqsEvent: SQSEvent = {
-                Records: [
+            // Create batch SQS event using the helper function
+            const batchSqsEvent = createSQSEvent(
+                ["batch-msg-1", "batch-msg-2", "batch-msg-3"],
+                [
                     {
-                        messageId: "batch-msg-1",
-                        body: JSON.stringify({
-                            user: { id: user1Id } as IUser,
-                            referrals: [],
-                            isTestReferralTracking: false,
-                        }),
-                        receiptHandle: "test-receipt-1",
-                        attributes: {
-                            ApproximateReceiveCount: "1",
-                            SentTimestamp: "1234567890000",
-                            SenderId: "test-sender",
-                            ApproximateFirstReceiveTimestamp: "1234567890000",
-                        },
-                        messageAttributes: {},
-                        md5OfBody: "test-md5-1",
-                        eventSource: "aws:sqs",
-                        eventSourceARN:
-                            "arn:aws:sqs:us-east-1:123456789012:test-queue",
-                        awsRegion: "us-east-1",
-                    } as SQSRecord,
+                        user: { id: user1Id } as IUser,
+                        referrals: [],
+                        isTestReferralTracking: false,
+                    },
                     {
-                        messageId: "batch-msg-2",
-                        body: JSON.stringify({
-                            user: { id: user2Id } as IUser,
-                            referrals: user2Referrals,
-                            isTestReferralTracking: false,
-                        }),
-                        receiptHandle: "test-receipt-2",
-                        attributes: {
-                            ApproximateReceiveCount: "1",
-                            SentTimestamp: "1234567890000",
-                            SenderId: "test-sender",
-                            ApproximateFirstReceiveTimestamp: "1234567890000",
-                        },
-                        messageAttributes: {},
-                        md5OfBody: "test-md5-2",
-                        eventSource: "aws:sqs",
-                        eventSourceARN:
-                            "arn:aws:sqs:us-east-1:123456789012:test-queue",
-                        awsRegion: "us-east-1",
-                    } as SQSRecord,
+                        user: { id: user2Id } as IUser,
+                        referrals: user2Referrals,
+                        isTestReferralTracking: false,
+                    },
                     {
-                        messageId: "batch-msg-3",
-                        body: JSON.stringify({
-                            user: { id: user3Id } as IUser,
-                            referrals: [],
-                            isTestReferralTracking: false,
-                        }),
-                        receiptHandle: "test-receipt-3",
-                        attributes: {
-                            ApproximateReceiveCount: "1",
-                            SentTimestamp: "1234567890000",
-                            SenderId: "test-sender",
-                            ApproximateFirstReceiveTimestamp: "1234567890000",
-                        },
-                        messageAttributes: {},
-                        md5OfBody: "test-md5-3",
-                        eventSource: "aws:sqs",
-                        eventSourceARN:
-                            "arn:aws:sqs:us-east-1:123456789012:test-queue",
-                        awsRegion: "us-east-1",
-                    } as SQSRecord,
-                ],
-            };
+                        user: { id: user3Id } as IUser,
+                        referrals: [],
+                        isTestReferralTracking: false,
+                    },
+                ]
+            );
 
             // Execute the method
             const result = await ReferralsService.processUserReferralTracking(
@@ -637,52 +624,22 @@ describe("ReferralsService Integration Tests", () => {
             const user2Id = "failure-user";
             await createUser(user2Id, 50, 0, ReferralRank.TA_RECRUIT);
 
-            const mixedSqsEvent: SQSEvent = {
-                Records: [
+            // Create mixed SQS event using the helper function
+            const mixedSqsEvent = createSQSEvent(
+                ["success-msg", "fail-msg"],
+                [
                     {
-                        messageId: "success-msg",
-                        body: JSON.stringify({
-                            user: { id: user1Id },
-                            referrals: [],
-                            isTestReferralTracking: false,
-                        }),
-                        receiptHandle: "test-receipt-1",
-                        attributes: {
-                            ApproximateReceiveCount: "1",
-                            SentTimestamp: "1234567890000",
-                            SenderId: "test-sender",
-                            ApproximateFirstReceiveTimestamp: "1234567890000",
-                        },
-                        messageAttributes: {},
-                        md5OfBody: "test-md5-1",
-                        eventSource: "aws:sqs",
-                        eventSourceARN:
-                            "arn:aws:sqs:us-east-1:123456789012:test-queue",
-                        awsRegion: "us-east-1",
-                    } as SQSRecord,
+                        user: { id: user1Id } as IUser,
+                        referrals: [],
+                        isTestReferralTracking: false,
+                    } as IReferralQueueMessage,
                     {
-                        messageId: "fail-msg",
-                        body: JSON.stringify({
-                            entity: { id: user2Id },
-                            referrals: [],
-                            isTestReferralTracking: false,
-                        }),
-                        receiptHandle: "test-receipt-2",
-                        attributes: {
-                            ApproximateReceiveCount: "1",
-                            SentTimestamp: "1234567890000",
-                            SenderId: "test-sender",
-                            ApproximateFirstReceiveTimestamp: "1234567890000",
-                        },
-                        messageAttributes: {},
-                        md5OfBody: "test-md5-2",
-                        eventSource: "aws:sqs",
-                        eventSourceARN:
-                            "arn:aws:sqs:us-east-1:123456789012:test-queue",
-                        awsRegion: "us-east-1",
-                    } as SQSRecord,
-                ],
-            };
+                        entity: { id: user2Id }, // Wrong property name to trigger failure
+                        referrals: [],
+                        isTestReferralTracking: false,
+                    } as unknown as IReferralQueueMessage,
+                ]
+            );
 
             // Execute the method
             const result = await ReferralsService.processUserReferralTracking(
