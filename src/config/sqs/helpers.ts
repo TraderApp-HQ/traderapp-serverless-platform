@@ -28,13 +28,3 @@ export const getParsedQueueMessagesBody = <T = IQueueMessageBodyObject>(
 ): IQueueMessageBody<T>[] => {
     return parseQueueMessagesBody<T>(event) as IQueueMessageBody<T>[];
 };
-
-// export const parseQueueMessagesBody = (event: SQSEvent) => {
-//     const queueMessages: IQueueMessageBody[] = event.Records.map((record) => {
-//         return {
-//             ...record,
-//             body: JSON.parse(record.body) as unknown as IQueueMessageBodyObject,
-//         };
-//     });
-//     return queueMessages;
-// };

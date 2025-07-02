@@ -5,3 +5,7 @@ export const WalletsServiceCollections = {
     walletTypes: "wallet-types",
     currencies: "currencies",
 };
+
+export const UsersServiceCollections = {
+    users: "users",
+};
