@@ -11,6 +11,7 @@ import {
     ITrackUserOnboardingChecklistInput,
     UserOnboardingChecklist,
 } from "src/types/users-service";
+import "dotenv/config";
 
 class UsersService {
     private connection: mongoose.Connection | null = null;
@@ -34,7 +35,7 @@ class UsersService {
         this.initializationPromise = (async () => {
             try {
                 // Fetch secrets once
-                const env = process.env.ENV ?? "dev";
+                const env = process.env.ENV;
                 console.log(
                     `=============== Getting secrets  for ${SecretLocation.usersServiceSecrets}/${env} =====================`
                 );
