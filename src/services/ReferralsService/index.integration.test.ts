@@ -1,12 +1,6 @@
 import { MongoMemoryServer } from "mongodb-memory-server";
 import mongoose from "mongoose";
-import { SQSEvent, SQSRecord } from "aws-lambda";
-import {
-    ReferralRank,
-    RANK_REQUIREMENTS,
-    TradingEngineServiceDbCollection,
-    UserServiceDbCollection,
-} from "src/config/constants";
+import { ReferralRank, RANK_REQUIREMENTS } from "src/config/constants";
 import {
     DatabaseConnections,
     DatabaseType,
@@ -14,6 +8,17 @@ import {
     IUser,
 } from "src/config/interfaces";
 import ReferralsService from "./index";
+import {
+    createAccountBalance,
+    createReferralsWithRankAndBalance,
+    createSQSEvent,
+    createTradingAccount,
+    createUser,
+    generateObjectId,
+    getUserFromDb,
+    setUpUserWithBalance,
+    updateUserBalance,
+} from "./integration.test.helpers";
 
 describe("ReferralsService Integration Tests", () => {
     let mongoServer: MongoMemoryServer;
@@ -65,175 +70,60 @@ describe("ReferralsService Integration Tests", () => {
         }
     });
 
-    // Helper function to generate valid ObjectId
-    const generateObjectId = () => new mongoose.Types.ObjectId().toString();
-
-    const createTradingAccount = async (userId: string, accountId?: string) => {
-        const validAccountId = accountId || generateObjectId();
-        return await tradingEngineConnection
-            .collection(
-                TradingEngineServiceDbCollection.userTradingAccountsCollection
-            )
-            .insertOne({
-                _id: new mongoose.Types.ObjectId(validAccountId),
-                userId,
-                connectionStatus: "ACTIVE",
-                createdAt: new Date(),
-            });
-    };
-
-    const createAccountBalance = async (
-        tradingAccountId: string,
-        availableBalance: number,
-        lockedBalance: number = 0
-    ) => {
-        return await tradingEngineConnection
-            .collection(
-                TradingEngineServiceDbCollection.userTradingAccountBalanceCollection
-            )
-            .insertOne({
-                tradingAccountId: new mongoose.Types.ObjectId(tradingAccountId),
-                currency: "USDT",
-                availableBalance,
-                lockedBalance,
-                updatedAt: new Date(),
-            });
-    };
-
-    const createUser = async (
-        userId: string,
-        personalATC: number = 0,
-        communityATC: number = 0,
-        referralRank: string | null = null,
-        maxRankFromReferrals: string = ReferralRank.TA_RECRUIT
-    ) => {
-        return await usersConnection
-            .collection(UserServiceDbCollection.users)
-            .insertOne({
-                id: userId,
-                personalATC,
-                communityATC,
-                referralRank,
-                maxRankFromReferrals,
-                isTestReferralTrackingInProgress: true,
-                createdAt: new Date(),
-            });
-    };
-
-    const createSQSEvent = (
-        messageId: string | string[],
-        queueMessage: IReferralQueueMessage | IReferralQueueMessage[]
-    ): SQSEvent => {
-        const defaultSqsAttributes = {
-            ApproximateReceiveCount: "1",
-            SentTimestamp: "1234567890000",
-            SenderId: "test-sender",
-            ApproximateFirstReceiveTimestamp: "1234567890000",
-        };
-        // Handle single message case (backward compatibility)
-        if (typeof messageId === "string" && !Array.isArray(queueMessage)) {
-            return {
-                Records: [
-                    {
-                        messageId: messageId,
-                        receiptHandle: "test-receipt-handle",
-                        body: JSON.stringify(queueMessage),
-                        attributes: { ...defaultSqsAttributes },
-                        messageAttributes: {},
-                        md5OfBody: "test-md5",
-                        eventSource: "aws:sqs",
-                        eventSourceARN:
-                            "arn:aws:sqs:us-east-1:123456789012:test-queue",
-                        awsRegion: "us-east-1",
-                    } as SQSRecord,
-                ],
-            };
-        }
-
-        // Handle multiple messages case
-        const messageIds = Array.isArray(messageId) ? messageId : [messageId];
-        const queueMessages = Array.isArray(queueMessage)
-            ? queueMessage
-            : [queueMessage];
-
-        if (messageIds.length !== queueMessages.length) {
-            throw new Error(
-                "messageId and queueMessage arrays must have the same length"
-            );
-        }
-
-        return {
-            Records: messageIds.map(
-                (id, index) =>
-                    ({
-                        messageId: id,
-                        receiptHandle: `test-receipt-${index + 1}`,
-                        body: JSON.stringify(queueMessages[index]),
-                        attributes: { ...defaultSqsAttributes },
-                        messageAttributes: {},
-                        md5OfBody: `test-md5-${index + 1}`,
-                        eventSource: "aws:sqs",
-                        eventSourceARN:
-                            "arn:aws:sqs:us-east-1:123456789012:test-queue",
-                        awsRegion: "us-east-1",
-                    }) as SQSRecord
-            ),
-        };
-    };
-
-    const getUserFromDb = async (userId: string) => {
-        return await usersConnection
-            .collection(UserServiceDbCollection.users)
-            .findOne({ id: userId });
-    };
-
     describe("Core Functionality", () => {
         it("should correctly determine rank for a user", async () => {
             const mainUserId = "rank-determination-user";
             const mainAccountId = generateObjectId();
 
             // Setup main user with sufficient personal balance for TA_CAPTAIN
-            await createUser(mainUserId, 0, 0, null); // Start with no rank
-            await createTradingAccount(mainUserId, mainAccountId);
-            await createAccountBalance(
+            await setUpUserWithBalance(
+                usersConnection,
+                tradingEngineConnection,
+                mainUserId,
                 mainAccountId,
                 RANK_REQUIREMENTS[ReferralRank.TA_CAPTAIN].personalATC
             );
 
             // Create mixed rank referrals that would qualify for TA_CAPTAIN
-            const referrals: IUser[] = [];
-
             // Add 3 high-rank referrals (TA_LIEUTENANT level) - meets the "3 referrals at required rank" rule
-            for (let i = 0; i < 3; i++) {
-                const userId = `lieutenant-referral-${i}`;
-                const accountId = generateObjectId();
+            const lieutenantReferralsreferrals: IUser[] =
+                await createReferralsWithRankAndBalance(
+                    "lieut-ref-",
+                    800,
+                    2,
+                    usersConnection,
+                    tradingEngineConnection,
+                    ReferralRank.TA_LIEUTENANT
+                );
 
-                await createUser(userId, 100, 0, ReferralRank.TA_LIEUTENANT);
-                await createTradingAccount(userId, accountId);
-                await createAccountBalance(accountId, 800); // Good balance for community ATC
-
-                referrals.push({
-                    id: userId,
-                    referralRank: ReferralRank.TA_LIEUTENANT,
-                } as IUser);
-            }
+            const captainReferrals: IUser[] =
+                await createReferralsWithRankAndBalance(
+                    "captain-ref-",
+                    400,
+                    2,
+                    usersConnection,
+                    tradingEngineConnection,
+                    ReferralRank.TA_CAPTAIN
+                );
 
             // Add some TA_RECRUIT referrals to reach community size for TA_CAPTAIN (100 total)
             const additionalRecruits =
                 RANK_REQUIREMENTS[ReferralRank.TA_CAPTAIN].communitySize - 3;
-            for (let i = 0; i < additionalRecruits; i++) {
-                const userId = `recruit-referral-${i}`;
-                const accountId = generateObjectId();
 
-                await createUser(userId, 50, 0, ReferralRank.TA_RECRUIT);
-                await createTradingAccount(userId, accountId);
-                await createAccountBalance(accountId, 55); // Contribute to community ATC
+            const recruitReferrals = await createReferralsWithRankAndBalance(
+                "recruit-ref-",
+                55,
+                additionalRecruits,
+                usersConnection,
+                tradingEngineConnection,
+                ReferralRank.TA_RECRUIT
+            );
 
-                referrals.push({
-                    id: userId,
-                    referralRank: ReferralRank.TA_RECRUIT,
-                } as IUser);
-            }
+            const referrals: IUser[] = [
+                ...lieutenantReferralsreferrals,
+                ...captainReferrals,
+                ...recruitReferrals,
+            ];
 
             const queueMessage: IReferralQueueMessage = {
                 user: { id: mainUserId } as IUser,
@@ -259,7 +149,10 @@ describe("ReferralsService Integration Tests", () => {
             expect(result.failedMessageIds).toHaveLength(0);
 
             // Verify the user's rank was correctly determined
-            const updatedUser = await getUserFromDb(mainUserId);
+            const updatedUser = await getUserFromDb(
+                usersConnection,
+                mainUserId
+            );
 
             // Should be promoted to TA_CAPTAIN based on:
             // - Personal ATC: 500 (meets TA_CAPTAIN requirement)
@@ -279,7 +172,7 @@ describe("ReferralsService Integration Tests", () => {
             );
 
             // Community ATC should be sum of all referral balances
-            const expectedCommunityATC = 3 * 800 + 97 * 55; // 2,400 + 5,335 = 7,735
+            const expectedCommunityATC = 2 * 800 + 2 * 400 + 97 * 55; // 2,400 + 5,335 = 7,735
             expect(updatedUser?.communityATC).toBe(expectedCommunityATC);
 
             // Verify it meets the minimum requirements for TA_CAPTAIN
@@ -302,36 +195,28 @@ describe("ReferralsService Integration Tests", () => {
             const recruitReferralBalance = 25000;
 
             // Setup main user with sufficient personal balance for TA_FIELD_MARSHAL
-            await createUser(mainUserId, 0, 0, null); // Start with no rank
-            await createTradingAccount(mainUserId, mainAccountId);
-            await createAccountBalance(
+            await setUpUserWithBalance(
+                usersConnection,
+                tradingEngineConnection,
+                mainUserId,
                 mainAccountId,
                 RANK_REQUIREMENTS[ReferralRank.TA_FIELD_MARSHAL].personalATC
             );
 
             // Create referrals using testCommunitySize for manageable test data
-            const referrals: IUser[] = [];
             const testCommunitySize =
                 RANK_REQUIREMENTS[ReferralRank.TA_FIELD_MARSHAL]
                     .testCommunitySize;
 
             // Add 3 referrals at TA_FIELD_MARSHAL rank (highest possible)
-            for (let i = 0; i < 3; i++) {
-                const userId = `field-marshal-referral-${i}`;
-                const accountId = generateObjectId();
-
-                await createUser(userId, 100, 0, ReferralRank.TA_FIELD_MARSHAL);
-                await createTradingAccount(userId, accountId);
-                await createAccountBalance(
-                    accountId,
-                    fieldMarshalReferralBalance
-                ); // High balance for community ATC
-
-                referrals.push({
-                    id: userId,
-                    referralRank: ReferralRank.TA_FIELD_MARSHAL,
-                } as IUser);
-            }
+            const referrals: IUser[] = await createReferralsWithRankAndBalance(
+                "recruit-ref-",
+                fieldMarshalReferralBalance,
+                3,
+                usersConnection,
+                tradingEngineConnection,
+                ReferralRank.TA_FIELD_MARSHAL
+            );
 
             // Add remaining referrals as TA_RECRUIT to meet community size requirement
             const additionalRecruits = testCommunitySize - 3;
@@ -339,9 +224,13 @@ describe("ReferralsService Integration Tests", () => {
                 const userId = `recruit-referral-${i}`;
                 const accountId = generateObjectId();
 
-                await createUser(userId, 50, 0, ReferralRank.TA_RECRUIT);
-                await createTradingAccount(userId, accountId);
-                await createAccountBalance(accountId, recruitReferralBalance); // Contribute to community ATC
+                await setUpUserWithBalance(
+                    usersConnection,
+                    tradingEngineConnection,
+                    userId,
+                    accountId,
+                    recruitReferralBalance
+                ); // Contribute to community ATC
 
                 referrals.push({
                     id: userId,
@@ -373,7 +262,10 @@ describe("ReferralsService Integration Tests", () => {
             expect(result.failedMessageIds).toHaveLength(0);
 
             // Verify the user achieved the highest possible rank
-            const updatedUser = await getUserFromDb(mainUserId);
+            const updatedUser = await getUserFromDb(
+                usersConnection,
+                mainUserId
+            );
 
             // Should be promoted to TA_FIELD_MARSHAL (highest rank)
             expect(updatedUser?.referralRank).toBe(
@@ -416,40 +308,37 @@ describe("ReferralsService Integration Tests", () => {
             const user3Id = "batch-user-3";
 
             // User 1 - Should succeed (meets TA_RECRUIT requirements)
-            await createUser(user1Id, 30, 0, null);
-            await createTradingAccount(user1Id, user1AccountId);
-            await createAccountBalance(
+            await setUpUserWithBalance(
+                usersConnection,
+                tradingEngineConnection,
+                user1Id,
                 user1AccountId,
                 RANK_REQUIREMENTS[ReferralRank.TA_RECRUIT].personalATC
             );
 
             // User 2 - Should succeed (meets TA_LIEUTENANT requirements)
-            await createUser(user2Id, 50, 0, ReferralRank.TA_RECRUIT);
-            await createTradingAccount(user2Id, user2AccountId);
-            await createAccountBalance(
+            await setUpUserWithBalance(
+                usersConnection,
+                tradingEngineConnection,
+                user2Id,
                 user2AccountId,
                 RANK_REQUIREMENTS[ReferralRank.TA_LIEUTENANT].personalATC
             );
 
             // User 3 - Should succeed but with zero balance (no trading account)
-            await createUser(user3Id, 100, 0, ReferralRank.TA_RECRUIT);
+            await createUser(usersConnection, user3Id);
             // Intentionally not creating trading account - will default to zero balance
 
             // Create referrals for user 2 to meet TA_LIEUTENANT requirements
-            const user2Referrals: IUser[] = [];
-            for (let i = 0; i < 20; i++) {
-                const refUserId = `batch-ref-${i}`;
-                const refAccountId = generateObjectId();
-
-                await createUser(refUserId, 50, 0, ReferralRank.TA_RECRUIT);
-                await createTradingAccount(refUserId, refAccountId);
-                await createAccountBalance(refAccountId, 50);
-
-                user2Referrals.push({
-                    id: refUserId,
-                    referralRank: ReferralRank.TA_RECRUIT,
-                } as IUser);
-            }
+            const user2Referrals: IUser[] =
+                await createReferralsWithRankAndBalance(
+                    "batch-ref-",
+                    50,
+                    20,
+                    usersConnection,
+                    tradingEngineConnection,
+                    ReferralRank.TA_RECRUIT
+                );
 
             // Create batch SQS event using the helper function
             const batchSqsEvent = createSQSEvent(
@@ -487,11 +376,11 @@ describe("ReferralsService Integration Tests", () => {
             expect(result.successMessageIds).toContain("batch-msg-3");
 
             // Verify users were updated correctly
-            const updatedUser1 = await getUserFromDb(user1Id);
+            const updatedUser1 = await getUserFromDb(usersConnection, user1Id);
             expect(updatedUser1?.referralRank).toBe(ReferralRank.TA_RECRUIT);
             expect(updatedUser1?.isTestReferralTrackingInProgress).toBe(false);
 
-            const updatedUser2 = await getUserFromDb(user2Id);
+            const updatedUser2 = await getUserFromDb(usersConnection, user2Id);
             expect(updatedUser2?.referralRank).toBe(ReferralRank.TA_LIEUTENANT);
             expect(updatedUser2?.maxRankFromReferrals).toBe(
                 ReferralRank.TA_LIEUTENANT
@@ -500,7 +389,7 @@ describe("ReferralsService Integration Tests", () => {
             expect(updatedUser2?.isTestReferralTrackingInProgress).toBe(false);
 
             // Verify user with no trading account gets zero balance but still processes successfully
-            const updatedUser3 = await getUserFromDb(user3Id);
+            const updatedUser3 = await getUserFromDb(usersConnection, user3Id);
             expect(updatedUser3?.personalATC).toBe(0); // Zero balance due to no trading account
             expect(updatedUser3?.isTestReferralTrackingInProgress).toBe(false);
         });
@@ -510,30 +399,25 @@ describe("ReferralsService Integration Tests", () => {
             const mainAccountId = generateObjectId();
 
             // Setup main user
-            await createUser(mainUserId, 50, 0, ReferralRank.TA_RECRUIT);
-            await createTradingAccount(mainUserId, mainAccountId);
-            await createAccountBalance(
+            await setUpUserWithBalance(
+                usersConnection,
+                tradingEngineConnection,
+                mainUserId,
                 mainAccountId,
                 RANK_REQUIREMENTS[ReferralRank.TA_LIEUTENANT].personalATC
             );
 
             // Create referrals equal to testCommunitySize
-            const testCommunitySize = 3;
-            const referrals: IUser[] = [];
-
-            for (let i = 0; i < testCommunitySize; i++) {
-                const userId = `test-ref-${i}`;
-                const accountId = generateObjectId();
-
-                await createUser(userId, 50, 0, ReferralRank.TA_RECRUIT);
-                await createTradingAccount(userId, accountId);
-                await createAccountBalance(accountId, 500);
-
-                referrals.push({
-                    id: userId,
-                    referralRank: ReferralRank.TA_RECRUIT,
-                } as IUser);
-            }
+            const testCommunitySize =
+                RANK_REQUIREMENTS[ReferralRank.TA_LIEUTENANT].communitySize;
+            const referrals: IUser[] = await createReferralsWithRankAndBalance(
+                "test-ref-",
+                500,
+                testCommunitySize,
+                usersConnection,
+                tradingEngineConnection,
+                ReferralRank.TA_RECRUIT
+            );
 
             const queueMessage: IReferralQueueMessage = {
                 user: { id: mainUserId } as IUser,
@@ -554,7 +438,10 @@ describe("ReferralsService Integration Tests", () => {
             expect(result.failedMessageIds).toHaveLength(0);
 
             // Verify user rank progression using test community size
-            const updatedUser = await getUserFromDb(mainUserId);
+            const updatedUser = await getUserFromDb(
+                usersConnection,
+                mainUserId
+            );
             expect(updatedUser?.referralRank).toBe(ReferralRank.TA_LIEUTENANT);
             expect(updatedUser?.communityATC).toBe(testCommunitySize * 500);
         });
@@ -616,13 +503,33 @@ describe("ReferralsService Integration Tests", () => {
             const user1Id = "success-user";
             const user1AccountId = generateObjectId();
 
-            await createUser(user1Id, 50, 0, ReferralRank.TA_RECRUIT);
-            await createTradingAccount(user1Id, user1AccountId);
-            await createAccountBalance(user1AccountId, 100);
+            await createUser(
+                usersConnection,
+                user1Id,
+                50,
+                0,
+                ReferralRank.TA_RECRUIT
+            );
+            await createTradingAccount(
+                tradingEngineConnection,
+                user1Id,
+                user1AccountId
+            );
+            await createAccountBalance(
+                tradingEngineConnection,
+                user1AccountId,
+                100
+            );
 
             // Setup second user (will fail due to event body format)
             const user2Id = "failure-user";
-            await createUser(user2Id, 50, 0, ReferralRank.TA_RECRUIT);
+            await createUser(
+                usersConnection,
+                user2Id,
+                50,
+                0,
+                ReferralRank.TA_RECRUIT
+            );
 
             // Create mixed SQS event using the helper function
             const mixedSqsEvent = createSQSEvent(
@@ -654,7 +561,7 @@ describe("ReferralsService Integration Tests", () => {
             expect(result.failedMessageIds).toHaveLength(1);
 
             // Verify successful user was updated
-            const successUser = await getUserFromDb(user1Id);
+            const successUser = await getUserFromDb(usersConnection, user1Id);
             expect(successUser?.referralRank).toBe(ReferralRank.TA_RECRUIT);
             expect(successUser?.isTestReferralTrackingInProgress).toBe(false);
         });
@@ -664,92 +571,57 @@ describe("ReferralsService Integration Tests", () => {
         it("should progress user from TA_RECRUIT to TA_LIEUTENANT when requirements are met", async () => {
             const mainUserId = "main-user";
             const mainAccountId = generateObjectId();
-            const referralUserIds = ["ref-1", "ref-2", "ref-3"];
-            const referralAccountIds = [
-                generateObjectId(),
-                generateObjectId(),
-                generateObjectId(),
-            ];
+            const requiredCommunitySize =
+                RANK_REQUIREMENTS[ReferralRank.TA_LIEUTENANT].communitySize;
 
             // Setup main user - initially qualifies for TA_RECRUIT
-            await createUser(
+            await setUpUserWithBalance(
+                usersConnection,
+                tradingEngineConnection,
                 mainUserId,
-                RANK_REQUIREMENTS[ReferralRank.TA_RECRUIT].personalATC,
-                0,
-                ReferralRank.TA_RECRUIT,
-                ReferralRank.TA_RECRUIT
-            );
-            await createTradingAccount(mainUserId, mainAccountId);
-            await createAccountBalance(
                 mainAccountId,
                 RANK_REQUIREMENTS[ReferralRank.TA_LIEUTENANT].personalATC
             );
 
-            // Setup referral users with TA_RECRUIT rank
-            const referrals: IUser[] = [];
-            for (let i = 0; i < referralUserIds.length; i++) {
-                const userId = referralUserIds[i];
-                const accountId = referralAccountIds[i];
+            const initialQueueMessage: IReferralQueueMessage = {
+                user: { id: mainUserId } as IUser,
+                referrals: [],
+                isTestReferralTracking: false,
+            };
 
-                await createUser(
-                    userId,
-                    RANK_REQUIREMENTS[ReferralRank.TA_RECRUIT].personalATC,
-                    0,
-                    ReferralRank.TA_RECRUIT,
-                    ReferralRank.TA_RECRUIT
-                );
-                await createTradingAccount(userId, accountId);
-                await createAccountBalance(
-                    accountId,
-                    RANK_REQUIREMENTS[ReferralRank.TA_RECRUIT].personalATC
-                );
+            const initialSqsEvent = createSQSEvent(
+                "test-message-1",
+                initialQueueMessage
+            );
 
-                referrals.push({
-                    id: userId,
-                    referralRank: ReferralRank.TA_RECRUIT,
-                } as IUser);
-            }
+            // Execute the method
+            await ReferralsService.processUserReferralTracking(
+                connections,
+                initialSqsEvent
+            );
 
-            // Add enough community balance to meet TA_LIEUTENANT requirements
-            const additionalCommunityUsers = 17; // Need 20 total for TA_LIEUTENANT
-            for (let i = 0; i < additionalCommunityUsers; i++) {
-                const userId = `community-${i}`;
-                const accountId = generateObjectId();
+            const recruitUser = await getUserFromDb(
+                usersConnection,
+                mainUserId
+            );
+            expect(recruitUser).toBeTruthy();
+            expect(recruitUser?.referralRank).toBe(ReferralRank.TA_RECRUIT);
 
-                await createUser(userId, 50, 0, ReferralRank.TA_RECRUIT);
-                await createTradingAccount(userId, accountId);
-                await createAccountBalance(accountId, 50);
-
-                referrals.push({
-                    id: userId,
-                    referralRank: ReferralRank.TA_RECRUIT,
-                } as IUser);
-            }
-
-            // Calculate community balance to meet requirements
             const requiredCommunityBalance =
                 RANK_REQUIREMENTS[ReferralRank.TA_LIEUTENANT].communityATC;
             const balancePerReferral = Math.ceil(
-                requiredCommunityBalance / referrals.length
+                requiredCommunityBalance / requiredCommunitySize
             );
 
-            // Update referral balances
-            for (let i = 0; i < referrals.length; i++) {
-                const accountId =
-                    i < 3 ? referralAccountIds[i] : generateObjectId();
-                await tradingEngineConnection
-                    .collection(
-                        TradingEngineServiceDbCollection.userTradingAccountBalanceCollection
-                    )
-                    .updateOne(
-                        {
-                            tradingAccountId: new mongoose.Types.ObjectId(
-                                accountId
-                            ),
-                        },
-                        { $set: { availableBalance: balancePerReferral } }
-                    );
-            }
+            // Setup referral users with TA_RECRUIT rank
+            const referrals: IUser[] = await createReferralsWithRankAndBalance(
+                "ref-",
+                balancePerReferral,
+                requiredCommunitySize,
+                usersConnection,
+                tradingEngineConnection,
+                ReferralRank.TA_RECRUIT
+            );
 
             const queueMessage: IReferralQueueMessage = {
                 user: { id: mainUserId } as IUser,
@@ -770,7 +642,10 @@ describe("ReferralsService Integration Tests", () => {
             expect(result.failedMessageIds).toHaveLength(0);
 
             // Verify user rank progression
-            const updatedUser = await getUserFromDb(mainUserId);
+            const updatedUser = await getUserFromDb(
+                usersConnection,
+                mainUserId
+            );
             expect(updatedUser).toBeTruthy();
             expect(updatedUser?.referralRank).toBe(ReferralRank.TA_LIEUTENANT);
             expect(updatedUser?.maxRankFromReferrals).toBe(
@@ -789,64 +664,38 @@ describe("ReferralsService Integration Tests", () => {
             const mainUserId = "main-user";
             const mainAccountId = generateObjectId();
 
-            // Setup main user - initially TA_LIEUTENANT
-            await createUser(
+            // Setup main user - initially TA_LIEUTENANTS
+            await setUpUserWithBalance(
+                usersConnection,
+                tradingEngineConnection,
                 mainUserId,
-                RANK_REQUIREMENTS[ReferralRank.TA_LIEUTENANT].personalATC,
-                RANK_REQUIREMENTS[ReferralRank.TA_LIEUTENANT].communityATC,
-                ReferralRank.TA_LIEUTENANT,
-                ReferralRank.TA_LIEUTENANT
-            );
-            await createTradingAccount(mainUserId, mainAccountId);
-            await createAccountBalance(
                 mainAccountId,
                 RANK_REQUIREMENTS[ReferralRank.TA_CAPTAIN].personalATC
             );
 
-            // Create 3 referrals with TA_LIEUTENANT rank
-            const highRankReferrals: IUser[] = [];
-            for (let i = 0; i < 3; i++) {
-                const userId = `lieutenant-ref-${i}`;
-                const accountId = generateObjectId();
-
-                await createUser(
-                    userId,
-                    RANK_REQUIREMENTS[ReferralRank.TA_LIEUTENANT].personalATC,
-                    0,
-                    ReferralRank.TA_LIEUTENANT
-                );
-                await createTradingAccount(userId, accountId);
-                await createAccountBalance(
-                    accountId,
-                    RANK_REQUIREMENTS[ReferralRank.TA_LIEUTENANT].personalATC
-                );
-
-                highRankReferrals.push({
-                    id: userId,
-                    referralRank: ReferralRank.TA_LIEUTENANT,
-                } as IUser);
-            }
+            // Create 2 referrals with TA_LIEUTENANT rank
+            const highRankReferrals = await createReferralsWithRankAndBalance(
+                "lieutenant-ref-",
+                50,
+                2,
+                usersConnection,
+                tradingEngineConnection,
+                ReferralRank.TA_LIEUTENANT
+            );
 
             // Add enough lower rank referrals to meet community size requirement
-            const additionalReferrals: IUser[] = [];
-            const requiredCommunitySize =
-                RANK_REQUIREMENTS[ReferralRank.TA_CAPTAIN].communitySize;
             const additionalNeeded =
-                requiredCommunitySize - highRankReferrals.length;
+                RANK_REQUIREMENTS[ReferralRank.TA_CAPTAIN].communitySize -
+                highRankReferrals.length;
 
-            for (let i = 0; i < additionalNeeded; i++) {
-                const userId = `recruit-ref-${i}`;
-                const accountId = generateObjectId();
-
-                await createUser(userId, 50, 0, ReferralRank.TA_RECRUIT);
-                await createTradingAccount(userId, accountId);
-                await createAccountBalance(accountId, 52);
-
-                additionalReferrals.push({
-                    id: userId,
-                    referralRank: ReferralRank.TA_RECRUIT,
-                } as IUser);
-            }
+            const additionalReferrals = await createReferralsWithRankAndBalance(
+                "recruit-ref-",
+                52,
+                additionalNeeded,
+                usersConnection,
+                tradingEngineConnection,
+                ReferralRank.TA_RECRUIT
+            );
 
             const allReferrals = [...highRankReferrals, ...additionalReferrals];
 
@@ -862,9 +711,35 @@ describe("ReferralsService Integration Tests", () => {
             );
 
             // Execute the method
-            const result = await ReferralsService.processUserReferralTracking(
+            await ReferralsService.processUserReferralTracking(
                 connections,
                 sqsEvent
+            );
+
+            const user = await getUserFromDb(usersConnection, mainUserId);
+            expect(user?.referralRank).toBe(ReferralRank.TA_LIEUTENANT);
+
+            // Add one more referral equal to or higher than TA_LIEUTENANT to qualify for TA_CAPTAIN
+            const fieldMarshalReferral = {
+                id: "field-marshal-id",
+                referralRank: ReferralRank.TA_FIELD_MARSHAL,
+            } as IUser;
+            allReferrals.push(fieldMarshalReferral);
+
+            const queueMessage2: IReferralQueueMessage = {
+                user: { id: mainUserId } as IUser,
+                referrals: allReferrals,
+                isTestReferralTracking: false,
+            };
+
+            const sqsEvent2 = createSQSEvent(
+                "test-message-captain",
+                queueMessage2
+            );
+
+            const result = await ReferralsService.processUserReferralTracking(
+                connections,
+                sqsEvent2
             );
 
             // Verify successful processing
@@ -872,7 +747,10 @@ describe("ReferralsService Integration Tests", () => {
             expect(result.failedMessageIds).toHaveLength(0);
 
             // Verify user rank progression
-            const updatedUser = await getUserFromDb(mainUserId);
+            const updatedUser = await getUserFromDb(
+                usersConnection,
+                mainUserId
+            );
             expect(updatedUser?.referralRank).toBe(ReferralRank.TA_CAPTAIN);
             expect(updatedUser?.maxRankFromReferrals).toBe(
                 ReferralRank.TA_CAPTAIN
@@ -884,32 +762,52 @@ describe("ReferralsService Integration Tests", () => {
             const mainAccountId = generateObjectId();
 
             // Setup main user
-            await createUser(
+            await setUpUserWithBalance(
+                usersConnection,
+                tradingEngineConnection,
                 mainUserId,
-                RANK_REQUIREMENTS[ReferralRank.TA_LIEUTENANT].personalATC,
-                RANK_REQUIREMENTS[ReferralRank.TA_LIEUTENANT].communityATC,
-                ReferralRank.TA_LIEUTENANT,
-                ReferralRank.TA_LIEUTENANT
-            );
-            await createTradingAccount(mainUserId, mainAccountId);
-            await createAccountBalance(
                 mainAccountId,
                 RANK_REQUIREMENTS[ReferralRank.TA_LIEUTENANT].personalATC
             );
 
-            // Create only 1 referral (insufficient for TA_LIEUTENANT)
-            const referrals: IUser[] = [
-                {
-                    id: "lonely-referral",
-                    referralRank: ReferralRank.TA_RECRUIT,
-                } as IUser,
-            ];
+            const referrals = await createReferralsWithRankAndBalance(
+                "ref-",
+                1000,
+                RANK_REQUIREMENTS[ReferralRank.TA_LIEUTENANT].communitySize,
+                usersConnection,
+                tradingEngineConnection,
+                ReferralRank.TA_RECRUIT
+            );
 
-            // Setup the lonely referral
-            const lonelyAccountId = generateObjectId();
-            await createUser("lonely-referral", 50, 0, ReferralRank.TA_RECRUIT);
-            await createTradingAccount("lonely-referral", lonelyAccountId);
-            await createAccountBalance(lonelyAccountId, 50);
+            const initialQueueMessage: IReferralQueueMessage = {
+                user: { id: mainUserId } as IUser,
+                referrals,
+                isTestReferralTracking: false,
+            };
+
+            const initialSqsEvent = createSQSEvent(
+                "test-demotion-1",
+                initialQueueMessage
+            );
+
+            // Execute the method
+            await ReferralsService.processUserReferralTracking(
+                connections,
+                initialSqsEvent
+            );
+
+            const lieutenantUser = await getUserFromDb(
+                usersConnection,
+                mainUserId
+            );
+
+            expect(lieutenantUser).toBeTruthy();
+            expect(lieutenantUser?.referralRank).toBe(
+                ReferralRank.TA_LIEUTENANT
+            );
+
+            // Lose one referral
+            referrals.pop();
 
             const queueMessage: IReferralQueueMessage = {
                 user: { id: mainUserId } as IUser,
@@ -919,23 +817,25 @@ describe("ReferralsService Integration Tests", () => {
 
             const sqsEvent = createSQSEvent("test-demotion-1", queueMessage);
 
-            // Execute the method
             const result = await ReferralsService.processUserReferralTracking(
                 connections,
                 sqsEvent
             );
 
-            // Verify successful processing
+            // // Verify successful processing
             expect(result.successMessageIds).toContain("test-demotion-1");
             expect(result.failedMessageIds).toHaveLength(0);
 
             // Verify user rank demotion
-            const updatedUser = await getUserFromDb(mainUserId);
+            const updatedUser = await getUserFromDb(
+                usersConnection,
+                mainUserId
+            );
             expect(updatedUser?.referralRank).toBe(ReferralRank.TA_RECRUIT);
             expect(updatedUser?.maxRankFromReferrals).toBe(
-                ReferralRank.TA_RECRUIT
+                ReferralRank.TA_LIEUTENANT
             );
-            expect(updatedUser?.communityATC).toBe(50);
+            expect(updatedUser?.communityATC).toBe(1000 * 19);
         });
 
         it("should demote user from TA_CAPTAIN to null when personal balance drops below minimum", async () => {
@@ -943,46 +843,35 @@ describe("ReferralsService Integration Tests", () => {
             const mainAccountId = generateObjectId();
 
             // Setup main user
-            await createUser(
+            await setUpUserWithBalance(
+                usersConnection,
+                tradingEngineConnection,
                 mainUserId,
-                RANK_REQUIREMENTS[ReferralRank.TA_CAPTAIN].personalATC,
-                RANK_REQUIREMENTS[ReferralRank.TA_CAPTAIN].communityATC,
-                ReferralRank.TA_CAPTAIN,
-                ReferralRank.TA_CAPTAIN
+                mainAccountId,
+                RANK_REQUIREMENTS[ReferralRank.TA_CAPTAIN].personalATC // Below minimum
             );
-            await createTradingAccount(mainUserId, mainAccountId);
-            await createAccountBalance(mainAccountId, 25); // Below minimum
 
             // Create referrals that would normally support TA_CAPTAIN
-            const referrals: IUser[] = [];
-            for (let i = 0; i < 3; i++) {
-                const userId = `captain-ref-${i}`;
-                const accountId = generateObjectId();
-
-                await createUser(userId, 100, 0, ReferralRank.TA_LIEUTENANT);
-                await createTradingAccount(userId, accountId);
-                await createAccountBalance(accountId, 2000);
-
-                referrals.push({
-                    id: userId,
-                    referralRank: ReferralRank.TA_LIEUTENANT,
-                } as IUser);
-            }
+            const lieutenantReferrals = await createReferralsWithRankAndBalance(
+                "lieut-ref-",
+                2000,
+                3,
+                usersConnection,
+                tradingEngineConnection,
+                ReferralRank.TA_LIEUTENANT
+            );
 
             // Add more referrals for community size
-            for (let i = 0; i < 97; i++) {
-                const userId = `extra-ref-${i}`;
-                const accountId = generateObjectId();
+            const moreReferrals = await createReferralsWithRankAndBalance(
+                "more-ref-",
+                100,
+                97,
+                usersConnection,
+                tradingEngineConnection,
+                ReferralRank.TA_RECRUIT
+            );
 
-                await createUser(userId, 50, 0, ReferralRank.TA_RECRUIT);
-                await createTradingAccount(userId, accountId);
-                await createAccountBalance(accountId, 100);
-
-                referrals.push({
-                    id: userId,
-                    referralRank: ReferralRank.TA_RECRUIT,
-                } as IUser);
-            }
+            const referrals = [...lieutenantReferrals, ...moreReferrals];
 
             const queueMessage: IReferralQueueMessage = {
                 user: { id: mainUserId } as IUser,
@@ -996,6 +885,27 @@ describe("ReferralsService Integration Tests", () => {
             );
 
             // Execute the method
+            await ReferralsService.processUserReferralTracking(
+                connections,
+                sqsEvent
+            );
+
+            const captainUser = await getUserFromDb(
+                usersConnection,
+                mainUserId
+            );
+            expect(captainUser?.referralRank).toBe(ReferralRank.TA_CAPTAIN);
+
+            // Reduce user balance
+            const reducedBalance =
+                RANK_REQUIREMENTS[ReferralRank.TA_CAPTAIN].personalATC - 470;
+
+            await updateUserBalance(
+                mainAccountId,
+                tradingEngineConnection,
+                reducedBalance
+            );
+
             const result = await ReferralsService.processUserReferralTracking(
                 connections,
                 sqsEvent
@@ -1006,9 +916,12 @@ describe("ReferralsService Integration Tests", () => {
             expect(result.failedMessageIds).toHaveLength(0);
 
             // Verify complete demotion due to insufficient personal balance
-            const updatedUser = await getUserFromDb(mainUserId);
+            const updatedUser = await getUserFromDb(
+                usersConnection,
+                mainUserId
+            );
             expect(updatedUser?.referralRank).toBeNull();
-            expect(updatedUser?.personalATC).toBe(25);
+            expect(updatedUser?.personalATC).toBe(30);
         });
     });
 });
