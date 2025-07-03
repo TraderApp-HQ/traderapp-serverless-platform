@@ -246,8 +246,8 @@ Resources:
                 - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:common-secrets/${Environment}*
             - Effect: Allow
               Action:
-                - sqs::SendMessage
-                - sqs::SendMessageBatch
+                - sqs:SendMessage
+                - sqs:SendMessageBatch
               Resource:
                 - !GetAtt trackUserOnboardingChecklistQueue.Arn
 
