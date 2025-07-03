@@ -1,5 +1,6 @@
 export interface ICommonSecrets {
     PORT: string;
+    SPLIT_IO_CLIENT_KEY: string;
 }
 export interface INotificationsServiceSecrets {
     SENDPULSE_API_USER_ID: string;
@@ -11,6 +12,7 @@ export interface IUsersServiceSecrets {
 }
 export interface ITradingEngineServiceSecrets {
     TRADING_ENGINE_SERVICE_DB_URL: string;
+    API_SECRET_KEY_ENCRYPTION_KEY: string;
 }
 export interface IWalletsServiceSecrets {
     CRYPTOPAY_BASE_URL: string;
