@@ -44,10 +44,7 @@ export class ReferralsService {
                 .toArray();
 
             if (!tradingAccounts.length) {
-                return {
-                    availableBalance: 0,
-                    lockedBalance: 0,
-                };
+                return { availableBalance: 0, lockedBalance: 0 };
             }
 
             // Get all trading account IDs
@@ -164,10 +161,7 @@ export class ReferralsService {
     public async processUserReferralTracking(
         connections: DatabaseConnections,
         event: SQSEvent
-    ): Promise<{
-        successMessageIds: string[];
-        failedMessageIds: string[];
-    }> {
+    ): Promise<{ successMessageIds: string[]; failedMessageIds: string[] }> {
         const queueMessages =
             getParsedQueueMessagesBody<IReferralQueueMessage>(event);
         const {
@@ -241,9 +235,7 @@ export class ReferralsService {
 
             return { successMessageIds, failedMessageIds };
         } catch (error) {
-            log.error("Error in processUserReferralTracking:", {
-                error,
-            });
+            log.error("Error in processUserReferralTracking:", { error });
             return {
                 successMessageIds: [],
                 failedMessageIds: queueMessages.map((qm) => qm.messageId),
@@ -273,10 +265,7 @@ export class ReferralsService {
             0
         );
 
-        return {
-            userBalance,
-            communityBalance: sumReferralBalance,
-        };
+        return { userBalance, communityBalance: sumReferralBalance };
     }
 
     public computeRank(criteria: IRankCriteria): IComputeRankResult {
