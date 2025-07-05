@@ -12,7 +12,10 @@ import { publishMessageToQueue } from "src/clients/SQSClient/helpers";
 import { IQueueMessageBody } from "src/config/interfaces";
 import { SecretLocation } from "src/config/secrets/enums";
 import { getSecrets } from "src/config/secrets/helpers";
-import { IWalletsServiceSecrets } from "src/config/secrets/interfaces";
+import {
+    ICommonSecrets,
+    IWalletsServiceSecrets,
+} from "src/config/secrets/interfaces";
 import { UserOnboardingChecklist } from "src/types/users-service";
 import {
     ITransaction,
@@ -26,7 +29,8 @@ import {
 
 export class WalletsService {
     private connection: mongoose.Connection | null = null;
-    private secrets: IWalletsServiceSecrets | null = null;
+    private walletSecrets: IWalletsServiceSecrets | null = null;
+    private commonSecrets: ICommonSecrets | null = null;
     private initialized: boolean = false;
     private initializationPromise: Promise<void> | null = null;
 
@@ -50,13 +54,21 @@ export class WalletsService {
                 console.log(
                     `=============== Getting secrets  for ${SecretLocation.walletsServiceSecrets}/${env} =====================`
                 );
-                this.secrets = await getSecrets<IWalletsServiceSecrets>(
-                    `${SecretLocation.walletsServiceSecrets}/${env}`
-                );
+                // Fetch both secrets once
+                const [walletSecrets, commonSecrets] = await Promise.all([
+                    getSecrets<IWalletsServiceSecrets>(
+                        `${SecretLocation.walletsServiceSecrets}/${env}`
+                    ),
+                    getSecrets<ICommonSecrets>(
+                        `${SecretLocation.commonSecrets}/${env}`
+                    ),
+                ]);
+                this.walletSecrets = walletSecrets as IWalletsServiceSecrets;
+                this.commonSecrets = commonSecrets as ICommonSecrets;
 
                 // Create connection
                 this.connection = mongoose.createConnection(
-                    this.secrets.WALLET_SERVICE_DB_URL
+                    this.walletSecrets.WALLET_SERVICE_DB_URL
                 );
 
                 this.initialized = true;
@@ -95,12 +107,19 @@ export class WalletsService {
     }
 
     // Get secrets (ensures initialization first)
-    private async getSecrets(): Promise<IWalletsServiceSecrets> {
+    private async getWalletSecrets(): Promise<IWalletsServiceSecrets> {
         await this.initialize();
-        if (!this.secrets) {
+        if (!this.walletSecrets) {
             throw new Error("Secrets not available");
         }
-        return this.secrets;
+        return this.walletSecrets;
+    }
+    private async getCommonSecrets(): Promise<ICommonSecrets> {
+        await this.initialize();
+        if (!this.commonSecrets) {
+            throw new Error("Common Secrets not available");
+        }
+        return this.commonSecrets;
     }
 
     // Record transaction to DB
@@ -196,13 +215,17 @@ export class WalletsService {
         try {
             // Ensure service is initialized
             await this.initialize();
-            const secrets = await this.getSecrets();
+            const [walletSecrets, commonSecrets] = await Promise.all([
+                this.getWalletSecrets(),
+                this.getCommonSecrets(),
+            ]);
 
             const cryptopayClient = new CryptoPayClient({
-                baseUrl: secrets.CRYPTOPAY_BASE_URL,
-                apiKey: secrets.CRYPTOPAY_DEPOSITS_API_KEY,
-                apiSecret: secrets.CRYPTOPAY_DEPOSITS_API_SECRET,
-                webhooksSharedSecret: secrets.CRYPTOPAY_WEBHOOK_SHARED_SECRET,
+                baseUrl: walletSecrets.CRYPTOPAY_BASE_URL,
+                apiKey: walletSecrets.CRYPTOPAY_DEPOSITS_API_KEY,
+                apiSecret: walletSecrets.CRYPTOPAY_DEPOSITS_API_SECRET,
+                webhooksSharedSecret:
+                    walletSecrets.CRYPTOPAY_WEBHOOK_SHARED_SECRET,
             });
 
             const connection = await this.getConnection();
@@ -403,8 +426,7 @@ export class WalletsService {
                             ) {
                                 await publishMessageToQueue({
                                     queueUrl:
-                                        process.env
-                                            .TRACK_USER_ONBOARDING_CHECKLIST_QUEUE ??
+                                        commonSecrets.TRACK_USER_ONBOARDING_CHECKLIST_QUEUE ??
                                         "",
                                     message: {
                                         userId,
