@@ -23,6 +23,12 @@ import {
     ReferralRankType,
 } from "src/config/interfaces";
 import { getParsedQueueMessagesBody } from "src/config/sqs/helpers";
+import "dotenv/config";
+import { getSecrets } from "src/config/secrets/helpers";
+import { ICommonSecrets } from "src/config/secrets/interfaces";
+import { SecretLocation } from "src/config/secrets/enums";
+import { publishMessageToQueue } from "src/clients/SQSClient/helpers";
+import { UserOnboardingChecklist } from "src/types/users-service";
 
 export class ReferralsService {
     constructor() {}
@@ -60,6 +66,7 @@ export class ReferralsService {
                 .find({
                     tradingAccountId: { $in: tradingAccountIds },
                     currency: "USDT",
+                    accountType: "FUTURES", // Only get FUTURES accounts balances
                 })
                 .toArray();
 
@@ -168,6 +175,10 @@ export class ReferralsService {
             tradingEngine: tradingEngineConnection,
             users: usersConnection,
         } = connections;
+        const env = process.env.ENV;
+        const commonSecrets = await getSecrets<ICommonSecrets>(
+                                `${SecretLocation.commonSecrets}/${env}`
+                            )
 
         const successMessageIds: string[] = [];
         const failedMessageIds: string[] = [];
@@ -196,13 +207,26 @@ export class ReferralsService {
                             }
                         );
 
-                        await this.updateUserInfoInDb({
-                            mongooseConnection: usersConnection,
-                            balance: balances,
-                            userId: user.id,
-                            maxRankFromReferrals,
-                            referralRank: rank,
-                        });
+                        await Promise.all([
+                            this.updateUserInfoInDb({
+                                mongooseConnection: usersConnection,
+                                balance: balances,
+                                userId: user.id,
+                                maxRankFromReferrals,
+                                referralRank: rank,
+                            }),
+                            publishMessageToQueue({
+                                queueUrl:
+                                    commonSecrets.TRACK_USER_ONBOARDING_CHECKLIST_QUEUE ??
+                                    "",
+                                message: {
+                                    userId: user.id,
+                                    onboardingChecklistItem:
+                                        UserOnboardingChecklist.IS_PERSONAL_ATC_FUNDED,
+                                    value: balances.userBalance.availableBalance > 50,
+                                },
+                            }),
+                        ]);
 
                         return {
                             messageId: queueMessage.messageId,
