@@ -49,6 +49,7 @@ export const createAccountBalance = async (
         .insertOne({
             tradingAccountId: new mongoose.Types.ObjectId(tradingAccountId),
             currency: "USDT",
+            accountType: "FUTURES",
             availableBalance,
             lockedBalance,
             updatedAt: new Date(),

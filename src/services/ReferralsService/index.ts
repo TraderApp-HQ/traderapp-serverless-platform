@@ -217,12 +217,12 @@ export class ReferralsService {
                             }),
                             publishMessageToQueue({
                                 queueUrl:
-                                    commonSecrets.TRACK_USER_ONBOARDING_CHECKLIST_QUEUE ??
-                                    "",
+                                commonSecrets.TRACK_USER_ONBOARDING_CHECKLIST_QUEUE ??
+                                "",
                                 message: {
                                     userId: user.id,
                                     onboardingChecklistItem:
-                                        UserOnboardingChecklist.IS_PERSONAL_ATC_FUNDED,
+                                    UserOnboardingChecklist.IS_PERSONAL_ATC_FUNDED,
                                     value: balances.userBalance.availableBalance > 50,
                                 },
                             }),
