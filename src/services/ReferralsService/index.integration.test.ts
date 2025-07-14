@@ -19,6 +19,18 @@ import {
     setUpUserWithBalance,
     updateUserBalance,
 } from "./integration.test.helpers";
+import { publishMessageToQueue } from "src/clients/SQSClient/helpers";
+import { getSecrets } from "src/config/secrets/helpers";
+
+jest.mock("src/config/secrets/helpers", () => ({
+    ...jest.requireActual("src/config/secrets/helpers"),
+    getSecrets: jest.fn(),
+}));
+
+jest.mock("src/clients/SQSClient/helpers", () => ({
+    ...jest.requireActual("src/clients/SQSClient/helpers"),
+    publishMessageToQueue: jest.fn(),
+}));
 
 describe("ReferralsService Integration Tests", () => {
     let mongoServer: MongoMemoryServer;
@@ -52,6 +64,14 @@ describe("ReferralsService Integration Tests", () => {
             tradingEngineConnection.on("connected", checkReady);
             usersConnection.on("connected", checkReady);
         });
+
+        // Mock getSecrets to always return a fake queue URL
+        (getSecrets as jest.Mock).mockResolvedValue({
+            TRACK_USER_ONBOARDING_CHECKLIST_QUEUE: "https://fake-queue-url",
+        });
+
+        // Mock publishMessageToQueue to just resolve (do nothing)
+        (publishMessageToQueue as jest.Mock).mockResolvedValue(undefined);
     });
 
     afterAll(async () => {

@@ -10,6 +10,7 @@ import {
     IUser,
     ITrackUserOnboardingChecklistInput,
     UserOnboardingChecklist,
+    Status,
 } from "src/types/users-service";
 import "dotenv/config";
 
@@ -124,6 +125,7 @@ class UsersService {
                 connection,
                 UsersServiceCollections.users
             );
+            let updatedUser: IUser | null;
 
             const successMessageIds: string[] = [];
             const failedMessageIds: string[] = [];
@@ -132,7 +134,7 @@ class UsersService {
             const userOnboardingTaskResult = await Promise.allSettled(
                 queueMessages.map(async (queue) => {
                     try {
-                        const { userId, onboardingChecklistItem } = queue.body;
+                        const { userId, onboardingChecklistItem, value } = queue.body;
 
                         // Get user
                         const user = await this.getUserById(userId);
@@ -147,17 +149,17 @@ class UsersService {
 
                         // Check that flag is not showOnboardingTask flag and flag is not turned on yet
                         if (
-                            onboardingChecklistItem !==
+                            (onboardingChecklistItem !==
                                 UserOnboardingChecklist.SHOW_ONBOARDING_STEPS &&
-                            !user[onboardingChecklistItem]
+                            !user[onboardingChecklistItem]) || onboardingChecklistItem === UserOnboardingChecklist.IS_PERSONAL_ATC_FUNDED
                         ) {
                             // Update the user onboarding task field
-                            const updatedUser =
+                            updatedUser =
                                 await usersCollection.findOneAndUpdate(
                                     { id: userId },
                                     {
                                         $set: {
-                                            [onboardingChecklistItem]: true,
+                                            [onboardingChecklistItem]: value ?? true,
                                         },
                                     }
                                 );
@@ -190,7 +192,7 @@ class UsersService {
                                 UserOnboardingChecklist.SHOW_ONBOARDING_STEPS &&
                             user[onboardingChecklistItem]
                         ) {
-                            await usersCollection.updateOne(
+                            updatedUser = await usersCollection.findOneAndUpdate(
                                 {
                                     id: userId,
                                     isEmailVerified: true,
@@ -202,6 +204,21 @@ class UsersService {
                                         [onboardingChecklistItem]: false,
                                     },
                                 }
+                            );
+                        }
+
+                        // Update user activation status if all compulsory conditions are met:
+                        const userStatus = updatedUser && updatedUser.isEmailVerified && updatedUser.isFirstDepositMade && updatedUser.isTradingAccountConnected && updatedUser.isPersonalATCFunded;
+                        if(updatedUser?.status !== userStatus) {
+                            await usersCollection.updateOne(
+                            {
+                                id: userId,
+                            },
+                            {
+                                $set: {
+                                    status: userStatus ? Status.ACTIVE : Status.INACTIVE,
+                                },
+                            }
                             );
                         }
 
