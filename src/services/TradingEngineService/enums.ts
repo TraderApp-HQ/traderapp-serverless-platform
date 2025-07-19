@@ -60,3 +60,17 @@ export enum ConnectionType {
     MANUAL = "MANUAL",
     FAST = "FAST",
 }
+
+export enum Exchange {
+    binance = "binance",
+    kucoin = "kucoin",
+}
+
+export enum TradingRuleName {
+    RISK_PERCENTAGE_PER_TRADE = "Risk Percentage Per Trade",
+    MAXIMUM_RISK_AMOUNT_PER_TRADE = "Maximum Risk Amount Per Trade",
+    MAXIMUM_LEVERAGE = "Maximum Leverage",
+    MINIMUM_RISK_REWARD_RATIO = "Minimum Risk-Reward Ratio",
+    MAXIMUM_CONCURRENT_TRADES = "Maximum Concurrent Trades",
+    DIRECTION_BALANCE_LIMIT = "Direction Balance Limit",
+}

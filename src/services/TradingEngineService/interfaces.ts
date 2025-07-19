@@ -2,6 +2,7 @@ import mongoose, { Document } from "mongoose";
 import {
     AccountConnectionStatus,
     ConnectionType,
+    Exchange,
     OrderBatchStatus,
     OrderPlacementType,
     OrderStatus,
@@ -133,4 +134,46 @@ export interface IUserTradingRule extends Document {
     lastResetToDefault: string | null;
     createdAt: string;
     updatedAt: string;
+}
+
+// export interface IActiveSignalsData {
+//     signalId: string;
+//     stopLoss: ISignalMilestone;
+//     targetProfits: ISignalMilestone[];
+//     entryPrice: number;
+//     isSignalTradable: boolean;
+//     assetName: string;
+//     baseCurrencyName: string;
+//     assetPair: string;
+//     exchanges: Exchange[];
+//     entryPriceUpperBound: number;
+//     entryPriceLowerBound: number;
+//     tradeSide: TradeSide;
+//     maxGain: number;
+// }
+
+export interface ISignalMilestone {
+    price: number;
+    percent: number;
+    isReached: boolean;
+}
+
+export interface IProcessUserTradingWithActiveSignalEvent {
+    signalId: string;
+    stopLoss: ISignalMilestone;
+    targetProfits: ISignalMilestone[];
+    entryPrice: number;
+    isSignalTradable: boolean;
+    baseAsset: string;
+    quoteCurrency: string;
+    assetPair: string;
+    exchange: Exchange;
+    entryPriceUpperBound: number;
+    entryPriceLowerBound: number;
+    tradeSide: TradeSide;
+    maxGain: number;
+    targetAmountToFill: number;
+    validUntil: string; // ISO date/time format
+    orderPlacementType?: OrderPlacementType; // default is MARKET if not provided
+    accountType?: AccountType; // default is FUTURES if not provided
 }

@@ -1,16 +1,17 @@
-export const WalletsServiceCollections = {
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.TradingEngineServiceCollections = exports.UsersServiceCollections = exports.WalletsServiceCollections = void 0;
+exports.WalletsServiceCollections = {
     userWalletDepositDetails: "user-wallet-deposit-details",
     transactions: "transactions",
     userWallets: "user-wallets",
     walletTypes: "wallet-types",
     currencies: "currencies",
 };
-
-export const UsersServiceCollections = {
+exports.UsersServiceCollections = {
     users: "users",
 };
-
-export const TradingEngineServiceCollections = {
+exports.TradingEngineServiceCollections = {
     trades: "trades",
     orders: "orders",
     orderBatches: "order-batches",

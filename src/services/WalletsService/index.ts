@@ -1,5 +1,6 @@
-import mongoose from "mongoose";
 import log from "@dazn/lambda-powertools-logger";
+import "dotenv/config";
+import mongoose from "mongoose";
 import {
     CryptoPayClient,
     CryptopayWebhookEventStatus,
@@ -7,6 +8,15 @@ import {
 } from "src/clients/CryptoPayClient";
 import { MongoDBClient } from "src/clients/MongoDBClient";
 import { WalletsServiceCollections } from "src/clients/MongoDBClient/constants";
+import { publishMessageToQueue } from "src/clients/SQSClient/helpers";
+import { IQueueMessageBody } from "src/config/interfaces";
+import { SecretLocation } from "src/config/secrets/enums";
+import { getSecrets } from "src/config/secrets/helpers";
+import {
+    ICommonSecrets,
+    IWalletsServiceSecrets,
+} from "src/config/secrets/interfaces";
+import { UserOnboardingChecklist } from "src/types/users-service";
 import {
     ITransaction,
     IUserWallet,
@@ -16,15 +26,11 @@ import {
     IWalletType,
     TransactionStatus,
 } from "src/types/wallets-service";
-import { IQueueMessageBody } from "src/config/interfaces";
-import { SecretLocation } from "src/config/secrets/enums";
-import { getSecrets } from "src/config/secrets/helpers";
-import { IWalletsServiceSecrets } from "src/config/secrets/interfaces";
-import "dotenv/config";
 
 export class WalletsService {
     private connection: mongoose.Connection | null = null;
-    private secrets: IWalletsServiceSecrets | null = null;
+    private walletSecrets: IWalletsServiceSecrets | null = null;
+    private commonSecrets: ICommonSecrets | null = null;
     private initialized: boolean = false;
     private initializationPromise: Promise<void> | null = null;
 
@@ -48,13 +54,21 @@ export class WalletsService {
                 console.log(
                     `=============== Getting secrets  for ${SecretLocation.walletsServiceSecrets}/${env} =====================`
                 );
-                this.secrets = await getSecrets<IWalletsServiceSecrets>(
-                    `${SecretLocation.walletsServiceSecrets}/${env}`
-                );
+                // Fetch both secrets once
+                const [walletSecrets, commonSecrets] = await Promise.all([
+                    getSecrets<IWalletsServiceSecrets>(
+                        `${SecretLocation.walletsServiceSecrets}/${env}`
+                    ),
+                    getSecrets<ICommonSecrets>(
+                        `${SecretLocation.commonSecrets}/${env}`
+                    ),
+                ]);
+                this.walletSecrets = walletSecrets as IWalletsServiceSecrets;
+                this.commonSecrets = commonSecrets as ICommonSecrets;
 
                 // Create connection
                 this.connection = mongoose.createConnection(
-                    this.secrets.WALLET_SERVICE_DB_URL
+                    this.walletSecrets.WALLET_SERVICE_DB_URL
                 );
 
                 this.initialized = true;
@@ -93,12 +107,19 @@ export class WalletsService {
     }
 
     // Get secrets (ensures initialization first)
-    private async getSecrets(): Promise<IWalletsServiceSecrets> {
+    private async getWalletSecrets(): Promise<IWalletsServiceSecrets> {
         await this.initialize();
-        if (!this.secrets) {
+        if (!this.walletSecrets) {
             throw new Error("Secrets not available");
         }
-        return this.secrets;
+        return this.walletSecrets;
+    }
+    private async getCommonSecrets(): Promise<ICommonSecrets> {
+        await this.initialize();
+        if (!this.commonSecrets) {
+            throw new Error("Common Secrets not available");
+        }
+        return this.commonSecrets;
     }
 
     // Record transaction to DB
@@ -194,13 +215,17 @@ export class WalletsService {
         try {
             // Ensure service is initialized
             await this.initialize();
-            const secrets = await this.getSecrets();
+            const [walletSecrets, commonSecrets] = await Promise.all([
+                this.getWalletSecrets(),
+                this.getCommonSecrets(),
+            ]);
 
             const cryptopayClient = new CryptoPayClient({
-                baseUrl: secrets.CRYPTOPAY_BASE_URL,
-                apiKey: secrets.CRYPTOPAY_DEPOSITS_API_KEY,
-                apiSecret: secrets.CRYPTOPAY_DEPOSITS_API_SECRET,
-                webhooksSharedSecret: secrets.CRYPTOPAY_WEBHOOK_SHARED_SECRET,
+                baseUrl: walletSecrets.CRYPTOPAY_BASE_URL,
+                apiKey: walletSecrets.CRYPTOPAY_DEPOSITS_API_KEY,
+                apiSecret: walletSecrets.CRYPTOPAY_DEPOSITS_API_SECRET,
+                webhooksSharedSecret:
+                    walletSecrets.CRYPTOPAY_WEBHOOK_SHARED_SECRET,
             });
 
             const connection = await this.getConnection();
@@ -380,6 +405,8 @@ export class WalletsService {
                 queueMessage: IQueueMessageBody<ICryptopayWebhookEvent>;
             }[];
 
+            // check if first deposit has not been made so we can deduct activation fee
+
             // Step 5: Credit user wallets for transactions that need crediting
             const creditResults = await Promise.allSettled(
                 filteredTransactionsToCredit.map(
@@ -391,6 +418,24 @@ export class WalletsService {
                                     queueMessage.body.data.paid_amount ?? "0"
                                 ),
                             });
+                            // Publish user to queue for first deposit tracking if paid_amount is greater than $10
+                            if (
+                                parseFloat(
+                                    queueMessage.body.data.paid_amount ?? "0"
+                                ) > 10
+                            ) {
+                                await publishMessageToQueue({
+                                    queueUrl:
+                                        commonSecrets.TRACK_USER_ONBOARDING_CHECKLIST_QUEUE ??
+                                        "",
+                                    message: {
+                                        userId,
+                                        onboardingChecklistItem:
+                                            UserOnboardingChecklist.IS_FIRST_DEPOSIT_MADE,
+                                    },
+                                });
+                            }
+
                             console.debug(
                                 `Successfully credited wallet for message ${messageId}`
                             );

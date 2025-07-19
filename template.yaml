@@ -108,6 +108,32 @@ Resources:
     Properties:
       QueueName: !Sub ${Environment}-createUserWalletDLQ
 
+  trackUserOnboardingChecklistQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${Environment}-trackUserOnboardingChecklistQueue
+      VisibilityTimeout: 60
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt trackUserOnboardingChecklistDLQ.Arn
+        maxReceiveCount: 3
+  trackUserOnboardingChecklistDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${Environment}-trackUserOnboardingChecklistDLQ
+
+  processUserTradingWithActiveSignalQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${Environment}-processUserTradingWithActiveSignalQueue
+      VisibilityTimeout: 60
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt processUserTradingWithActiveSignalDLQ.Arn
+        maxReceiveCount: 3
+  processUserTradingWithActiveSignalDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${Environment}-processUserTradingWithActiveSignalDLQ
+
 # create lambda functions
   sendEmailOtp:
     Type: AWS::Serverless::Function
@@ -230,6 +256,13 @@ Resources:
                 - secretsmanager:GetSecretValue
               Resource:
                 - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:wallets-service-secrets/${Environment}*
+                - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:common-secrets/${Environment}*
+            - Effect: Allow
+              Action:
+                - sqs:SendMessage
+                - sqs:SendMessageBatch
+              Resource:
+                - !GetAtt trackUserOnboardingChecklistQueue.Arn
 
   processCryptopayInvoiceWebhooks:
     Type: AWS::Serverless::Function
@@ -291,3 +324,70 @@ Resources:
               Resource:
                 - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:common-secrets/${Environment}*
                 - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:wallets-service-secrets/${Environment}*
+
+  trackUserOnboardingChecklist:
+    Type: AWS::Serverless::Function
+    Properties:
+      Environment:
+        Variables:
+          ENV: !Ref Environment
+      FunctionName: !Sub ${Environment}-trackUserOnboardingChecklist
+      Runtime: nodejs20.x
+      Architectures:
+        - x86_64
+      Handler: dist/handlers/track-user-onboarding-checklist.handler
+      Events:
+        SQSQueueEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt trackUserOnboardingChecklistQueue.Arn
+      MemorySize: 128
+      Timeout: 60
+      DeadLetterQueue:
+        Type: SQS
+        TargetArn: !GetAtt trackUserOnboardingChecklistDLQ.Arn
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource:
+                - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:users-service-secrets/${Environment}*
+
+  processUserTradingWithActiveSignal:
+    Type: AWS::Serverless::Function
+    Properties:
+      Environment:
+        Variables:
+          ENV: !Ref Environment
+      FunctionName: !Sub ${Environment}-processUserTradingWithActiveSignal
+      Runtime: nodejs20.x
+      Architectures:
+        - x86_64
+      Handler: dist/handlers/process-user-trading-with-active-signal.handler
+      Events:
+        SQSQueueEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt processUserTradingWithActiveSignalQueue.Arn
+      MemorySize: 128
+      Timeout: 60
+      DeadLetterQueue:
+        Type: SQS
+        TargetArn: !GetAtt processUserTradingWithActiveSignalDLQ.Arn
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource:
+                - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:trading-engine-service-secrets/${Environment}*
+                - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:common-secrets/${Environment}*
+            # - Effect: Allow
+            #   Action:
+            #     - sqs:SendMessage
+            #     - sqs:SendMessageBatch
+            #   Resource:
+            #     - !GetAtt trackUserOnboardingChecklistQueue.Arn

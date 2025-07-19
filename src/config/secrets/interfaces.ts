@@ -1,6 +1,7 @@
 export interface ICommonSecrets {
     PORT: string;
     SPLIT_IO_CLIENT_KEY: string;
+    TRACK_USER_ONBOARDING_CHECKLIST_QUEUE: string;
 }
 export interface INotificationsServiceSecrets {
     SENDPULSE_API_USER_ID: string;
