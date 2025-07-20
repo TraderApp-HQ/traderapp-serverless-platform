@@ -29,6 +29,7 @@ export enum UserOnboardingChecklist {
     SHOW_ONBOARDING_STEPS = "showOnboardingSteps",
     IS_PHONE_VERIFIED = "isPhoneVerified",
     IS_ID_VERIFIED = "isIdVerified",
+    IS_PERSONAL_ATC_FUNDED = "isPersonalATCFunded",
 }
 
 export type ReferralRankType = (typeof ReferralRank)[keyof typeof ReferralRank];
@@ -46,6 +47,7 @@ export interface IUser {
     isEmailVerified?: boolean;
     isFirstDepositMade?: boolean;
     isTradingAccountConnected?: boolean;
+    isPersonalATCFunded?: boolean;
     isSocialAccountConnected?: boolean;
     isOnboardingTaskDone?: boolean;
     showOnboardingSteps?: boolean;
@@ -68,4 +70,5 @@ export interface IUser {
 export interface ITrackUserOnboardingChecklistInput {
     userId: string;
     onboardingChecklistItem: UserOnboardingChecklist;
+    value?: boolean;
 }
