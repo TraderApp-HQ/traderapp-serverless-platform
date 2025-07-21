@@ -10,7 +10,7 @@ import {
     IUser,
     ITrackUserOnboardingChecklistInput,
     UserOnboardingChecklist,
-    Status,
+    TradingStatus,
 } from "src/types/users-service";
 import "dotenv/config";
 
@@ -134,7 +134,8 @@ class UsersService {
             const userOnboardingTaskResult = await Promise.allSettled(
                 queueMessages.map(async (queue) => {
                     try {
-                        const { userId, onboardingChecklistItem, value } = queue.body;
+                        const { userId, onboardingChecklistItem, value } =
+                            queue.body;
 
                         // Get user
                         const user = await this.getUserById(userId);
@@ -151,7 +152,9 @@ class UsersService {
                         if (
                             (onboardingChecklistItem !==
                                 UserOnboardingChecklist.SHOW_ONBOARDING_STEPS &&
-                            !user[onboardingChecklistItem]) || onboardingChecklistItem === UserOnboardingChecklist.IS_PERSONAL_ATC_FUNDED
+                                !user[onboardingChecklistItem]) ||
+                            onboardingChecklistItem ===
+                                UserOnboardingChecklist.IS_PERSONAL_ATC_FUNDED
                         ) {
                             // Update the user onboarding task field
                             updatedUser =
@@ -159,7 +162,8 @@ class UsersService {
                                     { id: userId },
                                     {
                                         $set: {
-                                            [onboardingChecklistItem]: value ?? true,
+                                            [onboardingChecklistItem]:
+                                                value ?? true,
                                         },
                                     }
                                 );
@@ -192,33 +196,42 @@ class UsersService {
                                 UserOnboardingChecklist.SHOW_ONBOARDING_STEPS &&
                             user[onboardingChecklistItem]
                         ) {
-                            updatedUser = await usersCollection.findOneAndUpdate(
+                            updatedUser =
+                                await usersCollection.findOneAndUpdate(
+                                    {
+                                        id: userId,
+                                        isEmailVerified: true,
+                                        isFirstDepositMade: true,
+                                        isTradingAccountConnected: true,
+                                    },
+                                    {
+                                        $set: {
+                                            [onboardingChecklistItem]: false,
+                                        },
+                                    }
+                                );
+                        }
+
+                        // Update user trading status if all compulsory conditions are met:
+                        const userTradingStatus =
+                            updatedUser &&
+                            updatedUser.isEmailVerified &&
+                            updatedUser.isFirstDepositMade &&
+                            updatedUser.isTradingAccountConnected &&
+                            updatedUser.isPersonalATCFunded;
+
+                        if (updatedUser?.tradingStatus !== userTradingStatus) {
+                            await usersCollection.updateOne(
                                 {
                                     id: userId,
-                                    isEmailVerified: true,
-                                    isFirstDepositMade: true,
-                                    isTradingAccountConnected: true,
                                 },
                                 {
                                     $set: {
-                                        [onboardingChecklistItem]: false,
+                                        tradingStatus: userTradingStatus
+                                            ? TradingStatus.ACTIVE
+                                            : TradingStatus.INACTIVE,
                                     },
                                 }
-                            );
-                        }
-
-                        // Update user activation status if all compulsory conditions are met:
-                        const userStatus = updatedUser && updatedUser.isEmailVerified && updatedUser.isFirstDepositMade && updatedUser.isTradingAccountConnected && updatedUser.isPersonalATCFunded;
-                        if(updatedUser?.status !== userStatus) {
-                            await usersCollection.updateOne(
-                            {
-                                id: userId,
-                            },
-                            {
-                                $set: {
-                                    status: userStatus ? Status.ACTIVE : Status.INACTIVE,
-                                },
-                            }
                             );
                         }
 
