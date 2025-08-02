@@ -220,16 +220,21 @@ class UsersService {
                             updatedUser.isTradingAccountConnected &&
                             updatedUser.isPersonalATCFunded;
 
-                        if (updatedUser?.tradingStatus !== userTradingStatus) {
+                        const updatedUserTradingStatus = userTradingStatus
+                            ? TradingStatus.ACTIVE
+                            : TradingStatus.INACTIVE;
+
+                        if (
+                            updatedUser?.tradingStatus !==
+                            updatedUserTradingStatus
+                        ) {
                             await usersCollection.updateOne(
                                 {
                                     id: userId,
                                 },
                                 {
                                     $set: {
-                                        tradingStatus: userTradingStatus
-                                            ? TradingStatus.ACTIVE
-                                            : TradingStatus.INACTIVE,
+                                        tradingStatus: updatedUserTradingStatus,
                                     },
                                 }
                             );
