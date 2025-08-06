@@ -125,7 +125,6 @@ class UsersService {
                 connection,
                 UsersServiceCollections.users
             );
-            let updatedUser: IUser | null;
 
             const successMessageIds: string[] = [];
             const failedMessageIds: string[] = [];
@@ -157,7 +156,7 @@ class UsersService {
                                 UserOnboardingChecklist.IS_PERSONAL_ATC_FUNDED
                         ) {
                             // Update the user onboarding task field
-                            updatedUser =
+                            const updatedUser =
                                 await usersCollection.findOneAndUpdate(
                                     { id: userId },
                                     {
@@ -168,23 +167,33 @@ class UsersService {
                                     }
                                 );
 
-                            // After the selected field is updated, confirm if other fields have been updated and and update the showOnboardingTask field to false
-                            if (
-                                updatedUser &&
-                                updatedUser.showOnboardingSteps
-                            ) {
+                            if (updatedUser) {
+                                const {
+                                    showOnboardingSteps,
+                                    isSocialAccountConnected,
+                                    isOnboardingTaskDone,
+                                    isPersonalATCFunded,
+                                } = updatedUser;
+
                                 await usersCollection.updateOne(
                                     {
                                         id: userId,
                                         isEmailVerified: true,
                                         isFirstDepositMade: true,
                                         isTradingAccountConnected: true,
-                                        isSocialAccountConnected: true,
-                                        isOnboardingTaskDone: true,
                                     },
                                     {
                                         $set: {
-                                            showOnboardingSteps: false,
+                                            // If the user has completed all compulsory onboarding tasks, update the showOnboardingSteps field
+                                            ...(showOnboardingSteps &&
+                                                isSocialAccountConnected &&
+                                                isOnboardingTaskDone && {
+                                                    showOnboardingSteps: false,
+                                                }),
+                                            // and update the trading status of the user depending on the personal ATC status after checking isEmailVerified -> isFirstDepositMade -> isTradingAccountConnected
+                                            tradingStatus: isPersonalATCFunded
+                                                ? TradingStatus.ACTIVE
+                                                : TradingStatus.INACTIVE,
                                         },
                                     }
                                 );
@@ -196,45 +205,16 @@ class UsersService {
                                 UserOnboardingChecklist.SHOW_ONBOARDING_STEPS &&
                             user[onboardingChecklistItem]
                         ) {
-                            updatedUser =
-                                await usersCollection.findOneAndUpdate(
-                                    {
-                                        id: userId,
-                                        isEmailVerified: true,
-                                        isFirstDepositMade: true,
-                                        isTradingAccountConnected: true,
-                                    },
-                                    {
-                                        $set: {
-                                            [onboardingChecklistItem]: false,
-                                        },
-                                    }
-                                );
-                        }
-
-                        // Update user trading status if all compulsory conditions are met:
-                        const userTradingStatus =
-                            updatedUser &&
-                            updatedUser.isEmailVerified &&
-                            updatedUser.isFirstDepositMade &&
-                            updatedUser.isTradingAccountConnected &&
-                            updatedUser.isPersonalATCFunded;
-
-                        const updatedUserTradingStatus = userTradingStatus
-                            ? TradingStatus.ACTIVE
-                            : TradingStatus.INACTIVE;
-
-                        if (
-                            updatedUser?.tradingStatus !==
-                            updatedUserTradingStatus
-                        ) {
                             await usersCollection.updateOne(
                                 {
                                     id: userId,
+                                    isEmailVerified: true,
+                                    isFirstDepositMade: true,
+                                    isTradingAccountConnected: true,
                                 },
                                 {
                                     $set: {
-                                        tradingStatus: updatedUserTradingStatus,
+                                        [onboardingChecklistItem]: false,
                                     },
                                 }
                             );
