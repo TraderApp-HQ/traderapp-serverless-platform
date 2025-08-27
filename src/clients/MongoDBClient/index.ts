@@ -48,6 +48,20 @@ export class MongoDBClient<T> {
         return result.modifiedCount > 0;
     }
 
+    async findOneAndUpdate(
+        filter: Record<string, any>,
+        update: Record<string, any>
+    ): Promise<T | null> {
+        const result = await this.connection
+            .collection(this.collection)
+            .findOneAndUpdate(
+                filter,
+                update,
+                { returnDocument: "after" } // returns the updated document
+            );
+        return result as T | null;
+    }
+
     async deleteOne(filter: Record<string, any>): Promise<boolean> {
         const result = await this.connection
             .collection(this.collection)
