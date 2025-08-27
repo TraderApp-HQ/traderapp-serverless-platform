@@ -4,6 +4,7 @@ import mongoose from "mongoose";
 import {
     CryptoPayClient,
     CryptopayWebhookEventStatus,
+    CryptopayWebhookEventType,
     ICryptopayWebhookEvent,
 } from "src/clients/CryptoPayClient";
 import { MongoDBClient } from "src/clients/MongoDBClient";
@@ -25,6 +26,7 @@ import {
     IWalletInput,
     IWalletType,
     TransactionStatus,
+    TransactionType,
 } from "src/types/wallets-service";
 
 export class WalletsService {
@@ -675,6 +677,196 @@ export class WalletsService {
             return {
                 successMessageIds: [],
                 failedMessageIds: queueMessages.map((qm) => qm.messageId),
+            };
+        }
+    }
+
+    public async processCryptoPayWithdrawalWebhook(
+        queueMessages: IQueueMessageBody<ICryptopayWebhookEvent>[]
+    ): Promise<{
+        successMessageIds: string[];
+        failedMessageIds: string[];
+    }> {
+        try {
+            await this.initialize();
+            const connection = await this.getConnection();
+
+            const transactionsCollection = new MongoDBClient<ITransaction>(
+                connection,
+                WalletsServiceCollections.transactions
+            );
+
+            const failedMessageIdSet = new Set<string>(); // retryable failures
+            const permanentFailureIdSet = new Set<string>(); // non-retryable, will be dropped
+
+            // Validate webhook type & lookup existing withdrawal transactions
+            const lookupResults = await Promise.allSettled(
+                queueMessages.map(async (message) => {
+                    const { body, messageId } = message;
+
+                    // Non-retryable: unsupported webhook type
+                    if (
+                        body.type !== CryptopayWebhookEventType.CoinWithdrawal
+                    ) {
+                        permanentFailureIdSet.add(messageId);
+                        log.warn(
+                            "Ignoring withdrawal webhook with invalid type",
+                            {
+                                messageId,
+                                type: body.type,
+                            }
+                        );
+                        return null;
+                    }
+
+                    const tx = await transactionsCollection.findOne({
+                        externalTransactionId: body.data.id,
+                        transactionType: TransactionType.WITHDRAWAL,
+                    });
+
+                    // Non-retryable: we will never find a transaction later (id mismatch / not created)
+                    if (!tx) {
+                        permanentFailureIdSet.add(messageId);
+                        log.warn(
+                            "Ignoring withdrawal webhook with unknown transaction id",
+                            {
+                                messageId,
+                                externalId: body.data.id,
+                            }
+                        );
+                        return null;
+                    }
+
+                    return {
+                        messageId,
+                        queueMessage: message,
+                        transaction: tx,
+                    };
+                })
+            );
+
+            const resolved: {
+                messageId: string;
+                queueMessage: IQueueMessageBody<ICryptopayWebhookEvent>;
+                transaction: ITransaction;
+            }[] = [];
+
+            lookupResults.forEach((res, i) => {
+                const messageId = queueMessages[i].messageId;
+                if (res.status === "fulfilled") {
+                    // fulfilled may be null (permanent skip) or an object
+                    if (res.value) {
+                        resolved.push(res.value);
+                    }
+                } else {
+                    failedMessageIdSet.add(messageId);
+                    log.error("Withdrawal lookup transient failure", {
+                        messageId,
+                        error: res.reason,
+                    });
+                }
+            });
+
+            // Update statuses (only for successfully resolved items)
+            const statusUpdateResults = await Promise.allSettled(
+                resolved.map(
+                    async ({ queueMessage: { body }, transaction }) => {
+                        switch (body.data.status) {
+                            case CryptopayWebhookEventStatus.completed:
+                                await transactionsCollection.updateOne(
+                                    {
+                                        _id: transaction._id,
+                                        status: {
+                                            $ne: TransactionStatus.SUCCESS,
+                                        },
+                                    },
+                                    {
+                                        $set: {
+                                            status: TransactionStatus.SUCCESS,
+                                            transactionHash:
+                                                body.data.txid ??
+                                                transaction.transactionHash,
+                                        },
+                                    }
+                                );
+                                break;
+                            case CryptopayWebhookEventStatus.cancelled:
+                                await transactionsCollection.updateOne(
+                                    {
+                                        _id: transaction._id,
+                                        status: {
+                                            $ne: TransactionStatus.FAILED,
+                                        },
+                                    },
+                                    {
+                                        $set: {
+                                            status: TransactionStatus.FAILED,
+                                            transactionHash:
+                                                body.data.txid ??
+                                                transaction.transactionHash,
+                                        },
+                                    }
+                                );
+                                break;
+                            default:
+                                await transactionsCollection.updateOne(
+                                    {
+                                        _id: transaction._id,
+                                        status: {
+                                            $ne: TransactionStatus.PENDING,
+                                        },
+                                    },
+                                    {
+                                        $set: {
+                                            status: TransactionStatus.PENDING,
+                                            transactionHash:
+                                                body.data.txid ??
+                                                transaction.transactionHash,
+                                        },
+                                    }
+                                );
+                                break;
+                        }
+                    }
+                )
+            );
+
+            statusUpdateResults.forEach((res, i) => {
+                const messageId = resolved[i].messageId;
+                if (res.status !== "fulfilled") {
+                    failedMessageIdSet.add(messageId);
+                    log.error(
+                        "Failed to update withdrawal transaction status (transient)",
+                        {
+                            messageId,
+                            error: res.status === "rejected" ? res.reason : res,
+                        }
+                    );
+                }
+            });
+
+            const failedMessageIds = Array.from(failedMessageIdSet);
+            const successMessageIds = queueMessages
+                .map((m) => m.messageId)
+                .filter((id) => !failedMessageIdSet.has(id));
+
+            if (permanentFailureIdSet.size) {
+                log.info(
+                    "Permanent withdrawal webhook failures skipped (no retry)",
+                    {
+                        permanentFailureIds: Array.from(permanentFailureIdSet),
+                    }
+                );
+            }
+
+            return { successMessageIds, failedMessageIds };
+        } catch (error) {
+            log.error("General error in processCryptoPayWithdrawalWebhook:", {
+                error,
+            });
+            return {
+                successMessageIds: [],
+                failedMessageIds: queueMessages.map((m) => m.messageId),
             };
         }
     }

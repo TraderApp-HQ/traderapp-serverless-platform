@@ -1,0 +1,20 @@
+{
+    "Records": [
+        {
+            "messageId": "4b5c7de2-1111-4aaa-b222-9f0e8c0c1234",
+            "receiptHandle": "AQEB",
+            "body": "{\"data\":{\"id\":\"9294f667-b3a8-4ff4-b9fe-2d69d0ef7519\",\"fee\":\"0.121213\",\"risk\":null,\"txid\":\"0x06d428778b4f534dcb86cac06da814549e079d86a50af291f312ab07a548326c\",\"status\":\"completed\",\"address\":\"0x0FCDb8C9F31695340efED0809861F4D6e9ea398C\",\"network\":\"ethereum\",\"custom_id\":\"68a66fd484be531db66210e3\",\"created_at\":\"2025-08-21T01:01:09+00:00\",\"customer_id\":null,\"description\":null,\"network_fee\":\"0.0\",\"fee_currency\":\"USDT\",\"charged_amount\":\"12.121213\",\"received_amount\":\"12.0\",\"charged_currency\":\"USDT\",\"network_fee_level\":\"average\",\"received_currency\":\"USDT\"},\"type\":\"CoinWithdrawal\",\"event\":\"status_changed\"}",
+            "attributes": {
+                "ApproximateReceiveCount": "1",
+                "SentTimestamp": "1729383908999",
+                "SenderId": "AIDAYL6XCX7JKIAG7VEHQ",
+                "ApproximateFirstReceiveTimestamp": "1729383909001"
+            },
+            "messageAttributes": {},
+            "md5OfBody": "0d34f7ef1aa0fd111122223333444455",
+            "eventSource": "aws:sqs",
+            "eventSourceARN": "arn:aws:sqs:eu-west-1:123456789012:dev-cryptopayWithdrawalWebhooksQueue",
+            "awsRegion": "eu-west-1"
+        }
+    ]
+}

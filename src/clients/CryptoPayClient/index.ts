@@ -25,6 +25,12 @@ export enum CryptopayWebhookEventStatus {
     processing = "processing",
 }
 
+export enum CryptopayWebhookEventType {
+    ChannelPayment = "ChannelPayment",
+    Invoice = "Invoice",
+    CoinWithdrawal = "CoinWithdrawal",
+}
+
 export interface ICryptoPayExchangeInfo {
     fee: string;
     pair: string;
@@ -45,7 +51,7 @@ export interface ICryptoPayTransaction {
 }
 
 export interface ICryptopayWebhookEvent {
-    type: "ChannelPayment" | "Invoice" | "CoinWithdrawal";
+    type: CryptopayWebhookEventType;
     event:
         | "created"
         | "completed"
