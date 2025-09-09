@@ -795,7 +795,10 @@ export class WalletsService {
                                     {
                                         _id: transaction._id,
                                         status: {
-                                            $ne: TransactionStatus.FAILED,
+                                            $nin: [
+                                                TransactionStatus.FAILED,
+                                                TransactionStatus.SUCCESS,
+                                            ],
                                         },
                                     },
                                     {
@@ -813,7 +816,10 @@ export class WalletsService {
                                     {
                                         _id: transaction._id,
                                         status: {
-                                            $ne: TransactionStatus.PENDING,
+                                            $nin: [
+                                                TransactionStatus.PENDING,
+                                                TransactionStatus.SUCCESS,
+                                            ],
                                         },
                                     },
                                     {
