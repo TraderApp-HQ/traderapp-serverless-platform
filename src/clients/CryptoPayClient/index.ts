@@ -332,8 +332,8 @@ export class CryptoPayClient {
             fromWalletAddress,
             toWalletAddress,
             transactionNetwork: transaction.data.network,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
+            createdAt: new Date(),
+            updatedAt: new Date(),
         };
     }
 }

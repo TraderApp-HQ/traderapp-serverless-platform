@@ -73,8 +73,8 @@ export interface ITransaction {
     paymentProviderName: string;
     externalTransactionId: string;
     transactionHash?: string;
-    createdAt: string;
-    updatedAt: string;
+    createdAt: Date;
+    updatedAt: Date;
 }
 
 export interface IUserWallet {
