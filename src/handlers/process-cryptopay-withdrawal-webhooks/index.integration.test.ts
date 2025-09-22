@@ -89,7 +89,7 @@ describe("process-cryptopay-withdrawal-webhooks handler (integration)", () => {
         status: TransactionStatus = TransactionStatus.PENDING,
         amount = 25
     ) => {
-        const now = new Date().toISOString();
+        const now = new Date();
         const doc: ITransactionWithObjectId = {
             transactionNetwork: "ETH",
             userId: "user-123",
