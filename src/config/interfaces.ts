@@ -9,6 +9,7 @@ export interface IMessageRecipient {
     phoneNumber?: string;
     emailAddress?: string;
     countryPhoneCode?: string;
+    amount?: number;
 }
 
 export interface IQueueMessageBodyObject {

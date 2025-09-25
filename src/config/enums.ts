@@ -6,4 +6,5 @@ export enum EventTemplate {
     OTP = "OTP",
     CREATE_USER = "CREATE_USER",
     INVITE_USER = "INVITE_USER",
+    SEND_EMAIL = "SEND_EMAIL",
 }
