@@ -9,6 +9,7 @@ import {
     PasswordResetTemplate,
     ReferralTemplate,
 } from "src/templates/email-templates";
+import SendDepositConfirmationEmailTemplate from "src/templates/email-templates/send-deposit-confirmation-email-template";
 
 interface IFormatEmailMessageInput {
     recipient: IMessageRecipient;
@@ -73,6 +74,13 @@ export const formatEmailMessageBody = ({
                 USER_NAME: recipient.firstName,
                 AMOUNT: amount?.toString(),
                 REF: message,
+            });
+
+        case EventTemplate.SEND_DEPOSIT_CONFIRMATION_EMAIL:
+            return applyReplacements(SendDepositConfirmationEmailTemplate, {
+                USER_NAME: recipient.firstName,
+                AMOUNT: amount?.toString(),
+                // TRANSACTION_ID: metadata?.transactionId,
             });
 
         case EventTemplate.INVITE_USER:

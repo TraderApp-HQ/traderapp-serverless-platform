@@ -10,6 +10,14 @@ export interface IMessageRecipient {
     emailAddress?: string;
     countryPhoneCode?: string;
     amount?: number;
+    metadata?: IMetadata;
+}
+
+export interface IMetadata {
+    transactionId?: string;
+    amount?: number;
+    event?: string;
+    message?: string;
 }
 
 export interface IQueueMessageBodyObject {
