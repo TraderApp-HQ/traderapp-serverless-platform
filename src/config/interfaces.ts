@@ -9,16 +9,12 @@ export interface IMessageRecipient {
     phoneNumber?: string;
     emailAddress?: string;
     countryPhoneCode?: string;
-    amount?: number;
     metadata?: IMetadata;
-    transactionId?: string;
 }
 
 export interface IMetadata {
     transactionId?: string;
     amount?: number;
-    event?: string;
-    message?: string;
 }
 
 export interface IQueueMessageBodyObject {

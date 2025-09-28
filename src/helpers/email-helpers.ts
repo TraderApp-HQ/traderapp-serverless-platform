@@ -1,6 +1,5 @@
 import { EventTemplate } from "src/config/enums";
-import { IMessageRecipient } from "src/config/interfaces";
-import SendEmailTemplate from "src/templates/email-templates/send-email-notifications-template";
+import { IMessageRecipient, IMetadata } from "src/config/interfaces";
 import {
     CreateUserTemplate,
     GeneralTemplate,
@@ -16,8 +15,7 @@ interface IFormatEmailMessageInput {
     message: string;
     event: EventTemplate;
     sender?: IMessageRecipient;
-    amount?: number;
-    transactionId?: string;
+    metadata?: IMetadata;
 }
 
 const applyReplacements = (
@@ -69,18 +67,11 @@ export const formatEmailMessageBody = ({
                 USER_NAME: recipient.firstName,
             });
 
-        case EventTemplate.SEND_EMAIL:
-            return applyReplacements(SendEmailTemplate, {
-                USER_NAME: recipient.firstName,
-                AMOUNT: recipient.amount?.toString(),
-                REF: message,
-            });
-
         case EventTemplate.SEND_DEPOSIT_CONFIRMATION_EMAIL:
             return applyReplacements(SendDepositConfirmationEmailTemplate, {
                 USER_NAME: recipient.firstName,
-                AMOUNT: recipient.amount?.toString(),
-                TRANSACTION_ID: recipient?.transactionId,
+                AMOUNT: recipient.metadata?.amount?.toString(),
+                TRANSACTION_ID: recipient.metadata?.transactionId
             });
 
         case EventTemplate.INVITE_USER:
