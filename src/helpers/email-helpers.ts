@@ -36,6 +36,7 @@ export const formatEmailMessageBody = ({
     message,
     event,
     sender,
+    metadata,
 }: IFormatEmailMessageInput): string => {
     switch (event) {
         case EventTemplate.GENERAL:
@@ -70,8 +71,8 @@ export const formatEmailMessageBody = ({
         case EventTemplate.SEND_DEPOSIT_CONFIRMATION_EMAIL:
             return applyReplacements(SendDepositConfirmationEmailTemplate, {
                 USER_NAME: recipient.firstName,
-                AMOUNT: recipient.metadata?.amount?.toString(),
-                TRANSACTION_ID: recipient.metadata?.transactionId,
+                AMOUNT: metadata?.amount?.toString(),
+                TRANSACTION_ID: metadata?.transactionId,
             });
 
         case EventTemplate.INVITE_USER:

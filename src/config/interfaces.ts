@@ -23,6 +23,7 @@ export interface IQueueMessageBodyObject {
     message: string;
     event: EventTemplate;
     sender?: IMessageRecipient;
+    metadata?: IMetadata;
 }
 
 export interface IQueueMessageBody<T = IQueueMessageBodyObject>

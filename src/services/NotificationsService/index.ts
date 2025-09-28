@@ -18,27 +18,29 @@ export class NotificationsService {
         const results: EmailResult[] = [];
 
         for (const message of queueMessages) {
-            for (const recipient of message.body.recipients) {
+            const { recipients, message: msg, event, sender, subject, metadata } = message.body;
+
+            for (const recipient of recipients) {
                 const body = formatEmailMessageBody({
                     recipient,
-                    message: message.body.message,
-                    event: message.body.event,
-                    sender: message.body.sender,
+                    message: msg,
+                    event,
+                    sender,
+                    metadata,
                 });
 
-                const subject =
-                    message.body.subject ?? "TraderApp Notification";
+                const finalSubject = subject ?? "TraderApp Notification";
 
                 try {
                     await sendpulseEmailService.sendEmail({
                         recipient: recipient.emailAddress ?? "",
-                        subject,
+                        subject: finalSubject,
                         body,
                     });
 
                     results.push({
                         recipient: recipient.emailAddress ?? "",
-                        subject,
+                        subject: finalSubject,
                         success: true,
                     });
                 } catch (err: unknown) {
@@ -51,7 +53,7 @@ export class NotificationsService {
 
                     results.push({
                         recipient: recipient.emailAddress ?? "",
-                        subject,
+                        subject: finalSubject,
                         success: false,
                         error: errorMessage,
                     });
