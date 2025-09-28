@@ -361,6 +361,6 @@ const SendDepositConfirmationEmailTemplate = `<!doctype html>
   </div>
 </body>
 
-</html>`
+</html>`;
 
 export default SendDepositConfirmationEmailTemplate;

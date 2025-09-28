@@ -11,6 +11,7 @@ export interface IMessageRecipient {
     countryPhoneCode?: string;
     amount?: number;
     metadata?: IMetadata;
+    transactionId?: string;
 }
 
 export interface IMetadata {

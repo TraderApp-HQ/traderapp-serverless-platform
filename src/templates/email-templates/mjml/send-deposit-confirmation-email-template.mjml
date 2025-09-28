@@ -48,7 +48,9 @@
                         font-weight="200"
                         line-height="1.6"
                     >
-                        A deposit transaction has been successfully processed, and the amount of 400 USDT has been credited to your TraderApp account.
+                        A deposit transaction has been successfully processed,
+                        and the amount of 400 USDT has been credited to your
+                        TraderApp account.
                     </mj-text>
 
                     <!-- Transaction Details -->
@@ -60,11 +62,11 @@
                                 line-height="1.8"
                             >
                                 Transaction Details:
-                                <br/>
+                                <br />
                                 Amount Deposited: {AMOUNT}
-                                <br/>
+                                <br />
                                 Date & Time: 27-June-2025 08:51 AM
-                                <br/>
+                                <br />
                                 Transaction ID: {TRANSACTION_ID}
                             </mj-text>
                         </mj-column>
@@ -89,8 +91,11 @@
                         font-weight="200"
                         line-height="1.6"
                     >
-                        You can now explore trading opportunities and take another step towards financial freedom.<br/>
-                        If you did not authorize this deposit or observe any irregularities, kindly contact our support team immediately at
+                        You can now explore trading opportunities and take
+                        another step towards financial freedom.<br />
+                        If you did not authorize this deposit or observe any
+                        irregularities, kindly contact our support team
+                        immediately at
                         <a
                             href="mailto:support@traderapp.com"
                             style="color: #1836b2; text-decoration: none"

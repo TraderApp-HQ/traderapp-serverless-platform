@@ -17,6 +17,7 @@ interface IFormatEmailMessageInput {
     event: EventTemplate;
     sender?: IMessageRecipient;
     amount?: number;
+    transactionId?: string;
 }
 
 const applyReplacements = (
@@ -37,7 +38,6 @@ export const formatEmailMessageBody = ({
     message,
     event,
     sender,
-    amount,
 }: IFormatEmailMessageInput): string => {
     switch (event) {
         case EventTemplate.GENERAL:
@@ -72,15 +72,15 @@ export const formatEmailMessageBody = ({
         case EventTemplate.SEND_EMAIL:
             return applyReplacements(SendEmailTemplate, {
                 USER_NAME: recipient.firstName,
-                AMOUNT: amount?.toString(),
+                AMOUNT: recipient.amount?.toString(),
                 REF: message,
             });
 
         case EventTemplate.SEND_DEPOSIT_CONFIRMATION_EMAIL:
             return applyReplacements(SendDepositConfirmationEmailTemplate, {
                 USER_NAME: recipient.firstName,
-                AMOUNT: amount?.toString(),
-                // TRANSACTION_ID: metadata?.transactionId,
+                AMOUNT: recipient.amount?.toString(),
+                TRANSACTION_ID: recipient?.transactionId,
             });
 
         case EventTemplate.INVITE_USER:
