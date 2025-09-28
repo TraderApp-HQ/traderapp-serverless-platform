@@ -71,7 +71,7 @@ export const formatEmailMessageBody = ({
             return applyReplacements(SendDepositConfirmationEmailTemplate, {
                 USER_NAME: recipient.firstName,
                 AMOUNT: recipient.metadata?.amount?.toString(),
-                TRANSACTION_ID: recipient.metadata?.transactionId
+                TRANSACTION_ID: recipient.metadata?.transactionId,
             });
 
         case EventTemplate.INVITE_USER:

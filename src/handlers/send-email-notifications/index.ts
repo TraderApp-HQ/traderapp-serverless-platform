@@ -9,5 +9,4 @@ export const handler = async (event: SQSEvent): Promise<void> => {
 
     const notificationService = NotificationsService;
     await notificationService.processMessagesAndSendEmails(queueMessages);
-
 };
