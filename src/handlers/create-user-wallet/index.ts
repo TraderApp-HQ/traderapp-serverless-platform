@@ -10,7 +10,7 @@ export const handler = async (event: SQSEvent): Promise<SQSBatchResponse> => {
     const queueMessages = getParsedQueueMessagesBody<IWalletInput>(event);
     const { failedMessageIds } =
         await WalletsService.createUserWallet(queueMessages);
-        
+
     return {
         batchItemFailures: failedMessageIds.map((id) => ({
             itemIdentifier: id,

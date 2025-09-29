@@ -18,7 +18,14 @@ export class NotificationsService {
         const results: EmailResult[] = [];
 
         for (const message of queueMessages) {
-            const { recipients, message: msg, event, sender, subject, metadata } = message.body;
+            const {
+                recipients,
+                message: msg,
+                event,
+                sender,
+                subject,
+                metadata,
+            } = message.body;
 
             for (const recipient of recipients) {
                 const body = formatEmailMessageBody({
