@@ -1,75 +1,45 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { IQueueMessageBody } from "src/config/interfaces";
 import { formatEmailMessageBody } from "src/helpers/email-helpers";
 import SendpulseEmailService from "src/utils/send-pulse";
 
-export interface EmailResult {
-    recipient: string;
-    subject: string;
-    success: boolean;
-    error?: string;
-}
-
 export class NotificationsService {
+    constructor() {}
+
     public async processMessagesAndSendEmails(
         queueMessages: IQueueMessageBody[]
-    ): Promise<EmailResult[]> {
+    ): Promise<void> {
         const sendpulseEmailService = await SendpulseEmailService.create();
-
-        const results: EmailResult[] = [];
-
-        for (const message of queueMessages) {
-            const {
-                recipients,
-                message: msg,
-                event,
-                sender,
-                subject,
-                metadata,
-            } = message.body;
-
-            for (const recipient of recipients) {
+        const promises: Promise<any>[] = [];
+        queueMessages.forEach((message) => {
+            message.body.recipients.forEach((recipient) => {
                 const body = formatEmailMessageBody({
                     recipient,
-                    message: msg,
-                    event,
-                    sender,
-                    metadata,
+                    message: message.body.message,
+                    event: message.body.event,
+                    sender: message.body.sender,
+                    metadata: message.body.metadata,
                 });
-
-                const finalSubject = subject ?? "TraderApp Notification";
-
-                try {
-                    await sendpulseEmailService.sendEmail({
+                const subject =
+                    message.body.subject ?? "TraderApp Notification";
+                promises.push(
+                    sendpulseEmailService.sendEmail({
                         recipient: recipient.emailAddress ?? "",
-                        subject: finalSubject,
+                        subject,
                         body,
-                    });
-
-                    results.push({
-                        recipient: recipient.emailAddress ?? "",
-                        subject: finalSubject,
-                        success: true,
-                    });
-                } catch (err: unknown) {
-                    const errorMessage =
-                        err instanceof Error
-                            ? err.message
-                            : typeof err === "string"
-                              ? err
-                              : "Unknown error";
-
-                    results.push({
-                        recipient: recipient.emailAddress ?? "",
-                        subject: finalSubject,
-                        success: false,
-                        error: errorMessage,
-                    });
-                }
-            }
-        }
-
-        return results;
+                    })
+                );
+            });
+        });
+        await Promise.all(promises);
     }
+
+    // public async sendBulkEmailWithSendpulse(
+    //     queueMessages: IQueueEmailMessageBody[]
+    // ): Promise<void> {
+    //     const sendpulseEmailService = await SendpulseEmailService.create();
+    //     sendpulseEmailService.sendBulkEmail({ recipients, subject, body, from });
+    // }
 }
 
 export default new NotificationsService();
