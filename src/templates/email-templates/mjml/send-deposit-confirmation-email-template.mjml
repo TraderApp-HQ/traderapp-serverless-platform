@@ -49,8 +49,8 @@
                         line-height="1.6"
                     >
                         A deposit transaction has been successfully processed,
-                        and the amount of {AMOUNT} USDT has been credited to your
-                        TraderApp account.
+                        and the amount of {AMOUNT} USDT has been credited to
+                        your TraderApp account.
                     </mj-text>
 
                     <!-- Transaction Details -->

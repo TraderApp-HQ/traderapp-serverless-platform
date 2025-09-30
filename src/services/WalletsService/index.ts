@@ -438,21 +438,24 @@ export class WalletsService {
                                     },
                                 });
                             }
-                            
+
                             // publish to notification queue
                             const amount = parseFloat(
                                 queueMessage.body.data.paid_amount ?? "0"
-                            ) 
+                            );
 
-                            const transactionId = queueMessage.body.data.txid ?? ""
+                            const transactionId =
+                                queueMessage.body.data.txid ?? "";
 
-                            const queueUrl = this.commonSecrets?.EMAIL_NOTIFICATIONS_QUEUE ?? ""
+                            const queueUrl =
+                                this.commonSecrets?.EMAIL_NOTIFICATIONS_QUEUE ??
+                                "";
                             await publishDepositConfirmationToQueue({
                                 amount,
                                 transactionId,
                                 userId,
                                 queueUrl,
-                            })
+                            });
 
                             console.debug(
                                 `Successfully credited wallet for message ${messageId}`

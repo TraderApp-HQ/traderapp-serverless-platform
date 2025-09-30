@@ -9,22 +9,23 @@ interface IPublishDepositConfirmationToQueueInput {
     queueUrl: string;
 }
 
-export const publishDepositConfirmationToQueue = async (input: IPublishDepositConfirmationToQueueInput) => {
+export const publishDepositConfirmationToQueue = async (
+    input: IPublishDepositConfirmationToQueueInput
+) => {
     const { userId, amount, transactionId, queueUrl } = input;
 
-    const user = await UsersService.getUserById(userId)
+    const user = await UsersService.getUserById(userId);
     if (!user) {
-        throw new Error(`User with the ID ${userId} not found`)
+        throw new Error(`User with the ID ${userId} not found`);
     }
 
     await publishMessageToQueue({
-        queueUrl, 
+        queueUrl,
         message: JSON.stringify({
-            recipient: [{ firstName: user.firstName, email: user.email, }],
+            recipient: [{ firstName: user.firstName, email: user.email }],
             message: "",
             event: EventTemplate.SEND_DEPOSIT_CONFIRMATION_EMAIL,
-            metadata: { amount, transactionId }
-        })
-    })
-}
-
+            metadata: { amount, transactionId },
+        }),
+    });
+};
