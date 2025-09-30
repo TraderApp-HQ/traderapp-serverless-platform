@@ -49,7 +49,7 @@
                         line-height="1.6"
                     >
                         A deposit transaction has been successfully processed,
-                        and the amount of 400 USDT has been credited to your
+                        and the amount of {AMOUNT} USDT has been credited to your
                         TraderApp account.
                     </mj-text>
 
@@ -63,7 +63,7 @@
                             >
                                 Transaction Details:
                                 <br />
-                                Amount Deposited: {AMOUNT}
+                                Amount Deposited: {AMOUNT} USDT
                                 <br />
                                 Date & Time: 27-June-2025 08:51 AM
                                 <br />
@@ -73,18 +73,6 @@
                     </mj-section>
 
                     <!-- CTA -->
-                    <mj-section>
-                        <mj-column>
-                            <mj-button
-                                background-color="#1836B2"
-                                border-radius="6px"
-                                href="https://traderapp.finance"
-                            >
-                                View Dashboard
-                            </mj-button>
-                        </mj-column>
-                    </mj-section>
-
                     <!-- Support -->
                     <mj-text
                         font-size="16px"

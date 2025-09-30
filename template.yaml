@@ -272,6 +272,8 @@ Resources:
                 - sqs:SendMessageBatch
               Resource:
                 - !GetAtt trackUserOnboardingChecklistQueue.Arn
+                - !GetAtt emailNotificationsQueue.Arn
+
 
   processCryptopayInvoiceWebhooks:
     Type: AWS::Serverless::Function

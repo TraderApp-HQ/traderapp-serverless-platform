@@ -9,7 +9,6 @@ export interface IMessageRecipient {
     phoneNumber?: string;
     emailAddress?: string;
     countryPhoneCode?: string;
-    metadata?: IMetadata;
 }
 
 export interface IMetadata {

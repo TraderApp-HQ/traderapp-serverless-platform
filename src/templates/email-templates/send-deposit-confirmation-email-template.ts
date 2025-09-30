@@ -166,7 +166,7 @@ const SendDepositConfirmationEmailTemplate = `<!doctype html>
                               <!-- Main Message -->
                               <tr>
                                 <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                                  <div style="font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:16px;font-weight:200;line-height:1.6;text-align:left;color:#000000;">A deposit transaction has been successfully processed, and the amount of 400 USDT has been credited to your TraderApp account.</div>
+                                  <div style="font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:16px;font-weight:200;line-height:1.6;text-align:left;color:#000000;">A deposit transaction has been successfully processed, and the amount of {AMOUNT} USDT has been credited to your TraderApp account.</div>
                                 </td>
                               </tr>
                               <!-- Transaction Details -->
@@ -184,7 +184,7 @@ const SendDepositConfirmationEmailTemplate = `<!doctype html>
                                                 <tbody>
                                                   <tr>
                                                     <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                                                      <div style="font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:16px;font-weight:400;line-height:1.8;text-align:left;color:#000000;">Transaction Details: <br /> Amount Deposited: {AMOUNT} <br /> Date & Time: 27-June-2025 08:51 AM <br /> Transaction ID: {TRANSACTION_ID}</div>
+                                                      <div style="font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:16px;font-weight:400;line-height:1.8;text-align:left;color:#000000;">Transaction Details: <br /> Amount Deposited: {AMOUNT} USDT <br /> Date & Time: 27-June-2025 08:51 AM <br /> Transaction ID: {TRANSACTION_ID}</div>
                                                     </td>
                                                   </tr>
                                                 </tbody>
@@ -199,45 +199,7 @@ const SendDepositConfirmationEmailTemplate = `<!doctype html>
                                   <!--[if mso | IE]></td></tr></table><![endif]-->
                                 </td>
                               </tr>
-                              <!-- CTA -->
-                              <tr>
-                                <td style="font-size:0px;padding:20px 0;word-break:break-word;">
-                                  <!--[if mso | IE]><table align="center" border="0" cellpadding="0" cellspacing="0" class="" role="presentation" style="width:560px;" width="560" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
-                                  <div style="margin:0px auto;max-width:560px;">
-                                    <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:100%;">
-                                      <tbody>
-                                        <tr>
-                                          <td style="direction:ltr;font-size:0px;padding:20px 0;text-align:center;">
-                                            <!--[if mso | IE]><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr><td class="" style="vertical-align:top;width:560px;" ><![endif]-->
-                                            <div class="mj-column-per-100 mj-outlook-group-fix" style="font-size:0px;text-align:left;direction:ltr;display:inline-block;vertical-align:top;width:100%;">
-                                              <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="vertical-align:top;" width="100%">
-                                                <tbody>
-                                                  <tr>
-                                                    <td align="center" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                                                      <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:separate;line-height:100%;">
-                                                        <tbody>
-                                                          <tr>
-                                                            <td align="center" bgcolor="#1836B2" role="presentation" style="border:none;border-radius:6px;cursor:auto;mso-padding-alt:10px 25px;background:#1836B2;" valign="middle">
-                                                              <a href="https://traderapp.finance" style="display:inline-block;background:#1836B2;color:#ffffff;font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:13px;font-weight:normal;line-height:120%;margin:0;text-decoration:none;text-transform:none;padding:10px 25px;mso-padding-alt:0px;border-radius:6px;" target="_blank"> View Dashboard </a>
-                                                            </td>
-                                                          </tr>
-                                                        </tbody>
-                                                      </table>
-                                                    </td>
-                                                  </tr>
-                                                </tbody>
-                                              </table>
-                                            </div>
-                                            <!--[if mso | IE]></td></tr></table><![endif]-->
-                                          </td>
-                                        </tr>
-                                      </tbody>
-                                    </table>
-                                  </div>
-                                  <!--[if mso | IE]></td></tr></table><![endif]-->
-                                </td>
-                              </tr>
-                              <!-- Support -->
+                              <!-- CTA --><!-- Support -->
                               <tr>
                                 <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
                                   <div style="font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:16px;font-weight:200;line-height:1.6;text-align:left;color:#000000;">You can now explore trading opportunities and take another step towards financial freedom.<br /> If you did not authorize this deposit or observe any irregularities, kindly contact our support team immediately at <a href="mailto:support@traderapp.com" style="color: #1836b2; text-decoration: none">support@traderapp.com</a></div>
