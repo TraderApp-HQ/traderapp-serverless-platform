@@ -1,6 +1,7 @@
 export interface ICommonSecrets {
     PORT: string;
     TRACK_USER_ONBOARDING_CHECKLIST_QUEUE: string;
+    EMAIL_NOTIFICATIONS_QUEUE: string;
 }
 export interface INotificationsServiceSecrets {
     SENDPULSE_API_USER_ID: string;

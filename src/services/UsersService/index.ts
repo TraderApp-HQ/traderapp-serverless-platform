@@ -94,7 +94,7 @@ class UsersService {
     }
 
     // Get user by ID
-    private async getUserById(userId: string): Promise<IUser | null> {
+    public async getUserById(userId: string): Promise<IUser | null> {
         try {
             const connection = await this.getConnection();
             const usersCollection = new MongoDBClient<IUser>(

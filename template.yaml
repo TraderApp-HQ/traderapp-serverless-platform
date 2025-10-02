@@ -195,6 +195,8 @@ Resources:
                 - secretsmanager:GetSecretValue
               Resource:
                 - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:notifications-service/${Environment}*
+                - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:users-service-secrets/${Environment}*
+
 
   userReferralsTracking:
     Type: AWS::Serverless::Function
@@ -270,6 +272,8 @@ Resources:
                 - sqs:SendMessageBatch
               Resource:
                 - !GetAtt trackUserOnboardingChecklistQueue.Arn
+                - !GetAtt emailNotificationsQueue.Arn
+
 
   processCryptopayInvoiceWebhooks:
     Type: AWS::Serverless::Function

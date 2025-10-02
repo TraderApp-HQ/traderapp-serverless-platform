@@ -11,12 +11,18 @@ export interface IMessageRecipient {
     countryPhoneCode?: string;
 }
 
+export interface IMetadata {
+    transactionId?: string;
+    amount?: number;
+}
+
 export interface IQueueMessageBodyObject {
     recipients: IMessageRecipient[];
     subject?: string;
     message: string;
     event: EventTemplate;
     sender?: IMessageRecipient;
+    metadata?: IMetadata;
 }
 
 export interface IQueueMessageBody<T = IQueueMessageBodyObject>
