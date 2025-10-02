@@ -94,7 +94,20 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       QueueName: !Sub ${Environment}-cryptopayInvoiceWebhooksDLQ
- 
+
+  cryptopayWithdrawalWebhooksQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${Environment}-cryptopayWithdrawalWebhooksQueue
+      VisibilityTimeout: 90
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt cryptopayWithdrawalWebhooksDLQ.Arn
+        maxReceiveCount: 3
+  cryptopayWithdrawalWebhooksDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${Environment}-cryptopayWithdrawalWebhooksDLQ
+
   createUserWalletQueue:
     Type: AWS::SQS::Queue
     Properties:
@@ -287,6 +300,37 @@ Resources:
                 - secretsmanager:GetSecretValue
               Resource:
                 - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:wallets-service-secrets/${Environment}*
+
+  processCryptopayWithdrawalWebhooks:
+    Type: AWS::Serverless::Function
+    Properties:
+      Environment:
+        Variables:
+          ENV: !Ref Environment
+      FunctionName: !Sub ${Environment}-processCryptopayWithdrawalWebhooks
+      Runtime: nodejs20.x
+      Architectures:
+        - x86_64
+      Handler: dist/handlers/process-cryptopay-withdrawal-webhooks.handler
+      Events:
+        SQSQueueEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt cryptopayWithdrawalWebhooksQueue.Arn
+      MemorySize: 128
+      Timeout: 90
+      DeadLetterQueue:
+        Type: SQS
+        TargetArn: !GetAtt cryptopayWithdrawalWebhooksDLQ.Arn
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource:
+                - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:wallets-service-secrets/${Environment}*
+                - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:common-secrets/${Environment}*
 
   createUserWallet:
     Type: AWS::Serverless::Function

@@ -25,6 +25,12 @@ export enum CryptopayWebhookEventStatus {
     processing = "processing",
 }
 
+export enum CryptopayWebhookEventType {
+    ChannelPayment = "ChannelPayment",
+    Invoice = "Invoice",
+    CoinWithdrawal = "CoinWithdrawal",
+}
+
 export interface ICryptoPayExchangeInfo {
     fee: string;
     pair: string;
@@ -45,7 +51,7 @@ export interface ICryptoPayTransaction {
 }
 
 export interface ICryptopayWebhookEvent {
-    type: "ChannelPayment" | "Invoice" | "CoinWithdrawal";
+    type: CryptopayWebhookEventType;
     event:
         | "created"
         | "completed"
@@ -326,8 +332,8 @@ export class CryptoPayClient {
             fromWalletAddress,
             toWalletAddress,
             transactionNetwork: transaction.data.network,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
+            createdAt: new Date(),
+            updatedAt: new Date(),
         };
     }
 }
