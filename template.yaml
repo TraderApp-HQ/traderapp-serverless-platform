@@ -121,18 +121,44 @@ Resources:
     Properties:
       QueueName: !Sub ${Environment}-trackUserOnboardingChecklistDLQ
 
-  processUserTradingWithActiveSignalQueue:
+  processIncomingMasterTradesQueue:
     Type: AWS::SQS::Queue
     Properties:
-      QueueName: !Sub ${Environment}-processUserTradingWithActiveSignalQueue
+      QueueName: !Sub ${Environment}-processIncomingMasterTradesQueue
       VisibilityTimeout: 60
       RedrivePolicy:
-        deadLetterTargetArn: !GetAtt processUserTradingWithActiveSignalDLQ.Arn
+        deadLetterTargetArn: !GetAtt processIncomingMasterTradesDLQ.Arn
         maxReceiveCount: 3
-  processUserTradingWithActiveSignalDLQ:
+  processIncomingMasterTradesDLQ:
     Type: AWS::SQS::Queue
     Properties:
-      QueueName: !Sub ${Environment}-processUserTradingWithActiveSignalDLQ
+      QueueName: !Sub ${Environment}-processIncomingMasterTradesDLQ
+
+  processUserTradesQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${Environment}-processUserTradesQueue
+      VisibilityTimeout: 60
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt processUserTradesDLQ.Arn
+        maxReceiveCount: 3
+  processUserTradesDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${Environment}-processUserTradesDLQ
+
+  processBinanceOrdersQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${Environment}-processBinanceOrdersQueue
+      VisibilityTimeout: 60
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt processBinanceOrdersDLQ.Arn
+        maxReceiveCount: 3
+  processBinanceOrdersDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${Environment}-processBinanceOrdersDLQ
 
 # create lambda functions
   sendEmailOtp:
@@ -362,27 +388,101 @@ Resources:
               Resource:
                 - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:users-service-secrets/${Environment}*
 
-  processUserTradingWithActiveSignal:
+  processIncomingMasterTrades:
     Type: AWS::Serverless::Function
     Properties:
       Environment:
         Variables:
           ENV: !Ref Environment
-      FunctionName: !Sub ${Environment}-processUserTradingWithActiveSignal
+      FunctionName: !Sub ${Environment}-processIncomingMasterTrades
       Runtime: nodejs20.x
       Architectures:
         - x86_64
-      Handler: dist/handlers/process-user-trading-with-active-signal.handler
+      Handler: dist/handlers/process-incoming-master-trades.handler
       Events:
         SQSQueueEvent:
           Type: SQS
           Properties:
-            Queue: !GetAtt processUserTradingWithActiveSignalQueue.Arn
+            Queue: !GetAtt processIncomingMasterTradesQueue.Arn
       MemorySize: 128
       Timeout: 60
       DeadLetterQueue:
         Type: SQS
-        TargetArn: !GetAtt processUserTradingWithActiveSignalDLQ.Arn
+        TargetArn: !GetAtt processIncomingMasterTradesDLQ.Arn
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource:
+                - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:trading-engine-service-secrets/${Environment}*
+                - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:common-secrets/${Environment}*
+            - Effect: Allow
+              Action:
+                - sqs:SendMessage
+                - sqs:SendMessageBatch
+              Resource:
+                - !GetAtt processUserTradesQueue.Arn
+
+  processUserTrades:
+    Type: AWS::Serverless::Function
+    Properties:
+      Environment:
+        Variables:
+          ENV: !Ref Environment
+      FunctionName: !Sub ${Environment}-processUserTrades
+      Runtime: nodejs20.x
+      Architectures:
+        - x86_64
+      Handler: dist/handlers/process-user-trades.handler
+      Events:
+        SQSQueueEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt processUserTradesQueue.Arn
+      MemorySize: 128
+      Timeout: 60
+      DeadLetterQueue:
+        Type: SQS
+        TargetArn: !GetAtt processUserTradesDLQ.Arn
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource:
+                - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:trading-engine-service-secrets/${Environment}*
+                - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:common-secrets/${Environment}*
+            - Effect: Allow
+              Action:
+                - sqs:SendMessage
+                - sqs:SendMessageBatch
+              Resource:
+                - !GetAtt processBinanceOrdersQueue.Arn
+
+  processBinanceOrders:
+    Type: AWS::Serverless::Function
+    Properties:
+      Environment:
+        Variables:
+          ENV: !Ref Environment
+      FunctionName: !Sub ${Environment}-processBinanceOrders
+      Runtime: nodejs20.x
+      Architectures:
+        - x86_64
+      Handler: dist/handlers/process-binance-orders.handler
+      Events:
+        SQSQueueEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt processBinanceOrdersQueue.Arn
+      MemorySize: 128
+      Timeout: 60
+      DeadLetterQueue:
+        Type: SQS
+        TargetArn: !GetAtt processBinanceOrdersDLQ.Arn
       Policies:
         - AWSLambdaBasicExecutionRole
         - Statement:

@@ -6,21 +6,18 @@ import { MongoDBClient } from "src/clients/MongoDBClient";
 import { TradingEngineServiceCollections } from "src/clients/MongoDBClient/constants";
 import {
     ITrade,
-    // IOrder,
-    // IOrderBatch,
-    // ITradingRule,
     IUserTradingRule,
     IUserTradingAccount,
     IUserTradingAccountBalance,
-    IProcessUserTradingWithActiveSignalEvent,
+    IProcessUserTradingWithMasterTradeEvent,
+    IPlatformTradingRule,
+    IUserTradeAllocation,
 } from "./interfaces";
 import {
-    // OrderStatus,
     OrderType,
     OrderPlacementType,
     TradeStatus,
     TradeSide,
-    // OrderBatchStatus,
     TradingRuleCategory,
     Exchange,
     AccountConnectionStatus,
@@ -29,15 +26,10 @@ import {
 import { SecretLocation } from "src/config/secrets/enums";
 import { getSecrets } from "src/config/secrets/helpers";
 import { ITradingEngineServiceSecrets } from "src/config/secrets/interfaces";
-import {
-    Currency,
-    AccountType,
-    TradingPlatform,
-    // Exchange,
-} from "src/config/enums";
+import { Currency, AccountType, TradingPlatform } from "src/config/enums";
 import "dotenv/config";
 import { IQueueMessageBody } from "src/config/interfaces";
-// import { AccountConnectionStatus } from "src/config/enums";
+import { publishMessageToQueue } from "src/clients/SQSClient/helpers";
 
 // Validation result interfaces
 export interface ITradingRuleValidationResult {
@@ -64,14 +56,14 @@ export interface ITradingRuleWarning {
 
 export interface ITradeInput {
     userId: string;
-    signalId: string;
+    masterTradeId: string;
     baseAsset: string;
     quoteCurrency: string;
-    baseQuantity: number;
+    baseQuantity?: number;
     quoteTotal: number;
     side: TradeSide;
     tradingAccountId: mongoose.Types.ObjectId;
-    leverage: number;
+    // leverage: number;
     price: number;
 }
 
@@ -87,18 +79,15 @@ export interface IOrderInput {
     tradingAccountId: mongoose.Types.ObjectId;
 }
 
-export interface IUserTradeAllocation {
+export interface ICreateTradesForUserResult {
+    tradeId: string;
+}
+
+export interface IAllocateTradesUpToTargetAmountResult {
     userId: string;
-    tradingAccountId: mongoose.Types.ObjectId;
-    tradeAmount: number;
-    baseQuantity: number;
-    platformName: TradingPlatform;
-    apiKey: string;
-    apiSecret: string;
-    passphrase?: string;
-    leverage: number;
-    riskPercentage: number;
-    availableBalance: number;
+    riskAmount: number;
+    positionSize: number;
+    requiredMargin: number;
 }
 
 export interface IProcessUserTradingResult {
@@ -106,7 +95,7 @@ export interface IProcessUserTradingResult {
     failedMessageIds: string[];
     userTradeAllocations: IUserTradeAllocation[];
     totalAllocatedAmount: number;
-    signalDetails: IProcessUserTradingWithActiveSignalEvent | null;
+    masterTradeDetails: IProcessUserTradingWithMasterTradeEvent | null;
 }
 
 // Consolidated interface for user with trading account and balance
@@ -137,9 +126,50 @@ interface IUserProcessingResult {
     apiKey?: string;
     apiSecret?: string;
     passphrase?: string;
-    leverage?: number;
     riskPercentage?: number;
+    riskAmount?: number;
+    positionSize?: number;
+    requiredMargin?: number;
     availableBalance?: number;
+}
+
+interface ICalculateLeverageInput {
+    entryPrice: number;
+    liquidationPrice: number;
+    tradeSide: TradeSide;
+    maintenanceMarginRate?: number;
+}
+
+interface IValidateTradeEligibilityForPairInput {
+    positionSize: number;
+    platformTradingRule: IPlatformTradingRule | null;
+    baseQuantity: number;
+}
+
+interface IValidateTradeEligibilityResult {
+    isValid: boolean;
+    reasons: string[];
+    positionSize: number;
+    quantity: number;
+    minQuantity: number;
+    minNotional: number;
+}
+
+interface ICalculateTradeAmountInput {
+    accountSize: number;
+    maxRiskAmount: number;
+    riskPercentage: number;
+    entryPrice: number;
+    stopLossPrice: number;
+    leverage: number;
+    stepSize: number;
+}
+
+interface ICalculateTradeAmountResult {
+    riskAmount: number;
+    positionSize: number;
+    requiredMargin: number;
+    baseQuantity: number;
 }
 
 export class TradingEngineService {
@@ -147,10 +177,17 @@ export class TradingEngineService {
     private secrets: ITradingEngineServiceSecrets | null = null;
     private initialized: boolean = false;
     private initializationPromise: Promise<void> | null = null;
+    private isExternalConnection: boolean = false;
 
-    constructor() {}
+    constructor(connection?: mongoose.Connection) {
+        if (connection) {
+            this.connection = connection;
+            this.isExternalConnection = true;
+            this.initialized = true;
+        }
+    }
 
-    // Initialize the service once
+    // Initialize the service once (only needed when no external connection provided)
     private async initialize(): Promise<void> {
         if (this.initialized) return;
 
@@ -193,7 +230,8 @@ export class TradingEngineService {
 
     // Close resources
     private async closeResources(): Promise<void> {
-        if (this.connection) {
+        // Only close connection if we created it (not externally provided)
+        if (this.connection && !this.isExternalConnection) {
             await this.connection.close();
             this.connection = null;
         }
@@ -202,12 +240,17 @@ export class TradingEngineService {
     // For cleanup, especially in testing
     public async cleanup(): Promise<void> {
         await this.closeResources();
-        this.initialized = false;
+        if (!this.isExternalConnection) {
+            this.initialized = false;
+        }
     }
 
-    // Get connection (ensures initialization first)
+    // Get connection (ensures initialization first if needed)
     private async getConnection(): Promise<mongoose.Connection> {
-        await this.initialize();
+        if (!this.isExternalConnection) {
+            await this.initialize();
+        }
+
         if (!this.connection) {
             throw new Error("Database connection not available");
         }
@@ -216,7 +259,10 @@ export class TradingEngineService {
 
     // Get secrets (ensures initialization first)
     private async getSecrets(): Promise<ITradingEngineServiceSecrets> {
-        await this.initialize();
+        if (!this.isExternalConnection) {
+            await this.initialize();
+        }
+
         if (!this.secrets) {
             throw new Error("Secrets not available");
         }
@@ -233,7 +279,9 @@ export class TradingEngineService {
         activeTrades,
     }: IValidateTradingRulesInput): Promise<ITradingRuleValidationResult> {
         try {
-            await this.initialize();
+            if (!this.isExternalConnection) {
+                await this.initialize();
+            }
 
             const violations: ITradingRuleViolation[] = [];
             const warnings: ITradingRuleWarning[] = [];
@@ -262,14 +310,6 @@ export class TradingEngineService {
                     allowedValue: "> 0",
                 });
             }
-
-            // Calculate proposed trade value
-            // const availableBalance = accountBalance?.availableBalance || 0;
-            // const proposedTradeValue = this.calculateTradeAmount(
-            //     availableBalance,
-            //     userTradingRules.riskPercentage,
-            //     proposedTrade.leverage
-            // );
 
             // Validate each rule
             for (const rule of userTradingRules) {
@@ -328,17 +368,12 @@ export class TradingEngineService {
                 }
             }
 
-            // Validate sufficient balance
-            // if (proposedTradeValue > availableBalance) {
-            //     violations.push({
-            //         ruleId: "insufficient-balance",
-            //         ruleName: "Sufficient Balance",
-            //         category: TradingRuleCategory.RISK_MANAGEMENT,
-            //         message: "Insufficient balance for this trade",
-            //         currentValue: availableBalance.toString(),
-            //         allowedValue: proposedTradeValue.toString(),
-            //     });
-            // }
+            log.info("validateTradingRulesResult", {
+                userId,
+                isValid: violations.length === 0,
+                violations,
+                warnings,
+            });
 
             return {
                 isValid: violations.length === 0,
@@ -387,26 +422,6 @@ export class TradingEngineService {
                 message: `Trade value exceeds maximum risk amount`,
                 currentValue: proposedTradeValue.toString(),
                 allowedValue: maxRiskAmount.toString(),
-            });
-        }
-    }
-
-    private async validateMaxLeverage(
-        rule: IUserTradingRule,
-        proposedTrade: ITradeInput,
-        violations: ITradingRuleViolation[]
-    ): Promise<void> {
-        const maxLeverage = Number(rule.value);
-        // Leverage validation would depend on the specific trading platform
-        // For now, we'll add a placeholder that can be extended
-        if (proposedTrade.leverage && proposedTrade.leverage > maxLeverage) {
-            violations.push({
-                ruleId: rule.id,
-                ruleName: rule.name,
-                category: rule.category,
-                message: `Leverage exceeds maximum allowed`,
-                currentValue: proposedTrade.leverage,
-                allowedValue: maxLeverage.toString(),
             });
         }
     }
@@ -489,8 +504,57 @@ export class TradingEngineService {
         }
     }
 
+    /**
+     * Calculate leverage for a futures position (LONG or SHORT)
+     *
+     * For LONG:
+     *    L = 1 / ((1 + m) - (Pl / P0))
+     *
+     * For SHORT:
+     *    L = 1 / ((Pl / P0) - (1 - m))
+     *
+     * @param entryPrice - Entry price (P0)
+     * @param liquidationPrice - Liquidation price (Pl)
+     * @param tradeSide - "LONG" or "SHORT"
+     * @param maintenanceMarginRate - Maintenance margin rate (default 0.004 for Binance BTC small positions)
+     * @returns Leverage (number)
+     */
+    public calculateLeverage(input: ICalculateLeverageInput): number {
+        const {
+            entryPrice,
+            liquidationPrice,
+            tradeSide,
+            maintenanceMarginRate = 0.004,
+        } = input;
+
+        if (entryPrice <= 0 || liquidationPrice <= 0) {
+            throw new Error(
+                "Entry price and liquidation price must be greater than zero."
+            );
+        }
+
+        const ratio = liquidationPrice / entryPrice;
+        let denominator: number;
+
+        if (tradeSide === TradeSide.LONG) {
+            denominator = 1 + maintenanceMarginRate - ratio;
+        } else if (tradeSide === TradeSide.SHORT) {
+            denominator = ratio - (1 - maintenanceMarginRate);
+        } else {
+            throw new Error("Invalid trade side. Must be 'LONG' or 'SHORT'.");
+        }
+
+        if (denominator <= 0) {
+            throw new Error(
+                "Invalid values: denominator is zero or negative. Check inputs."
+            );
+        }
+
+        return Math.floor(1 / denominator);
+    }
+
     // Get user's trading rules
-    private async getUserTradingRules(
+    public async getUserTradingRules(
         userId: string
     ): Promise<IUserTradingRule[]> {
         try {
@@ -509,7 +573,7 @@ export class TradingEngineService {
     }
 
     // Get user's active trades
-    private async getUserActiveTrades(userId: string): Promise<ITrade[]> {
+    public async getUserActiveTrades(userId: string): Promise<ITrade[]> {
         try {
             const connection = await this.getConnection();
             const tradesCollection = new MongoDBClient<ITrade>(
@@ -527,12 +591,50 @@ export class TradingEngineService {
         }
     }
 
+    public async getPlatformTradingRulesForPair(
+        tradingPlatform: TradingPlatform,
+        pair: string
+    ): Promise<IPlatformTradingRule | null> {
+        try {
+            const connection = await this.getConnection();
+            const tradingRulesCollection =
+                new MongoDBClient<IPlatformTradingRule>(
+                    connection,
+                    TradingEngineServiceCollections.platformTradingRules
+                );
+
+            const rule = await tradingRulesCollection.findOne({
+                platform: tradingPlatform,
+                pair,
+            });
+
+            log.info("getPlatformTradingRulesForPair", {
+                tradingPlatform,
+                pair,
+                rule,
+            });
+
+            return rule;
+        } catch (error) {
+            log.error("Error fetching trading platform rules:", {
+                error,
+                tradingPlatform,
+                pair,
+            });
+            throw error;
+        }
+    }
+
     // Consolidated method to get users with trading accounts and their balances
-    private async getUsersTradingAccountsAndBalances(
-        platform: TradingPlatform,
-        currency: Currency,
-        accountType: AccountType = AccountType.FUTURES
-    ): Promise<IUserTradingAccountWithBalance[]> {
+    public async getUsersTradingAccountsAndBalances({
+        platforms,
+        currency,
+        accountType = AccountType.FUTURES,
+    }: {
+        platforms: TradingPlatform[];
+        currency: Currency;
+        accountType: AccountType;
+    }): Promise<IUserTradingAccountWithBalance[]> {
         try {
             const connection = await this.getConnection();
 
@@ -549,7 +651,7 @@ export class TradingEngineService {
 
             // Get trading accounts for the platform
             const tradingAccounts = await accountsCollection.find({
-                platformName: platform,
+                platformName: { $in: platforms },
                 connectionStatus: AccountConnectionStatus.CONNECTED,
                 // isFuturesTradingEnabled: accountType === AccountType.FUTURES,
                 // isSpotTradingEnabled: accountType === AccountType.SPOT,
@@ -585,7 +687,7 @@ export class TradingEngineService {
                     results.push({
                         userId: account.userId,
                         tradingAccount: account,
-                        balance: balance,
+                        balance,
                     });
                 }
             }
@@ -596,7 +698,7 @@ export class TradingEngineService {
                 "Error fetching users with trading accounts and balances:",
                 {
                     error,
-                    platform,
+                    platforms,
                     currency,
                     accountType,
                 }
@@ -605,13 +707,60 @@ export class TradingEngineService {
         }
     }
 
-    // Helper method to calculate trade amount based on risk percentage
-    private calculateTradeAmount(
-        availableBalance: number,
-        riskPercentage: number
-    ): number {
-        const riskAmount = (availableBalance * riskPercentage) / 100;
-        return riskAmount;
+    // Helper method to calculate trade amount based on risk amount, risk percentage, entry price, stop loss price, and leverage
+    public calculateTradeAmount(
+        input: ICalculateTradeAmountInput
+    ): ICalculateTradeAmountResult {
+        const {
+            accountSize,
+            maxRiskAmount,
+            riskPercentage,
+            entryPrice,
+            stopLossPrice,
+            leverage,
+            stepSize,
+        } = input;
+
+        const calculatedRiskAmount = (accountSize * riskPercentage) / 100;
+        let riskAmount = Math.round(
+            Math.min(maxRiskAmount, calculatedRiskAmount)
+        );
+
+        // Minimum risk amount is 10 USDT
+        if (riskAmount < 10) riskAmount = 10;
+
+        if (entryPrice <= 0 || stopLossPrice <= 0) {
+            throw new Error(
+                "Entry and stop loss prices must be greater than zero."
+            );
+        }
+
+        if (leverage <= 0) {
+            throw new Error("Leverage must be greater than zero.");
+        }
+
+        // 1. Price difference (risk per unit)
+        const deltaP = Math.abs(entryPrice - stopLossPrice);
+        if (deltaP === 0) {
+            throw new Error("Entry price and stop loss cannot be the same.");
+        }
+
+        // 2. Quantity (contracts / lots) to risk exactly riskAmount
+        const quantity = riskAmount / deltaP;
+
+        // 3. Position size (notional in USDT)
+        const positionSize = quantity * entryPrice;
+
+        // 4. Required margin given leverage
+        const requiredMargin = positionSize / leverage;
+
+        const baseQuantity = Math.floor(quantity / stepSize) * stepSize;
+        return {
+            riskAmount,
+            positionSize,
+            requiredMargin,
+            baseQuantity,
+        };
     }
 
     // Consolidated method to map Exchange to TradingPlatform
@@ -626,276 +775,618 @@ export class TradingEngineService {
         }
     }
 
+    private async validateUserTradeEligibilityForPairOnPlatform(
+        input: IValidateTradeEligibilityForPairInput
+    ): Promise<IValidateTradeEligibilityResult> {
+        const { positionSize, platformTradingRule, baseQuantity } = input;
+
+        const reasons: string[] = [];
+        const quantity = baseQuantity;
+
+        if (!platformTradingRule) {
+            return {
+                isValid: false,
+                reasons,
+                positionSize: parseFloat(positionSize.toFixed(6)),
+                quantity: parseFloat(quantity.toFixed(6)),
+                minQuantity: 0,
+                minNotional: 0,
+            };
+        }
+
+        const { minQuantity, minNotional } = platformTradingRule;
+        if (quantity < minQuantity) {
+            reasons.push(
+                `Quantity ${quantity.toFixed(6)} < minQty ${minQuantity}`
+            );
+        }
+
+        if (positionSize < minNotional) {
+            reasons.push(
+                `Position size ${positionSize.toFixed(2)} < minNotional ${minNotional}`
+            );
+        }
+
+        return {
+            isValid: reasons.length === 0,
+            reasons,
+            positionSize: parseFloat(positionSize.toFixed(6)),
+            quantity: parseFloat(quantity.toFixed(6)),
+            minQuantity,
+            minNotional,
+        };
+    }
+
+    /**
+     * Creates trades for a specific user
+     */
+    private async createTradeForUser(
+        userId: string,
+        tradeData: {
+            masterTradeId: string;
+            baseAsset: string;
+            quoteCurrency: string;
+            baseQuantity: number;
+            entryPrice: number;
+            stopLossPrice: number;
+            takeProfitPrice: number;
+            quoteTotal: number;
+            pair: string;
+            side: TradeSide;
+            status: TradeStatus;
+        }
+    ): Promise<ITrade> {
+        try {
+            const connection = await this.getConnection();
+            const tradesCollection = new MongoDBClient<ITrade>(
+                connection,
+                TradingEngineServiceCollections.trades
+            );
+
+            const trade: Partial<ITrade> = {
+                ...tradeData,
+                userId,
+                pnl: 0, // New trades have no PnL yet
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+            };
+
+            const createdTrade = await tradesCollection.insertOne(trade);
+
+            log.info(`Created trade for user ${userId}`);
+            return createdTrade;
+        } catch (error) {
+            log.error("Error creating trades for user:", { error, userId });
+            throw error;
+        }
+    }
+
+    // Modify atomicallyProcessMasterTradeForUser to NOT create trades
+    private async validateAndProcessMasterTradeForUser({
+        userId,
+        masterTrade,
+        tradingAccount,
+        balance,
+        platformTradingRule,
+    }: {
+        userId: string;
+        masterTrade: IProcessUserTradingWithMasterTradeEvent;
+        tradingAccount: IUserTradingAccount;
+        balance: IUserTradingAccountBalance;
+        platformTradingRule: IPlatformTradingRule;
+    }): Promise<IUserProcessingResult> {
+        // const connection = await this.getConnection();
+
+        try {
+            // Get fresh data for validation
+            const [userTradingRules, activeTrades] = await Promise.all([
+                this.getUserTradingRules(userId),
+                this.getUserActiveTrades(userId),
+            ]);
+
+            // Create proposed trade for validation
+            const proposedTrade: ITradeInput = {
+                userId,
+                masterTradeId: masterTrade.masterTradeId,
+                baseAsset: masterTrade.baseAsset,
+                quoteCurrency: masterTrade.quoteCurrency,
+                quoteTotal: 0,
+                side: masterTrade.tradeSide,
+                tradingAccountId: tradingAccount._id as mongoose.Types.ObjectId,
+                price: masterTrade.entryPrice,
+            };
+
+            // Validate trading rules with fresh data
+            const validationResult = await this.validateTradingRules({
+                userId,
+                proposedTrade,
+                tradingAccount,
+                accountBalance: balance,
+                userTradingRules,
+                activeTrades,
+            });
+
+            if (!validationResult.isValid) {
+                return {
+                    success: false,
+                    reason: "Trading rules validation failed",
+                    userId: userId,
+                    violations: validationResult.violations,
+                };
+            }
+
+            //  get risk percentage and risk amount rules
+            const riskPercentageRule = userTradingRules.find(
+                (rule) =>
+                    rule.name === TradingRuleName.RISK_PERCENTAGE_PER_TRADE
+            );
+
+            const riskAmountRule = userTradingRules.find(
+                (rule) =>
+                    rule.name === TradingRuleName.MAXIMUM_RISK_AMOUNT_PER_TRADE
+            );
+
+            const riskPercentage = riskPercentageRule
+                ? Number(riskPercentageRule.value)
+                : 1;
+
+            // Calculate trade amount
+            const { positionSize, requiredMargin, riskAmount, baseQuantity } =
+                this.calculateTradeAmount({
+                    accountSize: balance.accountSize,
+                    maxRiskAmount: riskAmountRule
+                        ? Number(riskAmountRule.value)
+                        : 0,
+                    riskPercentage,
+                    entryPrice: masterTrade.entryPrice,
+                    stopLossPrice: masterTrade.stopLossPrice,
+                    leverage: 25,
+                    stepSize: platformTradingRule?.stepSize ?? 0.001,
+                });
+
+            // Validate required margin (i.e amount of money that will be used to open the trade)
+            const requiredMarginMarkup = requiredMargin * 1.1; // 10% markup for margin
+            if (requiredMarginMarkup > balance.availableBalance) {
+                return {
+                    success: false,
+                    userId,
+                    reason: "Insufficient balance",
+                };
+            }
+
+            // Validate trade eligibility for pair
+            const tradeEligibilityResult =
+                await this.validateUserTradeEligibilityForPairOnPlatform({
+                    positionSize,
+                    platformTradingRule,
+                    baseQuantity,
+                });
+
+            if (!tradeEligibilityResult.isValid) {
+                return {
+                    success: false,
+                    userId,
+                    reason: tradeEligibilityResult.reasons.join(", "),
+                };
+            }
+
+            return {
+                success: true,
+                userId: userId,
+                tradingAccountId: tradingAccount._id as mongoose.Types.ObjectId,
+                positionSize,
+                requiredMargin,
+                platformName: tradingAccount.platformName,
+                apiKey: tradingAccount.apiKey!,
+                apiSecret: tradingAccount.apiSecret!,
+                passphrase: tradingAccount.passphrase,
+                riskAmount,
+                riskPercentage,
+                availableBalance: balance.availableBalance,
+                tradeAmount: requiredMargin,
+            };
+        } catch (error) {
+            return {
+                success: false,
+                // reason: "Validation error",
+                reason:
+                    error instanceof Error ? error.message : "Unknown error",
+                userId: userId,
+            };
+        }
+    }
+
+    // New method to create trades for allocated users
+    private async createTradesForAllocatedUsers(
+        allocations: IAllocateTradesUpToTargetAmountResult[],
+        masterTrade: IProcessUserTradingWithMasterTradeEvent
+    ): Promise<ITrade[]> {
+        const successfulAllocations: ITrade[] = [];
+
+        // Create trades for each allocated user
+        const tradeCreationResults = await Promise.allSettled(
+            allocations.map(async (allocation) => {
+                const trade = {
+                    masterTradeId: masterTrade.masterTradeId,
+                    baseAsset: masterTrade.baseAsset,
+                    quoteCurrency: masterTrade.quoteCurrency,
+                    baseQuantity: allocation.positionSize,
+                    entryPrice: masterTrade.entryPrice,
+                    stopLossPrice: masterTrade.stopLossPrice,
+                    takeProfitPrice: masterTrade.takeProfitPrice,
+                    quoteTotal: allocation.requiredMargin,
+                    pair: masterTrade.pair,
+                    side: masterTrade.tradeSide,
+                    status: TradeStatus.PENDING,
+                };
+
+                const createdTrade = await this.createTradeForUser(
+                    allocation.userId,
+                    trade
+                );
+                return createdTrade;
+            })
+        );
+
+        // Only return allocations where trade creation succeeded
+        tradeCreationResults.forEach((result, index) => {
+            if (result.status === "fulfilled") {
+                successfulAllocations.push(result.value);
+            } else {
+                log.error(
+                    `Failed to create trade for user ${allocations[index].userId}:`,
+                    result.reason
+                );
+            }
+        });
+
+        return successfulAllocations;
+    }
+
+    /**
+     * Allocates trades up to the target amount from processed users
+     */
+    private allocateTradesUpToTargetAmount(
+        successfullyProcessedUsers: IUserProcessingResult[],
+        signalData: IProcessUserTradingWithMasterTradeEvent
+    ): {
+        allocations: IAllocateTradesUpToTargetAmountResult[];
+        totalAllocated: number;
+    } {
+        const userTradeAllocations: IAllocateTradesUpToTargetAmountResult[] =
+            [];
+        let currentAllocatedAmount = 0;
+
+        // Sort by trade amount (descending) to prioritize larger trades
+        successfullyProcessedUsers.sort(
+            (a, b) => b.tradeAmount! - a.tradeAmount!
+        );
+
+        for (const allocation of successfullyProcessedUsers) {
+            if (currentAllocatedAmount >= signalData.targetOrdersAmountToFill) {
+                break;
+            }
+
+            // const remainingAmount =
+            //     signalData.targetAmountToFill - currentAllocatedAmount;
+
+            // const finalTradeAmount = Math.min(
+            //     allocation.requiredMargin ?? 0,
+            //     remainingAmount
+            // );
+            // const finalBaseQuantity = finalTradeAmount / signalData.entryPrice;
+
+            userTradeAllocations.push({
+                userId: allocation.userId,
+                riskAmount: allocation.riskAmount!,
+                positionSize: allocation.positionSize!,
+                requiredMargin: allocation.requiredMargin!,
+            });
+
+            currentAllocatedAmount += allocation.requiredMargin ?? 0;
+        }
+
+        return {
+            allocations: userTradeAllocations,
+            totalAllocated: currentAllocatedAmount,
+        };
+    }
+
+    /**
+     * Processes a single signal and returns allocations
+     */
+    private async processSingleMasterTrade(
+        masterTrade: IProcessUserTradingWithMasterTradeEvent
+    ): Promise<{
+        allocations: IUserTradeAllocation[];
+        totalAllocated: number;
+    }> {
+        const currency = masterTrade.quoteCurrency as Currency;
+        const accountType = masterTrade.accountType || AccountType.FUTURES;
+
+        // Get users with trading accounts and balances for this platform/currency
+        const usersWithAccountsAndBalances =
+            await this.getUsersTradingAccountsAndBalances({
+                platforms: masterTrade.supportedTradingPlatforms,
+                currency,
+                accountType,
+            });
+
+        if (usersWithAccountsAndBalances.length === 0) {
+            log.info(
+                `No eligible users found for master trade ${masterTrade.masterTradeId} on ${masterTrade.supportedTradingPlatforms} with ${currency} balance`
+            );
+            return { allocations: [], totalAllocated: 0 };
+        }
+
+        // Get trading rules for each platform
+        const platformsTradingRules = await Promise.all(
+            usersWithAccountsAndBalances.map(async ({ tradingAccount }) => {
+                return this.getPlatformTradingRulesForPair(
+                    tradingAccount.platformName,
+                    masterTrade.pair
+                );
+            })
+        );
+
+        // Step 1: Process all users (validate + calculate) WITHOUT creating trades
+        const userProcessingResults = await Promise.allSettled(
+            usersWithAccountsAndBalances.map(
+                async ({ userId, tradingAccount, balance }) => {
+                    return this.validateAndProcessMasterTradeForUser({
+                        userId,
+                        masterTrade,
+                        tradingAccount,
+                        balance,
+                        platformTradingRule: platformsTradingRules.find(
+                            (rule) =>
+                                rule?.platform === tradingAccount.platformName
+                        ) as IPlatformTradingRule,
+                    });
+                }
+            )
+        );
+
+        // Step 2: Collect successful users
+        const successfullyProcessedUsers = userProcessingResults
+            .filter(
+                (result) =>
+                    result.status === "fulfilled" && result.value.success
+            )
+            .map(
+                (result) =>
+                    (result as PromiseFulfilledResult<IUserProcessingResult>)
+                        .value
+            )
+            .filter((result) => result.tradeAmount !== undefined);
+
+        // Step 3: Allocate users up to target amount
+        const { allocations, totalAllocated } =
+            this.allocateTradesUpToTargetAmount(
+                successfullyProcessedUsers,
+                masterTrade
+            );
+
+        // Step 4: Create trades only for allocated users
+        const createdTradesForAllocatedUsers =
+            await this.createTradesForAllocatedUsers(allocations, masterTrade);
+
+        const allocationsWithTrades: IUserTradeAllocation[] = allocations.map(
+            (allocation, index) => {
+                const tradingAccount = usersWithAccountsAndBalances.find(
+                    (user) => user.userId === allocation.userId
+                );
+                return {
+                    ...allocation,
+                    masterTradeId: masterTrade.masterTradeId,
+                    tradeId: createdTradesForAllocatedUsers[index]
+                        ._id as string,
+                    tradingAccountId: tradingAccount?.tradingAccount
+                        ._id as mongoose.Types.ObjectId,
+                    platformName: tradingAccount?.tradingAccount
+                        .platformName as TradingPlatform,
+                    apiKey: tradingAccount?.tradingAccount.apiKey as string,
+                    apiSecret: tradingAccount?.tradingAccount
+                        .apiSecret as string,
+                    passphrase: tradingAccount?.tradingAccount
+                        .passphrase as string,
+                    tradeAmount: allocation.requiredMargin,
+                    availableBalance: tradingAccount?.balance
+                        .availableBalance as number,
+                    baseAsset: masterTrade.baseAsset as string,
+                    quoteCurrency: masterTrade.quoteCurrency as string,
+                    quoteTotal: allocation.requiredMargin,
+                    entryPrice: masterTrade.entryPrice,
+                    stopLossPrice: masterTrade.stopLossPrice,
+                    takeProfitPrice: masterTrade.takeProfitPrice,
+                    tradeSide: masterTrade.tradeSide as TradeSide,
+                    orderPlacementType:
+                        masterTrade.orderPlacementType as OrderPlacementType,
+                    accountType: masterTrade.accountType as AccountType,
+                };
+            }
+        );
+
+        log.info(`Successfully processed signal ${masterTrade.masterTradeId}`, {
+            platforms: masterTrade.supportedTradingPlatforms,
+            currency: currency,
+            totalUsersWithAccounts: usersWithAccountsAndBalances.length,
+            successfullyProcessedUsers: successfullyProcessedUsers.length,
+            finalAllocations: allocations.length,
+            totalAllocatedAmount: totalAllocated,
+            targetAmount: masterTrade.targetOrdersAmountToFill,
+        });
+
+        return { allocations: allocationsWithTrades, totalAllocated };
+    }
+
+    /**
+     * Publishes allocations to queue with error handling
+     */
+    private async publishAllocationsToQueue(
+        userTradeAllocations: IUserTradeAllocation[]
+    ): Promise<IUserTradeAllocation[]> {
+        if (userTradeAllocations.length === 0) {
+            return [];
+        }
+
+        const queuePublishingResults = await Promise.allSettled(
+            userTradeAllocations.map(async (userTradeAllocation) => {
+                return publishMessageToQueue({
+                    queueUrl: this.secrets?.PROCESS_USER_TRADES_QUEUE ?? "",
+                    message: JSON.stringify(userTradeAllocation),
+                });
+            })
+        );
+
+        // Filter out failed publications and return only successful ones
+        const successfulAllocations: IUserTradeAllocation[] = [];
+        const failedUserIds: string[] = [];
+
+        queuePublishingResults.forEach((result, index) => {
+            const allocation = userTradeAllocations[index];
+            if (result.status === "fulfilled") {
+                successfulAllocations.push(allocation);
+            } else {
+                failedUserIds.push(allocation.userId);
+                log.error(
+                    `Failed to publish trade to queue for user ${allocation.userId}:`,
+                    result.reason
+                );
+            }
+        });
+
+        if (failedUserIds.length > 0) {
+            log.error(
+                `Failed to publish trades for ${failedUserIds.length} users:`,
+                {
+                    failedUserIds,
+                }
+            );
+        }
+
+        return successfulAllocations;
+    }
+
     // Consolidated method to process user trading with active signal
-    public async processUserTradingWithActiveSignal(
-        queueMessages: IQueueMessageBody<IProcessUserTradingWithActiveSignalEvent>[]
+    public async processIncomingMasterTrades(
+        queueMessages: IQueueMessageBody<IProcessUserTradingWithMasterTradeEvent>[]
     ): Promise<IProcessUserTradingResult> {
         try {
             const successMessageIds: string[] = [];
             const failedMessageIds: string[] = [];
-            const userTradeAllocations: IUserTradeAllocation[] = [];
+            const allUserTradeAllocations: IUserTradeAllocation[] = [];
             let totalAllocatedAmount = 0;
-            let signalDetails: IProcessUserTradingWithActiveSignalEvent | null =
+            let masterTradeDetails: IProcessUserTradingWithMasterTradeEvent | null =
                 null;
 
             await this.initialize();
 
-            // Step 1: Process each queue message
-            for (const queueMessage of queueMessages) {
-                try {
-                    const signalData = queueMessage.body;
-                    signalDetails = signalData;
+            // Process all queue messages in parallel
+            const signalProcessingResults = await Promise.allSettled(
+                queueMessages.map(async (queueMessage) => {
+                    try {
+                        const masterTrade = queueMessage.body;
 
-                    // Check if signal is still valid
-                    if (new Date(signalData.validUntil) < new Date()) {
-                        log.info(
-                            `Signal ${signalData.signalId} has expired, skipping`
+                        // Process this signal and get allocations
+                        const { allocations, totalAllocated } =
+                            await this.processSingleMasterTrade(masterTrade);
+
+                        return {
+                            success: true,
+                            messageId: queueMessage.messageId,
+                            masterTrade,
+                            allocations,
+                            totalAllocated,
+                        };
+                    } catch (error) {
+                        log.error(
+                            `Error processing queue message ${queueMessage.messageId}:`,
+                            { error }
                         );
-                        successMessageIds.push(queueMessage.messageId);
-                        continue;
+                        return {
+                            success: false,
+                            messageId: queueMessage.messageId,
+                            error,
+                        };
                     }
+                })
+            );
 
-                    // Check if signal is tradable
-                    if (!signalData.isSignalTradable) {
-                        log.info(
-                            `Signal ${signalData.signalId} is not tradable, skipping`
-                        );
-                        successMessageIds.push(queueMessage.messageId);
-                        continue;
+            // Collect results from parallel processing
+            signalProcessingResults.forEach((result) => {
+                if (result.status === "fulfilled") {
+                    const value = result.value;
+                    if (value.success) {
+                        successMessageIds.push(value.messageId);
+                        allUserTradeAllocations.push(
+                            ...(value.allocations || [])
+                        ); // Provide empty array fallback
+                        totalAllocatedAmount += value.totalAllocated || 0; // Provide 0 fallback
+                        masterTradeDetails = value.masterTrade || null; // Convert undefined to null
+                    } else {
+                        failedMessageIds.push(value.messageId);
                     }
-
-                    // Map signal exchange to trading platform (single exchange now)
-                    const tradingPlatform = this.mapExchangeToTradingPlatform(
-                        signalData.exchange
-                    );
-                    const currency = signalData.quoteCurrency as Currency;
-                    const accountType =
-                        signalData.accountType || AccountType.FUTURES;
-
-                    // Step 2: Get users with trading accounts and balances for this platform/currency
-                    const usersWithAccountsAndBalances =
-                        await this.getUsersTradingAccountsAndBalances(
-                            tradingPlatform,
-                            currency,
-                            accountType
-                        );
-
-                    if (usersWithAccountsAndBalances.length === 0) {
-                        log.info(
-                            `No eligible users found for signal ${signalData.signalId} on ${tradingPlatform} with ${currency} balance`
-                        );
-                        successMessageIds.push(queueMessage.messageId);
-                        continue;
-                    }
-
-                    // Step 3: Process each user in parallel
-                    const userProcessingResults = await Promise.allSettled(
-                        usersWithAccountsAndBalances.map(
-                            async ({ userId, tradingAccount, balance }) => {
-                                try {
-                                    // Create proposed trade for validation
-                                    const proposedTrade: ITradeInput = {
-                                        userId,
-                                        signalId: signalData.signalId,
-                                        baseAsset: signalData.baseAsset,
-                                        quoteCurrency: signalData.quoteCurrency,
-                                        baseQuantity: 0, // Will be calculated after validation
-                                        quoteTotal: 0,
-                                        side: signalData.tradeSide,
-                                        tradingAccountId:
-                                            tradingAccount._id as mongoose.Types.ObjectId,
-                                        leverage: 1, // Default leverage, can be adjusted
-                                        price: signalData.entryPrice,
-                                    };
-
-                                    // Get user's trading rules
-                                    const [userTradingRules, activeTrades] =
-                                        await Promise.all([
-                                            this.getUserTradingRules(userId),
-                                            this.getUserActiveTrades(userId),
-                                        ]);
-
-                                    // Validate trading rules
-                                    const validationResult =
-                                        await this.validateTradingRules({
-                                            userId,
-                                            proposedTrade,
-                                            tradingAccount,
-                                            accountBalance: balance,
-                                            userTradingRules,
-                                            activeTrades,
-                                        });
-
-                                    if (!validationResult.isValid) {
-                                        return {
-                                            success: false,
-                                            reason: "Trading rules validation failed",
-                                            userId: userId,
-                                            violations:
-                                                validationResult.violations,
-                                        };
-                                    }
-
-                                    // Get user's risk percentage rule
-                                    const riskPercentage = Number(
-                                        userTradingRules.filter(
-                                            (rule) =>
-                                                rule.name ===
-                                                TradingRuleName.RISK_PERCENTAGE_PER_TRADE
-                                        )[0]
-                                    );
-                                    const leverage = 1; // Default leverage
-
-                                    // Calculate trade amount
-                                    const tradeAmount =
-                                        this.calculateTradeAmount(
-                                            balance.availableBalance,
-                                            riskPercentage
-                                        );
-
-                                    // Calculate base quantity
-                                    const baseQuantity =
-                                        tradeAmount / signalData.entryPrice;
-
-                                    // Minimum trade amount check (e.g., $10 minimum)
-                                    if (tradeAmount < 10) {
-                                        return {
-                                            success: false,
-                                            reason: "Trade amount too small",
-                                            userId: userId,
-                                        };
-                                    }
-
-                                    return {
-                                        success: true,
-                                        userId: userId,
-                                        tradingAccountId: tradingAccount._id,
-                                        tradeAmount,
-                                        baseQuantity,
-                                        platformName:
-                                            tradingAccount.platformName,
-                                        apiKey: tradingAccount.apiKey!,
-                                        apiSecret: tradingAccount.apiSecret!,
-                                        passphrase: tradingAccount.passphrase,
-                                        leverage,
-                                        riskPercentage,
-                                        availableBalance:
-                                            balance.availableBalance,
-                                    };
-                                } catch (error) {
-                                    log.error(
-                                        `Error processing user ${userId}:`,
-                                        { error }
-                                    );
-                                    return {
-                                        success: false,
-                                        reason: "Processing error",
-                                        userId: userId,
-                                    };
-                                }
-                            }
-                        )
-                    );
-
-                    // Step 4: Collect successful user allocations
-                    const successfulAllocations = userProcessingResults
-                        .filter(
-                            (result) =>
-                                result.status === "fulfilled" &&
-                                result.value.success
-                        )
-                        .map(
-                            (result) =>
-                                (
-                                    result as PromiseFulfilledResult<IUserProcessingResult>
-                                ).value
-                        )
-                        .filter((result) => result.tradeAmount !== undefined);
-
-                    // Step 5: Sort by trade amount (descending) to prioritize larger trades
-                    successfulAllocations.sort(
-                        (a, b) => b.tradeAmount! - a.tradeAmount!
-                    );
-
-                    // Step 6: Allocate trades up to target amount
-                    let currentAllocatedAmount = 0;
-                    for (const allocation of successfulAllocations) {
-                        if (
-                            currentAllocatedAmount >=
-                            signalData.targetAmountToFill
-                        ) {
-                            break;
-                        }
-
-                        const remainingAmount =
-                            signalData.targetAmountToFill -
-                            currentAllocatedAmount;
-                        const finalTradeAmount = Math.min(
-                            allocation.tradeAmount!,
-                            remainingAmount
-                        );
-                        const finalBaseQuantity =
-                            finalTradeAmount / signalData.entryPrice;
-
-                        userTradeAllocations.push({
-                            userId: allocation.userId,
-                            tradingAccountId: allocation.tradingAccountId!,
-                            tradeAmount: finalTradeAmount,
-                            baseQuantity: finalBaseQuantity,
-                            platformName: allocation.platformName!,
-                            apiKey: allocation.apiKey!,
-                            apiSecret: allocation.apiSecret!,
-                            passphrase: allocation.passphrase,
-                            leverage: allocation.leverage!,
-                            riskPercentage: allocation.riskPercentage!,
-                            availableBalance: allocation.availableBalance!,
-                        });
-
-                        currentAllocatedAmount += finalTradeAmount;
-                        totalAllocatedAmount += finalTradeAmount;
-                    }
-
-                    log.info(
-                        `Successfully processed signal ${signalData.signalId}`,
-                        {
-                            platform: tradingPlatform,
-                            currency: currency,
-                            totalUsersWithAccounts:
-                                usersWithAccountsAndBalances.length,
-                            successfulAllocations: successfulAllocations.length,
-                            finalAllocations: userTradeAllocations.length,
-                            totalAllocatedAmount: currentAllocatedAmount,
-                            targetAmount: signalData.targetAmountToFill,
-                        }
-                    );
-
-                    successMessageIds.push(queueMessage.messageId);
-                } catch (error) {
+                } else {
+                    // This shouldn't happen since we're catching errors inside the map function
                     log.error(
-                        `Error processing queue message ${queueMessage.messageId}:`,
-                        { error }
+                        "Unexpected Promise.allSettled rejection:",
+                        result.reason
                     );
-                    failedMessageIds.push(queueMessage.messageId);
                 }
+            });
+
+            if (allUserTradeAllocations.length === 0) {
+                log.info("No user trades to publish to queue for signals", {
+                    processedSignals: successMessageIds.length,
+                    failedSignals: failedMessageIds.length,
+                });
+                return {
+                    successMessageIds,
+                    failedMessageIds,
+                    userTradeAllocations: [],
+                    totalAllocatedAmount: 0,
+                    masterTradeDetails,
+                };
             }
+
+            // Publish allocations to queue with error handling
+            const successfulAllocations = await this.publishAllocationsToQueue(
+                allUserTradeAllocations
+            );
+
+            log.info(
+                `Successfully processed ${successMessageIds.length} signals in parallel`,
+                {
+                    successfulSignals: successMessageIds.length,
+                    failedSignals: failedMessageIds.length,
+                    totalAllocations: allUserTradeAllocations.length,
+                    successfulPublications: successfulAllocations.length,
+                    totalAllocatedAmount,
+                    users: successfulAllocations.map((allocation) => ({
+                        userId: allocation.userId,
+                        tradingAccountId: allocation.tradingAccountId,
+                        tradeAmount: allocation.tradeAmount,
+                        platformName: allocation.platformName,
+                    })),
+                }
+            );
 
             return {
                 successMessageIds,
                 failedMessageIds,
-                userTradeAllocations,
+                userTradeAllocations: successfulAllocations, // Only return successfully published allocations
                 totalAllocatedAmount,
-                signalDetails,
+                masterTradeDetails,
             };
         } catch (error) {
-            log.error("General error in processUserTradingWithActiveSignal:", {
-                error,
-            });
+            log.error("General error in processIncomingSignals:", { error });
             return {
                 successMessageIds: [],
                 failedMessageIds: queueMessages.map((qm) => qm.messageId),
                 userTradeAllocations: [],
                 totalAllocatedAmount: 0,
-                signalDetails: null,
+                masterTradeDetails: null,
             };
         }
     }

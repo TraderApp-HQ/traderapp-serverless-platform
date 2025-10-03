@@ -14,15 +14,22 @@ import {
 } from "src/types/users-service";
 import "dotenv/config";
 
-class UsersService {
+export class UsersService {
     private connection: mongoose.Connection | null = null;
     private secrets: IUsersServiceSecrets | null = null;
     private initialized: boolean = false;
     private initializationPromise: Promise<void> | null = null;
+    private isExternalConnection: boolean = false;
 
-    constructor() {}
+    constructor(connection?: mongoose.Connection) {
+        if (connection) {
+            this.connection = connection;
+            this.isExternalConnection = true;
+            this.initialized = true;
+        }
+    }
 
-    // Initialize the service once
+    // Initialize the service once (only needed when no external connection provided)
     private async initialize(): Promise<void> {
         if (this.initialized) return;
 
@@ -63,7 +70,8 @@ class UsersService {
 
     // Close resources
     private async closeResources(): Promise<void> {
-        if (this.connection) {
+        // Only close connection if we created it (not externally provided)
+        if (this.connection && !this.isExternalConnection) {
             await this.connection.close();
             this.connection = null;
         }
@@ -72,12 +80,17 @@ class UsersService {
     // For cleanup, especially in testing
     public async cleanup(): Promise<void> {
         await this.closeResources();
-        this.initialized = false;
+        if (!this.isExternalConnection) {
+            this.initialized = false;
+        }
     }
 
-    // Get connection (ensures initialization first)
+    // Get connection (ensures initialization first if needed)
     private async getConnection(): Promise<mongoose.Connection> {
-        await this.initialize();
+        if (!this.isExternalConnection) {
+            await this.initialize();
+        }
+
         if (!this.connection) {
             throw new Error("Database connection not available");
         }
@@ -86,7 +99,10 @@ class UsersService {
 
     // Get secrets (ensures initialization first)
     private async getSecrets(): Promise<IUsersServiceSecrets> {
-        await this.initialize();
+        if (!this.isExternalConnection) {
+            await this.initialize();
+        }
+
         if (!this.secrets) {
             throw new Error("Secrets not available");
         }
@@ -134,7 +150,8 @@ class UsersService {
             const userOnboardingTaskResult = await Promise.allSettled(
                 queueMessages.map(async (queue) => {
                     try {
-                        const { userId, onboardingChecklistItem, value } = queue.body;
+                        const { userId, onboardingChecklistItem, value } =
+                            queue.body;
 
                         // Get user
                         const user = await this.getUserById(userId);
@@ -151,7 +168,9 @@ class UsersService {
                         if (
                             (onboardingChecklistItem !==
                                 UserOnboardingChecklist.SHOW_ONBOARDING_STEPS &&
-                            !user[onboardingChecklistItem]) || onboardingChecklistItem === UserOnboardingChecklist.IS_PERSONAL_ATC_FUNDED
+                                !user[onboardingChecklistItem]) ||
+                            onboardingChecklistItem ===
+                                UserOnboardingChecklist.IS_PERSONAL_ATC_FUNDED
                         ) {
                             // Update the user onboarding task field
                             updatedUser =
@@ -159,7 +178,8 @@ class UsersService {
                                     { id: userId },
                                     {
                                         $set: {
-                                            [onboardingChecklistItem]: value ?? true,
+                                            [onboardingChecklistItem]:
+                                                value ?? true,
                                         },
                                     }
                                 );
@@ -192,33 +212,41 @@ class UsersService {
                                 UserOnboardingChecklist.SHOW_ONBOARDING_STEPS &&
                             user[onboardingChecklistItem]
                         ) {
-                            updatedUser = await usersCollection.findOneAndUpdate(
-                                {
-                                    id: userId,
-                                    isEmailVerified: true,
-                                    isFirstDepositMade: true,
-                                    isTradingAccountConnected: true,
-                                },
-                                {
-                                    $set: {
-                                        [onboardingChecklistItem]: false,
+                            updatedUser =
+                                await usersCollection.findOneAndUpdate(
+                                    {
+                                        id: userId,
+                                        isEmailVerified: true,
+                                        isFirstDepositMade: true,
+                                        isTradingAccountConnected: true,
                                     },
-                                }
-                            );
+                                    {
+                                        $set: {
+                                            [onboardingChecklistItem]: false,
+                                        },
+                                    }
+                                );
                         }
 
                         // Update user activation status if all compulsory conditions are met:
-                        const userStatus = updatedUser && updatedUser.isEmailVerified && updatedUser.isFirstDepositMade && updatedUser.isTradingAccountConnected && updatedUser.isPersonalATCFunded;
-                        if(updatedUser?.status !== userStatus) {
+                        const userStatus =
+                            updatedUser &&
+                            updatedUser.isEmailVerified &&
+                            updatedUser.isFirstDepositMade &&
+                            updatedUser.isTradingAccountConnected &&
+                            updatedUser.isPersonalATCFunded;
+                        if (updatedUser?.status !== userStatus) {
                             await usersCollection.updateOne(
-                            {
-                                id: userId,
-                            },
-                            {
-                                $set: {
-                                    status: userStatus ? Status.ACTIVE : Status.INACTIVE,
+                                {
+                                    id: userId,
                                 },
-                            }
+                                {
+                                    $set: {
+                                        status: userStatus
+                                            ? Status.ACTIVE
+                                            : Status.INACTIVE,
+                                    },
+                                }
                             );
                         }
 

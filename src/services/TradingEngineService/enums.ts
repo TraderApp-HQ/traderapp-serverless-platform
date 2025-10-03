@@ -74,3 +74,14 @@ export enum TradingRuleName {
     MAXIMUM_CONCURRENT_TRADES = "Maximum Concurrent Trades",
     DIRECTION_BALANCE_LIMIT = "Direction Balance Limit",
 }
+
+export enum InvoiceStatus {
+    PENDING = "PENDING", // Invoice is created but not
+    PAID = "PAID",
+    FAILED = "FAILED",
+}
+
+export enum InvoiceType {
+    TRADING_FEE = "TRADING_FEE",
+    PROFIT_SHARE = "PROFIT_SHARE",
+}

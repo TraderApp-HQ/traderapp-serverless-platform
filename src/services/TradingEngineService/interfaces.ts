@@ -2,7 +2,8 @@ import mongoose, { Document } from "mongoose";
 import {
     AccountConnectionStatus,
     ConnectionType,
-    Exchange,
+    InvoiceStatus,
+    InvoiceType,
     OrderBatchStatus,
     OrderPlacementType,
     OrderStatus,
@@ -39,7 +40,7 @@ export interface IOrder extends Document {
 
 export interface IOrderBatch extends Document {
     id: string;
-    orderId: mongoose.Types.ObjectId; // reference to order _id
+    // orderId: mongoose.Types.ObjectId; // reference to order _id
     baseAsset: string;
     quoteCurrency: string;
     baseQuantity: number;
@@ -55,18 +56,57 @@ export interface IOrderBatch extends Document {
 export interface ITrade extends Document {
     id: string;
     userId: string;
-    signalId: string;
+    masterTradeId: string;
     baseAsset: string;
     quoteCurrency: string;
     baseQuantity: number;
-    avgBuyPrice: number;
     quoteTotal: number;
+    entryPrice: number;
+    stopLossPrice: number;
+    takeProfitPrice: number;
     pair: string;
     side: TradeSide;
     pnl: number;
     status: TradeStatus;
     createdAt: string;
     updatedAt: string;
+}
+
+export interface IMasterTrade extends Document {
+    id: string;
+    signalId: string;
+    baseAsset: string;
+    quoteCurrency: string;
+    baseQuantity: number;
+    quoteTotal: number;
+    entryPrice: number;
+    stopLossPrice: number;
+    takeProfitPrice: number;
+    ordersTriggerPrice: number;
+    targetOrdersAmountToFill: number;
+    chartUrl: string;
+    tradeNote: string;
+    pair: string;
+    side: TradeSide;
+    pnl: number;
+    status: TradeStatus;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface IProcessUserTradingWithMasterTradeEvent {
+    masterTradeId: string;
+    stopLossPrice: number;
+    takeProfitPrice: number;
+    entryPrice: number;
+    baseAsset: string;
+    quoteCurrency: string;
+    pair: string;
+    supportedTradingPlatforms: TradingPlatform[];
+    tradeSide: TradeSide;
+    targetOrdersAmountToFill: number;
+    orderPlacementType?: OrderPlacementType; // default is MARKET if not provided
+    accountType?: AccountType; // default is FUTURES if not provided
 }
 
 export interface ITradingRule extends Document {
@@ -114,6 +154,7 @@ export interface IUserTradingAccountBalance extends Document {
     accountType: AccountType;
     availableBalance: number;
     lockedBalance?: number; // Locked balance (e.g., in open orders)
+    accountSize: number;
     tradingAccountId: mongoose.Types.ObjectId; // reference to the user-trading-account _id
     createdAt: string;
     updatedAt: string;
@@ -136,44 +177,65 @@ export interface IUserTradingRule extends Document {
     updatedAt: string;
 }
 
-// export interface IActiveSignalsData {
-//     signalId: string;
-//     stopLoss: ISignalMilestone;
-//     targetProfits: ISignalMilestone[];
-//     entryPrice: number;
-//     isSignalTradable: boolean;
-//     assetName: string;
-//     baseCurrencyName: string;
-//     assetPair: string;
-//     exchanges: Exchange[];
-//     entryPriceUpperBound: number;
-//     entryPriceLowerBound: number;
-//     tradeSide: TradeSide;
-//     maxGain: number;
-// }
-
 export interface ISignalMilestone {
     price: number;
     percent: number;
     isReached: boolean;
 }
 
-export interface IProcessUserTradingWithActiveSignalEvent {
-    signalId: string;
-    stopLoss: ISignalMilestone;
-    targetProfits: ISignalMilestone[];
-    entryPrice: number;
-    isSignalTradable: boolean;
+export interface IPlatformTradingRule extends Document {
+    id: string;
+    pair: string;
     baseAsset: string;
     quoteCurrency: string;
-    assetPair: string;
-    exchange: Exchange;
-    entryPriceUpperBound: number;
-    entryPriceLowerBound: number;
+    minQuantity: number;
+    stepSize: number;
+    minNotional: number;
+    platform: TradingPlatform;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface IUserTradeAllocation {
+    userId: string;
+    tradingAccountId: mongoose.Types.ObjectId;
+    baseQuantity?: number;
+    platformName: TradingPlatform;
+    apiKey: string;
+    apiSecret: string;
+    passphrase?: string;
+    leverage?: number;
+    positionSize: number;
+    tradeAmount: number;
+    riskAmount: number;
+    availableBalance: number;
+    tradeId: string;
+    masterTradeId: string;
+    baseAsset: string;
+    quoteCurrency: string;
+    quoteTotal: number;
+    entryPrice: number;
+    stopLossPrice: number;
+    takeProfitPrice: number;
     tradeSide: TradeSide;
-    maxGain: number;
-    targetAmountToFill: number;
-    validUntil: string; // ISO date/time format
-    orderPlacementType?: OrderPlacementType; // default is MARKET if not provided
-    accountType?: AccountType; // default is FUTURES if not provided
+    orderPlacementType: OrderPlacementType;
+    accountType: AccountType;
+}
+
+export interface IInvoice extends Document {
+    id: string;
+    userId: string;
+    invoiceType: InvoiceType;
+    currency: Currency; // Currency to be paid in
+    amountDue: number;
+    amountPaid: number;
+    amountOutstanding: number; // amountDue - amountPaid
+    status: InvoiceStatus;
+    tradeId: string;
+    tradeSide: TradeSide;
+    baseAsset: string; // Asset that is being traded
+    logoUrl: string; // Logo of the baseAsset
+    quoteCurrency: string; // Currency in which the baseAsset is priced
+    createdAt: string;
+    updatedAt: string;
 }

@@ -177,8 +177,8 @@ export class ReferralsService {
         } = connections;
         const env = process.env.ENV;
         const commonSecrets = await getSecrets<ICommonSecrets>(
-                                `${SecretLocation.commonSecrets}/${env}`
-                            )
+            `${SecretLocation.commonSecrets}/${env}`
+        );
 
         const successMessageIds: string[] = [];
         const failedMessageIds: string[] = [];
@@ -217,14 +217,16 @@ export class ReferralsService {
                             }),
                             publishMessageToQueue({
                                 queueUrl:
-                                commonSecrets.TRACK_USER_ONBOARDING_CHECKLIST_QUEUE ??
-                                "",
-                                message: {
+                                    commonSecrets.TRACK_USER_ONBOARDING_CHECKLIST_QUEUE ??
+                                    "",
+                                message: JSON.stringify({
                                     userId: user.id,
                                     onboardingChecklistItem:
-                                    UserOnboardingChecklist.IS_PERSONAL_ATC_FUNDED,
-                                    value: balances.userBalance.availableBalance > 50,
-                                },
+                                        UserOnboardingChecklist.IS_PERSONAL_ATC_FUNDED,
+                                    value:
+                                        balances.userBalance.availableBalance >
+                                        50,
+                                }),
                             }),
                         ]);
 
