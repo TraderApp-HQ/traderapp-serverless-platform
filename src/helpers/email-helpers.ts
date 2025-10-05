@@ -22,6 +22,9 @@ const applyReplacements = (
     template: string,
     replacements: Record<string, string | undefined>
 ): string => {
+    console.log("######### inside applyReplacements ############", {
+        replacements,
+    });
     let result = template;
     for (const [key, value] of Object.entries(replacements)) {
         if (value) {
@@ -38,6 +41,13 @@ export const formatEmailMessageBody = ({
     sender,
     metadata,
 }: IFormatEmailMessageInput): string => {
+    console.log("######### insideformatEmailMessageBody ############", {
+        recipient,
+        message,
+        event,
+        sender,
+        metadata,
+    });
     switch (event) {
         case EventTemplate.GENERAL:
             return applyReplacements(GeneralTemplate, {
@@ -68,13 +78,20 @@ export const formatEmailMessageBody = ({
                 USER_NAME: recipient.firstName,
             });
 
-        case EventTemplate.SEND_DEPOSIT_CONFIRMATION_EMAIL:
+        case EventTemplate.SEND_DEPOSIT_CONFIRMATION_EMAIL: {
+            console.log("######### inside SendDepositConfirmationEmailTemplate ############", {
+                recipient,
+                message,
+                event,
+                sender,
+                metadata,
+            });
             return applyReplacements(SendDepositConfirmationEmailTemplate, {
                 USER_NAME: recipient.firstName,
                 AMOUNT: metadata?.amount?.toString(),
                 TRANSACTION_ID: metadata?.transactionId,
             });
-
+        }
         case EventTemplate.INVITE_USER:
             return applyReplacements(ReferralTemplate, {
                 REFERRAL_LINK: message,
