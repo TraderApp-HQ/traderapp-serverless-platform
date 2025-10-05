@@ -79,13 +79,16 @@ export const formatEmailMessageBody = ({
             });
 
         case EventTemplate.SEND_DEPOSIT_CONFIRMATION_EMAIL: {
-            console.log("######### inside SendDepositConfirmationEmailTemplate ############", {
-                recipient,
-                message,
-                event,
-                sender,
-                metadata,
-            });
+            console.log(
+                "######### inside SendDepositConfirmationEmailTemplate ############",
+                {
+                    recipient,
+                    message,
+                    event,
+                    sender,
+                    metadata,
+                }
+            );
             return applyReplacements(SendDepositConfirmationEmailTemplate, {
                 USER_NAME: recipient.firstName,
                 AMOUNT: metadata?.amount?.toString(),
