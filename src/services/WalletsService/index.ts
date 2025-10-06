@@ -37,7 +37,7 @@ export class WalletsService {
     private initialized: boolean = false;
     private initializationPromise: Promise<void> | null = null;
 
-    constructor() {}
+    constructor() { }
 
     // Initialize the service once
     private async initialize(): Promise<void> {
@@ -357,7 +357,7 @@ export class WalletsService {
             const completedDeposits = transactions.filter(
                 (t) =>
                     t.queueMessage.body.data.status ===
-                        CryptopayWebhookEventStatus.completed && t.userId
+                    CryptopayWebhookEventStatus.completed && t.userId
             );
 
             const transactionsToCredit = await Promise.all(
@@ -377,7 +377,7 @@ export class WalletsService {
                             if (
                                 existingTransaction &&
                                 existingTransaction.status ===
-                                    TransactionStatus.SUCCESS
+                                TransactionStatus.SUCCESS
                             ) {
                                 console.log(
                                     `Transaction ${transaction.externalTransactionId} already credited, skipping.`
@@ -425,7 +425,7 @@ export class WalletsService {
                             if (
                                 parseFloat(
                                     queueMessage.body.data.paid_amount ?? "0"
-                                ) > 10
+                                ) >= 10
                             ) {
                                 await publishMessageToQueue({
                                     queueUrl:

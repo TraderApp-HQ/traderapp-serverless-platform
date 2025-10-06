@@ -22,7 +22,7 @@ export const publishDepositConfirmationToQueue = async (
     await publishMessageToQueue({
         queueUrl,
         message: JSON.stringify({
-            recipient: [{ firstName: user.firstName, email: user.email }],
+            recipients: [{ firstName: user.firstName, email: user.email }],
             message: "",
             event: EventTemplate.SEND_DEPOSIT_CONFIRMATION_EMAIL,
             metadata: { amount, transactionId },
