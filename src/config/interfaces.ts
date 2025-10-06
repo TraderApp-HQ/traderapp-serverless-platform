@@ -14,6 +14,7 @@ export interface IMessageRecipient {
 export interface IMetadata {
     transactionId?: string;
     amount?: number;
+    dateTime?: string;
 }
 
 export interface IQueueMessageBodyObject {

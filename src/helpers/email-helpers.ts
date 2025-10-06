@@ -73,6 +73,7 @@ export const formatEmailMessageBody = ({
                 USER_NAME: recipient.firstName,
                 AMOUNT: metadata?.amount?.toString(),
                 TRANSACTION_ID: metadata?.transactionId,
+                DATE_TIME: metadata?.dateTime,
             });
         }
         case EventTemplate.INVITE_USER:

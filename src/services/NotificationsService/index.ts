@@ -4,7 +4,7 @@ import { formatEmailMessageBody } from "src/helpers/email-helpers";
 import SendpulseEmailService from "src/utils/send-pulse";
 
 export class NotificationsService {
-    constructor() { }
+    constructor() {}
 
     public async processMessagesAndSendEmails(
         queueMessages: IQueueMessageBody[]
