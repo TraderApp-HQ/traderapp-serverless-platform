@@ -1,6 +1,7 @@
 import { publishMessageToQueue } from "src/clients/SQSClient/helpers";
 import UsersService from "../UsersService";
 import { EventTemplate } from "src/config/enums";
+import { IQueueMessageBodyObject } from "src/config/interfaces";
 
 interface IPublishDepositConfirmationToQueueInput {
     userId: string;
@@ -19,13 +20,16 @@ export const publishDepositConfirmationToQueue = async (
         throw new Error(`User with the ID ${userId} not found`);
     }
 
+    const message: IQueueMessageBodyObject = {
+        recipients: [{ firstName: user.firstName, emailAddress: user.email }],
+        message: "Deposit Confirmation",
+        event: EventTemplate.SEND_DEPOSIT_CONFIRMATION_EMAIL,
+        metadata: { amount, transactionId },
+        subject: "Deposit Confirmation",
+    };
+
     await publishMessageToQueue({
         queueUrl,
-        message: JSON.stringify({
-            recipients: [{ firstName: user.firstName, email: user.email }],
-            message: "",
-            event: EventTemplate.SEND_DEPOSIT_CONFIRMATION_EMAIL,
-            metadata: { amount, transactionId },
-        }),
+        message: JSON.stringify(message),
     });
 };
