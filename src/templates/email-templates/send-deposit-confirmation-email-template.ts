@@ -184,7 +184,7 @@ const SendDepositConfirmationEmailTemplate = `<!doctype html>
                                                 <tbody>
                                                   <tr>
                                                     <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                                                      <div style="font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:16px;font-weight:400;line-height:1.8;text-align:left;color:#000000;">Transaction Details: <br /> Amount Deposited: {AMOUNT} USDT <br /> Date & Time: 27-June-2025 08:51 AM <br /> Transaction ID: {TRANSACTION_ID}</div>
+                                                      <div style="font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:16px;font-weight:400;line-height:1.8;text-align:left;color:#000000;">Transaction Details: <br /> Amount Deposited: {AMOUNT} USDT <br /> Date & Time: {DATE_TIME} <br /> Transaction ID: {TRANSACTION_ID}</div>
                                                     </td>
                                                   </tr>
                                                 </tbody>
