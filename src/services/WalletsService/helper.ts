@@ -21,12 +21,16 @@ export const publishDepositConfirmationToQueue = async (
         throw new Error(`User with the ID ${userId} not found`);
     }
 
-    const dateTime = new Date().toISOString()
+    const dateTime = new Date().toISOString();
     const message: IQueueMessageBodyObject = {
         recipients: [{ firstName: user.firstName, emailAddress: user.email }],
         message: "Deposit Confirmation",
         event: EventTemplate.SEND_DEPOSIT_CONFIRMATION_EMAIL,
-        metadata: { amount, transactionId, dateTime: format(dateTime, "do MMM, yyyy, h:mma") },
+        metadata: {
+            amount,
+            transactionId,
+            dateTime: format(dateTime, "do MMM, yyyy, h:mma"),
+        },
         subject: "Deposit Confirmation",
     };
 
