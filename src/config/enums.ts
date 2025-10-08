@@ -6,6 +6,8 @@ export enum EventTemplate {
     OTP = "OTP",
     CREATE_USER = "CREATE_USER",
     INVITE_USER = "INVITE_USER",
+    SEND_EMAIL = "SEND_EMAIL",
+    SEND_DEPOSIT_CONFIRMATION_EMAIL = "SEND_DEPOSIT_CONFIRMATION_EMAIL",
 }
 
 export enum AccountType {

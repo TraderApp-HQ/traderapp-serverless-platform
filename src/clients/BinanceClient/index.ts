@@ -28,7 +28,7 @@ export class BinanceClient {
             apiKey,
             apiSecret,
             httpFutures:
-                process.env.NODE_ENV !== "production"
+                process.env.ENV !== "prod"
                     ? "https://testnet.binancefuture.com"
                     : undefined,
         });
@@ -205,11 +205,11 @@ export class BinanceClient {
             const sortedTargets =
                 params.mainOrderSide === OrderSide.BUY
                     ? [...params.targetProfits].sort(
-                          (a, b) => a.price - b.price
-                      ) // ascending for BUY
+                        (a, b) => a.price - b.price
+                    ) // ascending for BUY
                     : [...params.targetProfits].sort(
-                          (a, b) => b.price - a.price
-                      ); // descending for SELL
+                        (a, b) => b.price - a.price
+                    ); // descending for SELL
 
             // Calculate quantities for each target
             let qtyLeft = executedQty;

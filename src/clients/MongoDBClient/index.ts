@@ -79,7 +79,7 @@ export class MongoDBClient<T> {
                 update,
                 { returnDocument: "after" } // returns the updated document
             );
-        return result?.value as T | null;
+        return result as T | null;
     }
 
     async deleteOne(filter: Record<string, any>): Promise<boolean> {

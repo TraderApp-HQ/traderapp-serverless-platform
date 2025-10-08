@@ -9,6 +9,16 @@ const constants_1 = require("src/config/constants");
 const interfaces_1 = require("src/config/interfaces");
 const index_1 = __importDefault(require("./index"));
 const integration_test_helpers_1 = require("./integration.test.helpers");
+const helpers_1 = require("src/clients/SQSClient/helpers");
+const helpers_2 = require("src/config/secrets/helpers");
+jest.mock("src/config/secrets/helpers", () => ({
+    ...jest.requireActual("src/config/secrets/helpers"),
+    getSecrets: jest.fn(),
+}));
+jest.mock("src/clients/SQSClient/helpers", () => ({
+    ...jest.requireActual("src/clients/SQSClient/helpers"),
+    publishMessageToQueue: jest.fn(),
+}));
 describe("ReferralsService Integration Tests", () => {
     let mongoServer;
     let tradingEngineConnection;
@@ -35,6 +45,12 @@ describe("ReferralsService Integration Tests", () => {
             tradingEngineConnection.on("connected", checkReady);
             usersConnection.on("connected", checkReady);
         });
+        // Mock getSecrets to always return a fake queue URL
+        helpers_2.getSecrets.mockResolvedValue({
+            TRACK_USER_ONBOARDING_CHECKLIST_QUEUE: "https://fake-queue-url",
+        });
+        // Mock publishMessageToQueue to just resolve (do nothing)
+        helpers_1.publishMessageToQueue.mockResolvedValue(undefined);
     });
     afterAll(async () => {
         await tradingEngineConnection.close();

@@ -6,13 +6,15 @@ class MongoDBClient {
         this.connection = connection;
         this.collection = collection;
     }
-    async findOne(filter) {
+    async findOne(filter, options) {
         return this.connection
             .collection(this.collection)
-            .findOne(filter);
+            .findOne(filter, options);
     }
-    async find(filter) {
-        const result = this.connection.collection(this.collection).find(filter);
+    async find(filter, options) {
+        const result = this.connection
+            .collection(this.collection)
+            .find(filter, options);
         return (await result.toArray());
     }
     async findAll() {
@@ -24,24 +26,28 @@ class MongoDBClient {
         const result = (await collection.find({}).toArray());
         return result;
     }
-    async insertOne(doc) {
+    async insertOne(doc, options) {
         const result = await this.connection
             .collection(this.collection)
-            .insertOne(doc);
+            .insertOne(doc, options);
         return { ...doc, _id: result.insertedId };
     }
-    async updateOne(filter, update) {
+    async updateOne(filter, update, options) {
         const result = await this.connection
             .collection(this.collection)
-            .updateOne(filter, update);
-        return result.modifiedCount > 0;
+            .updateOne(filter, update, options);
+        return {
+            modifiedCount: result.modifiedCount,
+            matchedCount: result.matchedCount,
+            acknowledged: result.acknowledged,
+        };
     }
     async findOneAndUpdate(filter, update) {
         const result = await this.connection
             .collection(this.collection)
             .findOneAndUpdate(filter, update, { returnDocument: "after" } // returns the updated document
         );
-        return result?.value;
+        return result;
     }
     async deleteOne(filter) {
         const result = await this.connection

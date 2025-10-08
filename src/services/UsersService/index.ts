@@ -10,7 +10,7 @@ import {
     IUser,
     ITrackUserOnboardingChecklistInput,
     UserOnboardingChecklist,
-    Status,
+    TradingStatus,
 } from "src/types/users-service";
 import "dotenv/config";
 
@@ -110,7 +110,7 @@ export class UsersService {
     }
 
     // Get user by ID
-    private async getUserById(userId: string): Promise<IUser | null> {
+    public async getUserById(userId: string): Promise<IUser | null> {
         try {
             const connection = await this.getConnection();
             const usersCollection = new MongoDBClient<IUser>(
@@ -141,7 +141,6 @@ export class UsersService {
                 connection,
                 UsersServiceCollections.users
             );
-            let updatedUser: IUser | null;
 
             const successMessageIds: string[] = [];
             const failedMessageIds: string[] = [];
@@ -173,7 +172,7 @@ export class UsersService {
                                 UserOnboardingChecklist.IS_PERSONAL_ATC_FUNDED
                         ) {
                             // Update the user onboarding task field
-                            updatedUser =
+                            const updatedUser =
                                 await usersCollection.findOneAndUpdate(
                                     { id: userId },
                                     {
@@ -184,23 +183,33 @@ export class UsersService {
                                     }
                                 );
 
-                            // After the selected field is updated, confirm if other fields have been updated and and update the showOnboardingTask field to false
-                            if (
-                                updatedUser &&
-                                updatedUser.showOnboardingSteps
-                            ) {
+                            if (updatedUser) {
+                                const {
+                                    showOnboardingSteps,
+                                    isSocialAccountConnected,
+                                    isOnboardingTaskDone,
+                                    isPersonalATCFunded,
+                                } = updatedUser;
+
                                 await usersCollection.updateOne(
                                     {
                                         id: userId,
                                         isEmailVerified: true,
                                         isFirstDepositMade: true,
                                         isTradingAccountConnected: true,
-                                        isSocialAccountConnected: true,
-                                        isOnboardingTaskDone: true,
                                     },
                                     {
                                         $set: {
-                                            showOnboardingSteps: false,
+                                            // If the user has completed all compulsory onboarding tasks, update the showOnboardingSteps field
+                                            ...(showOnboardingSteps &&
+                                                isSocialAccountConnected &&
+                                                isOnboardingTaskDone && {
+                                                    showOnboardingSteps: false,
+                                                }),
+                                            // and update the trading status of the user depending on the personal ATC status after checking isEmailVerified -> isFirstDepositMade -> isTradingAccountConnected
+                                            tradingStatus: isPersonalATCFunded
+                                                ? TradingStatus.ACTIVE
+                                                : TradingStatus.INACTIVE,
                                         },
                                     }
                                 );
@@ -212,39 +221,16 @@ export class UsersService {
                                 UserOnboardingChecklist.SHOW_ONBOARDING_STEPS &&
                             user[onboardingChecklistItem]
                         ) {
-                            updatedUser =
-                                await usersCollection.findOneAndUpdate(
-                                    {
-                                        id: userId,
-                                        isEmailVerified: true,
-                                        isFirstDepositMade: true,
-                                        isTradingAccountConnected: true,
-                                    },
-                                    {
-                                        $set: {
-                                            [onboardingChecklistItem]: false,
-                                        },
-                                    }
-                                );
-                        }
-
-                        // Update user activation status if all compulsory conditions are met:
-                        const userStatus =
-                            updatedUser &&
-                            updatedUser.isEmailVerified &&
-                            updatedUser.isFirstDepositMade &&
-                            updatedUser.isTradingAccountConnected &&
-                            updatedUser.isPersonalATCFunded;
-                        if (updatedUser?.status !== userStatus) {
                             await usersCollection.updateOne(
                                 {
                                     id: userId,
+                                    isEmailVerified: true,
+                                    isFirstDepositMade: true,
+                                    isTradingAccountConnected: true,
                                 },
                                 {
                                     $set: {
-                                        status: userStatus
-                                            ? Status.ACTIVE
-                                            : Status.INACTIVE,
+                                        [onboardingChecklistItem]: false,
                                     },
                                 }
                             );

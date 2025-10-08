@@ -8,6 +8,11 @@ const mongoose_1 = __importDefault(require("mongoose"));
 const lambda_powertools_logger_1 = __importDefault(require("@dazn/lambda-powertools-logger"));
 const constants_1 = require("src/config/constants");
 const helpers_1 = require("src/config/sqs/helpers");
+require("dotenv/config");
+const helpers_2 = require("src/config/secrets/helpers");
+const enums_1 = require("src/config/secrets/enums");
+const helpers_3 = require("src/clients/SQSClient/helpers");
+const users_service_1 = require("src/types/users-service");
 class ReferralsService {
     constructor() { }
     async getTotalUsdtBalanceFromDb({ userId, mongooseConnection, }) {
@@ -28,6 +33,7 @@ class ReferralsService {
                 .find({
                 tradingAccountId: { $in: tradingAccountIds },
                 currency: "USDT",
+                accountType: "FUTURES", // Only get FUTURES accounts balances
             })
                 .toArray();
             // Sum up the balances
@@ -102,6 +108,8 @@ class ReferralsService {
     async processUserReferralTracking(connections, event) {
         const queueMessages = (0, helpers_1.getParsedQueueMessagesBody)(event);
         const { tradingEngine: tradingEngineConnection, users: usersConnection, } = connections;
+        const env = process.env.ENV;
+        const commonSecrets = await (0, helpers_2.getSecrets)(`${enums_1.SecretLocation.commonSecrets}/${env}`);
         const successMessageIds = [];
         const failedMessageIds = [];
         try {
@@ -119,13 +127,25 @@ class ReferralsService {
                         referrals,
                         isTestReferralTracking,
                     });
-                    await this.updateUserInfoInDb({
-                        mongooseConnection: usersConnection,
-                        balance: balances,
-                        userId: user.id,
-                        maxRankFromReferrals,
-                        referralRank: rank,
-                    });
+                    await Promise.all([
+                        this.updateUserInfoInDb({
+                            mongooseConnection: usersConnection,
+                            balance: balances,
+                            userId: user.id,
+                            maxRankFromReferrals,
+                            referralRank: rank,
+                        }),
+                        (0, helpers_3.publishMessageToQueue)({
+                            queueUrl: commonSecrets.TRACK_USER_ONBOARDING_CHECKLIST_QUEUE ??
+                                "",
+                            message: JSON.stringify({
+                                userId: user.id,
+                                onboardingChecklistItem: users_service_1.UserOnboardingChecklist.IS_PERSONAL_ATC_FUNDED,
+                                value: balances.userBalance.availableBalance >
+                                    50,
+                            }),
+                        }),
+                    ]);
                     return {
                         messageId: queueMessage.messageId,
                         success: true,

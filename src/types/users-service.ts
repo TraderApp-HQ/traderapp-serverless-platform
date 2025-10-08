@@ -20,6 +20,11 @@ export enum Status {
     INACTIVE = "INACTIVE",
 }
 
+export enum TradingStatus {
+    ACTIVE = "ACTIVE",
+    INACTIVE = "INACTIVE",
+}
+
 export enum UserOnboardingChecklist {
     IS_EMAIL_VERIFIED = "isEmailVerified",
     IS_FIRST_DEPOSIT_MADE = "isFirstDepositMade",
@@ -59,6 +64,7 @@ export interface IUser {
     isIdVerified?: boolean;
     role: Role[];
     status: Status;
+    tradingStatus: TradingStatus;
     referralCode: string;
     parentId?: string;
     referralRank?: ReferralRankType;

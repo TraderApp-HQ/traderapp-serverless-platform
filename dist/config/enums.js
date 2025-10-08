@@ -10,6 +10,8 @@ var EventTemplate;
     EventTemplate["OTP"] = "OTP";
     EventTemplate["CREATE_USER"] = "CREATE_USER";
     EventTemplate["INVITE_USER"] = "INVITE_USER";
+    EventTemplate["SEND_EMAIL"] = "SEND_EMAIL";
+    EventTemplate["SEND_DEPOSIT_CONFIRMATION_EMAIL"] = "SEND_DEPOSIT_CONFIRMATION_EMAIL";
 })(EventTemplate || (exports.EventTemplate = EventTemplate = {}));
 var AccountType;
 (function (AccountType) {

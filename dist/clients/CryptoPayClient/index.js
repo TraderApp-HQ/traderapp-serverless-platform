@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CryptoPayClient = exports.CryptopayWebhookEventStatus = void 0;
+exports.CryptoPayClient = exports.CryptopayWebhookEventType = exports.CryptopayWebhookEventStatus = void 0;
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const axios_1 = __importDefault(require("axios"));
 const crypto_1 = __importDefault(require("crypto"));
@@ -23,6 +23,12 @@ var CryptopayWebhookEventStatus;
     CryptopayWebhookEventStatus["unresolved"] = "unresolved";
     CryptopayWebhookEventStatus["processing"] = "processing";
 })(CryptopayWebhookEventStatus || (exports.CryptopayWebhookEventStatus = CryptopayWebhookEventStatus = {}));
+var CryptopayWebhookEventType;
+(function (CryptopayWebhookEventType) {
+    CryptopayWebhookEventType["ChannelPayment"] = "ChannelPayment";
+    CryptopayWebhookEventType["Invoice"] = "Invoice";
+    CryptopayWebhookEventType["CoinWithdrawal"] = "CoinWithdrawal";
+})(CryptopayWebhookEventType || (exports.CryptopayWebhookEventType = CryptopayWebhookEventType = {}));
 class CryptoPayClient {
     constructor({ baseUrl, apiKey, apiSecret, webhooksSharedSecret, }) {
         this.baseUrl = baseUrl;
@@ -168,8 +174,8 @@ class CryptoPayClient {
             fromWalletAddress,
             toWalletAddress,
             transactionNetwork: transaction.data.network,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
+            createdAt: new Date(),
+            updatedAt: new Date(),
         };
     }
 }

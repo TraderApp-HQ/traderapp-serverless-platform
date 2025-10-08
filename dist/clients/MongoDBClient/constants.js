@@ -7,9 +7,12 @@ exports.WalletsServiceCollections = {
     userWallets: "user-wallets",
     walletTypes: "wallet-types",
     currencies: "currencies",
+    invoices: "invoices",
 };
 exports.UsersServiceCollections = {
     users: "users",
+    userRelationships: "user-relationships",
+    countries: "countries",
 };
 exports.TradingEngineServiceCollections = {
     trades: "trades",
@@ -19,4 +22,5 @@ exports.TradingEngineServiceCollections = {
     userTradingRules: "user-trading-rules",
     userTradingAccounts: "user-trading-accounts",
     userTradingAccountBalances: "user-trading-account-balances",
+    platformTradingRules: "platform-trading-rules",
 };

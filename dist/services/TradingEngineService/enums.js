@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.TradingRuleName = exports.Exchange = exports.ConnectionType = exports.AccountConnectionStatus = exports.TradingRuleType = exports.TradingRuleCategory = exports.TradeSide = exports.OrderBatchStatus = exports.TradeStatus = exports.OrderStatus = exports.OrderPlacementType = exports.OrderType = void 0;
+exports.InvoiceType = exports.InvoiceStatus = exports.TradingRuleName = exports.Exchange = exports.ConnectionType = exports.AccountConnectionStatus = exports.TradingRuleType = exports.TradingRuleCategory = exports.TradeSide = exports.OrderBatchStatus = exports.TradeStatus = exports.OrderStatus = exports.OrderPlacementType = exports.OrderType = void 0;
 var OrderType;
 (function (OrderType) {
     OrderType["BUY"] = "BUY";
@@ -78,3 +78,14 @@ var TradingRuleName;
     TradingRuleName["MAXIMUM_CONCURRENT_TRADES"] = "Maximum Concurrent Trades";
     TradingRuleName["DIRECTION_BALANCE_LIMIT"] = "Direction Balance Limit";
 })(TradingRuleName || (exports.TradingRuleName = TradingRuleName = {}));
+var InvoiceStatus;
+(function (InvoiceStatus) {
+    InvoiceStatus["PENDING"] = "PENDING";
+    InvoiceStatus["PAID"] = "PAID";
+    InvoiceStatus["FAILED"] = "FAILED";
+})(InvoiceStatus || (exports.InvoiceStatus = InvoiceStatus = {}));
+var InvoiceType;
+(function (InvoiceType) {
+    InvoiceType["TRADING_FEE"] = "TRADING_FEE";
+    InvoiceType["PROFIT_SHARE"] = "PROFIT_SHARE";
+})(InvoiceType || (exports.InvoiceType = InvoiceType = {}));

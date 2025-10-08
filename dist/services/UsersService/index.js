@@ -3,6 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.UsersService = void 0;
 const lambda_powertools_logger_1 = __importDefault(require("@dazn/lambda-powertools-logger"));
 const mongoose_1 = __importDefault(require("mongoose"));
 const MongoDBClient_1 = require("src/clients/MongoDBClient");
@@ -12,13 +13,19 @@ const helpers_1 = require("src/config/secrets/helpers");
 const users_service_1 = require("src/types/users-service");
 require("dotenv/config");
 class UsersService {
-    constructor() {
+    constructor(connection) {
         this.connection = null;
         this.secrets = null;
         this.initialized = false;
         this.initializationPromise = null;
+        this.isExternalConnection = false;
+        if (connection) {
+            this.connection = connection;
+            this.isExternalConnection = true;
+            this.initialized = true;
+        }
     }
-    // Initialize the service once
+    // Initialize the service once (only needed when no external connection provided)
     async initialize() {
         if (this.initialized)
             return;
@@ -50,7 +57,8 @@ class UsersService {
     }
     // Close resources
     async closeResources() {
-        if (this.connection) {
+        // Only close connection if we created it (not externally provided)
+        if (this.connection && !this.isExternalConnection) {
             await this.connection.close();
             this.connection = null;
         }
@@ -58,11 +66,15 @@ class UsersService {
     // For cleanup, especially in testing
     async cleanup() {
         await this.closeResources();
-        this.initialized = false;
+        if (!this.isExternalConnection) {
+            this.initialized = false;
+        }
     }
-    // Get connection (ensures initialization first)
+    // Get connection (ensures initialization first if needed)
     async getConnection() {
-        await this.initialize();
+        if (!this.isExternalConnection) {
+            await this.initialize();
+        }
         if (!this.connection) {
             throw new Error("Database connection not available");
         }
@@ -70,7 +82,9 @@ class UsersService {
     }
     // Get secrets (ensures initialization first)
     async getSecrets() {
-        await this.initialize();
+        if (!this.isExternalConnection) {
+            await this.initialize();
+        }
         if (!this.secrets) {
             throw new Error("Secrets not available");
         }
@@ -100,7 +114,7 @@ class UsersService {
             // Process each message and update each user onboarding task field
             const userOnboardingTaskResult = await Promise.allSettled(queueMessages.map(async (queue) => {
                 try {
-                    const { userId, onboardingChecklistItem } = queue.body;
+                    const { userId, onboardingChecklistItem, value } = queue.body;
                     // Get user
                     const user = await this.getUserById(userId);
                     // Confirm user exists and ...
@@ -111,28 +125,36 @@ class UsersService {
                         };
                     }
                     // Check that flag is not showOnboardingTask flag and flag is not turned on yet
-                    if (onboardingChecklistItem !==
+                    if ((onboardingChecklistItem !==
                         users_service_1.UserOnboardingChecklist.SHOW_ONBOARDING_STEPS &&
-                        !user[onboardingChecklistItem]) {
+                        !user[onboardingChecklistItem]) ||
+                        onboardingChecklistItem ===
+                            users_service_1.UserOnboardingChecklist.IS_PERSONAL_ATC_FUNDED) {
                         // Update the user onboarding task field
                         const updatedUser = await usersCollection.findOneAndUpdate({ id: userId }, {
                             $set: {
-                                [onboardingChecklistItem]: true,
+                                [onboardingChecklistItem]: value ?? true,
                             },
                         });
-                        // After the selected field is updated, confirm if other fields have been updated and and update the showOnboardingTask field to false
-                        if (updatedUser &&
-                            updatedUser.showOnboardingSteps) {
+                        if (updatedUser) {
+                            const { showOnboardingSteps, isSocialAccountConnected, isOnboardingTaskDone, isPersonalATCFunded, } = updatedUser;
                             await usersCollection.updateOne({
                                 id: userId,
                                 isEmailVerified: true,
                                 isFirstDepositMade: true,
                                 isTradingAccountConnected: true,
-                                isSocialAccountConnected: true,
-                                isOnboardingTaskDone: true,
                             }, {
                                 $set: {
-                                    showOnboardingSteps: false,
+                                    // If the user has completed all compulsory onboarding tasks, update the showOnboardingSteps field
+                                    ...(showOnboardingSteps &&
+                                        isSocialAccountConnected &&
+                                        isOnboardingTaskDone && {
+                                        showOnboardingSteps: false,
+                                    }),
+                                    // and update the trading status of the user depending on the personal ATC status after checking isEmailVerified -> isFirstDepositMade -> isTradingAccountConnected
+                                    tradingStatus: isPersonalATCFunded
+                                        ? users_service_1.TradingStatus.ACTIVE
+                                        : users_service_1.TradingStatus.INACTIVE,
                                 },
                             });
                         }
@@ -201,4 +223,5 @@ class UsersService {
         }
     }
 }
+exports.UsersService = UsersService;
 exports.default = new UsersService();

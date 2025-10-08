@@ -11,6 +11,7 @@ export class NotificationsService {
     ): Promise<void> {
         const sendpulseEmailService = await SendpulseEmailService.create();
         const promises: Promise<any>[] = [];
+
         queueMessages.forEach((message) => {
             message.body.recipients.forEach((recipient) => {
                 const body = formatEmailMessageBody({
@@ -18,7 +19,9 @@ export class NotificationsService {
                     message: message.body.message,
                     event: message.body.event,
                     sender: message.body.sender,
+                    metadata: message.body.metadata,
                 });
+
                 const subject =
                     message.body.subject ?? "TraderApp Notification";
                 promises.push(

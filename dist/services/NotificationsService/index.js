@@ -18,6 +18,7 @@ class NotificationsService {
                     message: message.body.message,
                     event: message.body.event,
                     sender: message.body.sender,
+                    metadata: message.body.metadata,
                 });
                 const subject = message.body.subject ?? "TraderApp Notification";
                 promises.push(sendpulseEmailService.sendEmail({

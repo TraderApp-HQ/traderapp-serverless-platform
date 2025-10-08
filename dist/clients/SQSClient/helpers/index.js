@@ -8,7 +8,7 @@ const lambda_powertools_logger_1 = __importDefault(require("@dazn/lambda-powerto
 require("dotenv/config");
 const __1 = require("..");
 const publishMessageToQueue = async ({ message, queueUrl, awsRegion, }) => {
-    const region = awsRegion ?? process.env.AWS_REGION ?? "";
+    const region = awsRegion ?? process.env.AWS_REGION ?? "eu-west-1";
     const sqsClient = new __1.QueueService({ region, queueUrl });
     try {
         let processedBody;
@@ -22,6 +22,7 @@ const publishMessageToQueue = async ({ message, queueUrl, awsRegion, }) => {
     }
     catch (error) {
         lambda_powertools_logger_1.default.error(`Error sending message to queue == ${JSON.stringify(error)}`);
+        throw error;
     }
 };
 exports.publishMessageToQueue = publishMessageToQueue;

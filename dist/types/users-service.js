@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.UserOnboardingChecklist = exports.Status = exports.Role = exports.ReferralRank = void 0;
+exports.UserOnboardingChecklist = exports.TradingStatus = exports.Status = exports.Role = exports.ReferralRank = void 0;
 exports.ReferralRank = {
     TA_RECRUIT: "TA-Recruit",
     TA_LIEUTENANT: "TA-Lieutenant",
@@ -22,6 +22,11 @@ var Status;
     Status["ACTIVE"] = "ACTIVE";
     Status["INACTIVE"] = "INACTIVE";
 })(Status || (exports.Status = Status = {}));
+var TradingStatus;
+(function (TradingStatus) {
+    TradingStatus["ACTIVE"] = "ACTIVE";
+    TradingStatus["INACTIVE"] = "INACTIVE";
+})(TradingStatus || (exports.TradingStatus = TradingStatus = {}));
 var UserOnboardingChecklist;
 (function (UserOnboardingChecklist) {
     UserOnboardingChecklist["IS_EMAIL_VERIFIED"] = "isEmailVerified";
@@ -32,4 +37,5 @@ var UserOnboardingChecklist;
     UserOnboardingChecklist["SHOW_ONBOARDING_STEPS"] = "showOnboardingSteps";
     UserOnboardingChecklist["IS_PHONE_VERIFIED"] = "isPhoneVerified";
     UserOnboardingChecklist["IS_ID_VERIFIED"] = "isIdVerified";
+    UserOnboardingChecklist["IS_PERSONAL_ATC_FUNDED"] = "isPersonalATCFunded";
 })(UserOnboardingChecklist || (exports.UserOnboardingChecklist = UserOnboardingChecklist = {}));

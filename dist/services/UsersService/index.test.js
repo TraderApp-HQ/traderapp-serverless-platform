@@ -33,28 +33,27 @@ describe("UsersService Integration Tests", () => {
     let testUserId;
     const testMessageId = "test-message-onboarding-456";
     beforeAll(async () => {
-        // Create a real instance of UsersService and initialize it
         usersService = _1.default;
         await usersService["initialize"]();
         const connection = await usersService["getConnection"]();
         usersCollection = new MongoDBClient_1.MongoDBClient(connection, constants_1.UsersServiceCollections.users);
-        // Create a test users
-        const testUser = await usersCollection.insertOne(testUserData);
+        // Create one test user that will be used across all tests
+        const uniqueTestUserData = {
+            ...testUserData,
+            email: `testuser+${Date.now()}+${Math.random()}@example.com`,
+        };
+        const testUser = await usersCollection.insertOne(uniqueTestUserData);
         if (testUser && testUser._id) {
-            // Update the id field for query purpose
-            await usersCollection.findOneAndUpdate({ _id: testUser?._id }, { $set: { id: testUser?._id.toString() } });
-            testUserId = testUser?._id.toString();
+            await usersCollection.findOneAndUpdate({ _id: testUser._id }, { $set: { id: testUser._id.toString() } });
+            testUserId = testUser._id.toString();
         }
     });
     afterAll(async () => {
-        // Clean up: delete the test user created during testing and close database connection
-        try {
+        // Clean up test user after all tests
+        if (testUserId) {
             await usersCollection.deleteOne({ id: testUserId });
-            await usersService.cleanup();
         }
-        catch (error) {
-            console.warn("Failed to cleanup UsersService:", error);
-        }
+        await usersService.cleanup();
     });
     const createMockQueueMessage = (userId, onboardingChecklistItem, messageId = testMessageId) => ({
         messageId,
@@ -128,6 +127,14 @@ describe("UsersService Integration Tests", () => {
             expect(updatedUser.isFirstDepositMade).toBe(true);
         });
         it("Turn Off showOnboardingSteps flag after compulsory actions are completed.", async () => {
+            // First, set up the required conditions
+            await usersCollection.findOneAndUpdate({ id: testUserId }, {
+                $set: {
+                    isEmailVerified: true,
+                    isFirstDepositMade: true,
+                    isTradingAccountConnected: true,
+                },
+            });
             // Arrange
             const queueMessage = createMockQueueMessage(testUserId, users_service_1.UserOnboardingChecklist.SHOW_ONBOARDING_STEPS);
             // Act

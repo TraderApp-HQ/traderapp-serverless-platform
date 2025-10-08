@@ -9,7 +9,6 @@ const NotificationsService_1 = __importDefault(require("src/services/Notificatio
 const helpers_1 = require("src/config/sqs/helpers");
 const handler = async (event) => {
     lambda_powertools_logger_1.default.info("Received event", { event });
-    // const queueMessages = parseQueueMessagesBody(event);
     const queueMessages = (0, helpers_1.getParsedQueueMessagesBody)(event);
     const notificationService = NotificationsService_1.default;
     await notificationService.processMessagesAndSendEmails(queueMessages);
