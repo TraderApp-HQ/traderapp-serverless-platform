@@ -17,6 +17,14 @@ export interface IMetadata {
     dateTime?: string;
 }
 
+export interface ITransactionDetails {
+    amount?: number;
+    transactionId?: string;
+    dateTime?: string;
+    network?: string;
+    address?: string;
+}
+
 export interface IQueueMessageBodyObject {
     recipients: IMessageRecipient[];
     subject?: string;
@@ -24,6 +32,7 @@ export interface IQueueMessageBodyObject {
     event: EventTemplate;
     sender?: IMessageRecipient;
     metadata?: IMetadata;
+    details?: ITransactionDetails;
 }
 
 export interface IQueueMessageBody<T = IQueueMessageBodyObject>

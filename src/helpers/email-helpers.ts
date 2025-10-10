@@ -1,5 +1,9 @@
 import { EventTemplate } from "src/config/enums";
-import { IMessageRecipient, IMetadata } from "src/config/interfaces";
+import {
+    ITransactionDetails,
+    IMessageRecipient,
+    IMetadata,
+} from "src/config/interfaces";
 import {
     CreateUserTemplate,
     GeneralTemplate,
@@ -9,6 +13,7 @@ import {
     ReferralTemplate,
 } from "src/templates/email-templates";
 import SendDepositConfirmationEmailTemplate from "src/templates/email-templates/send-deposit-confirmation-email-template";
+import sendWithdrawalConfirmationEmailTemplate from "src/templates/email-templates/send-withdrawal-confirmation-email-tempate";
 
 interface IFormatEmailMessageInput {
     recipient: IMessageRecipient;
@@ -16,6 +21,7 @@ interface IFormatEmailMessageInput {
     event: EventTemplate;
     sender?: IMessageRecipient;
     metadata?: IMetadata;
+    details?: ITransactionDetails;
 }
 
 const applyReplacements = (
@@ -37,6 +43,7 @@ export const formatEmailMessageBody = ({
     event,
     sender,
     metadata,
+    details,
 }: IFormatEmailMessageInput): string => {
     switch (event) {
         case EventTemplate.GENERAL:
@@ -74,6 +81,17 @@ export const formatEmailMessageBody = ({
                 AMOUNT: metadata?.amount?.toString(),
                 TRANSACTION_ID: metadata?.transactionId,
                 DATE_TIME: metadata?.dateTime,
+            });
+        }
+
+        case EventTemplate.SEND_WITHDRAWAL_CONFIRMATION_EMAIL: {
+            return applyReplacements(sendWithdrawalConfirmationEmailTemplate, {
+                USER_NAME: recipient.firstName,
+                AMOUNT: details?.amount?.toString(),
+                TRANSACTION_ID: details?.transactionId,
+                DATE_TIME: details?.dateTime,
+                ADDRESS: details?.address,
+                NETWORK: details?.network,
             });
         }
         case EventTemplate.INVITE_USER:

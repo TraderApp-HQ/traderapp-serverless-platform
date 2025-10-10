@@ -29,6 +29,7 @@ import {
     TransactionType,
 } from "src/types/wallets-service";
 import { publishDepositConfirmationToQueue } from "./helper";
+import { publishWithdrawlConfirmationToQueue } from "./helper.withdrawal";
 
 export class WalletsService {
     private connection: mongoose.Connection | null = null;
@@ -454,6 +455,20 @@ export class WalletsService {
                                 amount,
                                 transactionId,
                                 userId,
+                                queueUrl,
+                            });
+
+                            // publish withdrawal notification to queue
+                            const address = queueMessage.body.data.address;
+
+                            const network = queueMessage.body.data.network;
+
+                            await publishWithdrawlConfirmationToQueue({
+                                amount,
+                                userId,
+                                transactionId,
+                                address,
+                                network,
                                 queueUrl,
                             });
 

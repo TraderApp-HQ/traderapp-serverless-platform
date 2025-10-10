@@ -20,6 +20,7 @@ export class NotificationsService {
                     event: message.body.event,
                     sender: message.body.sender,
                     metadata: message.body.metadata,
+                    details: message.body.details,
                 });
 
                 const subject =
