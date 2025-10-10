@@ -4,7 +4,6 @@ import { EventTemplate } from "src/config/enums";
 import { IQueueMessageBodyObject } from "src/config/interfaces";
 import { format } from "date-fns/format";
 
-
 interface IPublishWithdrawlConfirmationToQueueInput {
     userId: string;
     amount?: number;
