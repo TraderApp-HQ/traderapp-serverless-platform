@@ -1,8 +1,5 @@
 import { EventTemplate } from "src/config/enums";
-import {
-    IMessageRecipient,
-    IMetadata,
-} from "src/config/interfaces";
+import { IMessageRecipient, IMetadata } from "src/config/interfaces";
 import {
     CreateUserTemplate,
     GeneralTemplate,
