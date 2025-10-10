@@ -28,7 +28,7 @@ export const publishWithdrawlConfirmationToQueue = async (
         recipients: [{ firstName: user.firstName, emailAddress: user.email }],
         message: "Withdrawl Confirmation",
         event: EventTemplate.SEND_WITHDRAWAL_CONFIRMATION_EMAIL,
-        details: {
+        metadata: {
             amount,
             transactionId,
             address,

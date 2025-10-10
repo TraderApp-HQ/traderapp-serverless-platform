@@ -1,6 +1,5 @@
 import { EventTemplate } from "src/config/enums";
 import {
-    ITransactionDetails,
     IMessageRecipient,
     IMetadata,
 } from "src/config/interfaces";
@@ -21,7 +20,6 @@ interface IFormatEmailMessageInput {
     event: EventTemplate;
     sender?: IMessageRecipient;
     metadata?: IMetadata;
-    details?: ITransactionDetails;
 }
 
 const applyReplacements = (
@@ -43,7 +41,6 @@ export const formatEmailMessageBody = ({
     event,
     sender,
     metadata,
-    details,
 }: IFormatEmailMessageInput): string => {
     switch (event) {
         case EventTemplate.GENERAL:
@@ -87,11 +84,11 @@ export const formatEmailMessageBody = ({
         case EventTemplate.SEND_WITHDRAWAL_CONFIRMATION_EMAIL: {
             return applyReplacements(sendWithdrawalConfirmationEmailTemplate, {
                 USER_NAME: recipient.firstName,
-                AMOUNT: details?.amount?.toString(),
-                TRANSACTION_ID: details?.transactionId,
-                DATE_TIME: details?.dateTime,
-                ADDRESS: details?.address,
-                NETWORK: details?.network,
+                AMOUNT: metadata?.amount?.toString(),
+                TRANSACTION_ID: metadata?.transactionId,
+                DATE_TIME: metadata?.dateTime,
+                ADDRESS: metadata?.address,
+                NETWORK: metadata?.network,
             });
         }
         case EventTemplate.INVITE_USER:
