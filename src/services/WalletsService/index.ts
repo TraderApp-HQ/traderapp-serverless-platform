@@ -29,6 +29,7 @@ import {
     TransactionType,
 } from "src/types/wallets-service";
 import { publishDepositConfirmationToQueue } from "./helper";
+import { publishWithdrawlConfirmationToQueue } from "./helper.withdrawal";
 
 export class WalletsService {
     private connection: mongoose.Connection | null = null;
@@ -439,7 +440,7 @@ export class WalletsService {
                                 });
                             }
 
-                            // publish to notification queue
+                            // publish deposit notification to queue
                             const amount = parseFloat(
                                 queueMessage.body.data.paid_amount ?? "0"
                             );
@@ -791,24 +792,51 @@ export class WalletsService {
                 resolved.map(
                     async ({ queueMessage: { body }, transaction }) => {
                         switch (body.data.status) {
-                            case CryptopayWebhookEventStatus.completed:
-                                await transactionsCollection.updateOne(
-                                    {
-                                        _id: transaction._id,
-                                        status: {
-                                            $ne: TransactionStatus.SUCCESS,
-                                        },
-                                    },
-                                    {
-                                        $set: {
-                                            status: TransactionStatus.SUCCESS,
-                                            transactionHash:
-                                                body.data.txid ??
-                                                transaction.transactionHash,
-                                        },
-                                    }
+                            case CryptopayWebhookEventStatus.completed: {
+                                const amount = parseFloat(
+                                    body.data.paid_amount ?? "0"
                                 );
+
+                                const transactionId = body.data.txid ?? "";
+
+                                const queueUrl =
+                                    this.commonSecrets
+                                        ?.EMAIL_NOTIFICATIONS_QUEUE ?? "";
+
+                                const address = body.data.address ?? "";
+
+                                const network = body.data.network ?? "";
+
+                                await Promise.all([
+                                    transactionsCollection.updateOne(
+                                        {
+                                            _id: transaction._id,
+                                            status: {
+                                                $ne: TransactionStatus.SUCCESS,
+                                            },
+                                        },
+                                        {
+                                            $set: {
+                                                status: TransactionStatus.SUCCESS,
+                                                transactionHash:
+                                                    body.data.txid ??
+                                                    transaction.transactionHash,
+                                            },
+                                        }
+                                    ),
+
+                                    publishWithdrawlConfirmationToQueue({
+                                        amount,
+                                        userId: transaction.userId,
+                                        transactionId,
+                                        address,
+                                        network,
+                                        queueUrl,
+                                    }),
+                                ]);
+
                                 break;
+                            }
                             case CryptopayWebhookEventStatus.cancelled:
                                 await transactionsCollection.updateOne(
                                     {
