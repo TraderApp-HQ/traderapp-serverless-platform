@@ -790,7 +790,7 @@ export class WalletsService {
             // Update statuses (only for successfully resolved items)
             const statusUpdateResults = await Promise.allSettled(
                 resolved.map(
-                    async ({ queueMessage: { body }, transaction, }) => {
+                    async ({ queueMessage: { body }, transaction }) => {
                         switch (body.data.status) {
                             case CryptopayWebhookEventStatus.completed:
                                 {
