@@ -790,11 +790,10 @@ export class WalletsService {
             // Update statuses (only for successfully resolved items)
             const statusUpdateResults = await Promise.allSettled(
                 resolved.map(
-                    async ({ queueMessage: { body }, transaction }) => {
+                    async ({ queueMessage: { body }, transaction, }) => {
                         switch (body.data.status) {
                             case CryptopayWebhookEventStatus.completed:
                                 {
-                                    // publish withdrawal notifications to queue
                                     const amount = parseFloat(
                                         body.data.paid_amount ?? "0"
                                     );
@@ -809,9 +808,10 @@ export class WalletsService {
 
                                     const network = body.data.network ?? "";
 
+                                    // publish withdrawal notifications to queue
                                     await publishWithdrawlConfirmationToQueue({
                                         amount,
-                                        userId: transaction.userId, // Use userId from the transaction object
+                                        userId: transaction.userId,
                                         transactionId,
                                         address,
                                         network,
