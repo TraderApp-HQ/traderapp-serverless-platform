@@ -792,23 +792,22 @@ export class WalletsService {
                 resolved.map(
                     async ({ queueMessage: { body }, transaction }) => {
                         switch (body.data.status) {
-                            case CryptopayWebhookEventStatus.completed:
-                                {
-                                    const amount = parseFloat(
-                                        body.data.paid_amount ?? "0"
-                                    );
+                            case CryptopayWebhookEventStatus.completed: {
+                                const amount = parseFloat(
+                                    body.data.paid_amount ?? "0"
+                                );
 
-                                    const transactionId = body.data.txid ?? "";
+                                const transactionId = body.data.txid ?? "";
 
-                                    const queueUrl =
-                                        this.commonSecrets
-                                            ?.EMAIL_NOTIFICATIONS_QUEUE ?? "";
+                                const queueUrl =
+                                    this.commonSecrets
+                                        ?.EMAIL_NOTIFICATIONS_QUEUE ?? "";
 
-                                    const address = body.data.address ?? "";
+                                const address = body.data.address ?? "";
 
-                                    const network = body.data.network ?? "";
+                                const network = body.data.network ?? "";
 
-                                    await Promise.all([
+                                await Promise.all([
                                     transactionsCollection.updateOne(
                                         {
                                             _id: transaction._id,
@@ -834,7 +833,7 @@ export class WalletsService {
                                         network,
                                         queueUrl,
                                     }),
-                                ])
+                                ]);
 
                                 break;
                             }
