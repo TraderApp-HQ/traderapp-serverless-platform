@@ -38,7 +38,7 @@ export class WalletsService {
     private initialized: boolean = false;
     private initializationPromise: Promise<void> | null = null;
 
-    constructor() { }
+    constructor() {}
 
     // Initialize the service once
     private async initialize(): Promise<void> {
@@ -358,7 +358,7 @@ export class WalletsService {
             const completedDeposits = transactions.filter(
                 (t) =>
                     t.queueMessage.body.data.status ===
-                    CryptopayWebhookEventStatus.completed && t.userId
+                        CryptopayWebhookEventStatus.completed && t.userId
             );
 
             const transactionsToCredit = await Promise.all(
@@ -378,7 +378,7 @@ export class WalletsService {
                             if (
                                 existingTransaction &&
                                 existingTransaction.status ===
-                                TransactionStatus.SUCCESS
+                                    TransactionStatus.SUCCESS
                             ) {
                                 console.log(
                                     `Transaction ${transaction.externalTransactionId} already credited, skipping.`
@@ -458,7 +458,6 @@ export class WalletsService {
                                 queueUrl,
                             });
 
-                          
                             console.debug(
                                 `Successfully credited wallet for message ${messageId}`
                             );
@@ -793,33 +792,32 @@ export class WalletsService {
                 resolved.map(
                     async ({ queueMessage: { body }, transaction }) => {
                         switch (body.data.status) {
-                            case CryptopayWebhookEventStatus.completed: {
-                                
-                                // publish withdrawal notifications to queue
-                                const amount = parseFloat(
-                                    body.data.paid_amount ?? "0"
-                                );
+                            case CryptopayWebhookEventStatus.completed:
+                                {
+                                    // publish withdrawal notifications to queue
+                                    const amount = parseFloat(
+                                        body.data.paid_amount ?? "0"
+                                    );
 
-                                const transactionId =
-                                    body.data.txid ?? "";
+                                    const transactionId = body.data.txid ?? "";
 
-                                const queueUrl =
-                                    this.commonSecrets?.EMAIL_NOTIFICATIONS_QUEUE ??
-                                    "";
+                                    const queueUrl =
+                                        this.commonSecrets
+                                            ?.EMAIL_NOTIFICATIONS_QUEUE ?? "";
 
-                                const address = body.data.address ?? "";
+                                    const address = body.data.address ?? "";
 
-                                const network = body.data.network ?? "";
+                                    const network = body.data.network ?? "";
 
-                                await publishWithdrawlConfirmationToQueue({
-                                    amount,
-                                    userId: transaction.userId, // Use userId from the transaction object
-                                    transactionId,
-                                    address,
-                                    network,
-                                    queueUrl,
-                                });
-                            }
+                                    await publishWithdrawlConfirmationToQueue({
+                                        amount,
+                                        userId: transaction.userId, // Use userId from the transaction object
+                                        transactionId,
+                                        address,
+                                        network,
+                                        queueUrl,
+                                    });
+                                }
 
                                 await transactionsCollection.updateOne(
                                     {
