@@ -45,10 +45,30 @@ jest.mock("src/config/secrets/helpers", () => ({
             return {
                 PORT: "3000",
                 TRACK_USER_ONBOARDING_CHECKLIST_QUEUE: "https://sqs.fake/queue",
+                EMAIL_NOTIFICATIONS_QUEUE: "https://sqs.fake/emailNotifications",
             };
         }
         return {};
     }),
+}));
+
+// Mock UsersService to avoid real DB connection during publishWithdrawlConfirmationToQueue
+jest.mock("src/services/UsersService", () => ({
+    __esModule: true,
+    default: {
+        getUserById: jest.fn(async (userId: string) => ({
+            id: userId,
+            email: "user@example.com",
+            firstName: "John",
+            lastName: "Doe",
+        })),
+    },
+}));
+
+// Mock SQS publish to avoid real network call
+jest.mock("src/clients/SQSClient/helpers", () => ({
+    ...jest.requireActual("src/clients/SQSClient/helpers"),
+    publishMessageToQueue: jest.fn(async () => undefined),
 }));
 
 // Ensure ENV so WalletsService.initialize builds correct secret paths
