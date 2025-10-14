@@ -808,35 +808,36 @@ export class WalletsService {
 
                                     const network = body.data.network ?? "";
 
-                                    // publish withdrawal notifications to queue
-                                    await publishWithdrawlConfirmationToQueue({
+                                    await Promise.all([
+                                    transactionsCollection.updateOne(
+                                        {
+                                            _id: transaction._id,
+                                            status: {
+                                                $ne: TransactionStatus.SUCCESS,
+                                            },
+                                        },
+                                        {
+                                            $set: {
+                                                status: TransactionStatus.SUCCESS,
+                                                transactionHash:
+                                                    body.data.txid ??
+                                                    transaction.transactionHash,
+                                            },
+                                        }
+                                    ),
+
+                                    publishWithdrawlConfirmationToQueue({
                                         amount,
                                         userId: transaction.userId,
                                         transactionId,
                                         address,
                                         network,
                                         queueUrl,
-                                    });
-                                }
-
-                                await transactionsCollection.updateOne(
-                                    {
-                                        _id: transaction._id,
-                                        status: {
-                                            $ne: TransactionStatus.SUCCESS,
-                                        },
-                                    },
-                                    {
-                                        $set: {
-                                            status: TransactionStatus.SUCCESS,
-                                            transactionHash:
-                                                body.data.txid ??
-                                                transaction.transactionHash,
-                                        },
-                                    }
-                                );
+                                    }),
+                                ])
 
                                 break;
+                            }
                             case CryptopayWebhookEventStatus.cancelled:
                                 await transactionsCollection.updateOne(
                                     {
