@@ -1,133 +1,153 @@
 <mjml>
-    <mj-head>
-        <mj-title>TraderApp - Deposit Confirmation</mj-title>
-        <mj-preview>Your deposit has been credited successfully.</mj-preview>
-        <mj-style>
-            .br_20 {
-                border: 1px solid #d1d7f0;
-                border-radius: 10px !important;
-            }
-        </mj-style>
-    </mj-head>
+  <mj-head>
+    <mj-title>TraderApp - Deposit Confirmation</mj-title>
+    <mj-preview>Your deposit has been credited successfully.</mj-preview>
 
-    <mj-body background-color="#ffffff">
-        <!-- Spacer -->
-        <mj-section padding="20px 0"></mj-section>
+    <mj-style>
+      .br_20 {
+        border: 1px solid #d1d7f0;
+        border-radius: 10px !important;
+      }
 
-        <!-- Main Wrapper -->
-        <mj-wrapper css-class="br_20" padding="20px">
-            <mj-section>
-                <mj-column>
-                    <!-- Logo -->
-                    <mj-image
-                        width="150px"
-                        src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/traderapp-logo.png"
-                        alt="TraderApp Logo"
-                    />
+      .main-wrapper {
+        width: auto;
+        height: auto;
+        gap: 24px;
+        opacity: 1;
+        margin: 0 auto;
+      }
 
-                    <!-- Optional Banner -->
-                    <mj-image
-                        width="500px"
-                        height="150px"
-                        src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/deposit+banners.png"
-                        alt="TraderApp Deposit Confirmation Banner"
-                    />
+      .gap-24 {
+        margin-bottom: 24px;
+        color: #08123B;
+      }
 
-                    <!-- Greeting -->
-                    <mj-text
-                        font-size="16px"
-                        font-weight="300"
-                        line-height="1.5"
-                    >
-                        Dear {USER_NAME},
-                    </mj-text>
+      .details {
+        background-color: #F5F8FF;
+        border-radius: 8px;
+        padding: 10px;
+        width: 90%;
+        margin: 0 auto;
+      }
 
-                    <!-- Main Message -->
-                    <mj-text
-                        font-size="16px"
-                        font-weight="200"
-                        line-height="1.6"
-                    >
-                        A deposit transaction has been successfully processed,
-                        and the amount of {AMOUNT} USDT has been credited to
-                        your TraderApp account.
-                    </mj-text>
+      .details mj-text {
+        color: #08123B !important;
+      }
 
-                    <!-- Transaction Details -->
-                    <mj-section background-color="#F5F8FF" border-radius="8px">
-                        <mj-column>
-                            <mj-text
-                                font-size="16px"
-                                font-weight="400"
-                                line-height="1.8"
-                            >
-                                Transaction Details:
-                                <br />
-                                Amount Deposited: {AMOUNT} USDT
-                                <br />
-                                Date & Time: 27-June-2025 08:51 AM
-                                <br />
-                                Transaction ID: {TRANSACTION_ID}
-                            </mj-text>
-                        </mj-column>
-                    </mj-section>
+      .social-wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 12px;
+        margin-top: 12px;
+      }
+    </mj-style>
+  </mj-head>
 
-                    <!-- CTA -->
-                    <!-- Support -->
-                    <mj-text
-                        font-size="16px"
-                        font-weight="200"
-                        line-height="1.6"
-                    >
-                        You can now explore trading opportunities and take
-                        another step towards financial freedom.<br />
-                        If you did not authorize this deposit or observe any
-                        irregularities, kindly contact our support team
-                        immediately at
-                        <a
-                            href="mailto:support@traderapp.com"
-                            style="color: #1836b2; text-decoration: none"
-                            >support@traderapp.com</a
-                        >
-                    </mj-text>
+  <mj-body background-color="#ffffff">
+    <!-- Spacer -->
+    <mj-section padding="20px 0"></mj-section>
 
-                    <!-- Closing -->
-                    <mj-text
-                        font-size="16px"
-                        font-weight="300"
-                        line-height="1.6"
-                    >
-                        Cheers to your success,<br />
-                        <b>The TraderApp Team</b>
-                    </mj-text>
+    <!-- Main Wrapper -->
+    <mj-wrapper css-class="br_20 main-wrapper" padding="20px">
+      <mj-section padding="0">
+        <mj-column>
+          <!-- Logo -->
+          <mj-image
+            width="150px"
+            src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/traderapp-logo.png"
+            alt="TraderApp Logo"
+          />
 
-                    <!-- Social Links -->
-                    <mj-spacer height="20px" />
-                    <mj-social
-                        icon-size="25px"
-                        mode="horizontal"
-                        align="center"
-                        icon-color="#F5F8FF"
-                    >
-                        <mj-social-element
-                            href="https://x.com/traderapp"
-                            src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/twitter22.png"
-                        />
-                        <mj-social-element
-                            href="https://www.facebook.com/traderappofficial?mibextid=ZbWKwL"
-                            src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/facebook22.png"
-                        />
-                        <mj-social-element
-                            href="https://instagram.com/traderapphq"
-                            src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/ig22.png"
-                        />
-                        <mj-social-element
-                            href="https://traderapp.finance/#"
-                            src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/tiktok22.png"
-                        />
-                    </mj-social>
-                </mj-column>
-            </mj-section>
-        </mj-wrapper>
-    </mj-body>
+          <!-- Banner -->
+          <mj-image
+            width="350px"
+            height="150px"
+            src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/deposit+banners.png"
+            alt="TraderApp Deposit Confirmation Banner"
+          />
+
+          <!-- Greeting -->
+          <mj-text css-class="gap-24" font-weight="700" font-size="18px" color="#08123B">
+            Dear {USER_NAME},
+          </mj-text>
+
+          <!-- Main Message -->
+          <mj-text font-size="16px" font-weight="300" line-height="1.6" css-class="gap-24">
+            We are pleased to inform you that your deposit transaction has been successfully processed, and the amount of
+            <b style="color: #08123B;">{AMOUNT} USDT</b> has been credited to your
+            <b style="color: #08123B;">TraderApp account</b>.
+          </mj-text>
+
+          <!-- Deposit Details -->
+          <mj-section css-class="details" padding="0" align="center">
+            <mj-column>
+              <mj-text
+                font-weight="700"
+                font-size="16px"
+                css-class="gap-24"
+                padding="0"
+                color="#08123B"
+                line-height="2"
+              >
+                Deposit Details
+              </mj-text>
+
+              <mj-text
+                font-size="15px"
+                color="#08123B"
+                padding="0"
+                line-height="2"
+              >
+                <b>Amount Deposited:</b> {AMOUNT} USDT<br />
+                <b>Date &amp; Time:</b> {DATE_TIME}<br />
+                <b>Transaction ID:</b> {TRANSACTION_ID}
+              </mj-text>
+            </mj-column>
+          </mj-section>
+
+          <!-- Support -->
+          <mj-text font-size="16px" font-weight="300" line-height="1.6" css-class="gap-24">
+            You can now explore trading opportunities and take another step toward financial freedom.
+            <br /><br />
+            If you did not authorize this deposit or notice any unusual activity, please contact our support team immediately at
+            <a href="mailto:support@traderapp.com" style="color: #1836b2; text-decoration: none;">support@traderapp.com</a>.
+            <br /><br />
+            Thank you for trading with TraderApp. We remain committed to helping you achieve your financial goals.
+          </mj-text>
+
+          <!-- Closing -->
+          <mj-text css-class="gap-24" color="#08123B" line-height="1.8" font-weight="700" font-size="15px">
+            Cheers to your success,<br />
+            The TraderApp Team
+          </mj-text>
+
+          <!-- Social Links -->
+          <mj-section padding="0">
+            <mj-column width="100%" vertical-align="middle">
+              <mj-social icon-size="25px" mode="horizontal" align="center">
+                <mj-social-element
+                  href="https://x.com/traderapp"
+                  src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/twitter22.png"
+                />
+                <mj-social-element
+                  href="https://www.facebook.com/traderappofficial?mibextid=ZbWKwL"
+                  src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/facebook22.png"
+                />
+                <mj-social-element
+                  href="https://instagram.com/traderapphq"
+                  src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/ig22.png"
+                />
+                <mj-social-element
+                  href="https://traderapp.finance/#"
+                  src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/tiktok22.png"
+                />
+              </mj-social>
+            </mj-column>
+          </mj-section>
+
+        </mj-column>
+      </mj-section>
+    </mj-wrapper>
+  </mj-body>
 </mjml>
