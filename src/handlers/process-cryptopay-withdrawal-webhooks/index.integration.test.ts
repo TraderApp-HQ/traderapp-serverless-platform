@@ -45,8 +45,7 @@ jest.mock("src/config/secrets/helpers", () => ({
             return {
                 PORT: "3000",
                 TRACK_USER_ONBOARDING_CHECKLIST_QUEUE: "https://sqs.fake/queue",
-                EMAIL_NOTIFICATIONS_QUEUE:
-                    "https://sqs.fake/emailNotifications",
+                EMAIL_NOTIFICATIONS_QUEUE: "https://sqs.fake/emailNotifications",
             };
         }
         return {};
