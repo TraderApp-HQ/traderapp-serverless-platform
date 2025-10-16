@@ -9,6 +9,7 @@ import {
     ReferralTemplate,
 } from "src/templates/email-templates";
 import SendDepositConfirmationEmailTemplate from "src/templates/email-templates/send-deposit-confirmation-email-template";
+import sendWithdrawalConfirmationEmailTemplate from "src/templates/email-templates/send-withdrawal-confirmation-email-tempate";
 
 interface IFormatEmailMessageInput {
     recipient: IMessageRecipient;
@@ -74,6 +75,17 @@ export const formatEmailMessageBody = ({
                 AMOUNT: metadata?.amount?.toString(),
                 TRANSACTION_ID: metadata?.transactionId,
                 DATE_TIME: metadata?.dateTime,
+            });
+        }
+
+        case EventTemplate.SEND_WITHDRAWAL_CONFIRMATION_EMAIL: {
+            return applyReplacements(sendWithdrawalConfirmationEmailTemplate, {
+                USER_NAME: recipient.firstName,
+                AMOUNT: metadata?.amount?.toString(),
+                TRANSACTION_ID: metadata?.transactionId,
+                DATE_TIME: metadata?.dateTime,
+                ADDRESS: metadata?.address,
+                NETWORK: metadata?.network,
             });
         }
         case EventTemplate.INVITE_USER:
