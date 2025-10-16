@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/consistent-type-definitions */
 import Binance, { PositionSide, OrderSide } from "binance-api-node";
 import type {
     FuturesOrder,
@@ -153,7 +152,6 @@ export class BinanceClient {
                 // 	};
                 // 	break;
                 default:
-                    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                     throw new Error(`Unsupported order type: ${params.type}`);
             }
 
@@ -172,12 +170,12 @@ export class BinanceClient {
     /**
      * Place target profit orders after checking if main order is filled
      */
-    async placeTargetProfitOrders(params: {
+    async placeTakeProfitOrders(params: {
         origClientOrderId: string;
         symbol: string;
         mainOrderSide: OrderSide;
         positionSide?: PositionSide;
-        targetProfits: Array<{ price: number; percent: number }>;
+        takeProfits: Array<{ price: number; percent: number }>;
     }): Promise<FuturesOrder[]> {
         try {
             // Check if main order is filled
@@ -193,9 +191,6 @@ export class BinanceClient {
             }
 
             const executedQty = parseFloat(mainOrder.executedQty);
-            console.log("######### Executed Qty for targets ############", {
-                executedQty,
-            });
 
             if (executedQty <= 0) {
                 throw new Error("No quantity was executed for the main order");
@@ -204,10 +199,10 @@ export class BinanceClient {
             // Sort target profits by price based on side
             const sortedTargets =
                 params.mainOrderSide === OrderSide.BUY
-                    ? [...params.targetProfits].sort(
+                    ? [...params.takeProfits].sort(
                         (a, b) => a.price - b.price
                     ) // ascending for BUY
-                    : [...params.targetProfits].sort(
+                    : [...params.takeProfits].sort(
                         (a, b) => b.price - a.price
                     ); // descending for SELL
 
@@ -232,9 +227,6 @@ export class BinanceClient {
 
                 if (tpQty <= 0) continue; // skip if nothing left
 
-                console.log(
-                    `############## Target Profit Qty ${i + 1} ========== ${tpQty}`
-                );
                 const tpSide =
                     params.mainOrderSide === OrderSide.BUY ? "SELL" : "BUY";
 
@@ -282,9 +274,6 @@ export class BinanceClient {
             }
 
             const executedQty = parseFloat(mainOrder.executedQty);
-            console.log("######### Executed Qty for stop loss ############", {
-                executedQty,
-            });
 
             if (executedQty <= 0) {
                 throw new Error("No quantity was executed for the main order");

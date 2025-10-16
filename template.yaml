@@ -173,6 +173,32 @@ Resources:
     Properties:
       QueueName: !Sub ${Environment}-processBinanceOrdersDLQ
 
+  handleProcessedTradesQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${Environment}-handleProcessedTradesQueue
+      VisibilityTimeout: 60
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt handleProcessedTradesDLQ.Arn
+        maxReceiveCount: 3
+  handleProcessedTradesDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${Environment}-handleProcessedTradesDLQ
+
+  handleFailedTradesQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${Environment}-handleFailedTradesQueue
+      VisibilityTimeout: 60
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt handleFailedTradesDLQ.Arn
+        maxReceiveCount: 3
+  handleFailedTradesDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${Environment}-handleFailedTradesDLQ
+
 # create lambda functions
   sendEmailOtp:
     Type: AWS::Serverless::Function
@@ -510,6 +536,7 @@ Resources:
                 - sqs:SendMessageBatch
               Resource:
                 - !GetAtt processBinanceOrdersQueue.Arn
+                - !GetAtt handleFailedTradesQueue.Arn
 
   processBinanceOrders:
     Type: AWS::Serverless::Function
@@ -521,7 +548,7 @@ Resources:
       Runtime: nodejs20.x
       Architectures:
         - x86_64
-      Handler: dist/handlers/process-binance-orders.handler
+      Handler: dist/handlers/binance-exchange/process-binance-orders.handler
       Events:
         SQSQueueEvent:
           Type: SQS
@@ -541,9 +568,86 @@ Resources:
               Resource:
                 - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:trading-engine-service-secrets/${Environment}*
                 - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:common-secrets/${Environment}*
+            - Effect: Allow
+              Action:
+                - sqs:SendMessage
+                - sqs:SendMessageBatch
+              Resource:
+                - !GetAtt handleProcessedTradesQueue.Arn
+                - !GetAtt handleFailedTradesQueue.Arn
+
+  handleProcessedTrades:
+    Type: AWS::Serverless::Function
+    Properties:
+      Environment:
+        Variables:
+          ENV: !Ref Environment
+      FunctionName: !Sub ${Environment}-handleProcessedTrades
+      Runtime: nodejs20.x
+      Architectures:
+        - x86_64
+      Handler: dist/handlers/handle-processed-trades.handler
+      Events:
+        SQSQueueEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt handleProcessedTradesQueue.Arn
+      MemorySize: 128
+      Timeout: 60
+      DeadLetterQueue:
+        Type: SQS
+        TargetArn: !GetAtt handleProcessedTradesDLQ.Arn
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource:
+                - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:trading-engine-service-secrets/${Environment}*
+                - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:common-secrets/${Environment}*
             # - Effect: Allow
             #   Action:
             #     - sqs:SendMessage
             #     - sqs:SendMessageBatch
             #   Resource:
-            #     - !GetAtt trackUserOnboardingChecklistQueue.Arn
+            #     - !GetAtt handleProcessedTradesQueue.Arn
+            #     - !GetAtt handleFailedTradesQueue.Arn
+
+  handleFailedTrades:
+    Type: AWS::Serverless::Function
+    Properties:
+      Environment:
+        Variables:
+          ENV: !Ref Environment
+      FunctionName: !Sub ${Environment}-handleFailedTrades
+      Runtime: nodejs20.x
+      Architectures:
+        - x86_64
+      Handler: dist/handlers/handle-failed-trades.handler
+      Events:
+        SQSQueueEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt handleFailedTradesQueue.Arn
+      MemorySize: 128
+      Timeout: 60
+      DeadLetterQueue:
+        Type: SQS
+        TargetArn: !GetAtt handleFailedTradesDLQ.Arn
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource:
+                - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:trading-engine-service-secrets/${Environment}*
+                - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:common-secrets/${Environment}*
+            # - Effect: Allow
+            #   Action:
+            #     - sqs:SendMessage
+            #     - sqs:SendMessageBatch
+            #   Resource:
+            #     - !GetAtt handleProcessedTradesQueue.Arn
+            #     - !GetAtt handleFailedTradesQueue.Arn

@@ -27,6 +27,7 @@ import {
     AccountConnectionStatus,
     ConnectionType,
     TradingRuleName,
+    OrderSide,
 } from "src/services/TradingEngineService/enums";
 import {
     Currency,
@@ -524,13 +525,15 @@ export interface CreateOrderOptions {
     orderBatchId?: mongoose.Types.ObjectId;
     baseAsset?: string;
     baseQuantity?: number;
-    type?: OrderType;
+    orderType?: OrderType;
+    orderSide?: OrderSide;
     placementType?: OrderPlacementType;
     price?: number;
     total?: number;
     quoteCurrency?: string;
     quoteTotal?: number;
     status?: OrderStatus;
+    externalOrderId?: string;
     createdAt?: string;
     updatedAt?: string;
 }
@@ -554,13 +557,15 @@ export const createOrder = async (
         orderBatchId: options.orderBatchId || new mongoose.Types.ObjectId(),
         baseAsset: options.baseAsset || "BTC",
         baseQuantity: options.baseQuantity || 0.001,
-        type: options.type || OrderType.BUY,
+        orderType: options.orderType || OrderType.ENTRY,
+        orderSide: options.orderSide || OrderSide.BUY,
         placementType: options.placementType || OrderPlacementType.MARKET,
         price: options.price || 50000,
         total: options.total || 50,
         quoteCurrency: options.quoteCurrency || "USDT",
         quoteTotal: options.quoteTotal || 50,
         status: options.status || OrderStatus.PENDING,
+        externalOrderId: options.externalOrderId || generateObjectId(),
         createdAt: options.createdAt || new Date().toISOString(),
         updatedAt: options.updatedAt || new Date().toISOString(),
     };
@@ -899,6 +904,9 @@ export const createCompleteTradeWithOrders = async (
                 (trade.baseQuantity / orderCount) *
                 (orderOptions.price || trade.entryPrice), // Calculate total
             id: orderOptions.id ? `${orderOptions.id}-${i}` : undefined,
+            orderType: orderOptions.orderType || OrderType.ENTRY,
+            orderSide: orderOptions.orderSide || OrderSide.BUY,
+            externalOrderId: orderOptions.externalOrderId || generateObjectId(),
         });
 
         orders.push(order);

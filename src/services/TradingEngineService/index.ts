@@ -12,6 +12,8 @@ import {
     IProcessUserTradingWithMasterTradeEvent,
     IPlatformTradingRule,
     IUserTradeAllocation,
+    IOrderBatch,
+    IOrder,
 } from "./interfaces";
 import {
     OrderType,
@@ -22,6 +24,11 @@ import {
     Exchange,
     AccountConnectionStatus,
     TradingRuleName,
+    OrderSide,
+    OrderBatchStatus,
+    OrderStatus,
+    // OrderBatchStatus,
+    // OrderStatus,
 } from "./enums";
 import { SecretLocation } from "src/config/secrets/enums";
 import { getSecrets } from "src/config/secrets/helpers";
@@ -72,11 +79,13 @@ export interface IOrderInput {
     tradeId: mongoose.Types.ObjectId;
     baseAsset: string;
     baseQuantity: number;
-    type: OrderType;
+    orderType: OrderType;
+    orderSide: OrderSide;
     placementType: OrderPlacementType;
     price: number;
     quoteCurrency: string;
     tradingAccountId: mongoose.Types.ObjectId;
+    externalOrderId: string;
 }
 
 export interface ICreateTradesForUserResult {
@@ -583,7 +592,7 @@ export class TradingEngineService {
 
             return tradesCollection.find({
                 userId,
-                status: { $in: [TradeStatus.ACTIVE, TradeStatus.PENDING] },
+                status: { $in: [TradeStatus.ACTIVE, TradeStatus.PENDING, TradeStatus.PROCESSED] },
             });
         } catch (error) {
             log.error("Error fetching user active trades:", { error, userId });
@@ -857,6 +866,309 @@ export class TradingEngineService {
             return createdTrade;
         } catch (error) {
             log.error("Error creating trades for user:", { error, userId });
+            throw error;
+        }
+    }
+
+    /**
+     * Update a trade
+     */
+    public async updateTrade({ tradeId, updateData }: { tradeId: string; updateData: Partial<ITrade> }): Promise<ITrade | null> {
+        try {
+            const connection = await this.getConnection();
+            const tradesCollection = new MongoDBClient<ITrade>(
+                connection,
+                TradingEngineServiceCollections.trades
+            );
+
+            const updatedTrade = await tradesCollection.findOneAndUpdate(
+                { _id: new mongoose.Types.ObjectId(tradeId) },
+                {
+                    ...updateData,
+                }
+            );
+
+            log.info(`Updated trade ${tradeId}`, { updateData });
+            return updatedTrade;
+        } catch (error) {
+            log.error("Error updating trade:", { error, tradeId, updateData });
+            throw error;
+        }
+    }
+
+    /**
+     * Get a trade by ID
+     */
+    public async getTradeById(tradeId: string): Promise<ITrade | null> {
+        try {
+            const connection = await this.getConnection();
+            const tradesCollection = new MongoDBClient<ITrade>(
+                connection,
+                TradingEngineServiceCollections.trades
+            );
+
+            return await tradesCollection.findOne({
+                _id: new mongoose.Types.ObjectId(tradeId),
+            });
+        } catch (error) {
+            log.error("Error fetching trade:", { error, tradeId });
+            throw error;
+        }
+    }
+
+    /**
+     * Create an order batch
+     */
+    public async createOrderBatch(
+        orderBatchData: {
+            baseAsset: string;
+            quoteCurrency: string;
+            baseQuantity: number;
+            quoteTotal: number;
+            status: OrderBatchStatus;
+            tradingAccountId: mongoose.Types.ObjectId;
+            platformName: TradingPlatform;
+            platformId: number;
+            externalOrderId: string;
+        }
+    ): Promise<IOrderBatch> {
+        try {
+            const connection = await this.getConnection();
+            const orderBatchCollection = new MongoDBClient<IOrderBatch>(
+                connection,
+                TradingEngineServiceCollections.orderBatches
+            );
+
+            return orderBatchCollection.insertOne(orderBatchData);
+        } catch (error) {
+            log.error("Error creating order batch:", { error, orderBatchData });
+            throw error;
+        }
+    }
+
+    /**
+     * Update an order batch
+     */
+    public async updateOrderBatch(
+        orderBatchId: string,
+        updateData: Partial<IOrderBatch>
+    ): Promise<IOrderBatch | null> {
+        try {
+            const connection = await this.getConnection();
+            const orderBatchCollection = new MongoDBClient<IOrderBatch>(
+                connection,
+                TradingEngineServiceCollections.orderBatches
+            );
+
+            const updatedOrderBatch = await orderBatchCollection.findOneAndUpdate(
+                { _id: new mongoose.Types.ObjectId(orderBatchId) },
+                {
+                    ...updateData,
+                }
+            );
+
+            log.info(`Updated order batch ${orderBatchId}`, { updateData });
+            return updatedOrderBatch;
+        } catch (error) {
+            log.error("Error updating order batch:", {
+                error,
+                orderBatchId,
+                updateData,
+            });
+            throw error;
+        }
+    }
+
+    /**
+     * Get order batch by ID
+     */
+    public async getOrderBatchById(
+        orderBatchId: string
+    ): Promise<IOrderBatch | null> {
+        try {
+            const connection = await this.getConnection();
+            const orderBatchCollection = new MongoDBClient<IOrderBatch>(
+                connection,
+                TradingEngineServiceCollections.orderBatches
+            );
+
+            return await orderBatchCollection.findOne({
+                _id: new mongoose.Types.ObjectId(orderBatchId),
+            });
+        } catch (error) {
+            log.error("Error fetching order batch:", { error, orderBatchId });
+            throw error;
+        }
+    }
+
+    /**
+     * Get order batches by external order ID
+     */
+    public async getOrderBatchByExternalOrderId(
+        externalOrderId: string
+    ): Promise<IOrderBatch | null> {
+        try {
+            const connection = await this.getConnection();
+            const orderBatchCollection = new MongoDBClient<IOrderBatch>(
+                connection,
+                TradingEngineServiceCollections.orderBatches
+            );
+
+            return await orderBatchCollection.findOne({ externalOrderId });
+        } catch (error) {
+            log.error("Error fetching order batch by external ID:", {
+                error,
+                externalOrderId,
+            });
+            throw error;
+        }
+    }
+
+    /**
+     * Create an order
+     */
+    public async createOrder(
+        orderData: {
+            userId: string;
+            tradeId: mongoose.Types.ObjectId;
+            orderBatchId: mongoose.Types.ObjectId;
+            baseAsset: string;
+            baseQuantity: number;
+            orderType: OrderType;
+            orderSide: OrderSide;
+            placementType: OrderPlacementType;
+            price: number;
+            total: number;
+            quoteCurrency: string;
+            quoteTotal: number;
+            status: OrderStatus;
+            externalOrderId: string;
+        }): Promise<IOrder> {
+        try {
+            const connection = await this.getConnection();
+            const ordersCollection = new MongoDBClient<IOrder>(
+                connection,
+                TradingEngineServiceCollections.orders
+            );
+
+            return ordersCollection.insertOne(orderData);
+        } catch (error) {
+            log.error("Error creating order:", { error, orderData });
+            throw error;
+        }
+    }
+
+    /**
+     * Update an order
+     */
+    public async updateOrder(
+        orderId: string,
+        updateData: Partial<IOrder>
+    ): Promise<IOrder | null> {
+        try {
+            const connection = await this.getConnection();
+            const ordersCollection = new MongoDBClient<IOrder>(
+                connection,
+                TradingEngineServiceCollections.orders
+            );
+
+            const updatedOrder = await ordersCollection.findOneAndUpdate(
+                { _id: new mongoose.Types.ObjectId(orderId) },
+                {
+                    ...updateData,
+                }
+            );
+            return updatedOrder;
+        } catch (error) {
+            log.error("Error updating order:", { error, orderId, updateData });
+            throw error;
+        }
+    }
+
+    /**
+     * Get order by ID
+     */
+    public async getOrderById(orderId: string): Promise<IOrder | null> {
+        try {
+            const connection = await this.getConnection();
+            const ordersCollection = new MongoDBClient<IOrder>(
+                connection,
+                TradingEngineServiceCollections.orders
+            );
+
+            return ordersCollection.findOne({
+                _id: new mongoose.Types.ObjectId(orderId),
+            });
+        } catch (error) {
+            log.error("Error fetching order:", { error, orderId });
+            throw error;
+        }
+    }
+
+    /**
+     * Get order by external order ID
+     */
+    public async getOrderByExternalOrderId(
+        externalOrderId: string
+    ): Promise<IOrder | null> {
+        try {
+            const connection = await this.getConnection();
+            const ordersCollection = new MongoDBClient<IOrder>(
+                connection,
+                TradingEngineServiceCollections.orders
+            );
+
+            return ordersCollection.findOne({ externalOrderId });
+        } catch (error) {
+            log.error("Error fetching order by external ID:", {
+                error,
+                externalOrderId,
+            });
+            throw error;
+        }
+    }
+
+    /**
+     * Get orders for a trade
+     */
+    public async getOrdersForTrade(tradeId: string): Promise<IOrder[]> {
+        try {
+            const connection = await this.getConnection();
+            const ordersCollection = new MongoDBClient<IOrder>(
+                connection,
+                TradingEngineServiceCollections.orders
+            );
+
+            return ordersCollection.find({
+                tradeId: new mongoose.Types.ObjectId(tradeId),
+            });
+        } catch (error) {
+            log.error("Error fetching orders for trade:", { error, tradeId });
+            throw error;
+        }
+    }
+
+    /**
+     * Get orders for an order batch
+     */
+    public async getOrdersForOrderBatch(
+        orderBatchId: string
+    ): Promise<IOrder[]> {
+        try {
+            const connection = await this.getConnection();
+            const ordersCollection = new MongoDBClient<IOrder>(
+                connection,
+                TradingEngineServiceCollections.orders
+            );
+
+            return await ordersCollection.find({
+                orderBatchId: new mongoose.Types.ObjectId(orderBatchId),
+            });
+        } catch (error) {
+            log.error("Error fetching orders for order batch:", {
+                error,
+                orderBatchId,
+            });
             throw error;
         }
     }

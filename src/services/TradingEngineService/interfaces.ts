@@ -6,6 +6,7 @@ import {
     InvoiceType,
     OrderBatchStatus,
     OrderPlacementType,
+    OrderSide,
     OrderStatus,
     OrderType,
     TradeSide,
@@ -27,13 +28,15 @@ export interface IOrder extends Document {
     orderBatchId: mongoose.Types.ObjectId; // reference to the OrderBatch model
     baseAsset: string;
     baseQuantity: number;
-    type: OrderType;
+    orderType: OrderType;
+    orderSide: OrderSide;
     placementType: OrderPlacementType;
     price: number;
     total: number;
     quoteCurrency: string;
     quoteTotal: number;
     status: OrderStatus;
+    externalOrderId: string;
     createdAt: string;
     updatedAt: string;
 }
@@ -49,6 +52,7 @@ export interface IOrderBatch extends Document {
     tradingAccountId: mongoose.Types.ObjectId; // reference to the user-trading-account _id
     platformName: TradingPlatform;
     platformId: number;
+    externalOrderId: string;
     createdAt: string;
     updatedAt: string;
 }
@@ -238,4 +242,30 @@ export interface IInvoice extends Document {
     quoteCurrency: string; // Currency in which the baseAsset is priced
     createdAt: string;
     updatedAt: string;
+}
+
+export interface IProcessedTrade {
+    userId: string;
+    tradeId: mongoose.Types.ObjectId; // reference to the Trade model
+    baseAsset: string;
+    baseQuantity: number;
+    orderType: OrderType;
+    orderSide: OrderSide;
+    placementType: OrderPlacementType;
+    externalOrderId: string;
+    side: TradeSide;
+    price: number;
+    total: number;
+    quoteCurrency: string;
+    quoteTotal: number;
+    tradingAccountId: mongoose.Types.ObjectId; // reference to the user-trading-account _id
+    platformName: TradingPlatform;
+    platformId: number;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface IFailedTrade {
+    userId: string;
+    tradeId: mongoose.Types.ObjectId; // reference to the Trade model
 }

@@ -18,6 +18,8 @@ export interface ITradingEngineServiceSecrets {
     PROCESS_INCOMING_SIGNALS_QUEUE: string;
     PROCESS_USER_TRADES_QUEUE: string;
     PROCESS_BINANCE_ORDERS_QUEUE: string;
+    HANDLE_PROCESSED_TRADES_QUEUE: string;
+    HANDLE_FAILED_TRADES_QUEUE: string;
 }
 export interface IWalletsServiceSecrets {
     CRYPTOPAY_BASE_URL: string;
