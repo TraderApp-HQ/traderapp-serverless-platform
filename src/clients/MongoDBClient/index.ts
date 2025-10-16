@@ -10,14 +10,22 @@ export class MongoDBClient<T> {
         this.collection = collection;
     }
 
-    async findOne(filter: Record<string, any>): Promise<T | null> {
+    async findOne(
+        filter: Record<string, any>,
+        options?: Record<string, any>
+    ): Promise<T | null> {
         return this.connection
             .collection(this.collection)
-            .findOne(filter) as Promise<T | null>;
+            .findOne(filter, options) as Promise<T | null>;
     }
 
-    async find(filter: Record<string, any>): Promise<T[]> {
-        const result = this.connection.collection(this.collection).find(filter);
+    async find(
+        filter: Record<string, any>,
+        options?: Record<string, any>
+    ): Promise<T[]> {
+        const result = this.connection
+            .collection(this.collection)
+            .find(filter, options);
         return (await result.toArray()) as T[];
     }
 
@@ -31,21 +39,33 @@ export class MongoDBClient<T> {
         return result;
     }
 
-    async insertOne(doc: Partial<T>): Promise<T> {
+    async insertOne(
+        doc: Partial<T>,
+        options?: Record<string, any>
+    ): Promise<T> {
         const result = await this.connection
             .collection(this.collection)
-            .insertOne(doc);
+            .insertOne(doc, options);
         return { ...doc, _id: result.insertedId } as T;
     }
 
     async updateOne(
         filter: Record<string, any>,
-        update: Record<string, any>
-    ): Promise<boolean> {
+        update: Record<string, any>,
+        options?: Record<string, any>
+    ): Promise<{
+        modifiedCount: number;
+        matchedCount: number;
+        acknowledged: boolean;
+    }> {
         const result = await this.connection
             .collection(this.collection)
-            .updateOne(filter, update);
-        return result.modifiedCount > 0;
+            .updateOne(filter, update, options);
+        return {
+            modifiedCount: result.modifiedCount,
+            matchedCount: result.matchedCount,
+            acknowledged: result.acknowledged,
+        };
     }
 
     async findOneAndUpdate(

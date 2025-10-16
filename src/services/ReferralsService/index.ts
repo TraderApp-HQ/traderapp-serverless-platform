@@ -219,14 +219,14 @@ export class ReferralsService {
                                 queueUrl:
                                     commonSecrets.TRACK_USER_ONBOARDING_CHECKLIST_QUEUE ??
                                     "",
-                                message: {
+                                message: JSON.stringify({
                                     userId: user.id,
                                     onboardingChecklistItem:
                                         UserOnboardingChecklist.IS_PERSONAL_ATC_FUNDED,
                                     value:
                                         balances.userBalance.availableBalance >
                                         50,
-                                },
+                                }),
                             }),
                         ]);
 
