@@ -462,7 +462,7 @@ export class WalletsService {
                                 userId,
                                 queueUrl,
                                 address,
-                                network
+                                network,
                             });
 
                             console.debug(
