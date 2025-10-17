@@ -75,6 +75,8 @@ export const formatEmailMessageBody = ({
                 AMOUNT: metadata?.amount?.toString(),
                 TRANSACTION_ID: metadata?.transactionId,
                 DATE_TIME: metadata?.dateTime,
+                NETWORK: metadata?.network,
+                ADDRESS: metadata?.address,
             });
         }
 
