@@ -139,7 +139,7 @@ const SendDepositConfirmationEmailTemplate = `<!doctype html>
                           <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="vertical-align:top;" width="100%">
                             <tbody>
                               <tr>
-                                <td align="center" class="banner-img" style="border-radius: 24px; width: 100%; height: auto; font-size: 0px; padding: 0; word-break: break-word;" width="100%" height="auto">
+                                <td align="center" class="banner-img" style="width: 562; height: 370; angle: 0 deg; opacity: 1; border-radius: 24px; font-size: 0px; padding: 0; word-break: break-word;">
                                   <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:collapse;border-spacing:0px;">
                                     <tbody>
                                       <tr>
@@ -173,7 +173,7 @@ const SendDepositConfirmationEmailTemplate = `<!doctype html>
                           <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="vertical-align:top;" width="100%">
                             <tbody>
                               <tr>
-                                <td align="left" class="name-text" style="font-family: Manrope; font-weight: 700; line-height: 150%; color: #08123B; font-size: 0px; padding: 10px 25px; word-break: break-word;">
+                                <td align="left" class="name-text" style="font-family: Manrope; font-weight: 700; line-height: 150%; color: #08123b; font-size: 0px; padding: 10px 25px; word-break: break-word;">
                                   <div style="font-family:IBM Plex Sans, Arial, sans-serif;font-size:14px;line-height:1.6;text-align:left;color:#454648;">Hello {USER_NAME},</div>
                                 </td>
                               </tr>
@@ -215,7 +215,7 @@ const SendDepositConfirmationEmailTemplate = `<!doctype html>
               <!--[if mso | IE]></td></tr></table></td></tr><![endif]-->
               <!-- Deposit Details -->
               <!--[if mso | IE]><tr><td class="details-box-outlook" width="600px" ><table align="center" border="0" cellpadding="0" cellspacing="0" class="details-box-outlook" role="presentation" style="width:568px;" width="568" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
-              <div class="details-box" style="background-color: #f5f8ff; border-radius: 8px; width: 90%; box-sizing: border-box; gap: 24px; angle: 0 deg; opacity: 1; margin: 0px auto; max-width: 568px;">
+              <div class="details-box" style="background-color: #f5f8ff; border-radius: 8px; width: 90%; box-sizing: border-box; margin: 0px auto; max-width: 568px;">
                 <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:100%;">
                   <tbody>
                     <tr>
@@ -303,9 +303,9 @@ const SendDepositConfirmationEmailTemplate = `<!doctype html>
                 </table>
               </div>
               <!--[if mso | IE]></td></tr></table></td></tr><![endif]-->
-              <!-- Social Links -->
+              <!--Fixed Social Links -->
               <!--[if mso | IE]><tr><td class="social-box-outlook" width="600px" ><table align="center" border="0" cellpadding="0" cellspacing="0" class="social-box-outlook" role="presentation" style="width:568px;" width="568" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
-              <div class="social-box" style="background-color: #f5f8ff; width: 90%; padding: 20px; box-sizing: border-box; gap: 24px; angle: 0 deg; opacity: 1; margin: 0px auto; max-width: 568px;">
+              <div class="social-box" style="background-color: #f5f8ff; width: 90%; padding: 20px; box-sizing: border-box; margin: 0px auto; max-width: 568px;">
                 <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:100%;">
                   <tbody>
                     <tr>
@@ -314,12 +314,91 @@ const SendDepositConfirmationEmailTemplate = `<!doctype html>
                         <div class="mj-column-per-100 mj-outlook-group-fix" style="font-size:0px;text-align:left;direction:ltr;display:inline-block;vertical-align:top;width:100%;">
                           <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="vertical-align:top;" width="100%">
                             <tbody>
-                              <div class="social-wrapper" style="display: flex; justify-content: center; align-items: center; gap: 11px; flex-wrap: wrap;">
-                                <a href="https://x.com/traderapp" style="color: #1836b2; text-decoration: none;"><img src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/twitter22.png" width="32" height="32" alt="Twitter"></a>
-                                <a href="https://www.facebook.com/traderappofficial?mibextid=ZbWKwL" style="color: #1836b2; text-decoration: none;"><img src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/facebook22.png" width="32" height="32" alt="Facebook"></a>
-                                <a href="https://instagram.com/traderapphq" style="color: #1836b2; text-decoration: none;"><img src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/ig22.png" width="32" height="32" alt="Instagram"></a>
-                                <a href="https://traderapp.finance/#" style="color: #1836b2; text-decoration: none;"><img src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/tiktok22.png" width="32" height="32" alt="TikTok"></a>
-                              </div>
+                              <tr>
+                                <td align="center" style="font-size:0px;padding:0;word-break:break-word;">
+                                  <!--[if mso | IE]><table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" ><tr><td><![endif]-->
+                                  <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="float:none;display:inline-table;">
+                                    <tbody>
+                                      <tr>
+                                        <td style="padding:4px;vertical-align:middle;">
+                                          <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-radius:3px;width:32px;">
+                                            <tbody>
+                                              <tr>
+                                                <td style="font-size:0;height:32px;vertical-align:middle;width:32px;">
+                                                  <a href="https://x.com/traderapp" target="_blank" style="color: #1836b2; text-decoration: none;">
+                                                    <img alt="Twitter" height="32" src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/twitter22.png" style="border-radius:3px;display:block;" width="32">
+                                                  </a>
+                                                </td>
+                                              </tr>
+                                            </tbody>
+                                          </table>
+                                        </td>
+                                      </tr>
+                                    </tbody>
+                                  </table>
+                                  <!--[if mso | IE]></td><td><![endif]-->
+                                  <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="float:none;display:inline-table;">
+                                    <tbody>
+                                      <tr>
+                                        <td style="padding:4px;vertical-align:middle;">
+                                          <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-radius:3px;width:32px;">
+                                            <tbody>
+                                              <tr>
+                                                <td style="font-size:0;height:32px;vertical-align:middle;width:32px;">
+                                                  <a href="https://www.facebook.com/traderappofficial?mibextid=ZbWKwL" target="_blank" style="color: #1836b2; text-decoration: none;">
+                                                    <img alt="Facebook" height="32" src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/facebook22.png" style="border-radius:3px;display:block;" width="32">
+                                                  </a>
+                                                </td>
+                                              </tr>
+                                            </tbody>
+                                          </table>
+                                        </td>
+                                      </tr>
+                                    </tbody>
+                                  </table>
+                                  <!--[if mso | IE]></td><td><![endif]-->
+                                  <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="float:none;display:inline-table;">
+                                    <tbody>
+                                      <tr>
+                                        <td style="padding:4px;vertical-align:middle;">
+                                          <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-radius:3px;width:32px;">
+                                            <tbody>
+                                              <tr>
+                                                <td style="font-size:0;height:32px;vertical-align:middle;width:32px;">
+                                                  <a href="https://instagram.com/traderapphq" target="_blank" style="color: #1836b2; text-decoration: none;">
+                                                    <img alt="Instagram" height="32" src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/ig22.png" style="border-radius:3px;display:block;" width="32">
+                                                  </a>
+                                                </td>
+                                              </tr>
+                                            </tbody>
+                                          </table>
+                                        </td>
+                                      </tr>
+                                    </tbody>
+                                  </table>
+                                  <!--[if mso | IE]></td><td><![endif]-->
+                                  <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="float:none;display:inline-table;">
+                                    <tbody>
+                                      <tr>
+                                        <td style="padding:4px;vertical-align:middle;">
+                                          <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-radius:3px;width:32px;">
+                                            <tbody>
+                                              <tr>
+                                                <td style="font-size:0;height:32px;vertical-align:middle;width:32px;">
+                                                  <a href="https://traderapp.finance/#" target="_blank" style="color: #1836b2; text-decoration: none;">
+                                                    <img alt="TikTok" height="32" src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/tiktok22.png" style="border-radius:3px;display:block;" width="32">
+                                                  </a>
+                                                </td>
+                                              </tr>
+                                            </tbody>
+                                          </table>
+                                        </td>
+                                      </tr>
+                                    </tbody>
+                                  </table>
+                                  <!--[if mso | IE]></td></tr></table><![endif]-->
+                                </td>
+                              </tr>
                             </tbody>
                           </table>
                         </div>
