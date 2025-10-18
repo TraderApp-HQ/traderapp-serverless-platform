@@ -502,11 +502,18 @@ export class WalletsService {
                             const queueUrl =
                                 this.commonSecrets?.EMAIL_NOTIFICATIONS_QUEUE ??
                                 "";
+
+                            const address = queueMessage.body.data.address;
+
+                            const network = queueMessage.body.data.network;
+
                             await publishDepositConfirmationToQueue({
                                 amount,
                                 transactionId,
                                 userId,
                                 queueUrl,
+                                address,
+                                network,
                             });
 
                             log.info(

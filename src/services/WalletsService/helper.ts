@@ -7,6 +7,8 @@ import { format } from "date-fns/format";
 interface IPublishDepositConfirmationToQueueInput {
     userId: string;
     amount: number;
+    address: string;
+    network: string;
     transactionId: string;
     queueUrl: string;
 }
@@ -14,7 +16,7 @@ interface IPublishDepositConfirmationToQueueInput {
 export const publishDepositConfirmationToQueue = async (
     input: IPublishDepositConfirmationToQueueInput
 ) => {
-    const { userId, amount, transactionId, queueUrl } = input;
+    const { userId, amount, transactionId, queueUrl, network, address } = input;
 
     const user = await UsersService.getUserById(userId);
     if (!user) {
@@ -29,6 +31,8 @@ export const publishDepositConfirmationToQueue = async (
         metadata: {
             amount,
             transactionId,
+            address,
+            network,
             dateTime: format(dateTime, "do MMM, yyyy, h:mma"),
         },
         subject: "Deposit Confirmation",
