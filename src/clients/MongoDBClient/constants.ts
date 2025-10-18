@@ -14,6 +14,7 @@ export const UsersServiceCollections = {
 };
 
 export const TradingEngineServiceCollections = {
+    masterTrades: "master-trades",
     trades: "trades",
     orders: "orders",
     orderBatches: "order-batches",

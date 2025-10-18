@@ -1,6 +1,5 @@
 import { SQSEvent } from "aws-lambda";
 import mongoose from "mongoose";
-import log from "@dazn/lambda-powertools-logger";
 import {
     RANK_INDEX_MAP,
     RANK_ORDER,
@@ -31,7 +30,7 @@ import { publishMessageToQueue } from "src/clients/SQSClient/helpers";
 import { UserOnboardingChecklist } from "src/types/users-service";
 
 export class ReferralsService {
-    constructor() {}
+    constructor() { }
 
     private async getTotalUsdtBalanceFromDb({
         userId,
@@ -84,7 +83,7 @@ export class ReferralsService {
 
             return totalBalance;
         } catch (error) {
-            log.error("Failed to get total USDT balance", { error, userId });
+            console.error("Failed to get total USDT balance", { error, userId });
             throw new Error(`Failed to get total USDT balance: ${error}`);
         }
     }
@@ -116,7 +115,7 @@ export class ReferralsService {
         // If a referral doesn't have a rank (or has an invalid rank), assigns -1
         const referralRankIndices = referrals.map((referral) =>
             referral.referralRank &&
-            RANK_INDEX_MAP[referral.referralRank] !== undefined
+                RANK_INDEX_MAP[referral.referralRank] !== undefined
                 ? RANK_INDEX_MAP[referral.referralRank]
                 : -1
         );
@@ -235,7 +234,7 @@ export class ReferralsService {
                             success: true,
                         };
                     } catch (error) {
-                        log.error(
+                        console.error(
                             `Failed to process referral message ${queueMessage.messageId}:`,
                             { error }
                         );
@@ -261,7 +260,7 @@ export class ReferralsService {
 
             return { successMessageIds, failedMessageIds };
         } catch (error) {
-            log.error("Error in processUserReferralTracking:", { error });
+            console.error("Error in processUserReferralTracking:", { error });
             return {
                 successMessageIds: [],
                 failedMessageIds: queueMessages.map((qm) => qm.messageId),
@@ -318,7 +317,7 @@ export class ReferralsService {
                 personalATC >= RANK_REQUIREMENTS[currentRank].personalATC &&
                 communityATC >= RANK_REQUIREMENTS[currentRank].communityATC &&
                 communitySize >=
-                    this.getCommunitySize(currentRank, isTestReferralTracking)
+                this.getCommunitySize(currentRank, isTestReferralTracking)
             ) {
                 rank = currentRank;
                 break;
@@ -329,7 +328,7 @@ export class ReferralsService {
         if (
             !rank &&
             personalATC >=
-                RANK_REQUIREMENTS[ReferralRank.TA_RECRUIT].personalATC
+            RANK_REQUIREMENTS[ReferralRank.TA_RECRUIT].personalATC
         ) {
             rank = ReferralRank.TA_RECRUIT;
         }

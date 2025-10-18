@@ -1,6 +1,7 @@
 import mongoose, { Document } from "mongoose";
 import {
     AccountConnectionStatus,
+    CandleStick,
     ConnectionType,
     InvoiceStatus,
     InvoiceType,
@@ -9,6 +10,7 @@ import {
     OrderSide,
     OrderStatus,
     OrderType,
+    TradeRisk,
     TradeSide,
     TradeStatus,
     TradingRuleCategory,
@@ -78,24 +80,35 @@ export interface ITrade extends Document {
 
 export interface IMasterTrade extends Document {
     id: string;
-    signalId: string;
+    signalId?: string;
     baseAsset: string;
+    baseAssetLogoUrl: string;
     quoteCurrency: string;
     baseQuantity: number;
     quoteTotal: number;
+    currentPrice: number;
     entryPrice: number;
     stopLossPrice: number;
-    takeProfitPrice: number;
+    takeProfitPrice?: number;
     ordersTriggerPrice: number;
     targetOrdersAmountToFill: number;
-    chartUrl: string;
-    tradeNote: string;
+    orderPlacementType?: OrderPlacementType;
+    accountType?: AccountType;
+    supportedTradingPlatforms: TradingPlatform[];
+    chartUrl?: string;
+    tradeNote?: string;
     pair: string;
     side: TradeSide;
     pnl: number;
+    pnlPercentage: number;
+    estimatedProfit: number;
+    estimatedLoss: number;
     status: TradeStatus;
-    createdAt: string;
-    updatedAt: string;
+    createdAt: Date;
+    updatedAt: Date;
+    candlestick: CandleStick;
+    risk: TradeRisk;
+    category: Category;
 }
 
 export interface IProcessUserTradingWithMasterTradeEvent {

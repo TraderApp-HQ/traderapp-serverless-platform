@@ -14,7 +14,8 @@
         "prepare": "husky",
         "deploy": "sam deploy",
         "sample-local-invoke": "sam local invoke <handler-name-on-template.yml> -e events/<even-name>.json",
-        "deploy-secrets": "npx ts-node src/config/secrets/deploy-secrets.ts"
+        "deploy-secrets": "npx ts-node src/config/secrets/deploy-secrets.ts",
+        "get-users-trading-accounts": "npx ts-node -r tsconfig-paths/register src/scripts/get-users-trading-accounts.ts"
     },
     "dependencies": {
         "@aws-sdk/client-secrets-manager": "^3.675.0",

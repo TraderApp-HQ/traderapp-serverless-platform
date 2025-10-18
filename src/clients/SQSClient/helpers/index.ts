@@ -1,4 +1,3 @@
-import log from "@dazn/lambda-powertools-logger";
 import "dotenv/config";
 import { QueueService } from "..";
 
@@ -25,7 +24,7 @@ export const publishMessageToQueue = async ({
         }
         await sqsClient.sendMessage(processedBody);
     } catch (error) {
-        log.error(`Error sending message to queue == ${JSON.stringify(error)}`);
+        console.error("Error sending message to queue", { error });
         throw error;
     }
 };

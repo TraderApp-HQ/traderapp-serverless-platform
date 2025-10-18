@@ -14,6 +14,7 @@ export class MongoDBClient<T> {
         filter: Record<string, any>,
         options?: Record<string, any>
     ): Promise<T | null> {
+        await this.connection.asPromise(); // Wait for connection to be ready
         return this.connection
             .collection(this.collection)
             .findOne(filter, options) as Promise<T | null>;
@@ -23,6 +24,7 @@ export class MongoDBClient<T> {
         filter: Record<string, any>,
         options?: Record<string, any>
     ): Promise<T[]> {
+        await this.connection.asPromise(); // Wait for connection to be ready
         const result = this.connection
             .collection(this.collection)
             .find(filter, options);
@@ -43,6 +45,7 @@ export class MongoDBClient<T> {
         doc: Partial<T>,
         options?: Record<string, any>
     ): Promise<T> {
+        await this.connection.asPromise(); // Wait for connection to be ready
         const result = await this.connection
             .collection(this.collection)
             .insertOne(doc, options);
@@ -58,6 +61,7 @@ export class MongoDBClient<T> {
         matchedCount: number;
         acknowledged: boolean;
     }> {
+        await this.connection.asPromise(); // Wait for connection to be ready
         const result = await this.connection
             .collection(this.collection)
             .updateOne(filter, update, options);
@@ -72,6 +76,7 @@ export class MongoDBClient<T> {
         filter: Record<string, any>,
         update: Record<string, any>
     ): Promise<T | null> {
+        await this.connection.asPromise(); // Wait for connection to be ready
         const result = await this.connection
             .collection(this.collection)
             .findOneAndUpdate(
@@ -83,6 +88,7 @@ export class MongoDBClient<T> {
     }
 
     async deleteOne(filter: Record<string, any>): Promise<boolean> {
+        await this.connection.asPromise(); // Wait for connection to be ready
         const result = await this.connection
             .collection(this.collection)
             .deleteOne(filter);
@@ -90,6 +96,7 @@ export class MongoDBClient<T> {
     }
 
     async deleteMany(filter: Record<string, any>): Promise<boolean> {
+        await this.connection.asPromise(); // Wait for connection to be ready
         const result = await this.connection
             .collection(this.collection)
             .deleteMany(filter);
