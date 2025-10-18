@@ -76,7 +76,7 @@ export const processBinanceTrades = async (queueMessages: IQueueMessageBody<IUse
                         isSuccess: true,
                     };
                 } catch (error) {
-                    log.error("Error processing user trade", {
+                    console.error("Error processing user trade", {
                         error,
                         userId: queueMessage.body.userId,
                         masterTradeId: queueMessage.body.masterTradeId,
@@ -112,7 +112,7 @@ export const processBinanceTrades = async (queueMessages: IQueueMessageBody<IUse
 
         return { successMessageIds, failedMessageIds };
     } catch (error) {
-        log.error("Error processing binance trades", { error });
+        console.error("Error processing binance trades", { error });
         throw error;
     }
 }

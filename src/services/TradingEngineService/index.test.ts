@@ -6,12 +6,13 @@ import {
     TestTradingEngineSetup,
     createTrade,
     createPlatformTradingRule,
+    createMasterTrade,
+    getMasterTradeById,
 } from "src/__tests__/test-helpers/trading-engine-service-helper";
 import { IQueueMessageBody } from "src/config/interfaces";
-import { IProcessUserTradingWithMasterTradeEvent, ITrade } from "./interfaces";
+import { IMasterTrade, IProcessUserTradingWithMasterTradeEvent, ITrade } from "./interfaces";
 import {
     TradeSide,
-    OrderPlacementType,
     TradingRuleName,
     AccountConnectionStatus,
     TradeStatus,
@@ -37,10 +38,12 @@ jest.setTimeout(60000);
 describe("TradingEngineService", () => {
     let testDb: TestTradingEngineSetup;
     let service: TradingEngineService;
+    let masterTrade: IMasterTrade;
 
     beforeAll(async () => {
         testDb = await setupTestTradingEngineDatabase();
         service = new TradingEngineService(testDb.tradingEngineConnection);
+        // masterTrade = await createMasterTrade(testDb.tradingEngineConnection);
     });
 
     afterAll(async () => {
@@ -49,6 +52,10 @@ describe("TradingEngineService", () => {
 
     beforeEach(async () => {
         await clearTestTradingEngineDatabase(testDb.tradingEngineConnection);
+
+        // Recreate the master trade after clearing the database
+        masterTrade = await createMasterTrade(testDb.tradingEngineConnection);
+
         // Reset mocks before each test
         jest.clearAllMocks();
         // Default successful queue publishing
@@ -58,18 +65,18 @@ describe("TradingEngineService", () => {
     const createMockMasterTradeEvent = (
         overrides: Partial<IProcessUserTradingWithMasterTradeEvent> = {}
     ): IProcessUserTradingWithMasterTradeEvent => ({
-        masterTradeId: "test-signal-123",
-        stopLossPrice: 110408,
-        takeProfitPrice: 117882,
-        entryPrice: 111373,
-        baseAsset: "BTC",
-        quoteCurrency: "USDT",
-        pair: "BTCUSDT",
-        supportedTradingPlatforms: [TradingPlatform.BINANCE],
-        tradeSide: TradeSide.LONG,
-        targetOrdersAmountToFill: 1000,
-        orderPlacementType: OrderPlacementType.MARKET,
-        accountType: AccountType.FUTURES,
+        masterTradeId: (masterTrade._id as mongoose.Types.ObjectId).toString(),
+        stopLossPrice: masterTrade.stopLossPrice,
+        takeProfitPrice: masterTrade.takeProfitPrice as number,
+        entryPrice: masterTrade.entryPrice as number,
+        baseAsset: masterTrade.baseAsset,
+        quoteCurrency: masterTrade.quoteCurrency,
+        pair: masterTrade.pair,
+        supportedTradingPlatforms: masterTrade.supportedTradingPlatforms,
+        tradeSide: masterTrade.side,
+        targetOrdersAmountToFill: masterTrade.targetOrdersAmountToFill,
+        orderPlacementType: masterTrade.orderPlacementType,
+        accountType: masterTrade.accountType,
         ...overrides,
     });
 
@@ -243,7 +250,7 @@ describe("TradingEngineService", () => {
             expect(mockPublishMessageToQueue).toHaveBeenCalledTimes(1);
         });
 
-        it("should process valid signal with eligible users", async () => {
+        it("should process valid master trade with eligible users", async () => {
             const userId = "test-user-1";
             await createCompleteUserTradingSetup(
                 testDb.tradingEngineConnection,
@@ -310,6 +317,10 @@ describe("TradingEngineService", () => {
             expect(createdTrades[0].quoteCurrency).toBe("USDT");
             expect(createdTrades[0].side).toBe(TradeSide.LONG);
             expect(createdTrades[0].quoteTotal).toBeGreaterThan(0);
+
+            // Check if master trade status was updated to PROCESSED
+            const updatedMasterTrade = await getMasterTradeById(testDb.tradingEngineConnection, (masterTrade._id as mongoose.Types.ObjectId).toString());
+            expect(updatedMasterTrade?.status).toBe(TradeStatus.PROCESSED);
 
             // Verify queue publishing was called
             expect(mockPublishMessageToQueue).toHaveBeenCalledTimes(1);
@@ -431,39 +442,42 @@ describe("TradingEngineService", () => {
 
         it("should handle multiple queue messages", async () => {
             const userId = "test-user-multi";
-            await createCompleteUserTradingSetup(
-                testDb.tradingEngineConnection,
-                userId,
-                {
-                    accountOptions: {
-                        platformName: TradingPlatform.BINANCE,
-                        connectionStatus: AccountConnectionStatus.CONNECTED,
-                    },
-                    balanceOptions: [
-                        {
-                            currency: Currency.USDT,
-                            availableBalance: 5000,
-                            accountType: AccountType.FUTURES,
+            await Promise.all([
+                createCompleteUserTradingSetup(
+                    testDb.tradingEngineConnection,
+                    userId,
+                    {
+                        accountOptions: {
+                            platformName: TradingPlatform.BINANCE,
+                            connectionStatus: AccountConnectionStatus.CONNECTED,
                         },
-                    ],
-                }
-            );
+                        balanceOptions: [
+                            {
+                                currency: Currency.USDT,
+                                availableBalance: 5000,
+                                accountType: AccountType.FUTURES,
+                            },
+                        ],
+                    }
+                ),
+                createPlatformTradingRule(testDb.tradingEngineConnection, {
+                    pair: "BTCUSDT",
+                    platform: TradingPlatform.BINANCE,
+                    minQuantity: 0.001,
+                    minNotional: 10,
+                    stepSize: 0.001,
+                })
+            ])
 
-            // Create platform trading rules
-            await createPlatformTradingRule(testDb.tradingEngineConnection, {
-                pair: "BTCUSDT",
-                platform: TradingPlatform.BINANCE,
-                minQuantity: 0.001,
-                minNotional: 10,
-                stepSize: 0.001,
-            });
 
-            const masterTradeEvent1 = createMockMasterTradeEvent({
-                masterTradeId: "signal-1",
-            });
-            const masterTradeEvent2 = createMockMasterTradeEvent({
-                masterTradeId: "signal-2",
-            });
+            const [masterTradeEvent1, masterTradeEvent2] = await Promise.all([
+                createMockMasterTradeEvent({
+                    masterTradeId: (masterTrade._id as mongoose.Types.ObjectId).toString(),
+                }),
+                createMockMasterTradeEvent({
+                    masterTradeId: (masterTrade._id as mongoose.Types.ObjectId).toString(),
+                })
+            ]);
 
             const queueMessages = [
                 createMockQueueMessage(masterTradeEvent1, "msg-1"),

@@ -14,6 +14,7 @@ import {
     IUserTradeAllocation,
     IOrderBatch,
     IOrder,
+    IMasterTrade,
 } from "./interfaces";
 import {
     OrderType,
@@ -225,7 +226,7 @@ export class TradingEngineService {
 
                 this.initialized = true;
             } catch (error) {
-                log.error("Failed to initialize TradingEngineService:", {
+                console.error("Failed to initialize TradingEngineService:", {
                     error,
                 });
                 throw error;
@@ -390,7 +391,7 @@ export class TradingEngineService {
                 warnings,
             };
         } catch (error) {
-            log.error("Error validating trading rules:", { error, userId });
+            console.error("Error validating trading rules:", { error, userId });
             throw error;
         }
     }
@@ -576,7 +577,7 @@ export class TradingEngineService {
 
             return userTradingRulesCollection.find({ userId });
         } catch (error) {
-            log.error("Error fetching user trading rules:", { error, userId });
+            console.error("Error fetching user trading rules:", { error, userId });
             throw error;
         }
     }
@@ -595,7 +596,7 @@ export class TradingEngineService {
                 status: { $in: [TradeStatus.ACTIVE, TradeStatus.PENDING, TradeStatus.PROCESSED] },
             });
         } catch (error) {
-            log.error("Error fetching user active trades:", { error, userId });
+            console.error("Error fetching user active trades:", { error, userId });
             throw error;
         }
     }
@@ -625,7 +626,7 @@ export class TradingEngineService {
 
             return rule;
         } catch (error) {
-            log.error("Error fetching trading platform rules:", {
+            console.error("Error fetching trading platform rules:", {
                 error,
                 tradingPlatform,
                 pair,
@@ -703,7 +704,7 @@ export class TradingEngineService {
 
             return results;
         } catch (error) {
-            log.error(
+            console.error(
                 "Error fetching users with trading accounts and balances:",
                 {
                     error,
@@ -826,6 +827,31 @@ export class TradingEngineService {
         };
     }
 
+    // update master trade
+    public async updateMasterTrade({ masterTradeId, updateData }: { masterTradeId: string, updateData: Partial<IMasterTrade> }): Promise<IMasterTrade | null> {
+        try {
+            const connection = await this.getConnection();
+            const masterTradesCollection = new MongoDBClient<IMasterTrade>(
+                connection,
+                TradingEngineServiceCollections.masterTrades
+            );
+
+            const updatedMasterTrade = await masterTradesCollection.findOneAndUpdate(
+                { _id: new mongoose.Types.ObjectId(masterTradeId) },
+                {
+                    $set: {
+                        ...updateData,
+                    },
+                }
+            );
+            log.info(`Updated master trade ${masterTradeId}`, { updateData });
+            return updatedMasterTrade;
+        } catch (error) {
+            console.error("Error updating trade:", { error, masterTradeId, updateData });
+            throw error;
+        }
+    }
+
     /**
      * Creates trades for a specific user
      */
@@ -865,7 +891,7 @@ export class TradingEngineService {
             log.info(`Created trade for user ${userId}`);
             return createdTrade;
         } catch (error) {
-            log.error("Error creating trades for user:", { error, userId });
+            console.error("Error creating trades for user:", { error, userId });
             throw error;
         }
     }
@@ -884,14 +910,16 @@ export class TradingEngineService {
             const updatedTrade = await tradesCollection.findOneAndUpdate(
                 { _id: new mongoose.Types.ObjectId(tradeId) },
                 {
-                    ...updateData,
+                    $set: {
+                        ...updateData,
+                    },
                 }
             );
 
             log.info(`Updated trade ${tradeId}`, { updateData });
             return updatedTrade;
         } catch (error) {
-            log.error("Error updating trade:", { error, tradeId, updateData });
+            console.error("Error updating trade:", { error, tradeId, updateData });
             throw error;
         }
     }
@@ -911,7 +939,7 @@ export class TradingEngineService {
                 _id: new mongoose.Types.ObjectId(tradeId),
             });
         } catch (error) {
-            log.error("Error fetching trade:", { error, tradeId });
+            console.error("Error fetching trade:", { error, tradeId });
             throw error;
         }
     }
@@ -941,7 +969,7 @@ export class TradingEngineService {
 
             return orderBatchCollection.insertOne(orderBatchData);
         } catch (error) {
-            log.error("Error creating order batch:", { error, orderBatchData });
+            console.error("Error creating order batch:", { error, orderBatchData });
             throw error;
         }
     }
@@ -963,14 +991,16 @@ export class TradingEngineService {
             const updatedOrderBatch = await orderBatchCollection.findOneAndUpdate(
                 { _id: new mongoose.Types.ObjectId(orderBatchId) },
                 {
-                    ...updateData,
+                    $set: {
+                        ...updateData,
+                    },
                 }
             );
 
             log.info(`Updated order batch ${orderBatchId}`, { updateData });
             return updatedOrderBatch;
         } catch (error) {
-            log.error("Error updating order batch:", {
+            console.error("Error updating order batch:", {
                 error,
                 orderBatchId,
                 updateData,
@@ -996,7 +1026,7 @@ export class TradingEngineService {
                 _id: new mongoose.Types.ObjectId(orderBatchId),
             });
         } catch (error) {
-            log.error("Error fetching order batch:", { error, orderBatchId });
+            console.error("Error fetching order batch:", { error, orderBatchId });
             throw error;
         }
     }
@@ -1016,7 +1046,7 @@ export class TradingEngineService {
 
             return await orderBatchCollection.findOne({ externalOrderId });
         } catch (error) {
-            log.error("Error fetching order batch by external ID:", {
+            console.error("Error fetching order batch by external ID:", {
                 error,
                 externalOrderId,
             });
@@ -1053,7 +1083,7 @@ export class TradingEngineService {
 
             return ordersCollection.insertOne(orderData);
         } catch (error) {
-            log.error("Error creating order:", { error, orderData });
+            console.error("Error creating order:", { error, orderData });
             throw error;
         }
     }
@@ -1075,12 +1105,14 @@ export class TradingEngineService {
             const updatedOrder = await ordersCollection.findOneAndUpdate(
                 { _id: new mongoose.Types.ObjectId(orderId) },
                 {
-                    ...updateData,
+                    $set: {
+                        ...updateData,
+                    },
                 }
             );
             return updatedOrder;
         } catch (error) {
-            log.error("Error updating order:", { error, orderId, updateData });
+            console.error("Error updating order:", { error, orderId, updateData });
             throw error;
         }
     }
@@ -1100,7 +1132,7 @@ export class TradingEngineService {
                 _id: new mongoose.Types.ObjectId(orderId),
             });
         } catch (error) {
-            log.error("Error fetching order:", { error, orderId });
+            console.error("Error fetching order:", { error, orderId });
             throw error;
         }
     }
@@ -1120,7 +1152,7 @@ export class TradingEngineService {
 
             return ordersCollection.findOne({ externalOrderId });
         } catch (error) {
-            log.error("Error fetching order by external ID:", {
+            console.error("Error fetching order by external ID:", {
                 error,
                 externalOrderId,
             });
@@ -1143,7 +1175,7 @@ export class TradingEngineService {
                 tradeId: new mongoose.Types.ObjectId(tradeId),
             });
         } catch (error) {
-            log.error("Error fetching orders for trade:", { error, tradeId });
+            console.error("Error fetching orders for trade:", { error, tradeId });
             throw error;
         }
     }
@@ -1165,7 +1197,7 @@ export class TradingEngineService {
                 orderBatchId: new mongoose.Types.ObjectId(orderBatchId),
             });
         } catch (error) {
-            log.error("Error fetching orders for order batch:", {
+            console.error("Error fetching orders for order batch:", {
                 error,
                 orderBatchId,
             });
@@ -1345,7 +1377,7 @@ export class TradingEngineService {
             if (result.status === "fulfilled") {
                 successfulAllocations.push(result.value);
             } else {
-                log.error(
+                console.error(
                     `Failed to create trade for user ${allocations[index].userId}:`,
                     result.reason
                 );
@@ -1561,7 +1593,7 @@ export class TradingEngineService {
                 successfulAllocations.push(allocation);
             } else {
                 failedUserIds.push(allocation.userId);
-                log.error(
+                console.error(
                     `Failed to publish trade to queue for user ${allocation.userId}:`,
                     result.reason
                 );
@@ -1569,7 +1601,7 @@ export class TradingEngineService {
         });
 
         if (failedUserIds.length > 0) {
-            log.error(
+            console.error(
                 `Failed to publish trades for ${failedUserIds.length} users:`,
                 {
                     failedUserIds,
@@ -1604,6 +1636,13 @@ export class TradingEngineService {
                         const { allocations, totalAllocated } =
                             await this.processSingleMasterTrade(masterTrade);
 
+                        console.log("allocations before master trade update", allocations);
+
+                        // update master trade status to PROCESSED
+                        const updatedMasterTrade = await this.updateMasterTrade({ masterTradeId: masterTrade.masterTradeId, updateData: { status: TradeStatus.PROCESSED } })
+
+                        log.info(`Updated master trade ${masterTrade.masterTradeId} status to PROCESSED`, { updatedMasterTrade });
+
                         return {
                             success: true,
                             messageId: queueMessage.messageId,
@@ -1612,7 +1651,7 @@ export class TradingEngineService {
                             totalAllocated,
                         };
                     } catch (error) {
-                        log.error(
+                        console.error(
                             `Error processing queue message ${queueMessage.messageId}:`,
                             { error }
                         );
@@ -1641,7 +1680,7 @@ export class TradingEngineService {
                     }
                 } else {
                     // This shouldn't happen since we're catching errors inside the map function
-                    log.error(
+                    console.error(
                         "Unexpected Promise.allSettled rejection:",
                         result.reason
                     );
@@ -1692,7 +1731,7 @@ export class TradingEngineService {
                 masterTradeDetails,
             };
         } catch (error) {
-            log.error("General error in processIncomingSignals:", { error });
+            console.error("General error in processIncomingSignals:", { error });
             return {
                 successMessageIds: [],
                 failedMessageIds: queueMessages.map((qm) => qm.messageId),

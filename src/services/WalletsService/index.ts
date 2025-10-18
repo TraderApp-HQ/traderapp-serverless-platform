@@ -64,7 +64,7 @@ export class WalletsService {
     private initialized: boolean = false;
     private initializationPromise: Promise<void> | null = null;
 
-    constructor() {}
+    constructor() { }
 
     // Initialize the service once
     private async initialize(): Promise<void> {
@@ -103,7 +103,7 @@ export class WalletsService {
 
                 this.initialized = true;
             } catch (error) {
-                log.error("Failed to initialize WalletsService:", { error });
+                console.error("Failed to initialize WalletsService:", { error });
                 throw error;
             } finally {
                 this.initializationPromise = null;
@@ -184,7 +184,7 @@ export class WalletsService {
                 await transactionsCollection.insertOne(transaction);
             }
         } catch (error) {
-            log.error("Error recording transaction:", { error });
+            console.error("Error recording transaction:", { error });
             throw error;
         }
     }
@@ -204,7 +204,7 @@ export class WalletsService {
                 externalTransactionId,
             });
         } catch (error) {
-            log.error(`Error getting transaction from DB:`, { error });
+            console.error(`Error getting transaction from DB:`, { error });
             throw error;
         }
     }
@@ -230,7 +230,7 @@ export class WalletsService {
                 { $inc: { availableBalance: amount } }
             );
         } catch (error) {
-            log.error("Error crediting user wallet:", { error });
+            console.error("Error crediting user wallet:", { error });
             throw error;
         }
     }
@@ -255,7 +255,7 @@ export class WalletsService {
                 { $inc: { availableBalance: -amount } }
             );
         } catch (error) {
-            log.error("Error debiting user wallet:", { error });
+            console.error("Error debiting user wallet:", { error });
             throw error;
         }
     }
@@ -311,7 +311,7 @@ export class WalletsService {
                             completedMessages.push(qm);
                             return { messageId: qm.messageId, success: true };
                         } catch (error) {
-                            log.error(
+                            console.error(
                                 `Failed to confirm payment for message ${qm.messageId}:`,
                                 { error }
                             );
@@ -348,7 +348,7 @@ export class WalletsService {
                             success: true,
                         };
                     } catch (error) {
-                        log.error(
+                        console.error(
                             `Failed to find wallet details for message ${qm.messageId}:`,
                             { error }
                         );
@@ -409,7 +409,7 @@ export class WalletsService {
             const completedDeposits = transactions.filter(
                 (t) =>
                     t.queueMessage.body.data.status ===
-                        CryptopayWebhookEventStatus.completed && t.userId
+                    CryptopayWebhookEventStatus.completed && t.userId
             );
 
             const transactionsToCredit = await Promise.all(
@@ -429,16 +429,16 @@ export class WalletsService {
                             if (
                                 existingTransaction &&
                                 existingTransaction.status ===
-                                    TransactionStatus.SUCCESS
+                                TransactionStatus.SUCCESS
                             ) {
-                                log.error(
+                                console.error(
                                     `Transaction ${transaction.externalTransactionId} already credited, skipping.`
                                 );
                                 return null; // Skip this one
                             }
                             return { messageId, userId, queueMessage };
                         } catch (error) {
-                            log.error(
+                            console.error(
                                 `Failed to check transaction status for message ${messageId}:`,
                                 { error }
                             );
@@ -514,7 +514,7 @@ export class WalletsService {
                             );
                             return { messageId, success: true };
                         } catch (error) {
-                            log.error(
+                            console.error(
                                 `Failed to credit wallet for message ${messageId}:`,
                                 { error }
                             );
@@ -549,7 +549,7 @@ export class WalletsService {
                         await this.recordTransactionToDB(transaction);
                         return { messageId, success: true };
                     } catch (error) {
-                        log.error(
+                        console.error(
                             `Failed to record transaction for message ${messageId}:`,
                             { error }
                         );
@@ -590,7 +590,7 @@ export class WalletsService {
                 failedMessageIds,
             };
         } catch (error) {
-            log.error("General error in processCryptoPayChannelsWebhook:", {
+            console.error("General error in processCryptoPayChannelsWebhook:", {
                 error,
             });
             return {
@@ -704,7 +704,7 @@ export class WalletsService {
                             success: allWalletsCreatedSuccessfully,
                         };
                     } catch (error) {
-                        log.error(
+                        console.error(
                             `Failed to create all wallets for user ${queue.messageId}:`,
                             {
                                 error,
@@ -742,7 +742,7 @@ export class WalletsService {
                 failedMessageIds,
             };
         } catch (error) {
-            log.error("General error in createUserWallet:", {
+            console.error("General error in createUserWallet:", {
                 error,
             });
             return {
@@ -831,7 +831,7 @@ export class WalletsService {
                     }
                 } else {
                     failedMessageIdSet.add(messageId);
-                    log.error("Withdrawal lookup transient failure", {
+                    console.error("Withdrawal lookup transient failure", {
                         messageId,
                         error: res.reason,
                     });
@@ -939,7 +939,7 @@ export class WalletsService {
                 const messageId = resolved[i].messageId;
                 if (res.status !== "fulfilled") {
                     failedMessageIdSet.add(messageId);
-                    log.error(
+                    console.error(
                         "Failed to update withdrawal transaction status (transient)",
                         {
                             messageId,
@@ -965,7 +965,7 @@ export class WalletsService {
 
             return { successMessageIds, failedMessageIds };
         } catch (error) {
-            log.error("General error in processCryptoPayWithdrawalWebhook:", {
+            console.error("General error in processCryptoPayWithdrawalWebhook:", {
                 error,
             });
             return {
@@ -1002,7 +1002,7 @@ export class WalletsService {
 
             return userWallet;
         } catch (error) {
-            log.error("General error in getUserWallet:", { error });
+            console.error("General error in getUserWallet:", { error });
         }
     }
 
@@ -1072,7 +1072,7 @@ export class WalletsService {
 
             return { success: true, wallet };
         } catch (error) {
-            log.error("General error in lockUserBalance:", { error });
+            console.error("General error in lockUserBalance:", { error });
             throw error;
         }
     }
@@ -1188,7 +1188,7 @@ export class WalletsService {
                 invoice: createdInvoice,
             };
         } catch (error) {
-            log.error("General error in createInvoice:", { error });
+            console.error("General error in createInvoice:", { error });
             return {
                 success: false,
                 error: "SYSTEM_ERROR",
@@ -1219,7 +1219,7 @@ export class WalletsService {
 
             return invoice;
         } catch (error) {
-            log.error("General error in getInvoiceById:", { error });
+            console.error("General error in getInvoiceById:", { error });
             throw error;
         }
     }
@@ -1256,7 +1256,7 @@ export class WalletsService {
 
             return invoices;
         } catch (error) {
-            log.error("General error in getInvoices:", { error });
+            console.error("General error in getInvoices:", { error });
             throw error;
         }
     }
@@ -1357,7 +1357,7 @@ export class WalletsService {
                 invoice: updatedInvoice!,
             };
         } catch (error) {
-            log.error("General error in updateInvoice:", { error });
+            console.error("General error in updateInvoice:", { error });
             return {
                 success: false,
                 error: "SYSTEM_ERROR",
@@ -1431,7 +1431,7 @@ export class WalletsService {
                 invoice: updateResult.invoice,
             };
         } catch (error) {
-            log.error("General error in payInvoice:", { error });
+            console.error("General error in payInvoice:", { error });
             return {
                 success: false,
                 error: "SYSTEM_ERROR",

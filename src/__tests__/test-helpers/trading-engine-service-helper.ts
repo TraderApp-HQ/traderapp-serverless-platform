@@ -14,6 +14,7 @@ import {
     IUserTradingAccount,
     IUserTradingAccountBalance,
     IPlatformTradingRule,
+    IMasterTrade,
 } from "src/services/TradingEngineService/interfaces";
 import {
     OrderType,
@@ -28,6 +29,8 @@ import {
     ConnectionType,
     TradingRuleName,
     OrderSide,
+    CandleStick,
+    TradeRisk,
 } from "src/services/TradingEngineService/enums";
 import {
     Currency,
@@ -439,6 +442,50 @@ export const createDefaultUserTradingRules = async (
 // TRADE CREATION
 // =============================================================================
 
+export const createMasterTrade = async (
+    connection: mongoose.Connection,
+    options: Partial<IMasterTrade> = {}
+): Promise<IMasterTrade> => {
+    const masterTradeCollection = new MongoDBClient<IMasterTrade>(
+        connection,
+        TradingEngineServiceCollections.masterTrades
+    );
+
+    const masterTradeData: Partial<IMasterTrade> = {
+        ...options,
+        baseAsset: options.baseAsset || "BTC",
+        quoteCurrency: options.quoteCurrency || "USDT",
+        baseQuantity: options.baseQuantity || 0.001,
+        entryPrice: options.entryPrice || 111373,
+        stopLossPrice: options.stopLossPrice || 110408,
+        takeProfitPrice: options.takeProfitPrice || 117882,
+        quoteTotal: options.quoteTotal || 50,
+        createdAt: options.createdAt || new Date(),
+        updatedAt: options.updatedAt || new Date(),
+        baseAssetLogoUrl: options.baseAssetLogoUrl || "https://example.com/logo.png",
+        currentPrice: options.currentPrice || 111373,
+        ordersTriggerPrice: options.ordersTriggerPrice || 111373,
+        targetOrdersAmountToFill: options.targetOrdersAmountToFill || 100000,
+        orderPlacementType: options.orderPlacementType || OrderPlacementType.MARKET,
+        accountType: options.accountType || AccountType.FUTURES,
+        supportedTradingPlatforms: options.supportedTradingPlatforms || [TradingPlatform.BINANCE],
+        chartUrl: options.chartUrl || "https://example.com/chart.png",
+        tradeNote: options.tradeNote || "Test trade note",
+        pair: options.pair || "BTCUSDT",
+        side: options.side || TradeSide.LONG,
+        pnl: options.pnl || 0,
+        pnlPercentage: options.pnlPercentage || 0,
+        estimatedProfit: options.estimatedProfit || 0,
+        estimatedLoss: options.estimatedLoss || 0,
+        status: options.status || TradeStatus.PENDING,
+        candlestick: options.candlestick || CandleStick.oneHour,
+        risk: options.risk || TradeRisk.low,
+        category: options.category || Category.CRYPTO,
+    };
+
+    return masterTradeCollection.insertOne(masterTradeData);
+};
+
 export interface CreateTradeOptions {
     id?: string;
     userId?: string;
@@ -656,6 +703,7 @@ export const createCompleteUserTradingSetup = async (
             userId,
             side: TradeSide.LONG,
             id: tradeOptions.id ? `${tradeOptions.id}-long-${i}` : undefined,
+            masterTradeId: tradeOptions.masterTradeId
         });
         trades.push(trade);
     }
@@ -793,6 +841,19 @@ export const getUserTradingRules = async (
     );
 
     return ruleCollection.find({ userId });
+};
+
+// Gets master trade by id
+export const getMasterTradeById = async (
+    connection: mongoose.Connection,
+    id: string
+): Promise<IMasterTrade | null> => {
+    const masterTradeCollection = new MongoDBClient<IMasterTrade>(
+        connection,
+        TradingEngineServiceCollections.masterTrades
+    );
+
+    return masterTradeCollection.findOne({ _id: new mongoose.Types.ObjectId(id) });
 };
 
 // Add these functions after the existing ORDER CREATION section

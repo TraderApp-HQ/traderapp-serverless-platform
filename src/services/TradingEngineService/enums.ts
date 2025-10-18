@@ -26,6 +26,7 @@ export enum TradeStatus {
     ACTIVE = "ACTIVE",
     CLOSED = "CLOSED",
     PENDING = "PENDING",
+    PROCESSING = "PROCESSING",
     PROCESSED = "PROCESSED",
     FAILED = "FAILED",
     CANCELED = "CANCELED",
@@ -93,4 +94,24 @@ export enum InvoiceStatus {
 export enum InvoiceType {
     TRADING_FEE = "TRADING_FEE",
     PROFIT_SHARE = "PROFIT_SHARE",
+}
+
+export enum CandleStick {
+    fiveMin = "5m",
+    fifteenMin = "15m",
+    thirtyMin = "30m",
+    oneHour = "1HR",
+    twoHours = "2HRS",
+    fourHours = "4HRS",
+    eightHours = "8HRS",
+    twelveHours = "12HRS",
+    oneDay = "1D",
+    threeDays = "3D",
+    oneWeek = "1W",
+}
+
+export enum TradeRisk {
+    low = "LOW",
+    medium = "MEDIUM",
+    high = "HIGH",
 }

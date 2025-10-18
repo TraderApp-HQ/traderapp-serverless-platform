@@ -58,7 +58,7 @@ export class UsersService {
 
                 this.initialized = true;
             } catch (error) {
-                log.error("Failed to initialize UsersService:", { error });
+                console.error("Failed to initialize UsersService:", { error });
                 throw error;
             } finally {
                 this.initializationPromise = null;
@@ -123,7 +123,7 @@ export class UsersService {
 
             return user;
         } catch (error) {
-            log.error(`Failed to get user by ID ${userId}:`, { error });
+            console.error(`Failed to get user by ID ${userId}:`, { error });
             throw error;
         }
     }
@@ -169,7 +169,7 @@ export class UsersService {
                                 UserOnboardingChecklist.SHOW_ONBOARDING_STEPS &&
                                 !user[onboardingChecklistItem]) ||
                             onboardingChecklistItem ===
-                                UserOnboardingChecklist.IS_PERSONAL_ATC_FUNDED
+                            UserOnboardingChecklist.IS_PERSONAL_ATC_FUNDED
                         ) {
                             // Update the user onboarding task field
                             const updatedUser =
@@ -204,8 +204,8 @@ export class UsersService {
                                             ...(showOnboardingSteps &&
                                                 isSocialAccountConnected &&
                                                 isOnboardingTaskDone && {
-                                                    showOnboardingSteps: false,
-                                                }),
+                                                showOnboardingSteps: false,
+                                            }),
                                             // and update the trading status of the user depending on the personal ATC status after checking isEmailVerified -> isFirstDepositMade -> isTradingAccountConnected
                                             tradingStatus: isPersonalATCFunded
                                                 ? TradingStatus.ACTIVE
@@ -218,7 +218,7 @@ export class UsersService {
                             // The block below accounts for manual dismisal of the onboarding tasks using the optional dismiss button after the comulsory tasks are completed.
                         } else if (
                             onboardingChecklistItem ===
-                                UserOnboardingChecklist.SHOW_ONBOARDING_STEPS &&
+                            UserOnboardingChecklist.SHOW_ONBOARDING_STEPS &&
                             user[onboardingChecklistItem]
                         ) {
                             await usersCollection.updateOne(
@@ -241,7 +241,7 @@ export class UsersService {
                             success: true,
                         };
                     } catch (error) {
-                        log.error(
+                        console.error(
                             `Failed to update onboarding task (${queue.body.onboardingChecklistItem}) for user ${queue.body.userId}:`,
                             {
                                 error,

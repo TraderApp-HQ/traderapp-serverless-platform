@@ -129,7 +129,7 @@ export const processUserTrades = async (
                         isSuccess: true,
                     };
                 } catch (error) {
-                    log.error("Error processing user trade", {
+                    console.error("Error processing user trade", {
                         error,
                         userId: queueMessage.body.userId,
                         masterTradeId: queueMessage.body.masterTradeId,
@@ -174,7 +174,7 @@ export const processUserTrades = async (
 
                     // TODO: Send notification to users about insufficient balance
                 } catch (error) {
-                    log.error("Error canceling and sending notification", { error })
+                    console.error("Error canceling and sending notification", { error })
                 }
             }))
 
@@ -189,7 +189,7 @@ export const processUserTrades = async (
 
         return { successMessageIds, failedMessageIds };
     } catch (error) {
-        log.error("Critical error in processUserTrades", { error });
+        console.error("Critical error in processUserTrades", { error });
         return {
             successMessageIds: [],
             failedMessageIds: queueMessages.map((qm) => qm.messageId),
@@ -246,7 +246,7 @@ export const handleProcessedTrades = async (
 
                     return { messageId: queueMessage.messageId, processedOrder, isSuccess: true };
                 } catch (error) {
-                    log.error("Error handling processed order", { error });
+                    console.error("Error handling processed order", { error });
                     throw error;
                 }
             })
@@ -269,7 +269,7 @@ export const handleProcessedTrades = async (
 
         return { successMessageIds, failedMessageIds };
     } catch (error) {
-        log.error("Critical error in handleProcessedOrders", { error });
+        console.error("Critical error in handleProcessedOrders", { error });
         return {
             successMessageIds: [],
             failedMessageIds: queueMessages.map((qm) => qm.messageId),
@@ -294,7 +294,7 @@ export const handleFailedTrades = async (
                     await tradingEngineService.updateTrade({ tradeId: failedOrder.tradeId.toString(), updateData: { status: TradeStatus.FAILED } });
                     return { messageId: queueMessage.messageId, failedOrder, isSuccess: true };
                 } catch (error) {
-                    log.error("Error handling failed order", { error });
+                    console.error("Error handling failed order", { error });
                     throw error;
                 }
             })
@@ -317,7 +317,7 @@ export const handleFailedTrades = async (
 
         return { successMessageIds, failedMessageIds };
     } catch (error) {
-        log.error("Critical error in handleFailedOrders", { error });
+        console.error("Critical error in handleFailedOrders", { error });
         return {
             successMessageIds: [],
             failedMessageIds: queueMessages.map((qm) => qm.messageId),
