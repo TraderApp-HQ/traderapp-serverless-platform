@@ -990,7 +990,7 @@ export class WalletsService {
         userId: string;
         currency: string;
         walletType: string;
-    }) {
+    }): Promise<IUserWallet | null> {
         try {
             // Ensure service is initialized
             await this.initialize();
@@ -1003,13 +1003,18 @@ export class WalletsService {
 
             const userWallet = await userWalletCollection.findOne({
                 userId,
-                currency,
-                walletType,
+                currencySymbol: currency,
+                walletTypeName: walletType,
             });
+
+            if (!userWallet) {
+                throw new Error(`No wallet found for user ${userId} with currency ${currency} and walletType ${walletType}`);
+            }
 
             return userWallet;
         } catch (error) {
             console.error("General error in getUserWallet:", { error });
+            return null;
         }
     }
 

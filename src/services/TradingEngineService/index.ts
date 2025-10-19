@@ -733,7 +733,7 @@ export class TradingEngineService {
 
         const calculatedRiskAmount = (accountSize * riskPercentage) / 100;
         let riskAmount = Math.round(
-            Math.min(maxRiskAmount, calculatedRiskAmount)
+            Math.max(maxRiskAmount, calculatedRiskAmount)
         );
 
         // Minimum risk amount is 10 USDT
