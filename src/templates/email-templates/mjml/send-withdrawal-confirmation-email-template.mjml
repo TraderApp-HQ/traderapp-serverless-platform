@@ -48,14 +48,15 @@
             .details-box {
                 background-color: #f5f8ff;
                 border-radius: 8px;
-                width: 90%;
+                width: auto;
                 box-sizing: border-box;
             }
             .social-box {
                 background-color: #f5f8ff;
-                width: 90%;
-                padding: 20px;
+                width: auto;
+                padding: 20px 0;
                 box-sizing: border-box;
+          			border-radius: 8px;
             }
             .banner-img {
                 width: 562;
@@ -81,7 +82,7 @@
     </mj-head>
 
     <mj-body background-color="#ffffff">
-        <mj-wrapper css-class="wrapper" padding="0 16px">
+        <mj-wrapper css-class="wrapper">
             <!-- Logo -->
             <mj-section padding-bottom="10px">
                 <mj-column>

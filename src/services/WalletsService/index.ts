@@ -800,9 +800,17 @@ export class WalletsService {
                     async ({ queueMessage: { body }, transaction }) => {
                         switch (body.data.status) {
                             case CryptopayWebhookEventStatus.completed: {
-                                const amount = parseFloat(
-                                    body.data.paid_amount ?? "0"
-                                );
+                                const rawAmount =
+                                    body.data.paid_amount ??
+                                    body.data.pay_amount ??
+                                    body.data.received_amount ?? "0";
+                                const amount = parseFloat(String(rawAmount ?? "0"));
+                                if (isNaN(amount)) {
+                                    log.warn("Parsed amount is NaN — defaulting to 0", {
+                                        rawAmount,
+                                        bodyData: body.data,
+                                    });
+                                }
 
                                 const transactionId = body.data.txid ?? "";
 
