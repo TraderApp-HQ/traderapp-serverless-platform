@@ -1,0 +1,2 @@
+echo "✅ Commit completed!"
+git reset --hard HEAD && git clean -fd
