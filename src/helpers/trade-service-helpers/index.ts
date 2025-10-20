@@ -7,11 +7,18 @@ import { SecretLocation } from "src/config/secrets/enums";
 import { getSecrets } from "src/config/secrets/helpers";
 import { ITradingEngineServiceSecrets } from "src/config/secrets/interfaces";
 import { TradingEngineService } from "src/services/TradingEngineService";
-import { OrderBatchStatus, OrderStatus, TradeStatus } from "src/services/TradingEngineService/enums";
-import { IFailedTrade, IProcessedTrade, IUserTradeAllocation } from "src/services/TradingEngineService/interfaces";
+import {
+    OrderBatchStatus,
+    OrderStatus,
+    TradeStatus,
+} from "src/services/TradingEngineService/enums";
+import {
+    IFailedTrade,
+    IProcessedTrade,
+    IUserTradeAllocation,
+} from "src/services/TradingEngineService/interfaces";
 import { WalletsService } from "src/services/WalletsService";
 import { IUserWallet, WalletType } from "src/types/wallets-service";
-
 
 export const getTradingEngineServiceSecrets = async () => {
     const env = process.env.ENV ?? "";
@@ -19,7 +26,13 @@ export const getTradingEngineServiceSecrets = async () => {
         `${SecretLocation.tradingEngineServiceSecrets}/${env}`
     );
 };
-export const mapUserConnectedTradingPlatformToQueueUrl = async ({ platformName, tradingEngineServiceSecrets }: { platformName: string, tradingEngineServiceSecrets: ITradingEngineServiceSecrets }) => {
+export const mapUserConnectedTradingPlatformToQueueUrl = async ({
+    platformName,
+    tradingEngineServiceSecrets,
+}: {
+    platformName: string;
+    tradingEngineServiceSecrets: ITradingEngineServiceSecrets;
+}) => {
     // Get process binance orders queue url
     const processBinanceOrdersQueue =
         tradingEngineServiceSecrets.PROCESS_BINANCE_ORDERS_QUEUE ?? "";
@@ -46,7 +59,8 @@ export const processUserTrades = async (
         const walletsService = new WalletsService();
 
         // Get secrets
-        const tradingEngineServiceSecrets = await getTradingEngineServiceSecrets();
+        const tradingEngineServiceSecrets =
+            await getTradingEngineServiceSecrets();
 
         // Process all queue messages in parallel
         const userTradeProcessingResults = await Promise.allSettled(
@@ -63,18 +77,27 @@ export const processUserTrades = async (
                             tradeAmount: userTrade.tradeAmount,
                         });
 
+                    console.log("##################totalAmountToLock", {
+                        totalAmountToLock,
+                    });
+                    console.log("##################userTrade", { userTrade });
                     // Get user wallet
                     const userWallet = await walletsService.getUserWallet({
                         userId: userTrade.userId,
                         currency: Currency.USDT,
                         walletType: WalletType.MAIN,
                     });
+                    console.log("##################userWallet", { userWallet });
 
                     // If user wallet is not found or insufficient balance, push to insufficient balance array
                     if (
                         !userWallet ||
                         userWallet.availableBalance < totalAmountToLock
                     ) {
+                        console.log("##################insufficient balance", {
+                            availableBalance: userWallet?.availableBalance,
+                            totalAmountToLock,
+                        });
                         insufficientBalanceUsers.push({
                             userTrade,
                             wallet: userWallet,
@@ -95,9 +118,15 @@ export const processUserTrades = async (
                             currency: Currency.USDT,
                             walletType: WalletType.MAIN,
                         });
-
+                    console.log("##################lockUserBalanceResult", {
+                        lockUserBalanceResult,
+                    });
                     // If lockUserBalanceResult is not successful, push to insufficient balance array
                     if (!lockUserBalanceResult.success) {
+                        console.log(
+                            "##################insufficient balance for lockUserBalance",
+                            { userId: userTrade.userId }
+                        );
                         insufficientBalanceUsers.push({
                             userTrade,
                             wallet: lockUserBalanceResult.wallet,
@@ -115,13 +144,18 @@ export const processUserTrades = async (
 
                     // Get queue url for user connected trading platform
                     const queueUrl =
-                        await mapUserConnectedTradingPlatformToQueueUrl({ platformName: userTrade.platformName, tradingEngineServiceSecrets });
+                        await mapUserConnectedTradingPlatformToQueueUrl({
+                            platformName: userTrade.platformName,
+                            tradingEngineServiceSecrets,
+                        });
+
+                    console.log("##################queueUrl", { queueUrl });
 
                     // Publish message to queue to process binance orders
-                    await publishMessageToQueue({
-                        queueUrl,
-                        message: JSON.stringify(userTrade),
-                    });
+                    // await publishMessageToQueue({
+                    //     queueUrl,
+                    //     message: JSON.stringify(userTrade),
+                    // });
 
                     return {
                         messageId: queueMessage.messageId,
@@ -158,26 +192,34 @@ export const processUserTrades = async (
                 users: insufficientBalanceUsers,
             });
 
-            await Promise.allSettled(insufficientBalanceUsers.map(async ({ userTrade }) => {
-                try {
-                    // Create failed order object
-                    const failedOrder: IFailedTrade = {
-                        userId: userTrade.userId,
-                        tradeId: new mongoose.Types.ObjectId(userTrade.tradeId),
-                    };
+            await Promise.allSettled(
+                insufficientBalanceUsers.map(async ({ userTrade }) => {
+                    try {
+                        // Create failed order object
+                        const failedOrder: IFailedTrade = {
+                            userId: userTrade.userId,
+                            tradeId: new mongoose.Types.ObjectId(
+                                userTrade.tradeId
+                            ),
+                        };
 
-                    // publish failed order to queue
-                    await publishMessageToQueue({
-                        queueUrl: tradingEngineServiceSecrets.HANDLE_FAILED_TRADES_QUEUE ?? "",
-                        message: JSON.stringify(failedOrder),
-                    });
+                        // publish failed order to queue
+                        await publishMessageToQueue({
+                            queueUrl:
+                                tradingEngineServiceSecrets.HANDLE_FAILED_TRADES_QUEUE ??
+                                "",
+                            message: JSON.stringify(failedOrder),
+                        });
 
-                    // TODO: Send notification to users about insufficient balance
-                } catch (error) {
-                    console.error("Error canceling and sending notification", { error })
-                }
-            }))
-
+                        // TODO: Send notification to users about insufficient balance
+                    } catch (error) {
+                        console.error(
+                            "Error canceling and sending notification",
+                            { error }
+                        );
+                    }
+                })
+            );
         }
 
         log.info("User trades processing completed", {
@@ -211,26 +253,32 @@ export const handleProcessedTrades = async (
                 const processedOrder = queueMessage.body;
                 try {
                     // update trade status to PROCESSED
-                    await tradingEngineService.updateTrade({ tradeId: processedOrder.tradeId.toString(), updateData: { status: TradeStatus.PROCESSED } });
+                    await tradingEngineService.updateTrade({
+                        tradeId: processedOrder.tradeId.toString(),
+                        updateData: { status: TradeStatus.PROCESSED },
+                    });
 
                     // create order batch
-                    const orderBatch = await tradingEngineService.createOrderBatch({
-                        baseAsset: processedOrder.baseAsset,
-                        quoteCurrency: processedOrder.quoteCurrency,
-                        baseQuantity: processedOrder.baseQuantity,
-                        quoteTotal: processedOrder.quoteTotal,
-                        status: OrderBatchStatus.PENDING,
-                        tradingAccountId: processedOrder.tradingAccountId,
-                        platformName: processedOrder.platformName,
-                        platformId: processedOrder.platformId,
-                        externalOrderId: processedOrder.externalOrderId,
-                    })
+                    const orderBatch =
+                        await tradingEngineService.createOrderBatch({
+                            baseAsset: processedOrder.baseAsset,
+                            quoteCurrency: processedOrder.quoteCurrency,
+                            baseQuantity: processedOrder.baseQuantity,
+                            quoteTotal: processedOrder.quoteTotal,
+                            status: OrderBatchStatus.PENDING,
+                            tradingAccountId: processedOrder.tradingAccountId,
+                            platformName: processedOrder.platformName,
+                            platformId: processedOrder.platformId,
+                            externalOrderId: processedOrder.externalOrderId,
+                        });
 
                     // create order
                     await tradingEngineService.createOrder({
                         userId: processedOrder.userId,
                         tradeId: processedOrder.tradeId,
-                        orderBatchId: new mongoose.Types.ObjectId(orderBatch.id),
+                        orderBatchId: new mongoose.Types.ObjectId(
+                            orderBatch.id
+                        ),
                         baseAsset: processedOrder.baseAsset,
                         baseQuantity: processedOrder.baseQuantity,
                         orderType: processedOrder.orderType,
@@ -244,7 +292,11 @@ export const handleProcessedTrades = async (
                         externalOrderId: processedOrder.externalOrderId,
                     });
 
-                    return { messageId: queueMessage.messageId, processedOrder, isSuccess: true };
+                    return {
+                        messageId: queueMessage.messageId,
+                        processedOrder,
+                        isSuccess: true,
+                    };
                 } catch (error) {
                     console.error("Error handling processed order", { error });
                     throw error;
@@ -291,8 +343,15 @@ export const handleFailedTrades = async (
                 const failedOrder = queueMessage.body;
                 try {
                     // update trade status to FAILED
-                    await tradingEngineService.updateTrade({ tradeId: failedOrder.tradeId.toString(), updateData: { status: TradeStatus.FAILED } });
-                    return { messageId: queueMessage.messageId, failedOrder, isSuccess: true };
+                    await tradingEngineService.updateTrade({
+                        tradeId: failedOrder.tradeId.toString(),
+                        updateData: { status: TradeStatus.FAILED },
+                    });
+                    return {
+                        messageId: queueMessage.messageId,
+                        failedOrder,
+                        isSuccess: true,
+                    };
                 } catch (error) {
                     console.error("Error handling failed order", { error });
                     throw error;

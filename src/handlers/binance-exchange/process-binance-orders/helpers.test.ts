@@ -2,7 +2,10 @@ import mongoose from "mongoose";
 import { OrderSide as BinanceOrderSide } from "binance-api-node";
 import { IQueueMessageBody } from "src/config/interfaces";
 import { AccountType, TradingPlatform } from "src/config/enums";
-import { OrderPlacementType, TradeSide } from "src/services/TradingEngineService/enums";
+import {
+    OrderPlacementType,
+    TradeSide,
+} from "src/services/TradingEngineService/enums";
 import { IUserTradeAllocation } from "src/services/TradingEngineService/interfaces";
 import { processBinanceTrades } from "./helpers";
 
@@ -17,22 +20,34 @@ import { publishMessageToQueue } from "src/clients/SQSClient/helpers";
 import { getTradingEngineServiceSecrets } from "src/helpers/trade-service-helpers";
 import { decrypt } from "src/utils/cypher-helpers";
 
-const mockPublishMessageToQueue = publishMessageToQueue as jest.MockedFunction<typeof publishMessageToQueue>;
-const mockGetTradingEngineServiceSecrets = getTradingEngineServiceSecrets as jest.MockedFunction<typeof getTradingEngineServiceSecrets>;
+const mockPublishMessageToQueue = publishMessageToQueue as jest.MockedFunction<
+    typeof publishMessageToQueue
+>;
+const mockGetTradingEngineServiceSecrets =
+    getTradingEngineServiceSecrets as jest.MockedFunction<
+        typeof getTradingEngineServiceSecrets
+    >;
 const mockDecrypt = decrypt as jest.MockedFunction<typeof decrypt>;
 
 describe("processBinanceTrades", () => {
     const mockSecrets = {
         TRADING_ENGINE_SERVICE_DB_URL: "mongodb://test",
-        PROCESS_BINANCE_ORDERS_QUEUE: "https://sqs.us-east-1.amazonaws.com/123/binance-orders",
-        PROCESS_USER_TRADES_QUEUE: "https://sqs.us-east-1.amazonaws.com/123/user-trades",
-        HANDLE_FAILED_TRADES_QUEUE: "https://sqs.us-east-1.amazonaws.com/123/failed-trades",
-        HANDLE_PROCESSED_TRADES_QUEUE: "https://sqs.us-east-1.amazonaws.com/123/processed-trades",
+        PROCESS_BINANCE_ORDERS_QUEUE:
+            "https://sqs.us-east-1.amazonaws.com/123/binance-orders",
+        PROCESS_USER_TRADES_QUEUE:
+            "https://sqs.us-east-1.amazonaws.com/123/user-trades",
+        HANDLE_FAILED_TRADES_QUEUE:
+            "https://sqs.us-east-1.amazonaws.com/123/failed-trades",
+        HANDLE_PROCESSED_TRADES_QUEUE:
+            "https://sqs.us-east-1.amazonaws.com/123/processed-trades",
         API_SECRET_KEY_ENCRYPTION_KEY: "test-encryption-key",
-        PROCESS_INCOMING_SIGNALS_QUEUE: "https://sqs.us-east-1.amazonaws.com/123/incoming-signals",
+        PROCESS_INCOMING_SIGNALS_QUEUE:
+            "https://sqs.us-east-1.amazonaws.com/123/incoming-signals",
     };
 
-    const createMockUserTrade = (overrides: Partial<IUserTradeAllocation> = {}): IUserTradeAllocation => ({
+    const createMockUserTrade = (
+        overrides: Partial<IUserTradeAllocation> = {}
+    ): IUserTradeAllocation => ({
         userId: "user123",
         tradingAccountId: new mongoose.Types.ObjectId(),
         platformName: TradingPlatform.BINANCE,
@@ -58,7 +73,9 @@ describe("processBinanceTrades", () => {
         ...overrides,
     });
 
-    const createQueueMessage = (userTrade: IUserTradeAllocation): IQueueMessageBody<IUserTradeAllocation> => ({
+    const createQueueMessage = (
+        userTrade: IUserTradeAllocation
+    ): IQueueMessageBody<IUserTradeAllocation> => ({
         messageId: "msg123",
         body: userTrade,
         receiptHandle: "receipt123",
@@ -106,8 +123,14 @@ describe("processBinanceTrades", () => {
 
         expect(result.successMessageIds).toHaveLength(1);
         expect(result.failedMessageIds).toHaveLength(0);
-        expect(mockDecrypt).toHaveBeenCalledWith(userTrade.apiKey, mockSecrets.API_SECRET_KEY_ENCRYPTION_KEY);
-        expect(mockDecrypt).toHaveBeenCalledWith(userTrade.apiSecret, mockSecrets.API_SECRET_KEY_ENCRYPTION_KEY);
+        expect(mockDecrypt).toHaveBeenCalledWith(
+            userTrade.apiKey,
+            mockSecrets.API_SECRET_KEY_ENCRYPTION_KEY
+        );
+        expect(mockDecrypt).toHaveBeenCalledWith(
+            userTrade.apiSecret,
+            mockSecrets.API_SECRET_KEY_ENCRYPTION_KEY
+        );
         expect(mockPlaceTrade).toHaveBeenCalledWith({
             symbol: "BTCUSDT",
             side: BinanceOrderSide.BUY,
@@ -157,7 +180,9 @@ describe("processBinanceTrades", () => {
         const userTrade = createMockUserTrade();
         const queueMessage = createQueueMessage(userTrade);
 
-        const mockPlaceTrade = jest.fn().mockRejectedValue(new Error("Insufficient balance on Binance"));
+        const mockPlaceTrade = jest
+            .fn()
+            .mockRejectedValue(new Error("Insufficient balance on Binance"));
         (BinanceClient as jest.Mock).mockImplementation(() => ({
             placeTrade: mockPlaceTrade,
         }));
@@ -175,7 +200,10 @@ describe("processBinanceTrades", () => {
     it("should process multiple trades in parallel", async () => {
         const userTrade1 = createMockUserTrade({ userId: "user1" });
         const userTrade2 = createMockUserTrade({ userId: "user2" });
-        const queueMessages = [createQueueMessage(userTrade1), createQueueMessage(userTrade2)];
+        const queueMessages = [
+            createQueueMessage(userTrade1),
+            createQueueMessage(userTrade2),
+        ];
 
         const mockBinanceOrder = {
             clientOrderId: "binance-order-123",
@@ -203,7 +231,10 @@ describe("processBinanceTrades", () => {
     it("should handle mixed success and failure in batch processing", async () => {
         const userTrade1 = createMockUserTrade({ userId: "user1" });
         const userTrade2 = createMockUserTrade({ userId: "user2" });
-        const queueMessages = [createQueueMessage(userTrade1), createQueueMessage(userTrade2)];
+        const queueMessages = [
+            createQueueMessage(userTrade1),
+            createQueueMessage(userTrade2),
+        ];
 
         const mockBinanceOrder = {
             clientOrderId: "binance-order-123",

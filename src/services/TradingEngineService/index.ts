@@ -577,7 +577,10 @@ export class TradingEngineService {
 
             return userTradingRulesCollection.find({ userId });
         } catch (error) {
-            console.error("Error fetching user trading rules:", { error, userId });
+            console.error("Error fetching user trading rules:", {
+                error,
+                userId,
+            });
             throw error;
         }
     }
@@ -593,10 +596,19 @@ export class TradingEngineService {
 
             return tradesCollection.find({
                 userId,
-                status: { $in: [TradeStatus.ACTIVE, TradeStatus.PENDING, TradeStatus.PROCESSED] },
+                status: {
+                    $in: [
+                        TradeStatus.ACTIVE,
+                        TradeStatus.PENDING,
+                        TradeStatus.PROCESSED,
+                    ],
+                },
             });
         } catch (error) {
-            console.error("Error fetching user active trades:", { error, userId });
+            console.error("Error fetching user active trades:", {
+                error,
+                userId,
+            });
             throw error;
         }
     }
@@ -828,7 +840,13 @@ export class TradingEngineService {
     }
 
     // update master trade
-    public async updateMasterTrade({ masterTradeId, updateData }: { masterTradeId: string, updateData: Partial<IMasterTrade> }): Promise<IMasterTrade | null> {
+    public async updateMasterTrade({
+        masterTradeId,
+        updateData,
+    }: {
+        masterTradeId: string;
+        updateData: Partial<IMasterTrade>;
+    }): Promise<IMasterTrade | null> {
         try {
             const connection = await this.getConnection();
             const masterTradesCollection = new MongoDBClient<IMasterTrade>(
@@ -836,18 +854,23 @@ export class TradingEngineService {
                 TradingEngineServiceCollections.masterTrades
             );
 
-            const updatedMasterTrade = await masterTradesCollection.findOneAndUpdate(
-                { _id: new mongoose.Types.ObjectId(masterTradeId) },
-                {
-                    $set: {
-                        ...updateData,
-                    },
-                }
-            );
+            const updatedMasterTrade =
+                await masterTradesCollection.findOneAndUpdate(
+                    { _id: new mongoose.Types.ObjectId(masterTradeId) },
+                    {
+                        $set: {
+                            ...updateData,
+                        },
+                    }
+                );
             log.info(`Updated master trade ${masterTradeId}`, { updateData });
             return updatedMasterTrade;
         } catch (error) {
-            console.error("Error updating trade:", { error, masterTradeId, updateData });
+            console.error("Error updating trade:", {
+                error,
+                masterTradeId,
+                updateData,
+            });
             throw error;
         }
     }
@@ -899,7 +922,13 @@ export class TradingEngineService {
     /**
      * Update a trade
      */
-    public async updateTrade({ tradeId, updateData }: { tradeId: string; updateData: Partial<ITrade> }): Promise<ITrade | null> {
+    public async updateTrade({
+        tradeId,
+        updateData,
+    }: {
+        tradeId: string;
+        updateData: Partial<ITrade>;
+    }): Promise<ITrade | null> {
         try {
             const connection = await this.getConnection();
             const tradesCollection = new MongoDBClient<ITrade>(
@@ -919,7 +948,11 @@ export class TradingEngineService {
             log.info(`Updated trade ${tradeId}`, { updateData });
             return updatedTrade;
         } catch (error) {
-            console.error("Error updating trade:", { error, tradeId, updateData });
+            console.error("Error updating trade:", {
+                error,
+                tradeId,
+                updateData,
+            });
             throw error;
         }
     }
@@ -947,19 +980,17 @@ export class TradingEngineService {
     /**
      * Create an order batch
      */
-    public async createOrderBatch(
-        orderBatchData: {
-            baseAsset: string;
-            quoteCurrency: string;
-            baseQuantity: number;
-            quoteTotal: number;
-            status: OrderBatchStatus;
-            tradingAccountId: mongoose.Types.ObjectId;
-            platformName: TradingPlatform;
-            platformId: number;
-            externalOrderId: string;
-        }
-    ): Promise<IOrderBatch> {
+    public async createOrderBatch(orderBatchData: {
+        baseAsset: string;
+        quoteCurrency: string;
+        baseQuantity: number;
+        quoteTotal: number;
+        status: OrderBatchStatus;
+        tradingAccountId: mongoose.Types.ObjectId;
+        platformName: TradingPlatform;
+        platformId: number;
+        externalOrderId: string;
+    }): Promise<IOrderBatch> {
         try {
             const connection = await this.getConnection();
             const orderBatchCollection = new MongoDBClient<IOrderBatch>(
@@ -969,7 +1000,10 @@ export class TradingEngineService {
 
             return orderBatchCollection.insertOne(orderBatchData);
         } catch (error) {
-            console.error("Error creating order batch:", { error, orderBatchData });
+            console.error("Error creating order batch:", {
+                error,
+                orderBatchData,
+            });
             throw error;
         }
     }
@@ -988,14 +1022,15 @@ export class TradingEngineService {
                 TradingEngineServiceCollections.orderBatches
             );
 
-            const updatedOrderBatch = await orderBatchCollection.findOneAndUpdate(
-                { _id: new mongoose.Types.ObjectId(orderBatchId) },
-                {
-                    $set: {
-                        ...updateData,
-                    },
-                }
-            );
+            const updatedOrderBatch =
+                await orderBatchCollection.findOneAndUpdate(
+                    { _id: new mongoose.Types.ObjectId(orderBatchId) },
+                    {
+                        $set: {
+                            ...updateData,
+                        },
+                    }
+                );
 
             log.info(`Updated order batch ${orderBatchId}`, { updateData });
             return updatedOrderBatch;
@@ -1026,7 +1061,10 @@ export class TradingEngineService {
                 _id: new mongoose.Types.ObjectId(orderBatchId),
             });
         } catch (error) {
-            console.error("Error fetching order batch:", { error, orderBatchId });
+            console.error("Error fetching order batch:", {
+                error,
+                orderBatchId,
+            });
             throw error;
         }
     }
@@ -1057,23 +1095,22 @@ export class TradingEngineService {
     /**
      * Create an order
      */
-    public async createOrder(
-        orderData: {
-            userId: string;
-            tradeId: mongoose.Types.ObjectId;
-            orderBatchId: mongoose.Types.ObjectId;
-            baseAsset: string;
-            baseQuantity: number;
-            orderType: OrderType;
-            orderSide: OrderSide;
-            placementType: OrderPlacementType;
-            price: number;
-            total: number;
-            quoteCurrency: string;
-            quoteTotal: number;
-            status: OrderStatus;
-            externalOrderId: string;
-        }): Promise<IOrder> {
+    public async createOrder(orderData: {
+        userId: string;
+        tradeId: mongoose.Types.ObjectId;
+        orderBatchId: mongoose.Types.ObjectId;
+        baseAsset: string;
+        baseQuantity: number;
+        orderType: OrderType;
+        orderSide: OrderSide;
+        placementType: OrderPlacementType;
+        price: number;
+        total: number;
+        quoteCurrency: string;
+        quoteTotal: number;
+        status: OrderStatus;
+        externalOrderId: string;
+    }): Promise<IOrder> {
         try {
             const connection = await this.getConnection();
             const ordersCollection = new MongoDBClient<IOrder>(
@@ -1112,7 +1149,11 @@ export class TradingEngineService {
             );
             return updatedOrder;
         } catch (error) {
-            console.error("Error updating order:", { error, orderId, updateData });
+            console.error("Error updating order:", {
+                error,
+                orderId,
+                updateData,
+            });
             throw error;
         }
     }
@@ -1175,7 +1216,10 @@ export class TradingEngineService {
                 tradeId: new mongoose.Types.ObjectId(tradeId),
             });
         } catch (error) {
-            console.error("Error fetching orders for trade:", { error, tradeId });
+            console.error("Error fetching orders for trade:", {
+                error,
+                tradeId,
+            });
             throw error;
         }
     }
@@ -1636,12 +1680,23 @@ export class TradingEngineService {
                         const { allocations, totalAllocated } =
                             await this.processSingleMasterTrade(masterTrade);
 
-                        console.log("allocations before master trade update", allocations);
+                        console.log(
+                            "allocations before master trade update",
+                            allocations
+                        );
 
                         // update master trade status to PROCESSED
-                        const updatedMasterTrade = await this.updateMasterTrade({ masterTradeId: masterTrade.masterTradeId, updateData: { status: TradeStatus.PROCESSED } })
+                        const updatedMasterTrade = await this.updateMasterTrade(
+                            {
+                                masterTradeId: masterTrade.masterTradeId,
+                                updateData: { status: TradeStatus.PROCESSED },
+                            }
+                        );
 
-                        log.info(`Updated master trade ${masterTrade.masterTradeId} status to PROCESSED`, { updatedMasterTrade });
+                        log.info(
+                            `Updated master trade ${masterTrade.masterTradeId} status to PROCESSED`,
+                            { updatedMasterTrade }
+                        );
 
                         return {
                             success: true,
@@ -1731,7 +1786,9 @@ export class TradingEngineService {
                 masterTradeDetails,
             };
         } catch (error) {
-            console.error("General error in processIncomingSignals:", { error });
+            console.error("General error in processIncomingSignals:", {
+                error,
+            });
             return {
                 successMessageIds: [],
                 failedMessageIds: queueMessages.map((qm) => qm.messageId),

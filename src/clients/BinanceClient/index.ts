@@ -199,12 +199,8 @@ export class BinanceClient {
             // Sort target profits by price based on side
             const sortedTargets =
                 params.mainOrderSide === OrderSide.BUY
-                    ? [...params.takeProfits].sort(
-                        (a, b) => a.price - b.price
-                    ) // ascending for BUY
-                    : [...params.takeProfits].sort(
-                        (a, b) => b.price - a.price
-                    ); // descending for SELL
+                    ? [...params.takeProfits].sort((a, b) => a.price - b.price) // ascending for BUY
+                    : [...params.takeProfits].sort((a, b) => b.price - a.price); // descending for SELL
 
             // Calculate quantities for each target
             let qtyLeft = executedQty;
