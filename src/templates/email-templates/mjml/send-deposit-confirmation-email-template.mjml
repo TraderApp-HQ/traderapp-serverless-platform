@@ -54,7 +54,7 @@
                 width: auto;
                 padding: 20px;
                 box-sizing: border-box;
-          			border-radius: 8px;
+                border-radius: 8px;
             }
             .banner-img {
                 width: 400px;
@@ -63,7 +63,6 @@
                 opacity: 1;
                 top: -22px;
                 left: 81px;
-
             }
             a {
                 color: #1836b2;
