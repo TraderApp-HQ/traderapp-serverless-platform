@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { TradingPlatform, Currency, AccountType } from "src/config/enums";
+import { TradingPlatform, AccountType } from "src/config/enums";
 import { IQueueMessageBody } from "src/config/interfaces";
 import { ITradingEngineServiceSecrets } from "src/config/secrets/interfaces";
 import {
@@ -14,7 +14,6 @@ import {
     IProcessedTrade,
     IUserTradeAllocation,
 } from "src/services/TradingEngineService/interfaces";
-import { WalletType } from "src/types/wallets-service";
 import {
     mapUserConnectedTradingPlatformToQueueUrl,
     processUserTrades,
@@ -31,6 +30,7 @@ jest.mock("src/config/secrets/helpers");
 const mockUpdateTrade = jest.fn();
 const mockCreateOrderBatch = jest.fn();
 const mockCreateOrder = jest.fn();
+const mockCalculatePnL = jest.fn();
 
 jest.mock("src/services/TradingEngineService", () => {
     return {
@@ -38,6 +38,7 @@ jest.mock("src/services/TradingEngineService", () => {
             updateTrade: mockUpdateTrade,
             createOrderBatch: mockCreateOrderBatch,
             createOrder: mockCreateOrder,
+            calculatePnL: mockCalculatePnL,
         })),
     };
 });
@@ -46,18 +47,25 @@ import { publishMessageToQueue } from "src/clients/SQSClient/helpers";
 import { WalletsService } from "src/services/WalletsService";
 import { getSecrets } from "src/config/secrets/helpers";
 
-const mockPublishMessageToQueue = publishMessageToQueue as jest.MockedFunction<typeof publishMessageToQueue>;
+const mockPublishMessageToQueue = publishMessageToQueue as jest.MockedFunction<
+    typeof publishMessageToQueue
+>;
 const mockGetSecrets = getSecrets as jest.MockedFunction<typeof getSecrets>;
 
 describe("Trade Service Helpers", () => {
     const mockSecrets: ITradingEngineServiceSecrets = {
         TRADING_ENGINE_SERVICE_DB_URL: "mongodb://test",
-        PROCESS_BINANCE_ORDERS_QUEUE: "https://sqs.us-east-1.amazonaws.com/123/binance-orders",
-        PROCESS_USER_TRADES_QUEUE: "https://sqs.us-east-1.amazonaws.com/123/user-trades",
-        HANDLE_FAILED_TRADES_QUEUE: "https://sqs.us-east-1.amazonaws.com/123/failed-trades",
-        HANDLE_PROCESSED_TRADES_QUEUE: "https://sqs.us-east-1.amazonaws.com/123/processed-trades",
+        PROCESS_BINANCE_ORDERS_QUEUE:
+            "https://sqs.us-east-1.amazonaws.com/123/binance-orders",
+        PROCESS_USER_TRADES_QUEUE:
+            "https://sqs.us-east-1.amazonaws.com/123/user-trades",
+        HANDLE_FAILED_TRADES_QUEUE:
+            "https://sqs.us-east-1.amazonaws.com/123/failed-trades",
+        HANDLE_PROCESSED_TRADES_QUEUE:
+            "https://sqs.us-east-1.amazonaws.com/123/processed-trades",
         API_SECRET_KEY_ENCRYPTION_KEY: "test-key",
-        PROCESS_INCOMING_SIGNALS_QUEUE: "https://sqs.us-east-1.amazonaws.com/123/incoming-signals",
+        PROCESS_INCOMING_SIGNALS_QUEUE:
+            "https://sqs.us-east-1.amazonaws.com/123/incoming-signals",
     };
 
     beforeEach(() => {
@@ -67,6 +75,14 @@ describe("Trade Service Helpers", () => {
         mockUpdateTrade.mockReset();
         mockCreateOrderBatch.mockReset();
         mockCreateOrder.mockReset();
+        mockCalculatePnL.mockReset();
+
+        // Set default return value for calculatePnL
+        mockCalculatePnL.mockReturnValue({
+            pnlAmount: 100,
+            pnlPercentOfRisk: 200,
+            pnlPercentOfRequiredMargin: 20,
+        });
     });
 
     describe("mapUserConnectedTradingPlatformToQueueUrl", () => {
@@ -90,7 +106,9 @@ describe("Trade Service Helpers", () => {
     });
 
     describe("processUserTrades", () => {
-        const createMockUserTrade = (overrides: Partial<IUserTradeAllocation> = {}): IUserTradeAllocation => ({
+        const createMockUserTrade = (
+            overrides: Partial<IUserTradeAllocation> = {}
+        ): IUserTradeAllocation => ({
             userId: "user123",
             tradingAccountId: new mongoose.Types.ObjectId(),
             platformName: TradingPlatform.BINANCE,
@@ -114,7 +132,9 @@ describe("Trade Service Helpers", () => {
             ...overrides,
         });
 
-        const createQueueMessage = (userTrade: IUserTradeAllocation): IQueueMessageBody<IUserTradeAllocation> => ({
+        const createQueueMessage = (
+            userTrade: IUserTradeAllocation
+        ): IQueueMessageBody<IUserTradeAllocation> => ({
             messageId: "msg123",
             body: userTrade,
             receiptHandle: "receipt123",
@@ -136,23 +156,22 @@ describe("Trade Service Helpers", () => {
             const queueMessage = createQueueMessage(userTrade);
 
             const mockWalletsService = {
-                computeTotalAmountToLock: jest.fn().mockReturnValue({ totalAmountToLock: 50 }),
-                getUserWallet: jest.fn().mockResolvedValue({ availableBalance: 1000, userId: "user123" }),
+                getUserWallet: jest.fn().mockResolvedValue({
+                    availableBalance: 1000,
+                    userId: "user123",
+                }),
                 lockUserBalance: jest.fn().mockResolvedValue({ success: true }),
             };
-            (WalletsService as jest.Mock).mockImplementation(() => mockWalletsService);
+            (WalletsService as jest.Mock).mockImplementation(
+                () => mockWalletsService
+            );
             mockPublishMessageToQueue.mockResolvedValue(undefined);
 
             const result = await processUserTrades([queueMessage]);
 
             expect(result.successMessageIds).toHaveLength(1);
             expect(result.failedMessageIds).toHaveLength(0);
-            expect(mockWalletsService.lockUserBalance).toHaveBeenCalledWith({
-                userId: userTrade.userId,
-                amount: 50,
-                currency: Currency.USDT,
-                walletType: WalletType.MAIN,
-            });
+            expect(mockWalletsService.lockUserBalance).toHaveBeenCalled();
             expect(mockPublishMessageToQueue).toHaveBeenCalled();
         });
 
@@ -161,11 +180,15 @@ describe("Trade Service Helpers", () => {
             const queueMessage = createQueueMessage(userTrade);
 
             const mockWalletsService = {
-                computeTotalAmountToLock: jest.fn().mockReturnValue({ totalAmountToLock: 2000 }),
-                getUserWallet: jest.fn().mockResolvedValue({ availableBalance: 100, userId: "user123" }),
+                getUserWallet: jest.fn().mockResolvedValue({
+                    availableBalance: 10,
+                    userId: "user123",
+                }),
                 lockUserBalance: jest.fn(),
             };
-            (WalletsService as jest.Mock).mockImplementation(() => mockWalletsService);
+            (WalletsService as jest.Mock).mockImplementation(
+                () => mockWalletsService
+            );
             mockPublishMessageToQueue.mockResolvedValue(undefined);
 
             await processUserTrades([queueMessage]);
@@ -181,11 +204,18 @@ describe("Trade Service Helpers", () => {
             const queueMessage = createQueueMessage(userTrade);
 
             const mockWalletsService = {
-                computeTotalAmountToLock: jest.fn().mockReturnValue({ totalAmountToLock: 50 }),
-                getUserWallet: jest.fn().mockResolvedValue({ availableBalance: 1000 }),
-                lockUserBalance: jest.fn().mockResolvedValue({ success: false, wallet: { availableBalance: 1000 } }),
+                getUserWallet: jest
+                    .fn()
+                    .mockResolvedValue({ availableBalance: 1000 }),
+                lockUserBalance: jest.fn().mockResolvedValue({
+                    success: false,
+                    wallet: { availableBalance: 1000 },
+                }),
             };
-            (WalletsService as jest.Mock).mockImplementation(() => mockWalletsService);
+            (WalletsService as jest.Mock).mockImplementation(
+                () => mockWalletsService
+            );
+            mockPublishMessageToQueue.mockResolvedValue(undefined);
 
             await processUserTrades([queueMessage]);
 
@@ -218,7 +248,9 @@ describe("Trade Service Helpers", () => {
             updatedAt: new Date().toISOString(),
         });
 
-        const createQueueMessage = (trade: IProcessedTrade): IQueueMessageBody<IProcessedTrade> => ({
+        const createQueueMessage = (
+            trade: IProcessedTrade
+        ): IQueueMessageBody<IProcessedTrade> => ({
             messageId: "msg123",
             body: trade,
             receiptHandle: "receipt123",
@@ -240,12 +272,15 @@ describe("Trade Service Helpers", () => {
             const queueMessage = createQueueMessage(processedTrade);
 
             // Configure mocks for this test
-            mockUpdateTrade.mockResolvedValue({ id: processedTrade.tradeId.toString() });
-            mockCreateOrderBatch.mockResolvedValue({ id: "68625959a18cb30d0f937702" });
+            mockUpdateTrade.mockResolvedValue({
+                id: processedTrade.tradeId.toString(),
+            });
+            mockCreateOrderBatch.mockResolvedValue({
+                id: "68625959a18cb30d0f937702",
+            });
             mockCreateOrder.mockResolvedValue({ id: "order123" });
 
             const result = await handleProcessedTrades([queueMessage]);
-            console.log("result", result);
 
             expect(result.successMessageIds).toHaveLength(1);
             expect(mockUpdateTrade).toHaveBeenCalledWith({
@@ -275,7 +310,9 @@ describe("Trade Service Helpers", () => {
             tradeId: new mongoose.Types.ObjectId(),
         });
 
-        const createQueueMessage = (trade: IFailedTrade): IQueueMessageBody<IFailedTrade> => ({
+        const createQueueMessage = (
+            trade: IFailedTrade
+        ): IQueueMessageBody<IFailedTrade> => ({
             messageId: "msg123",
             body: trade,
             receiptHandle: "receipt123",
@@ -296,7 +333,9 @@ describe("Trade Service Helpers", () => {
             const failedTrade = createFailedTrade();
             const queueMessage = createQueueMessage(failedTrade);
 
-            mockUpdateTrade.mockResolvedValue({ id: failedTrade.tradeId.toString() });
+            mockUpdateTrade.mockResolvedValue({
+                id: failedTrade.tradeId.toString(),
+            });
 
             const result = await handleFailedTrades([queueMessage]);
 

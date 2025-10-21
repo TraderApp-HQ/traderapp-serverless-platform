@@ -7,11 +7,19 @@ import { SecretLocation } from "src/config/secrets/enums";
 import { getSecrets } from "src/config/secrets/helpers";
 import { ITradingEngineServiceSecrets } from "src/config/secrets/interfaces";
 import { TradingEngineService } from "src/services/TradingEngineService";
-import { OrderBatchStatus, OrderStatus, TradeStatus } from "src/services/TradingEngineService/enums";
-import { IFailedTrade, IProcessedTrade, IUserTradeAllocation } from "src/services/TradingEngineService/interfaces";
+import {
+    OrderBatchStatus,
+    OrderStatus,
+    TradeSide,
+    TradeStatus,
+} from "src/services/TradingEngineService/enums";
+import {
+    IFailedTrade,
+    IProcessedTrade,
+    IUserTradeAllocation,
+} from "src/services/TradingEngineService/interfaces";
 import { WalletsService } from "src/services/WalletsService";
 import { IUserWallet, WalletType } from "src/types/wallets-service";
-
 
 export const getTradingEngineServiceSecrets = async () => {
     const env = process.env.ENV ?? "";
@@ -19,7 +27,13 @@ export const getTradingEngineServiceSecrets = async () => {
         `${SecretLocation.tradingEngineServiceSecrets}/${env}`
     );
 };
-export const mapUserConnectedTradingPlatformToQueueUrl = async ({ platformName, tradingEngineServiceSecrets }: { platformName: string, tradingEngineServiceSecrets: ITradingEngineServiceSecrets }) => {
+export const mapUserConnectedTradingPlatformToQueueUrl = async ({
+    platformName,
+    tradingEngineServiceSecrets,
+}: {
+    platformName: string;
+    tradingEngineServiceSecrets: ITradingEngineServiceSecrets;
+}) => {
     // Get process binance orders queue url
     const processBinanceOrdersQueue =
         tradingEngineServiceSecrets.PROCESS_BINANCE_ORDERS_QUEUE ?? "";
@@ -31,6 +45,41 @@ export const mapUserConnectedTradingPlatformToQueueUrl = async ({ platformName, 
         default:
             throw new Error(`Unsupported trading platform: ${platformName}`);
     }
+};
+
+export const computeTotalAmountToLock = (input: {
+    entryPrice: number;
+    takeProfitPrice: number;
+    tradeSide: TradeSide;
+    tradeAmount: number;
+    riskUSDT: number;
+    baseQuantity: number;
+}) => {
+    const {
+        entryPrice,
+        takeProfitPrice,
+        tradeSide,
+        tradeAmount,
+        riskUSDT,
+        baseQuantity,
+    } = input;
+
+    // Compute trading fee of 1% of the trade amount or $1, whichever is greater
+    const tradingFee = Math.max(tradeAmount * 0.01, 1);
+
+    const tradingEngineService = new TradingEngineService();
+    const { pnlAmount } = tradingEngineService.calculatePnL({
+        side: tradeSide,
+        entryPrice,
+        targetPrice: takeProfitPrice,
+        baseQuantity,
+        riskUSDT,
+        requiredMargin: tradeAmount,
+    });
+
+    const totalAmountToLock = tradingFee + pnlAmount;
+
+    return { tradingFee, projectedProfitAmount: pnlAmount, totalAmountToLock };
 };
 
 export const processUserTrades = async (
@@ -46,7 +95,8 @@ export const processUserTrades = async (
         const walletsService = new WalletsService();
 
         // Get secrets
-        const tradingEngineServiceSecrets = await getTradingEngineServiceSecrets();
+        const tradingEngineServiceSecrets =
+            await getTradingEngineServiceSecrets();
 
         // Process all queue messages in parallel
         const userTradeProcessingResults = await Promise.allSettled(
@@ -55,13 +105,14 @@ export const processUserTrades = async (
                     const userTrade = queueMessage.body;
 
                     // Compute total amount to lock
-                    const { totalAmountToLock } =
-                        walletsService.computeTotalAmountToLock({
-                            entryPrice: userTrade.entryPrice,
-                            takeProfitPrice: userTrade.takeProfitPrice,
-                            tradeSide: userTrade.tradeSide,
-                            tradeAmount: userTrade.tradeAmount,
-                        });
+                    const { totalAmountToLock } = computeTotalAmountToLock({
+                        entryPrice: userTrade.entryPrice,
+                        takeProfitPrice: userTrade.takeProfitPrice,
+                        tradeSide: userTrade.tradeSide,
+                        tradeAmount: userTrade.tradeAmount,
+                        riskUSDT: userTrade.riskAmount,
+                        baseQuantity: userTrade.baseQuantity ?? 0,
+                    });
 
                     // Get user wallet
                     const userWallet = await walletsService.getUserWallet({
@@ -75,6 +126,10 @@ export const processUserTrades = async (
                         !userWallet ||
                         userWallet.availableBalance < totalAmountToLock
                     ) {
+                        // TODO: Add a check to see if user has over 3 outstanding/unpaid invoices
+                        // If so, push to insufficient balance array
+                        // If not, continue
+
                         insufficientBalanceUsers.push({
                             userTrade,
                             wallet: userWallet,
@@ -109,13 +164,13 @@ export const processUserTrades = async (
                             isSuccess: false,
                         };
                     }
-                    // TODO: Add a check to see if user has over 3 outstanding/unpaid invoices
-                    // If so, push to insufficient balance array
-                    // If not, publish message to queue
 
                     // Get queue url for user connected trading platform
                     const queueUrl =
-                        await mapUserConnectedTradingPlatformToQueueUrl({ platformName: userTrade.platformName, tradingEngineServiceSecrets });
+                        await mapUserConnectedTradingPlatformToQueueUrl({
+                            platformName: userTrade.platformName,
+                            tradingEngineServiceSecrets,
+                        });
 
                     // Publish message to queue to process binance orders
                     await publishMessageToQueue({
@@ -158,26 +213,34 @@ export const processUserTrades = async (
                 users: insufficientBalanceUsers,
             });
 
-            await Promise.allSettled(insufficientBalanceUsers.map(async ({ userTrade }) => {
-                try {
-                    // Create failed order object
-                    const failedOrder: IFailedTrade = {
-                        userId: userTrade.userId,
-                        tradeId: new mongoose.Types.ObjectId(userTrade.tradeId),
-                    };
+            await Promise.allSettled(
+                insufficientBalanceUsers.map(async ({ userTrade }) => {
+                    try {
+                        // Create failed order object
+                        const failedOrder: IFailedTrade = {
+                            userId: userTrade.userId,
+                            tradeId: new mongoose.Types.ObjectId(
+                                userTrade.tradeId
+                            ),
+                        };
 
-                    // publish failed order to queue
-                    await publishMessageToQueue({
-                        queueUrl: tradingEngineServiceSecrets.HANDLE_FAILED_TRADES_QUEUE ?? "",
-                        message: JSON.stringify(failedOrder),
-                    });
+                        // publish failed order to queue
+                        await publishMessageToQueue({
+                            queueUrl:
+                                tradingEngineServiceSecrets.HANDLE_FAILED_TRADES_QUEUE ??
+                                "",
+                            message: JSON.stringify(failedOrder),
+                        });
 
-                    // TODO: Send notification to users about insufficient balance
-                } catch (error) {
-                    console.error("Error canceling and sending notification", { error })
-                }
-            }))
-
+                        // TODO: Send notification to users about insufficient balance
+                    } catch (error) {
+                        console.error(
+                            "Error canceling and sending notification",
+                            { error }
+                        );
+                    }
+                })
+            );
         }
 
         log.info("User trades processing completed", {
@@ -211,26 +274,32 @@ export const handleProcessedTrades = async (
                 const processedOrder = queueMessage.body;
                 try {
                     // update trade status to PROCESSED
-                    await tradingEngineService.updateTrade({ tradeId: processedOrder.tradeId.toString(), updateData: { status: TradeStatus.PROCESSED } });
+                    await tradingEngineService.updateTrade({
+                        tradeId: processedOrder.tradeId.toString(),
+                        updateData: { status: TradeStatus.PROCESSED },
+                    });
 
                     // create order batch
-                    const orderBatch = await tradingEngineService.createOrderBatch({
-                        baseAsset: processedOrder.baseAsset,
-                        quoteCurrency: processedOrder.quoteCurrency,
-                        baseQuantity: processedOrder.baseQuantity,
-                        quoteTotal: processedOrder.quoteTotal,
-                        status: OrderBatchStatus.PENDING,
-                        tradingAccountId: processedOrder.tradingAccountId,
-                        platformName: processedOrder.platformName,
-                        platformId: processedOrder.platformId,
-                        externalOrderId: processedOrder.externalOrderId,
-                    })
+                    const orderBatch =
+                        await tradingEngineService.createOrderBatch({
+                            baseAsset: processedOrder.baseAsset,
+                            quoteCurrency: processedOrder.quoteCurrency,
+                            baseQuantity: processedOrder.baseQuantity,
+                            quoteTotal: processedOrder.quoteTotal,
+                            status: OrderBatchStatus.PENDING,
+                            tradingAccountId: processedOrder.tradingAccountId,
+                            platformName: processedOrder.platformName,
+                            platformId: processedOrder.platformId,
+                            externalOrderId: processedOrder.externalOrderId,
+                        });
 
                     // create order
                     await tradingEngineService.createOrder({
                         userId: processedOrder.userId,
                         tradeId: processedOrder.tradeId,
-                        orderBatchId: new mongoose.Types.ObjectId(orderBatch.id),
+                        orderBatchId: new mongoose.Types.ObjectId(
+                            orderBatch.id
+                        ),
                         baseAsset: processedOrder.baseAsset,
                         baseQuantity: processedOrder.baseQuantity,
                         orderType: processedOrder.orderType,
@@ -244,7 +313,11 @@ export const handleProcessedTrades = async (
                         externalOrderId: processedOrder.externalOrderId,
                     });
 
-                    return { messageId: queueMessage.messageId, processedOrder, isSuccess: true };
+                    return {
+                        messageId: queueMessage.messageId,
+                        processedOrder,
+                        isSuccess: true,
+                    };
                 } catch (error) {
                     console.error("Error handling processed order", { error });
                     throw error;
@@ -291,8 +364,15 @@ export const handleFailedTrades = async (
                 const failedOrder = queueMessage.body;
                 try {
                     // update trade status to FAILED
-                    await tradingEngineService.updateTrade({ tradeId: failedOrder.tradeId.toString(), updateData: { status: TradeStatus.FAILED } });
-                    return { messageId: queueMessage.messageId, failedOrder, isSuccess: true };
+                    await tradingEngineService.updateTrade({
+                        tradeId: failedOrder.tradeId.toString(),
+                        updateData: { status: TradeStatus.FAILED },
+                    });
+                    return {
+                        messageId: queueMessage.messageId,
+                        failedOrder,
+                        isSuccess: true,
+                    };
                 } catch (error) {
                     console.error("Error handling failed order", { error });
                     throw error;
