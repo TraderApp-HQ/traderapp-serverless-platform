@@ -78,3 +78,21 @@ export interface ITrackUserOnboardingChecklistInput {
     onboardingChecklistItem: UserOnboardingChecklist;
     value?: boolean;
 }
+
+export interface UserRelationship {
+    userId: string; // The user (descendant)
+    parentId: string; // The ancestor (direct parent)
+    level: number; // Level of the ancestor (1 for direct parent, 2 for grandparent, etc.)
+    createdAt: Date;
+}
+
+export interface ICountry {
+    _id: number;
+    name: string;
+    code: string;
+    flag: string;
+    capital: string;
+    dial_code: string;
+    currency: { name: string; code: string; symbol: string };
+    continent: string;
+}
