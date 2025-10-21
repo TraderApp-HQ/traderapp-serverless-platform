@@ -612,7 +612,7 @@ describe("TradingEngineService", () => {
                     balanceOptions: [
                         {
                             currency: Currency.USDT,
-                            availableBalance: 500, // Small balance = 5 USDT trade amount
+                            availableBalance: 100, // Small balance = 5 USDT trade amount
                             accountType: AccountType.FUTURES,
                         },
                     ],
@@ -930,6 +930,138 @@ describe("TradingEngineService", () => {
             );
 
             expect(result).toBeNull();
+        });
+    });
+
+    describe("calculatePnL", () => {
+        it("should calculate profit for LONG position when target price is higher", () => {
+            const result = service.calculatePnL({
+                side: TradeSide.LONG,
+                entryPrice: 50000,
+                targetPrice: 55000,
+                baseQuantity: 0.01,
+                riskUSDT: 50,
+                requiredMargin: 500,
+            });
+
+            expect(result.pnlAmount).toBe(50); // (55000 - 50000) * 0.01
+            expect(result.pnlPercentOfRisk).toBe(100); // (50 / 50) * 100
+            expect(result.pnlPercentOfRequiredMargin).toBe(10); // (50 / 500) * 100
+        });
+
+        it("should calculate loss for LONG position when target price is lower", () => {
+            const result = service.calculatePnL({
+                side: TradeSide.LONG,
+                entryPrice: 50000,
+                targetPrice: 45000,
+                baseQuantity: 0.01,
+                riskUSDT: 50,
+                requiredMargin: 500,
+            });
+
+            expect(result.pnlAmount).toBe(-50); // (45000 - 50000) * 0.01
+            expect(result.pnlPercentOfRisk).toBe(-100); // (-50 / 50) * 100
+            expect(result.pnlPercentOfRequiredMargin).toBe(-10); // (-50 / 500) * 100
+        });
+
+        it("should calculate profit for SHORT position when target price is lower", () => {
+            const result = service.calculatePnL({
+                side: TradeSide.SHORT,
+                entryPrice: 50000,
+                targetPrice: 45000,
+                baseQuantity: 0.01,
+                riskUSDT: 50,
+                requiredMargin: 500,
+            });
+
+            expect(result.pnlAmount).toBe(50); // (50000 - 45000) * 0.01
+            expect(result.pnlPercentOfRisk).toBe(100);
+            expect(result.pnlPercentOfRequiredMargin).toBe(10);
+        });
+
+        it("should calculate loss for SHORT position when target price is higher", () => {
+            const result = service.calculatePnL({
+                side: TradeSide.SHORT,
+                entryPrice: 50000,
+                targetPrice: 55000,
+                baseQuantity: 0.01,
+                riskUSDT: 50,
+                requiredMargin: 500,
+            });
+
+            expect(result.pnlAmount).toBe(-50); // (50000 - 55000) * 0.01
+            expect(result.pnlPercentOfRisk).toBe(-100);
+            expect(result.pnlPercentOfRequiredMargin).toBe(-10);
+        });
+
+        it("should calculate zero PnL when target price equals entry price", () => {
+            const result = service.calculatePnL({
+                side: TradeSide.LONG,
+                entryPrice: 50000,
+                targetPrice: 50000,
+                baseQuantity: 0.01,
+                riskUSDT: 50,
+                requiredMargin: 500,
+            });
+
+            expect(result.pnlAmount).toBe(0);
+            expect(result.pnlPercentOfRisk).toBe(0);
+            expect(result.pnlPercentOfRequiredMargin).toBe(0);
+        });
+
+        it("should handle large quantities correctly", () => {
+            const result = service.calculatePnL({
+                side: TradeSide.LONG,
+                entryPrice: 100,
+                targetPrice: 110,
+                baseQuantity: 1000,
+                riskUSDT: 5000,
+                requiredMargin: 10000,
+            });
+
+            expect(result.pnlAmount).toBe(10000); // (110 - 100) * 1000
+            expect(result.pnlPercentOfRisk).toBe(200); // (10000 / 5000) * 100
+            expect(result.pnlPercentOfRequiredMargin).toBe(100); // (10000 / 10000) * 100
+        });
+
+        it("should handle small price differences with precision", () => {
+            const result = service.calculatePnL({
+                side: TradeSide.LONG,
+                entryPrice: 108400,
+                targetPrice: 110000,
+                baseQuantity: 0.001,
+                riskUSDT: 10,
+                requiredMargin: 50,
+            });
+
+            expect(result.pnlAmount).toBe(1.6); // (110000 - 108400) * 0.001
+            expect(result.pnlPercentOfRisk).toBe(16); // (1.6 / 10) * 100
+            expect(result.pnlPercentOfRequiredMargin).toBe(3.2); // (1.6 / 50) * 100
+        });
+
+        it("should format result to correct decimal places", () => {
+            const result = service.calculatePnL({
+                side: TradeSide.LONG,
+                entryPrice: 50000.123456789,
+                targetPrice: 50001.987654321,
+                baseQuantity: 0.00123456,
+                riskUSDT: 15.5,
+                requiredMargin: 61.73,
+            });
+
+            // pnlAmount should be rounded to 8 decimal places
+            expect(
+                result.pnlAmount.toString().split(".")[1]?.length || 0
+            ).toBeLessThanOrEqual(8);
+
+            // percentages should be rounded to 4 decimal places
+            expect(
+                result.pnlPercentOfRisk.toString().split(".")[1]?.length || 0
+            ).toBeLessThanOrEqual(4);
+            expect(
+                result.pnlPercentOfRequiredMargin.toString().split(".")[1]
+                    ?.length || 0
+            ).toBeLessThanOrEqual(4);
         });
     });
 });

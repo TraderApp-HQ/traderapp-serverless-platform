@@ -10,6 +10,7 @@ import { TradingEngineService } from "src/services/TradingEngineService";
 import {
     OrderBatchStatus,
     OrderStatus,
+    TradeSide,
     TradeStatus,
 } from "src/services/TradingEngineService/enums";
 import {
@@ -46,6 +47,41 @@ export const mapUserConnectedTradingPlatformToQueueUrl = async ({
     }
 };
 
+export const computeTotalAmountToLock = (input: {
+    entryPrice: number;
+    takeProfitPrice: number;
+    tradeSide: TradeSide;
+    tradeAmount: number;
+    riskUSDT: number;
+    baseQuantity: number;
+}) => {
+    const {
+        entryPrice,
+        takeProfitPrice,
+        tradeSide,
+        tradeAmount,
+        riskUSDT,
+        baseQuantity,
+    } = input;
+
+    // Compute trading fee of 1% of the trade amount or $1, whichever is greater
+    const tradingFee = Math.max(tradeAmount * 0.01, 1);
+
+    const tradingEngineService = new TradingEngineService();
+    const { pnlAmount } = tradingEngineService.calculatePnL({
+        side: tradeSide,
+        entryPrice,
+        targetPrice: takeProfitPrice,
+        baseQuantity,
+        riskUSDT,
+        requiredMargin: tradeAmount,
+    });
+
+    const totalAmountToLock = tradingFee + pnlAmount;
+
+    return { tradingFee, projectedProfitAmount: pnlAmount, totalAmountToLock };
+};
+
 export const processUserTrades = async (
     queueMessages: IQueueMessageBody<IUserTradeAllocation>[]
 ) => {
@@ -69,35 +105,31 @@ export const processUserTrades = async (
                     const userTrade = queueMessage.body;
 
                     // Compute total amount to lock
-                    const { totalAmountToLock } =
-                        walletsService.computeTotalAmountToLock({
-                            entryPrice: userTrade.entryPrice,
-                            takeProfitPrice: userTrade.takeProfitPrice,
-                            tradeSide: userTrade.tradeSide,
-                            tradeAmount: userTrade.tradeAmount,
-                        });
-
-                    console.log("##################totalAmountToLock", {
-                        totalAmountToLock,
+                    const { totalAmountToLock } = computeTotalAmountToLock({
+                        entryPrice: userTrade.entryPrice,
+                        takeProfitPrice: userTrade.takeProfitPrice,
+                        tradeSide: userTrade.tradeSide,
+                        tradeAmount: userTrade.tradeAmount,
+                        riskUSDT: userTrade.riskAmount,
+                        baseQuantity: userTrade.baseQuantity ?? 0,
                     });
-                    console.log("##################userTrade", { userTrade });
+
                     // Get user wallet
                     const userWallet = await walletsService.getUserWallet({
                         userId: userTrade.userId,
                         currency: Currency.USDT,
                         walletType: WalletType.MAIN,
                     });
-                    console.log("##################userWallet", { userWallet });
 
                     // If user wallet is not found or insufficient balance, push to insufficient balance array
                     if (
                         !userWallet ||
                         userWallet.availableBalance < totalAmountToLock
                     ) {
-                        console.log("##################insufficient balance", {
-                            availableBalance: userWallet?.availableBalance,
-                            totalAmountToLock,
-                        });
+                        // TODO: Add a check to see if user has over 3 outstanding/unpaid invoices
+                        // If so, push to insufficient balance array
+                        // If not, continue
+
                         insufficientBalanceUsers.push({
                             userTrade,
                             wallet: userWallet,
@@ -118,15 +150,9 @@ export const processUserTrades = async (
                             currency: Currency.USDT,
                             walletType: WalletType.MAIN,
                         });
-                    console.log("##################lockUserBalanceResult", {
-                        lockUserBalanceResult,
-                    });
+
                     // If lockUserBalanceResult is not successful, push to insufficient balance array
                     if (!lockUserBalanceResult.success) {
-                        console.log(
-                            "##################insufficient balance for lockUserBalance",
-                            { userId: userTrade.userId }
-                        );
                         insufficientBalanceUsers.push({
                             userTrade,
                             wallet: lockUserBalanceResult.wallet,
@@ -138,9 +164,6 @@ export const processUserTrades = async (
                             isSuccess: false,
                         };
                     }
-                    // TODO: Add a check to see if user has over 3 outstanding/unpaid invoices
-                    // If so, push to insufficient balance array
-                    // If not, publish message to queue
 
                     // Get queue url for user connected trading platform
                     const queueUrl =
@@ -149,13 +172,11 @@ export const processUserTrades = async (
                             tradingEngineServiceSecrets,
                         });
 
-                    console.log("##################queueUrl", { queueUrl });
-
                     // Publish message to queue to process binance orders
-                    // await publishMessageToQueue({
-                    //     queueUrl,
-                    //     message: JSON.stringify(userTrade),
-                    // });
+                    await publishMessageToQueue({
+                        queueUrl,
+                        message: JSON.stringify(userTrade),
+                    });
 
                     return {
                         messageId: queueMessage.messageId,

@@ -1051,8 +1051,8 @@ export class WalletsService {
             const result = await userWalletCollection.updateOne(
                 {
                     userId,
-                    currency,
-                    walletType,
+                    currencySymbol: currency,
+                    walletTypeName: walletType,
                     availableBalance: { $gte: amount }, // Only update if sufficient balance
                 },
                 {
@@ -1063,12 +1063,22 @@ export class WalletsService {
                 }
             );
 
+            console.log(
+                "##################result after lockUserBalance update",
+                { result }
+            );
+
             // Check if the update actually modified a document
             const wallet = await this.getUserWallet({
                 userId,
                 currency,
                 walletType,
             });
+
+            console.log(
+                "##################wallet after lockUserBalance update",
+                { wallet }
+            );
 
             if (!wallet) {
                 return {
@@ -1080,6 +1090,13 @@ export class WalletsService {
 
             // Either wallet doesn't exist or insufficient balance
             if (result.modifiedCount === 0) {
+                console.log(
+                    "##################inside if result.modifiedCount === 0",
+                    { modifiedCount: result.modifiedCount }
+                );
+                console.log("##################wallet.availableBalance", {
+                    availableBalance: wallet?.availableBalance,
+                });
                 return {
                     success: false,
                     error: "INSUFFICIENT_BALANCE",
@@ -1094,40 +1111,6 @@ export class WalletsService {
             console.error("General error in lockUserBalance:", { error });
             throw error;
         }
-    }
-
-    public computeTotalAmountToLock(input: {
-        entryPrice: number;
-        takeProfitPrice: number;
-        tradeSide: TradeSide;
-        tradeAmount: number;
-    }): {
-        tradingFee: number;
-        projectedProfitAmount: number;
-        totalAmountToLock: number;
-    } {
-        const { entryPrice, takeProfitPrice, tradeSide, tradeAmount } = input;
-
-        // Compute trading fee of 1% of the trade amount or $1, whichever is greater
-        const tradingFee = Math.max(tradeAmount * 0.01, 1);
-
-        // Compute profit amount from trade amount based on trade side, entry price, and take profit price
-        let projectedProfitAmount = 0;
-        if (tradeSide === TradeSide.LONG) {
-            // compute profit amount from entry price to take profit price for long trades
-            const profitPercentage =
-                (takeProfitPrice - entryPrice) / entryPrice;
-            projectedProfitAmount = tradeAmount * profitPercentage;
-        } else {
-            // compute profit amount from entry price to take profit price for short trades
-            const profitPercentage =
-                (entryPrice - takeProfitPrice) / entryPrice;
-            projectedProfitAmount = tradeAmount * profitPercentage;
-        }
-
-        const totalAmountToLock = tradingFee + projectedProfitAmount;
-
-        return { tradingFee, projectedProfitAmount, totalAmountToLock };
     }
 
     public async createInvoice({

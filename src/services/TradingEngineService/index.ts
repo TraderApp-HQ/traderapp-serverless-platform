@@ -98,6 +98,7 @@ export interface IAllocateTradesUpToTargetAmountResult {
     riskAmount: number;
     positionSize: number;
     requiredMargin: number;
+    baseQuantity?: number;
 }
 
 export interface IProcessUserTradingResult {
@@ -785,6 +786,41 @@ export class TradingEngineService {
         };
     }
 
+    public calculatePnL({
+        side,
+        entryPrice,
+        targetPrice,
+        baseQuantity,
+        riskUSDT,
+        requiredMargin,
+    }: {
+        side: TradeSide;
+        entryPrice: number;
+        targetPrice: number;
+        baseQuantity: number;
+        riskUSDT: number;
+        requiredMargin: number;
+    }): {
+        pnlAmount: number;
+        pnlPercentOfRisk: number;
+        pnlPercentOfRequiredMargin: number;
+    } {
+        const priceDiff =
+            side === TradeSide.LONG
+                ? targetPrice - entryPrice
+                : entryPrice - targetPrice;
+
+        const pnlAmount = priceDiff * baseQuantity;
+
+        return {
+            pnlAmount: Number(pnlAmount.toFixed(8)),
+            pnlPercentOfRisk: Number(((pnlAmount / riskUSDT) * 100).toFixed(4)),
+            pnlPercentOfRequiredMargin: Number(
+                ((pnlAmount / requiredMargin) * 100).toFixed(4)
+            ),
+        };
+    }
+
     // Consolidated method to map Exchange to TradingPlatform
     private mapExchangeToTradingPlatform(exchange: Exchange): TradingPlatform {
         switch (exchange) {
@@ -1328,7 +1364,7 @@ export class TradingEngineService {
                     riskPercentage,
                     entryPrice: masterTrade.entryPrice,
                     stopLossPrice: masterTrade.stopLossPrice,
-                    leverage: 25,
+                    leverage: 50,
                     stepSize: platformTradingRule?.stepSize ?? 0.001,
                 });
 
@@ -1372,6 +1408,7 @@ export class TradingEngineService {
                 riskPercentage,
                 availableBalance: balance.availableBalance,
                 tradeAmount: requiredMargin,
+                baseQuantity,
             };
         } catch (error) {
             return {
@@ -1469,6 +1506,7 @@ export class TradingEngineService {
                 riskAmount: allocation.riskAmount!,
                 positionSize: allocation.positionSize!,
                 requiredMargin: allocation.requiredMargin!,
+                baseQuantity: allocation.baseQuantity,
             });
 
             currentAllocatedAmount += allocation.requiredMargin ?? 0;
@@ -1582,6 +1620,7 @@ export class TradingEngineService {
                     availableBalance: tradingAccount?.balance
                         .availableBalance as number,
                     baseAsset: masterTrade.baseAsset as string,
+                    baseQuantity: allocation.baseQuantity,
                     quoteCurrency: masterTrade.quoteCurrency as string,
                     quoteTotal: allocation.requiredMargin,
                     entryPrice: masterTrade.entryPrice,
