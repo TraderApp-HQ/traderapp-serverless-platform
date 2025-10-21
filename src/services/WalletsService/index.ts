@@ -801,7 +801,6 @@ export class WalletsService {
                         switch (body.data.status) {
                             case CryptopayWebhookEventStatus.completed: {
                                 const rawAmount =
-                                    body.data.paid_amount ??
                                     body.data.pay_amount ??
                                     body.data.received_amount ??
                                     "0";
