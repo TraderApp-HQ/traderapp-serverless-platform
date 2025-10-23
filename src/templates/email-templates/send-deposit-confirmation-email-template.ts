@@ -91,16 +91,16 @@ const SendDepositConfirmationEmailTemplate = `<!doctype html>
       <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:100%;">
         <tbody>
           <tr>
-            <td style="direction:ltr;font-size:0px;padding:0 16px;text-align:center;">
+            <td style="direction:ltr;font-size:0px;padding:20px 0;text-align:center;">
               <!--[if mso | IE]><table role="presentation" border="0" cellpadding="0" cellspacing="0"><![endif]-->
               <!-- Logo -->
-              <!--[if mso | IE]><tr><td class="" width="600px" ><table align="center" border="0" cellpadding="0" cellspacing="0" class="" role="presentation" style="width:568px;" width="568" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
-              <div style="margin:0px auto;max-width:568px;">
+              <!--[if mso | IE]><tr><td class="" width="600px" ><table align="center" border="0" cellpadding="0" cellspacing="0" class="" role="presentation" style="width:600px;" width="600" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
+              <div style="margin:0px auto;max-width:600px;">
                 <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:100%;">
                   <tbody>
                     <tr>
                       <td style="direction:ltr;font-size:0px;padding:20px 0;padding-bottom:10px;text-align:center;">
-                        <!--[if mso | IE]><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr><td class="" style="vertical-align:top;width:568px;" ><![endif]-->
+                        <!--[if mso | IE]><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr><td class="" style="vertical-align:top;width:600px;" ><![endif]-->
                         <div class="mj-column-per-100 mj-outlook-group-fix" style="font-size:0px;text-align:left;direction:ltr;display:inline-block;vertical-align:top;width:100%;">
                           <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="vertical-align:top;" width="100%">
                             <tbody>
@@ -128,23 +128,23 @@ const SendDepositConfirmationEmailTemplate = `<!doctype html>
               </div>
               <!--[if mso | IE]></td></tr></table></td></tr><![endif]-->
               <!-- Banner -->
-              <!--[if mso | IE]><tr><td class="" width="600px" ><table align="center" border="0" cellpadding="0" cellspacing="0" class="" role="presentation" style="width:568px;" width="568" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
-              <div style="margin:0px auto;max-width:568px;">
+              <!--[if mso | IE]><tr><td class="" width="600px" ><table align="center" border="0" cellpadding="0" cellspacing="0" class="" role="presentation" style="width:600px;" width="600" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
+              <div style="margin:0px auto;max-width:600px;">
                 <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:100%;">
                   <tbody>
                     <tr>
                       <td style="direction:ltr;font-size:0px;padding:20px 0;padding-bottom:20px;text-align:center;">
-                        <!--[if mso | IE]><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr><td class="" style="vertical-align:top;width:568px;" ><![endif]-->
+                        <!--[if mso | IE]><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr><td class="" style="vertical-align:top;width:600px;" ><![endif]-->
                         <div class="mj-column-per-100 mj-outlook-group-fix" style="font-size:0px;text-align:left;direction:ltr;display:inline-block;vertical-align:top;width:100%;">
                           <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="vertical-align:top;" width="100%">
                             <tbody>
                               <tr>
-                                <td align="center" class="banner-img" style="width: 562; height: 370; angle: 0 deg; opacity: 1; border-radius: 24px; font-size: 0px; padding: 0; word-break: break-word;">
+                                <td align="center" class="banner-img" style="width: 400px; height: 400px; angle: 0 deg; opacity: 1; top: -22px; left: 81px; font-size: 0px; padding: 0; word-break: break-word;" width="400" height="400">
                                   <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:collapse;border-spacing:0px;">
                                     <tbody>
                                       <tr>
-                                        <td style="width:568px;">
-                                          <img alt="Deposit Confirmation Banner" src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/Investing+1.png" style="border:0;display:block;outline:none;text-decoration:none;height:auto;width:100%;font-size:13px;" width="568" height="auto">
+                                        <td style="width:600px;">
+                                          <img alt="Deposit Confirmation Banner" src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/Investing+1.png" style="border:0;display:block;outline:none;text-decoration:none;height:auto;width:100%;font-size:13px;" width="600" height="auto">
                                         </td>
                                       </tr>
                                     </tbody>
@@ -162,13 +162,13 @@ const SendDepositConfirmationEmailTemplate = `<!doctype html>
               </div>
               <!--[if mso | IE]></td></tr></table></td></tr><![endif]-->
               <!-- Greeting -->
-              <!--[if mso | IE]><tr><td class="" width="600px" ><table align="center" border="0" cellpadding="0" cellspacing="0" class="" role="presentation" style="width:568px;" width="568" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
-              <div style="margin:0px auto;max-width:568px;">
+              <!--[if mso | IE]><tr><td class="" width="600px" ><table align="center" border="0" cellpadding="0" cellspacing="0" class="" role="presentation" style="width:600px;" width="600" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
+              <div style="margin:0px auto;max-width:600px;">
                 <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:100%;">
                   <tbody>
                     <tr>
                       <td style="direction:ltr;font-size:0px;padding:0;text-align:center;">
-                        <!--[if mso | IE]><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr><td class="" style="vertical-align:top;width:568px;" ><![endif]-->
+                        <!--[if mso | IE]><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr><td class="" style="vertical-align:top;width:600px;" ><![endif]-->
                         <div class="mj-column-per-100 mj-outlook-group-fix" style="font-size:0px;text-align:left;direction:ltr;display:inline-block;vertical-align:top;width:100%;">
                           <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="vertical-align:top;" width="100%">
                             <tbody>
@@ -188,13 +188,13 @@ const SendDepositConfirmationEmailTemplate = `<!doctype html>
               </div>
               <!--[if mso | IE]></td></tr></table></td></tr><![endif]-->
               <!-- Main Message -->
-              <!--[if mso | IE]><tr><td class="" width="600px" ><table align="center" border="0" cellpadding="0" cellspacing="0" class="" role="presentation" style="width:568px;" width="568" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
-              <div style="margin:0px auto;max-width:568px;">
+              <!--[if mso | IE]><tr><td class="" width="600px" ><table align="center" border="0" cellpadding="0" cellspacing="0" class="" role="presentation" style="width:600px;" width="600" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
+              <div style="margin:0px auto;max-width:600px;">
                 <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:100%;">
                   <tbody>
                     <tr>
                       <td style="direction:ltr;font-size:0px;padding:0 0 20px 0;text-align:center;">
-                        <!--[if mso | IE]><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr><td class="" style="vertical-align:top;width:568px;" ><![endif]-->
+                        <!--[if mso | IE]><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr><td class="" style="vertical-align:top;width:600px;" ><![endif]-->
                         <div class="mj-column-per-100 mj-outlook-group-fix" style="font-size:0px;text-align:left;direction:ltr;display:inline-block;vertical-align:top;width:100%;">
                           <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="vertical-align:top;" width="100%">
                             <tbody>
@@ -214,13 +214,13 @@ const SendDepositConfirmationEmailTemplate = `<!doctype html>
               </div>
               <!--[if mso | IE]></td></tr></table></td></tr><![endif]-->
               <!-- Deposit Details -->
-              <!--[if mso | IE]><tr><td class="details-box-outlook" width="600px" ><table align="center" border="0" cellpadding="0" cellspacing="0" class="details-box-outlook" role="presentation" style="width:568px;" width="568" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
-              <div class="details-box" style="background-color: #f5f8ff; border-radius: 8px; width: 90%; box-sizing: border-box; margin: 0px auto; max-width: 568px;">
+              <!--[if mso | IE]><tr><td class="details-box-outlook" width="600px" ><table align="center" border="0" cellpadding="0" cellspacing="0" class="details-box-outlook" role="presentation" style="width:600px;" width="600" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
+              <div class="details-box" style="background-color: #f5f8ff; border-radius: 8px; width: auto; box-sizing: border-box; margin: 0px auto; max-width: 600px;">
                 <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:100%;">
                   <tbody>
                     <tr>
                       <td style="direction:ltr;font-size:0px;padding:20px 0;text-align:center;">
-                        <!--[if mso | IE]><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr><td class="" style="vertical-align:top;width:568px;" ><![endif]-->
+                        <!--[if mso | IE]><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr><td class="" style="vertical-align:top;width:600px;" ><![endif]-->
                         <div class="mj-column-per-100 mj-outlook-group-fix" style="font-size:0px;text-align:left;direction:ltr;display:inline-block;vertical-align:top;width:100%;">
                           <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="vertical-align:top;" width="100%">
                             <tbody>
@@ -250,13 +250,13 @@ const SendDepositConfirmationEmailTemplate = `<!doctype html>
               </div>
               <!--[if mso | IE]></td></tr></table></td></tr><![endif]-->
               <!-- Support Message -->
-              <!--[if mso | IE]><tr><td class="" width="600px" ><table align="center" border="0" cellpadding="0" cellspacing="0" class="" role="presentation" style="width:568px;" width="568" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
-              <div style="margin:0px auto;max-width:568px;">
+              <!--[if mso | IE]><tr><td class="" width="600px" ><table align="center" border="0" cellpadding="0" cellspacing="0" class="" role="presentation" style="width:600px;" width="600" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
+              <div style="margin:0px auto;max-width:600px;">
                 <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:100%;">
                   <tbody>
                     <tr>
                       <td style="direction:ltr;font-size:0px;padding:20px 0;text-align:center;">
-                        <!--[if mso | IE]><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr><td class="" style="vertical-align:top;width:568px;" ><![endif]-->
+                        <!--[if mso | IE]><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr><td class="" style="vertical-align:top;width:600px;" ><![endif]-->
                         <div class="mj-column-per-100 mj-outlook-group-fix" style="font-size:0px;text-align:left;direction:ltr;display:inline-block;vertical-align:top;width:100%;">
                           <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="vertical-align:top;" width="100%">
                             <tbody>
@@ -276,13 +276,13 @@ const SendDepositConfirmationEmailTemplate = `<!doctype html>
               </div>
               <!--[if mso | IE]></td></tr></table></td></tr><![endif]-->
               <!-- Closing -->
-              <!--[if mso | IE]><tr><td class="" width="600px" ><table align="center" border="0" cellpadding="0" cellspacing="0" class="" role="presentation" style="width:568px;" width="568" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
-              <div style="margin:0px auto;max-width:568px;">
+              <!--[if mso | IE]><tr><td class="" width="600px" ><table align="center" border="0" cellpadding="0" cellspacing="0" class="" role="presentation" style="width:600px;" width="600" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
+              <div style="margin:0px auto;max-width:600px;">
                 <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:100%;">
                   <tbody>
                     <tr>
                       <td style="direction:ltr;font-size:0px;padding:0 0 20px 0;text-align:center;">
-                        <!--[if mso | IE]><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr><td class="" style="vertical-align:top;width:568px;" ><![endif]-->
+                        <!--[if mso | IE]><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr><td class="" style="vertical-align:top;width:600px;" ><![endif]-->
                         <div class="mj-column-per-100 mj-outlook-group-fix" style="font-size:0px;text-align:left;direction:ltr;display:inline-block;vertical-align:top;width:100%;">
                           <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="vertical-align:top;" width="100%">
                             <tbody>
@@ -304,13 +304,13 @@ const SendDepositConfirmationEmailTemplate = `<!doctype html>
               </div>
               <!--[if mso | IE]></td></tr></table></td></tr><![endif]-->
               <!--Fixed Social Links -->
-              <!--[if mso | IE]><tr><td class="social-box-outlook" width="600px" ><table align="center" border="0" cellpadding="0" cellspacing="0" class="social-box-outlook" role="presentation" style="width:568px;" width="568" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
-              <div class="social-box" style="background-color: #f5f8ff; width: 90%; padding: 20px; box-sizing: border-box; margin: 0px auto; max-width: 568px;">
+              <!--[if mso | IE]><tr><td class="social-box-outlook" width="600px" ><table align="center" border="0" cellpadding="0" cellspacing="0" class="social-box-outlook" role="presentation" style="width:600px;" width="600" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
+              <div class="social-box" style="background-color: #f5f8ff; width: auto; padding: 20px; box-sizing: border-box; border-radius: 8px; margin: 0px auto; max-width: 600px;">
                 <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:100%;">
                   <tbody>
                     <tr>
                       <td style="direction:ltr;font-size:0px;padding:20px 0;text-align:center;">
-                        <!--[if mso | IE]><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr><td class="" style="vertical-align:top;width:568px;" ><![endif]-->
+                        <!--[if mso | IE]><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr><td class="" style="vertical-align:top;width:600px;" ><![endif]-->
                         <div class="mj-column-per-100 mj-outlook-group-fix" style="font-size:0px;text-align:left;direction:ltr;display:inline-block;vertical-align:top;width:100%;">
                           <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="vertical-align:top;" width="100%">
                             <tbody>

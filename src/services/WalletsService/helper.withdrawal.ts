@@ -26,7 +26,7 @@ export const publishWithdrawlConfirmationToQueue = async (
     const dateTime = new Date().toISOString();
     const message: IQueueMessageBodyObject = {
         recipients: [{ firstName: user.firstName, emailAddress: user.email }],
-        message: "Withdrawl Confirmation",
+        message: "Withdrawal Successful",
         event: EventTemplate.SEND_WITHDRAWAL_CONFIRMATION_EMAIL,
         metadata: {
             amount,
@@ -35,7 +35,7 @@ export const publishWithdrawlConfirmationToQueue = async (
             network,
             dateTime: format(dateTime, "do MMMM yyyy, h:mm a"),
         },
-        subject: "Withdrawal Confirmation",
+        subject: "Withdrawal Successful",
     };
 
     await publishMessageToQueue({
