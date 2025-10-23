@@ -30,7 +30,7 @@ import { publishMessageToQueue } from "src/clients/SQSClient/helpers";
 import { UserOnboardingChecklist } from "src/types/users-service";
 
 export class ReferralsService {
-    constructor() {}
+    constructor() { }
 
     private async getTotalUsdtBalanceFromDb({
         userId,
@@ -118,7 +118,7 @@ export class ReferralsService {
         // If a referral doesn't have a rank (or has an invalid rank), assigns -1
         const referralRankIndices = referrals.map((referral) =>
             referral.referralRank &&
-            RANK_INDEX_MAP[referral.referralRank] !== undefined
+                RANK_INDEX_MAP[referral.referralRank] !== undefined
                 ? RANK_INDEX_MAP[referral.referralRank]
                 : -1
         );
@@ -206,6 +206,7 @@ export class ReferralsService {
                                 communityATC: balances.communityBalance,
                                 referrals,
                                 isTestReferralTracking,
+                                isFirstDepositMade: user.isFirstDepositMade
                             }
                         );
 
@@ -297,7 +298,7 @@ export class ReferralsService {
     }
 
     public computeRank(criteria: IRankCriteria): IComputeRankResult {
-        const { personalATC, communityATC, referrals, isTestReferralTracking } =
+        const { personalATC, communityATC, referrals, isTestReferralTracking, isFirstDepositMade } =
             criteria;
 
         const communitySize = referrals.length;
@@ -316,11 +317,11 @@ export class ReferralsService {
                 maxRankFromReferrals
             );
             if (
-                hasRequiredRankReferrals &&
+                isFirstDepositMade && hasRequiredRankReferrals &&
                 personalATC >= RANK_REQUIREMENTS[currentRank].personalATC &&
                 communityATC >= RANK_REQUIREMENTS[currentRank].communityATC &&
                 communitySize >=
-                    this.getCommunitySize(currentRank, isTestReferralTracking)
+                this.getCommunitySize(currentRank, isTestReferralTracking)
             ) {
                 rank = currentRank;
                 break;
@@ -329,9 +330,9 @@ export class ReferralsService {
 
         // If no higher rank matched, check for TA_RECRUIT
         if (
-            !rank &&
+            !rank && isFirstDepositMade &&
             personalATC >=
-                RANK_REQUIREMENTS[ReferralRank.TA_RECRUIT].personalATC
+            RANK_REQUIREMENTS[ReferralRank.TA_RECRUIT].personalATC
         ) {
             rank = ReferralRank.TA_RECRUIT;
         }
