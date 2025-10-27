@@ -47,6 +47,7 @@ export interface IUser {
     firstName: string;
     lastName: string;
     email: string;
+    isFirstDepositMade: boolean;
     referralRank?: ReferralRankType;
 }
 
@@ -99,5 +100,6 @@ export interface IRankCriteria {
     personalATC: number;
     communityATC: number;
     referrals: IUser[];
+    isFirstDepositMade: boolean;
     isTestReferralTracking?: boolean;
 }
