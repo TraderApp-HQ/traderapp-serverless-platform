@@ -150,12 +150,10 @@ describe("Trade Service Helpers", () => {
                 computeTotalAmountToLock: jest
                     .fn()
                     .mockReturnValue({ totalAmountToLock: 50 }),
-                getUserWallet: jest
-                    .fn()
-                    .mockResolvedValue({
-                        availableBalance: 1000,
-                        userId: "user123",
-                    }),
+                getUserWallet: jest.fn().mockResolvedValue({
+                    availableBalance: 1000,
+                    userId: "user123",
+                }),
                 lockUserBalance: jest.fn().mockResolvedValue({ success: true }),
             };
             (WalletsService as jest.Mock).mockImplementation(
@@ -184,12 +182,10 @@ describe("Trade Service Helpers", () => {
                 computeTotalAmountToLock: jest
                     .fn()
                     .mockReturnValue({ totalAmountToLock: 2000 }),
-                getUserWallet: jest
-                    .fn()
-                    .mockResolvedValue({
-                        availableBalance: 100,
-                        userId: "user123",
-                    }),
+                getUserWallet: jest.fn().mockResolvedValue({
+                    availableBalance: 100,
+                    userId: "user123",
+                }),
                 lockUserBalance: jest.fn(),
             };
             (WalletsService as jest.Mock).mockImplementation(
@@ -216,12 +212,10 @@ describe("Trade Service Helpers", () => {
                 getUserWallet: jest
                     .fn()
                     .mockResolvedValue({ availableBalance: 1000 }),
-                lockUserBalance: jest
-                    .fn()
-                    .mockResolvedValue({
-                        success: false,
-                        wallet: { availableBalance: 1000 },
-                    }),
+                lockUserBalance: jest.fn().mockResolvedValue({
+                    success: false,
+                    wallet: { availableBalance: 1000 },
+                }),
             };
             (WalletsService as jest.Mock).mockImplementation(
                 () => mockWalletsService
