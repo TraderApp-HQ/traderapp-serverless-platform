@@ -10,7 +10,11 @@ import {
     getMasterTradeById,
 } from "src/__tests__/test-helpers/trading-engine-service-helper";
 import { IQueueMessageBody } from "src/config/interfaces";
-import { IMasterTrade, IProcessUserTradingWithMasterTradeEvent, ITrade } from "./interfaces";
+import {
+    IMasterTrade,
+    IProcessUserTradingWithMasterTradeEvent,
+    ITrade,
+} from "./interfaces";
 import {
     TradeSide,
     TradingRuleName,
@@ -319,7 +323,10 @@ describe("TradingEngineService", () => {
             expect(createdTrades[0].quoteTotal).toBeGreaterThan(0);
 
             // Check if master trade status was updated to PROCESSED
-            const updatedMasterTrade = await getMasterTradeById(testDb.tradingEngineConnection, (masterTrade._id as mongoose.Types.ObjectId).toString());
+            const updatedMasterTrade = await getMasterTradeById(
+                testDb.tradingEngineConnection,
+                (masterTrade._id as mongoose.Types.ObjectId).toString()
+            );
             expect(updatedMasterTrade?.status).toBe(TradeStatus.PROCESSED);
 
             // Verify queue publishing was called
@@ -466,17 +473,20 @@ describe("TradingEngineService", () => {
                     minQuantity: 0.001,
                     minNotional: 10,
                     stepSize: 0.001,
-                })
-            ])
-
+                }),
+            ]);
 
             const [masterTradeEvent1, masterTradeEvent2] = await Promise.all([
                 createMockMasterTradeEvent({
-                    masterTradeId: (masterTrade._id as mongoose.Types.ObjectId).toString(),
+                    masterTradeId: (
+                        masterTrade._id as mongoose.Types.ObjectId
+                    ).toString(),
                 }),
                 createMockMasterTradeEvent({
-                    masterTradeId: (masterTrade._id as mongoose.Types.ObjectId).toString(),
-                })
+                    masterTradeId: (
+                        masterTrade._id as mongoose.Types.ObjectId
+                    ).toString(),
+                }),
             ]);
 
             const queueMessages = [

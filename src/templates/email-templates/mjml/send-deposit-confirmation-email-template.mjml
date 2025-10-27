@@ -10,7 +10,7 @@
         </mj-attributes>
         <mj-style inline="inline">
             /* Global span styling */
-           span {
+            span {
                 font-family: Manrope, Arial, sans-serif;
                 font-weight: 400;
                 font-size: 14px;
@@ -28,7 +28,7 @@
                 font-weight: 700;
                 font-size: 18px;
                 line-height: 130%;
-                color: #08123B;
+                color: #08123b;
             }
 
             .deposit_details {
@@ -36,7 +36,7 @@
                 font-weight: 700;
                 font-size: 16px;
                 line-height: 150%;
-                color: #0A0D14;
+                color: #0a0d14;
                 margin-bottom: 6px;
             }
 
@@ -56,7 +56,7 @@
             }
 
             .details-box {
-                background-color: #F5F8FF;
+                background-color: #f5f8ff;
                 border-radius: 8px;
                 width: auto;
                 box-sizing: border-box;
@@ -64,7 +64,7 @@
             }
 
             .social-box {
-                background-color: #F5F8FF;
+                background-color: #f5f8ff;
                 width: auto;
                 padding: 20px;
                 box-sizing: border-box;
@@ -80,7 +80,7 @@
             }
 
             a {
-                color: #1836B2;
+                color: #1836b2;
                 text-decoration: none;
             }
 
@@ -158,21 +158,25 @@
                         padding="0"
                         font-size="14px"
                         line-height="1.6"
-                        style="line-height:1.6; font-family: Manrope, Arial, sans-serif; color:#0a0d14;"
+                        style="
+                            line-height: 1.6;
+                            font-family: Manrope, Arial, sans-serif;
+                            color: #0a0d14;
+                        "
                     >
-                        <p style="margin:0; line-height:2; display:block;">
+                        <p style="margin: 0; line-height: 2; display: block">
                             <b>Amount:</b> {AMOUNT} USDT
                         </p>
-                        <p style="margin:0; line-height:2; display:block;">
+                        <p style="margin: 0; line-height: 2; display: block">
                             <b>Date:</b> {DATE_TIME}
                         </p>
-                        <p style="margin:0; line-height:2; display:block;">
+                        <p style="margin: 0; line-height: 2; display: block">
                             <b>Wallet Address:</b> {ADDRESS}
                         </p>
-                        <p style="margin:0; line-height:2; display:block;">
+                        <p style="margin: 0; line-height: 2; display: block">
                             <b>Network Type:</b> {NETWORK}
                         </p>
-                        <p style="margin:0; line-height:2; display:block;">
+                        <p style="margin: 0; line-height: 2; display: block">
                             <b>Transaction ID:</b> {TRANSACTION_ID}
                         </p>
                     </mj-text>
@@ -191,8 +195,7 @@
                         immediately at
                         <a href="mailto:support@traderapp.com"
                             >support@traderapp.com</a
-                        >.
-                        <br /><br />
+                        >. <br /><br />
                         Thank you for trading with TraderApp. We remain
                         committed to helping you achieve your financial goals.
                     </mj-text>

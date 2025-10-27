@@ -462,13 +462,17 @@ export const createMasterTrade = async (
         quoteTotal: options.quoteTotal || 50,
         createdAt: options.createdAt || new Date(),
         updatedAt: options.updatedAt || new Date(),
-        baseAssetLogoUrl: options.baseAssetLogoUrl || "https://example.com/logo.png",
+        baseAssetLogoUrl:
+            options.baseAssetLogoUrl || "https://example.com/logo.png",
         currentPrice: options.currentPrice || 111373,
         ordersTriggerPrice: options.ordersTriggerPrice || 111373,
         targetOrdersAmountToFill: options.targetOrdersAmountToFill || 100000,
-        orderPlacementType: options.orderPlacementType || OrderPlacementType.MARKET,
+        orderPlacementType:
+            options.orderPlacementType || OrderPlacementType.MARKET,
         accountType: options.accountType || AccountType.FUTURES,
-        supportedTradingPlatforms: options.supportedTradingPlatforms || [TradingPlatform.BINANCE],
+        supportedTradingPlatforms: options.supportedTradingPlatforms || [
+            TradingPlatform.BINANCE,
+        ],
         chartUrl: options.chartUrl || "https://example.com/chart.png",
         tradeNote: options.tradeNote || "Test trade note",
         pair: options.pair || "BTCUSDT",
@@ -703,7 +707,7 @@ export const createCompleteUserTradingSetup = async (
             userId,
             side: TradeSide.LONG,
             id: tradeOptions.id ? `${tradeOptions.id}-long-${i}` : undefined,
-            masterTradeId: tradeOptions.masterTradeId
+            masterTradeId: tradeOptions.masterTradeId,
         });
         trades.push(trade);
     }
@@ -853,7 +857,9 @@ export const getMasterTradeById = async (
         TradingEngineServiceCollections.masterTrades
     );
 
-    return masterTradeCollection.findOne({ _id: new mongoose.Types.ObjectId(id) });
+    return masterTradeCollection.findOne({
+        _id: new mongoose.Types.ObjectId(id),
+    });
 };
 
 // Add these functions after the existing ORDER CREATION section

@@ -64,7 +64,7 @@ export class WalletsService {
     private initialized: boolean = false;
     private initializationPromise: Promise<void> | null = null;
 
-    constructor() { }
+    constructor() {}
 
     // Initialize the service once
     private async initialize(): Promise<void> {
@@ -103,7 +103,9 @@ export class WalletsService {
 
                 this.initialized = true;
             } catch (error) {
-                console.error("Failed to initialize WalletsService:", { error });
+                console.error("Failed to initialize WalletsService:", {
+                    error,
+                });
                 throw error;
             } finally {
                 this.initializationPromise = null;
@@ -409,7 +411,7 @@ export class WalletsService {
             const completedDeposits = transactions.filter(
                 (t) =>
                     t.queueMessage.body.data.status ===
-                    CryptopayWebhookEventStatus.completed && t.userId
+                        CryptopayWebhookEventStatus.completed && t.userId
             );
 
             const transactionsToCredit = await Promise.all(
@@ -429,7 +431,7 @@ export class WalletsService {
                             if (
                                 existingTransaction &&
                                 existingTransaction.status ===
-                                TransactionStatus.SUCCESS
+                                    TransactionStatus.SUCCESS
                             ) {
                                 console.error(
                                     `Transaction ${transaction.externalTransactionId} already credited, skipping.`
@@ -972,9 +974,12 @@ export class WalletsService {
 
             return { successMessageIds, failedMessageIds };
         } catch (error) {
-            console.error("General error in processCryptoPayWithdrawalWebhook:", {
-                error,
-            });
+            console.error(
+                "General error in processCryptoPayWithdrawalWebhook:",
+                {
+                    error,
+                }
+            );
             return {
                 successMessageIds: [],
                 failedMessageIds: queueMessages.map((m) => m.messageId),
@@ -1008,7 +1013,9 @@ export class WalletsService {
             });
 
             if (!userWallet) {
-                throw new Error(`No wallet found for user ${userId} with currency ${currency} and walletType ${walletType}`);
+                throw new Error(
+                    `No wallet found for user ${userId} with currency ${currency} and walletType ${walletType}`
+                );
             }
 
             return userWallet;

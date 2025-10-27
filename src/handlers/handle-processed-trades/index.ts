@@ -6,8 +6,7 @@ import { handleProcessedTrades } from "../../helpers/trade-service-helpers";
 
 export const handler = async (event: SQSEvent): Promise<SQSBatchResponse> => {
     log.info("Received event", { event });
-    const queueMessages =
-        getParsedQueueMessagesBody<IProcessedTrade>(event);
+    const queueMessages = getParsedQueueMessagesBody<IProcessedTrade>(event);
     const { failedMessageIds } = await handleProcessedTrades(queueMessages);
 
     // put failed items back into the queue
