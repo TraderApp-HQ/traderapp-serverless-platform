@@ -46,6 +46,41 @@ export const mapUserConnectedTradingPlatformToQueueUrl = async ({
     }
 };
 
+export const computeTotalAmountToLock = (input: {
+    entryPrice: number;
+    takeProfitPrice: number;
+    tradeSide: TradeSide;
+    tradeAmount: number;
+    riskUSDT: number;
+    baseQuantity: number;
+}) => {
+    const {
+        entryPrice,
+        takeProfitPrice,
+        tradeSide,
+        tradeAmount,
+        riskUSDT,
+        baseQuantity,
+    } = input;
+
+    // Compute trading fee of 1% of the trade amount or $1, whichever is greater
+    const tradingFee = Math.max(tradeAmount * 0.01, 1);
+
+    const tradingEngineService = new TradingEngineService();
+    const { pnlAmount } = tradingEngineService.calculatePnL({
+        side: tradeSide,
+        entryPrice,
+        targetPrice: takeProfitPrice,
+        baseQuantity,
+        riskUSDT,
+        requiredMargin: tradeAmount,
+    });
+
+    const totalAmountToLock = tradingFee + pnlAmount;
+
+    return { tradingFee, projectedProfitAmount: pnlAmount, totalAmountToLock };
+};
+
 export const processUserTrades = async (
     queueMessages: IQueueMessageBody<IUserTradeAllocation>[]
 ) => {
@@ -69,13 +104,14 @@ export const processUserTrades = async (
                     const userTrade = queueMessage.body;
 
                     // Compute total amount to lock
-                    const { totalAmountToLock } =
-                        walletsService.computeTotalAmountToLock({
-                            entryPrice: userTrade.entryPrice,
-                            takeProfitPrice: userTrade.takeProfitPrice,
-                            tradeSide: userTrade.tradeSide,
-                            tradeAmount: userTrade.tradeAmount,
-                        });
+                    const { totalAmountToLock } = computeTotalAmountToLock({
+                        entryPrice: userTrade.entryPrice,
+                        takeProfitPrice: userTrade.takeProfitPrice,
+                        tradeSide: userTrade.tradeSide,
+                        tradeAmount: userTrade.tradeAmount,
+                        riskUSDT: userTrade.riskAmount,
+                        baseQuantity: userTrade.baseQuantity ?? 0,
+                    });
 
                     // Get user wallet
                     const userWallet = await walletsService.getUserWallet({
@@ -89,6 +125,10 @@ export const processUserTrades = async (
                         !userWallet ||
                         userWallet.availableBalance < totalAmountToLock
                     ) {
+                        // TODO: Add a check to see if user has over 3 outstanding/unpaid invoices
+                        // If so, push to insufficient balance array
+                        // If not, continue
+
                         insufficientBalanceUsers.push({
                             userTrade,
                             wallet: userWallet,
@@ -123,9 +163,6 @@ export const processUserTrades = async (
                             isSuccess: false,
                         };
                     }
-                    // TODO: Add a check to see if user has over 3 outstanding/unpaid invoices
-                    // If so, push to insufficient balance array
-                    // If not, publish message to queue
 
                     // Get queue url for user connected trading platform
                     const queueUrl =

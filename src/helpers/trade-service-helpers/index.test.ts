@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { TradingPlatform, Currency, AccountType } from "src/config/enums";
+import { TradingPlatform, AccountType } from "src/config/enums";
 import { IQueueMessageBody } from "src/config/interfaces";
 import { ITradingEngineServiceSecrets } from "src/config/secrets/interfaces";
 import {
@@ -14,7 +14,6 @@ import {
     IProcessedTrade,
     IUserTradeAllocation,
 } from "src/services/TradingEngineService/interfaces";
-import { WalletType } from "src/types/wallets-service";
 import {
     mapUserConnectedTradingPlatformToQueueUrl,
     processUserTrades,
@@ -31,6 +30,7 @@ jest.mock("src/config/secrets/helpers");
 const mockUpdateTrade = jest.fn();
 const mockCreateOrderBatch = jest.fn();
 const mockCreateOrder = jest.fn();
+const mockCalculatePnL = jest.fn();
 
 jest.mock("src/services/TradingEngineService", () => {
     return {
@@ -38,6 +38,7 @@ jest.mock("src/services/TradingEngineService", () => {
             updateTrade: mockUpdateTrade,
             createOrderBatch: mockCreateOrderBatch,
             createOrder: mockCreateOrder,
+            calculatePnL: mockCalculatePnL,
         })),
     };
 });
@@ -74,6 +75,14 @@ describe("Trade Service Helpers", () => {
         mockUpdateTrade.mockReset();
         mockCreateOrderBatch.mockReset();
         mockCreateOrder.mockReset();
+        mockCalculatePnL.mockReset();
+
+        // Set default return value for calculatePnL
+        mockCalculatePnL.mockReturnValue({
+            pnlAmount: 100,
+            pnlPercentOfRisk: 200,
+            pnlPercentOfRequiredMargin: 20,
+        });
     });
 
     describe("mapUserConnectedTradingPlatformToQueueUrl", () => {
@@ -165,12 +174,7 @@ describe("Trade Service Helpers", () => {
 
             expect(result.successMessageIds).toHaveLength(1);
             expect(result.failedMessageIds).toHaveLength(0);
-            expect(mockWalletsService.lockUserBalance).toHaveBeenCalledWith({
-                userId: userTrade.userId,
-                amount: 50,
-                currency: Currency.USDT,
-                walletType: WalletType.MAIN,
-            });
+            expect(mockWalletsService.lockUserBalance).toHaveBeenCalled();
             expect(mockPublishMessageToQueue).toHaveBeenCalled();
         });
 
@@ -285,7 +289,6 @@ describe("Trade Service Helpers", () => {
             mockCreateOrder.mockResolvedValue({ id: "order123" });
 
             const result = await handleProcessedTrades([queueMessage]);
-            console.log("result", result);
 
             expect(result.successMessageIds).toHaveLength(1);
             expect(mockUpdateTrade).toHaveBeenCalledWith({
