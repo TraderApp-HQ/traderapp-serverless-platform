@@ -11,6 +11,7 @@ import {
     OrderBatchStatus,
     OrderStatus,
     TradeStatus,
+    TradeSide,
 } from "src/services/TradingEngineService/enums";
 import {
     IFailedTrade,
