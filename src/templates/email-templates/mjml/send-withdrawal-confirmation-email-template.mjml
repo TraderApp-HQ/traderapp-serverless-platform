@@ -8,63 +8,78 @@
         <mj-attributes>
             <mj-all font-family="IBM Plex Sans, Arial, sans-serif" />
             <mj-section padding="20px 0" />
-            <mj-text font-size="14px" line-height="1.6" color="#454648" />
+            <mj-text font-size="14px" line-height="1.6" color="#0A0D14" />
             <mj-image padding="0" align="center" />
         </mj-attributes>
 
         <mj-style inline="inline">
+            /* Global Span Styling */
+            span {
+                font-family: Manrope, Arial, sans-serif;
+                font-weight: 400;
+                font-size: 14px;
+                line-height: 1.6;
+                color: #0a0d14;
+            }
+
             .highlight {
                 font-weight: 700;
                 color: #414141;
             }
+
             .name-text {
                 font-family: Manrope;
                 font-weight: 700;
                 font-size: 18px;
-                line-height: 150%;
+                line-height: 130%;
                 color: #08123b;
             }
-            .deposit_details {
+
+            .section-title {
                 font-family: Manrope;
                 font-weight: 700;
                 font-size: 16px;
-                line-height: 114%;
+                line-height: 150%;
                 color: #0a0d14;
-                margin-bottom: 8px;
+                margin-bottom: 6px;
             }
+
             .remark {
                 font-family: Manrope;
                 font-weight: 400;
                 font-size: 16px;
-                line-height: 150%;
+                line-height: 135%;
                 color: #414141;
             }
+
             .remarkspan {
                 font-family: Manrope;
                 font-weight: 600;
                 font-size: 18px;
-                line-height: 150%;
+                line-height: 135%;
             }
+
             .details-box {
                 background-color: #f5f8ff;
                 border-radius: 8px;
-                width: auto;
+                padding: 5px 15px;
                 box-sizing: border-box;
             }
+
             .social-box {
                 background-color: #f5f8ff;
-                width: auto;
-                padding: 20px 0;
+                border-radius: 8px;
+                padding: 20px;
                 box-sizing: border-box;
                 border-radius: 8px;
             }
+
             .banner-img {
-                width: 562;
-                height: 272;
-                angle: 0 deg;
-                opacity: 1;
-                border-radius: 24px;
+                width: 300px;
+                height: 200px;
+                border-radius: 14.18px;
             }
+
             a {
                 color: #1836b2;
                 text-decoration: none;
@@ -73,7 +88,7 @@
             @media only screen and (max-width: 480px) {
                 .name-text,
                 .remark,
-                .deposit_details,
+                .section-title,
                 .content {
                     text-align: center !important;
                 }
@@ -81,8 +96,8 @@
         </mj-style>
     </mj-head>
 
-    <mj-body background-color="#ffffff">
-        <mj-wrapper css-class="wrapper">
+    <mj-body background-color="#FFFFFF">
+        <mj-wrapper>
             <!-- Logo -->
             <mj-section padding-bottom="10px">
                 <mj-column>
@@ -100,7 +115,7 @@
                     <mj-image
                         css-class="banner-img"
                         src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/withdrawal+banners+(2).png"
-                        alt="Deposit Confirmation Banner"
+                        alt="Withdrawal Confirmation Banner"
                     />
                 </mj-column>
             </mj-section>
@@ -108,14 +123,16 @@
             <!-- Greeting -->
             <mj-section padding="0">
                 <mj-column>
-                    <mj-text css-class="name-text">Hello {USER_NAME},</mj-text>
+                    <mj-text css-class="name-text" padding="0 0 8px 0">
+                        Hello {USER_NAME},
+                    </mj-text>
                 </mj-column>
             </mj-section>
 
             <!-- Main Message -->
-            <mj-section padding="0 0 20px 0">
+            <mj-section padding="0 0 16px 0">
                 <mj-column>
-                    <mj-text class="content">
+                    <mj-text css-class="content" padding="0">
                         We are pleased to inform you that your withdrawal
                         request has been successfully processed from your
                         TraderApp account.
@@ -123,32 +140,33 @@
                 </mj-column>
             </mj-section>
 
-            <!-- Deposit Details -->
-            <mj-section css-class="details-box">
-                <mj-column>
-                    <mj-text class="deposit_details"
-                        >Withdrawal Details</mj-text
-                    >
-                    <mj-text class="details-box">
-                        <b>Amount:</b> <span>{AMOUNT} USDT</span><br />
-                        <b>Date:</b> {DATE_TIME}<br />
-                        <b>Wallet Address:</b> <span>{ADDRESS}</span><br />
-                        <b>Network Type:</b> <span>{NETWORK}</span><br />
-                        <b>Transaction ID:</b> <span>{TRANSACTION_ID}</span>
+            <!-- Withdrawal Details -->
+            <mj-section padding="12px 0">
+                <mj-column css-class="details-box">
+                    <mj-text css-class="section-title" padding="0 0 6px 0">
+                        Withdrawal Details
+                    </mj-text>
+
+                    <mj-text padding="0" font-size="14px" line-height="1.6">
+                        <p><b>Amount:</b> {AMOUNT} USDT</p>
+                        <p><b>Date:</b> {DATE_TIME}</p>
+                        <p><b>Wallet Address:</b> {ADDRESS}</p>
+                        <p><b>Network Type:</b> {NETWORK}</p>
+                        <p><b>Transaction ID:</b> {TRANSACTION_ID}</p>
                     </mj-text>
                 </mj-column>
             </mj-section>
 
             <!-- Support Message -->
-            <mj-section padding="20px 0">
+            <mj-section padding="16px 0">
                 <mj-column>
-                    <mj-text class="content">
+                    <mj-text css-class="content" padding="0">
                         Your funds should arrive within a few minutes. You may
                         track the status of your transaction anytime from your
                         TraderApp dashboard.
                         <br /><br />
-                        If you didn’t initiate this deposit or notice any issue,
-                        please contact our support team immediately at
+                        If you didn’t initiate this withdrawal or notice any
+                        issue, please contact our support team immediately at
                         <a href="mailto:support@traderapp.com"
                             >support@traderapp.com</a
                         >. <br /><br />
@@ -159,16 +177,16 @@
             </mj-section>
 
             <!-- Closing -->
-            <mj-section padding="0 0 20px 0">
+            <mj-section padding="0 0 16px 0">
                 <mj-column>
-                    <mj-text class="remark">
+                    <mj-text css-class="remark" padding="0">
                         Warm regards,<br />
                         <span class="remarkspan">The TraderApp Team</span>
                     </mj-text>
                 </mj-column>
             </mj-section>
 
-            <!--Fixed Social Links -->
+            <!-- Social Links -->
             <mj-section css-class="social-box" padding="20px 0">
                 <mj-column>
                     <mj-social

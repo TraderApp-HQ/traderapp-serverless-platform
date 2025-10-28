@@ -10,8 +10,8 @@ import { TradingEngineService } from "src/services/TradingEngineService";
 import {
     OrderBatchStatus,
     OrderStatus,
-    TradeSide,
     TradeStatus,
+    TradeSide,
 } from "src/services/TradingEngineService/enums";
 import {
     IFailedTrade,

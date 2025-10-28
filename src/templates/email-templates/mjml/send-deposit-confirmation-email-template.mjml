@@ -2,53 +2,67 @@
     <mj-head>
         <mj-title>TraderApp - Deposit Confirmation</mj-title>
         <mj-preview>Your deposit has been credited successfully.</mj-preview>
-
         <mj-attributes>
             <mj-all font-family="IBM Plex Sans, Arial, sans-serif" />
             <mj-section padding="20px 0" />
-            <mj-text font-size="14px" line-height="1.6" color="#454648" />
+            <mj-text font-size="14px" line-height="1.4" color="#454648" />
             <mj-image padding="0" align="center" />
         </mj-attributes>
-
         <mj-style inline="inline">
+            /* Global span styling */
+            span {
+                font-family: Manrope, Arial, sans-serif;
+                font-weight: 400;
+                font-size: 14px;
+                line-height: 1.6;
+                color: #0a0d14;
+            }
+
             .highlight {
                 font-weight: 700;
                 color: #414141;
             }
+
             .name-text {
                 font-family: Manrope;
                 font-weight: 700;
                 font-size: 18px;
-                line-height: 150%;
+                line-height: 130%;
                 color: #08123b;
             }
+
             .deposit_details {
                 font-family: Manrope;
                 font-weight: 700;
                 font-size: 16px;
-                line-height: 114%;
+                line-height: 150%;
                 color: #0a0d14;
-                margin-bottom: 8px;
+                margin-bottom: 6px;
             }
+
             .remark {
                 font-family: Manrope;
                 font-weight: 400;
                 font-size: 16px;
-                line-height: 150%;
+                line-height: 135%;
                 color: #414141;
             }
+
             .remarkspan {
                 font-family: Manrope;
                 font-weight: 600;
                 font-size: 18px;
-                line-height: 150%;
+                line-height: 135%;
             }
+
             .details-box {
                 background-color: #f5f8ff;
                 border-radius: 8px;
                 width: auto;
                 box-sizing: border-box;
+                padding: 5px 15px;
             }
+
             .social-box {
                 background-color: #f5f8ff;
                 width: auto;
@@ -56,14 +70,15 @@
                 box-sizing: border-box;
                 border-radius: 8px;
             }
+
             .banner-img {
-                width: 400px;
-                height: 400px;
-                angle: 0 deg;
+                width: 300px;
+                height: 200px;
+                angle: 0deg;
                 opacity: 1;
-                top: -22px;
-                left: 81px;
+                border-radius: 14.18px;
             }
+
             a {
                 color: #1836b2;
                 text-decoration: none;
@@ -79,8 +94,7 @@
             }
         </mj-style>
     </mj-head>
-
-    <mj-body background-color="#ffffff">
+    <mj-body background-color="#FFFFFF">
         <mj-wrapper css-class="wrapper">
             <!-- Logo -->
             <mj-section padding-bottom="10px">
@@ -97,9 +111,10 @@
             <mj-section padding-bottom="20px">
                 <mj-column>
                     <mj-image
-                        css-class="banner-img"
                         src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/Investing+1.png"
                         alt="Deposit Confirmation Banner"
+                        width="236.3px"
+                        height="236.3px"
                     />
                 </mj-column>
             </mj-section>
@@ -107,14 +122,16 @@
             <!-- Greeting -->
             <mj-section padding="0">
                 <mj-column>
-                    <mj-text css-class="name-text">Hello {USER_NAME},</mj-text>
+                    <mj-text css-class="name-text" padding="0 0 8px 0">
+                        Hello {USER_NAME},
+                    </mj-text>
                 </mj-column>
             </mj-section>
 
             <!-- Main Message -->
-            <mj-section padding="0 0 20px 0">
+            <mj-section padding="0 0 16px 0">
                 <mj-column>
-                    <mj-text class="content">
+                    <mj-text class="content" padding="0">
                         A deposit transaction has been successfully processed,
                         and the amount of
                         <span class="highlight">{AMOUNT} USDT</span> has been
@@ -124,23 +141,52 @@
             </mj-section>
 
             <!-- Deposit Details -->
-            <mj-section css-class="details-box">
+            <mj-section css-class="details-box" padding="12px 0">
                 <mj-column>
-                    <mj-text class="deposit_details">Deposit Details</mj-text>
-                    <mj-text class="details-box">
-                        <b>Amount:</b> <span>{AMOUNT} USDT</span><br />
-                        <b>Date:</b> {DATE_TIME}<br />
-                        <b>Wallet Address:</b> <span>{ADDRESS}</span><br />
-                        <b>Network Type:</b> <span>{NETWORK}</span><br />
-                        <b>Transaction ID:</b> <span>{TRANSACTION_ID}</span>
+                    <mj-text
+                        class="deposit_details"
+                        padding="0 0 6px 0"
+                        font-weight="bold"
+                        font-size="16px"
+                    >
+                        Deposit Details
+                    </mj-text>
+
+                    <!-- Bulletproof line spacing for all platforms -->
+                    <mj-text
+                        class="details-box"
+                        padding="0"
+                        font-size="14px"
+                        line-height="1.6"
+                        style="
+                            line-height: 1.6;
+                            font-family: Manrope, Arial, sans-serif;
+                            color: #0a0d14;
+                        "
+                    >
+                        <p style="margin: 0; line-height: 2; display: block">
+                            <b>Amount:</b> {AMOUNT} USDT
+                        </p>
+                        <p style="margin: 0; line-height: 2; display: block">
+                            <b>Date:</b> {DATE_TIME}
+                        </p>
+                        <p style="margin: 0; line-height: 2; display: block">
+                            <b>Wallet Address:</b> {ADDRESS}
+                        </p>
+                        <p style="margin: 0; line-height: 2; display: block">
+                            <b>Network Type:</b> {NETWORK}
+                        </p>
+                        <p style="margin: 0; line-height: 2; display: block">
+                            <b>Transaction ID:</b> {TRANSACTION_ID}
+                        </p>
                     </mj-text>
                 </mj-column>
             </mj-section>
 
             <!-- Support Message -->
-            <mj-section padding="20px 0">
+            <mj-section padding="16px 0">
                 <mj-column>
-                    <mj-text class="content">
+                    <mj-text class="content" padding="0">
                         You can now explore trading opportunities and take
                         another step toward financial freedom.
                         <br /><br />
@@ -157,16 +203,16 @@
             </mj-section>
 
             <!-- Closing -->
-            <mj-section padding="0 0 20px 0">
+            <mj-section padding="0 0 16px 0">
                 <mj-column>
-                    <mj-text class="remark">
+                    <mj-text class="remark" padding="0">
                         Warm regards,<br />
                         <span class="remarkspan">The TraderApp Team</span>
                     </mj-text>
                 </mj-column>
             </mj-section>
 
-            <!--Fixed Social Links -->
+            <!-- Social Links -->
             <mj-section css-class="social-box" padding="20px 0">
                 <mj-column>
                     <mj-social
