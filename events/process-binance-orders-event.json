@@ -1,0 +1,21 @@
+{
+    "Records": [
+        {
+            "messageId": "ed67b883-6077-4e1a-8e0f-2c78934a5bfb",
+            "receiptHandle": "AQEB45a4j/3vfI0F9L+Lw1Y0WqgCfA9bZA9dfBWujMrqFKZi3OSx2s7FjcGMjab7Szm+eFqpQpCOAjGjghjL6qvTNUgI5lGLx+8T0D7V5DFtSyfOxkexJTNnCvD7dtk+KQw/kaJ+psn9nYr/7MtjrrUv1kAUZCCoHstOZK5x4fEno/uUO3XkayWYuBVDh1EDgf8pRxMfQXCnKKpveu/WE4SSxGgEmuxPEAcN8bkRTrl/yDGgLL1b7f89D8CbWUYvmQYLmYr0P60fg1zQH2qisQNBlzfxL9lrNO16GnPpkXfOHpqquZ+4CCDWDxso60l3SVTaNRCmSDQKiI4GvQJCosfoABw+veMzojf6Z6C37RbFLSr7TKbXkG2/kNem0in4Y43es9KaQDBAZEvpj9I+3SJAJg==",
+            "body": "{\"userId\":\"666fd3b2bf31f343523ecd8a\",\"riskAmount\":250,\"positionSize\":25543.703887393927,\"requiredMargin\":510.8740777478786,\"baseQuantity\":0.23500000000000001,\"masterTradeId\":\"68f86e5e738aa71abf5deebb\",\"tradeId\":\"68f86f99d632cc64a3a746eb\",\"tradingAccountId\":\"68e48ecd9036e6a25cb6c035\",\"platformName\":\"BINANCE\",\"apiKey\":\"0af0050a82b0307bb4bfa22abd876412:d81a391f169714632771ca3c7e945e5992f656c6d32c12e7db4816cc3b70c11749186a64546b07bd337d54831097a2f34c40cbab45c1aa4a89a50b197cdae82c94683a67d8aa32adcaa03a1eb14ea6c4\",\"apiSecret\":\"fc1fc4bf673dbf8fc5f02c0a22ce76a0:668bde5210b1f30c89a63b1715258b354c97a2f0b3cd33f9162562cc1e79d25dc49defe5231acdd6c1397b55580b1aab9c86666390778f4bbdffbb6359b6dff2009c888a053afa5fb65212a5d4c68ab5\",\"tradeAmount\":510.8740777478786,\"availableBalance\":10503.9822256,\"baseAsset\":\"BTC\",\"quoteCurrency\":\"USDT\",\"quoteTotal\":510.8740777478786,\"entryPrice\":108610,\"stopLossPrice\":107547.0179,\"takeProfitPrice\":113935,\"tradeSide\":\"LONG\",\"orderPlacementType\":\"LIMIT\",\"accountType\":\"FUTURES\"}",
+            "attributes": {
+                "ApproximateReceiveCount": "1",
+                "AWSTraceHeader": "Root=1-68f86f99-e3629bde6d71080dc7ee14ea;Parent=15e8825d90ecfba8;Sampled=0;Lineage=2:797236a0:0",
+                "SentTimestamp": "1761111964334",
+                "SenderId": "AROAYL6XCX7JAAAD3X5BE:dev-processUserTrades",
+                "ApproximateFirstReceiveTimestamp": "1761111964345"
+            },
+            "messageAttributes": {},
+            "md5OfBody": "9980b490ba590041bd2864e811ab2be3",
+            "eventSource": "aws:sqs",
+            "eventSourceARN": "arn:aws:sqs:eu-west-1:575439814610:dev-processBinanceOrdersQueue",
+            "awsRegion": "eu-west-1"
+        }
+    ]
+}
