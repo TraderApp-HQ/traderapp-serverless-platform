@@ -8,6 +8,8 @@ import { getSecrets } from "src/config/secrets/helpers";
 import { ITradingEngineServiceSecrets } from "src/config/secrets/interfaces";
 import { TradingEngineService } from "src/services/TradingEngineService";
 import {
+    InvoiceStatus,
+    InvoiceType,
     OrderBatchStatus,
     OrderStatus,
     TradeSide,
@@ -15,10 +17,11 @@ import {
 } from "src/services/TradingEngineService/enums";
 import {
     IFailedTrade,
+    IInvoice,
     IProcessedTrade,
     IUserTradeAllocation,
 } from "src/services/TradingEngineService/interfaces";
-import { WalletsService } from "src/services/WalletsService";
+import { ICreateInvoiceResponse, WalletsService } from "src/services/WalletsService";
 import { IUserWallet, WalletType } from "src/types/wallets-service";
 
 export const getTradingEngineServiceSecrets = async () => {
@@ -27,6 +30,7 @@ export const getTradingEngineServiceSecrets = async () => {
         `${SecretLocation.tradingEngineServiceSecrets}/${env}`
     );
 };
+
 export const mapUserConnectedTradingPlatformToQueueUrl = async ({
     platformName,
     tradingEngineServiceSecrets,
@@ -65,7 +69,7 @@ export const computeTotalAmountToLock = (input: {
     } = input;
 
     // Compute trading fee of 1% of the trade amount or $1, whichever is greater
-    const tradingFee = Math.max(tradeAmount * 0.01, 1);
+    const tradingFee = Number((Math.max(tradeAmount * 0.01, 1)).toFixed(2));
 
     const tradingEngineService = new TradingEngineService();
     const { pnlAmount } = tradingEngineService.calculatePnL({
@@ -77,11 +81,609 @@ export const computeTotalAmountToLock = (input: {
         requiredMargin: tradeAmount,
     });
 
-    const totalAmountToLock = tradingFee + pnlAmount;
+    // Compute 30% of the projected profit amount, rounded to 2 decimal places
+    const projectedProfitShareAmount = Number((pnlAmount * 0.3).toFixed(2));
 
-    return { tradingFee, projectedProfitAmount: pnlAmount, totalAmountToLock };
+    // Compute total amount to lock
+    const totalAmountToLock = tradingFee + projectedProfitShareAmount;
+
+    return { tradingFee, projectedProfitShareAmount, totalAmountToLock };
 };
 
+// export const processUserTrades = async (
+//     queueMessages: IQueueMessageBody<IUserTradeAllocation>[]
+// ) => {
+//     try {
+//         const successMessageIds: string[] = [];
+//         const failedMessageIds: string[] = [];
+//         const insufficientBalanceUsers: Array<{
+//             userTrade: IUserTradeAllocation;
+//             wallet?: IUserWallet | null;
+//         }> = [];
+//         const walletsService = new WalletsService();
+
+//         // Get secrets
+//         const tradingEngineServiceSecrets =
+//             await getTradingEngineServiceSecrets();
+
+//         // Process all queue messages in parallel
+//         const userTradeProcessingResults = await Promise.allSettled(
+//             queueMessages.map(async (queueMessage) => {
+//                 try {
+//                     const userTrade = queueMessage.body;
+//                     // let isBalanceLocked = false;
+//                     let lockedAmount = 0;
+//                     let tradingFeeAmountPaid = 0;
+//                     let profitShareAmountPaid = 0;
+
+//                     // Compute total amount to lock
+//                     const { totalAmountToLock, projectedProfitShareAmount, tradingFee } = computeTotalAmountToLock({
+//                         entryPrice: userTrade.entryPrice,
+//                         takeProfitPrice: userTrade.takeProfitPrice,
+//                         tradeSide: userTrade.tradeSide,
+//                         tradeAmount: userTrade.tradeAmount,
+//                         riskUSDT: userTrade.riskAmount,
+//                         baseQuantity: userTrade.baseQuantity ?? 0,
+//                     });
+
+//                     // Get user wallet and invoices in parallel
+//                     const [userWallet, userUnpaidInvoices] = await Promise.all([
+//                         walletsService.getUserWallet({
+//                             userId: userTrade.userId,
+//                             currency: Currency.USDT,
+//                             walletType: WalletType.MAIN,
+//                         }),
+//                         walletsService.getInvoices({
+//                             userId: userTrade.userId,
+//                             statuses: [InvoiceStatus.PENDING, InvoiceStatus.OVERDUE],
+//                         }),
+//                     ]);
+
+//                     // Check if user has over 3 outstanding/unpaid invoices
+//                     const uniqueTradeIds = new Set(userUnpaidInvoices.map(invoice => invoice.tradeId));
+//                     if (uniqueTradeIds.size >= 3) {
+//                         insufficientBalanceUsers.push({
+//                             userTrade,
+//                             wallet: userWallet,
+//                         });
+
+//                         return {
+//                             messageId: queueMessage.messageId,
+//                             userTrade,
+//                             isSuccess: false,
+//                         };
+//                     }
+
+//                     // Determine how much to lock based on available balance
+//                     const availableBalance = userWallet?.availableBalance || 0;
+//                     let invoiceStatus: InvoiceStatus;
+
+//                     if (availableBalance < 1) {
+//                         // Case 1: Balance < $1 - Don't lock, create PENDING invoices
+//                         lockedAmount = 0;
+//                         tradingFeeAmountPaid = 0;
+//                         profitShareAmountPaid = 0;
+//                         // isBalanceLocked = false;
+//                         invoiceStatus = InvoiceStatus.PENDING;
+//                     } else if (availableBalance >= totalAmountToLock) {
+//                         // Case 2: Full balance available - lock exact amount needed
+//                         lockedAmount = totalAmountToLock;
+//                         tradingFeeAmountPaid = tradingFee;
+//                         profitShareAmountPaid = projectedProfitShareAmount;
+//                         invoiceStatus = InvoiceStatus.LOCKED;
+
+//                         // Lock the balance
+//                         const lockUserBalanceResult = await walletsService.lockUserBalance({
+//                             userId: userTrade.userId,
+//                             amount: lockedAmount,
+//                             currency: Currency.USDT,
+//                             walletType: WalletType.MAIN,
+//                         });
+
+//                         if (!lockUserBalanceResult.success) {
+//                             insufficientBalanceUsers.push({
+//                                 userTrade,
+//                                 wallet: lockUserBalanceResult.wallet,
+//                             });
+
+//                             return {
+//                                 messageId: queueMessage.messageId,
+//                                 userTrade,
+//                                 isSuccess: false,
+//                             };
+//                         }
+
+//                         // isBalanceLocked = true;
+//                     } else {
+//                         // Case 3: Partial balance - lock entire available balance
+//                         lockedAmount = availableBalance;
+//                         invoiceStatus = InvoiceStatus.LOCKED;
+
+//                         // Prioritize trading fee first, then profit share
+//                         if (availableBalance >= tradingFee) {
+//                             tradingFeeAmountPaid = tradingFee;
+//                             profitShareAmountPaid = availableBalance - tradingFee;
+//                         } else {
+//                             tradingFeeAmountPaid = availableBalance;
+//                             profitShareAmountPaid = 0;
+//                         }
+
+//                         // Lock the balance
+//                         const lockUserBalanceResult = await walletsService.lockUserBalance({
+//                             userId: userTrade.userId,
+//                             amount: lockedAmount,
+//                             currency: Currency.USDT,
+//                             walletType: WalletType.MAIN,
+//                         });
+
+//                         if (!lockUserBalanceResult.success) {
+//                             insufficientBalanceUsers.push({
+//                                 userTrade,
+//                                 wallet: lockUserBalanceResult.wallet,
+//                             });
+
+//                             return {
+//                                 messageId: queueMessage.messageId,
+//                                 userTrade,
+//                                 isSuccess: false,
+//                             };
+//                         }
+
+//                         // isBalanceLocked = true;
+//                     }
+
+//                     // Create invoices with appropriate amounts paid and status
+//                     const [tradingFeeInvoice, projectedProfitShareInvoice] = await Promise.all([
+//                         walletsService.createInvoice({
+//                             userId: userTrade.userId,
+//                             invoiceType: InvoiceType.TRADING_FEE,
+//                             amountDue: tradingFee,
+//                             amountPaid: tradingFeeAmountPaid,
+//                             currency: Currency.USDT,
+//                             tradeId: userTrade.tradeId,
+//                             tradeSide: userTrade.tradeSide,
+//                             baseAsset: userTrade.baseAsset,
+//                             logoUrl: "",
+//                             quoteCurrency: userTrade.quoteCurrency,
+//                             status: invoiceStatus, // Use determined status
+//                         }),
+//                         walletsService.createInvoice({
+//                             userId: userTrade.userId,
+//                             invoiceType: InvoiceType.PROFIT_SHARE,
+//                             amountDue: projectedProfitShareAmount,
+//                             amountPaid: profitShareAmountPaid,
+//                             currency: Currency.USDT,
+//                             tradeId: userTrade.tradeId,
+//                             tradeSide: userTrade.tradeSide,
+//                             baseAsset: userTrade.baseAsset,
+//                             logoUrl: "",
+//                             quoteCurrency: userTrade.quoteCurrency,
+//                             status: invoiceStatus, // Use determined status
+//                         }),
+//                     ]);
+
+//                     // If either invoice creation fails, push to insufficient balance array
+//                     if (!tradingFeeInvoice.success || !projectedProfitShareInvoice.success) {
+//                         insufficientBalanceUsers.push({
+//                             userTrade,
+//                             wallet: userWallet,
+//                         });
+
+//                         return {
+//                             messageId: queueMessage.messageId,
+//                             userTrade,
+//                             isSuccess: false,
+//                         };
+//                     }
+
+//                     // Get queue url for user connected trading platform
+//                     const queueUrl = await mapUserConnectedTradingPlatformToQueueUrl({
+//                         platformName: userTrade.platformName,
+//                         tradingEngineServiceSecrets,
+//                     });
+
+//                     // Publish message to queue to process binance orders
+//                     await publishMessageToQueue({
+//                         queueUrl,
+//                         message: JSON.stringify(userTrade),
+//                     });
+
+//                     return {
+//                         messageId: queueMessage.messageId,
+//                         userTrade,
+//                         isSuccess: true,
+//                     };
+//                 } catch (error) {
+//                     console.error("Error processing user trade", {
+//                         error,
+//                         userId: queueMessage.body.userId,
+//                         masterTradeId: queueMessage.body.masterTradeId,
+//                     });
+
+//                     // This is a real error, should be marked as failed for retry
+//                     throw error;
+//                 }
+//             })
+//         );
+
+//         // Process results
+//         userTradeProcessingResults.forEach((result) => {
+//             if (result.status === "fulfilled") {
+//                 successMessageIds.push(result.value.messageId);
+//             } else {
+//                 // Real errors should be retried
+//                 failedMessageIds.push(result.reason.messageId || "unknown");
+//             }
+//         });
+
+//         // Cancel pending trade and Send notifications for users with insufficient balance
+//         if (insufficientBalanceUsers.length > 0) {
+//             log.info("Users with insufficient balance found", {
+//                 count: insufficientBalanceUsers.length,
+//                 users: insufficientBalanceUsers,
+//             });
+
+//             await Promise.allSettled(
+//                 insufficientBalanceUsers.map(async ({ userTrade }) => {
+//                     try {
+//                         // Create failed order object
+//                         const failedOrder: IFailedTrade = {
+//                             userId: userTrade.userId,
+//                             tradeId: new mongoose.Types.ObjectId(
+//                                 userTrade.tradeId
+//                             ),
+//                         };
+
+//                         // publish failed order to queue
+//                         await publishMessageToQueue({
+//                             queueUrl:
+//                                 tradingEngineServiceSecrets.HANDLE_FAILED_TRADES_QUEUE ??
+//                                 "",
+//                             message: JSON.stringify(failedOrder),
+//                         });
+
+//                         // TODO: Send notification to users about insufficient balance
+//                     } catch (error) {
+//                         console.error(
+//                             "Error canceling and sending notification",
+//                             { error }
+//                         );
+//                     }
+//                 })
+//             );
+//         }
+
+//         log.info("User trades processing completed", {
+//             totalProcessed: queueMessages.length,
+//             successful: successMessageIds.length,
+//             failed: failedMessageIds.length,
+//             insufficientBalance: insufficientBalanceUsers.length,
+//         });
+
+//         return { successMessageIds, failedMessageIds };
+//     } catch (error) {
+//         console.error("Critical error in processUserTrades", { error });
+//         return {
+//             successMessageIds: [],
+//             failedMessageIds: queueMessages.map((qm) => qm.messageId),
+//         };
+//     }
+// };
+
+// Helper function to check if user has exceeded unpaid invoices limit
+
+const checkUserUnpaidInvoicesLimit = (
+    unpaidInvoices: IInvoice[]
+): boolean => {
+    const uniqueTradeIds = new Set(
+        unpaidInvoices.map((invoice) => invoice.tradeId)
+    );
+    return uniqueTradeIds.size >= 3;
+};
+
+// Helper function to determine balance lock strategy
+const determineBalanceLockStrategy = ({
+    availableBalance,
+    totalAmountToLock,
+    tradingFee,
+    projectedProfitShareAmount,
+}: {
+    availableBalance: number;
+    totalAmountToLock: number;
+    tradingFee: number;
+    projectedProfitShareAmount: number;
+}): {
+    lockedAmount: number;
+    tradingFeeAmountPaid: number;
+    profitShareAmountPaid: number;
+    invoiceStatus: InvoiceStatus;
+    shouldLock: boolean;
+} => {
+    if (availableBalance < 1) {
+        // Case 1: Balance < $1 - Don't lock, create PENDING invoices
+        return {
+            lockedAmount: 0,
+            tradingFeeAmountPaid: 0,
+            profitShareAmountPaid: 0,
+            invoiceStatus: InvoiceStatus.PENDING,
+            shouldLock: false,
+        };
+    } else if (availableBalance >= totalAmountToLock) {
+        // Case 2: Full balance available - lock exact amount needed
+        return {
+            lockedAmount: totalAmountToLock,
+            tradingFeeAmountPaid: tradingFee,
+            profitShareAmountPaid: projectedProfitShareAmount,
+            invoiceStatus: InvoiceStatus.LOCKED,
+            shouldLock: true,
+        };
+    } else {
+        // Case 3: Partial balance - lock entire available balance
+        const tradingFeeAmountPaid =
+            availableBalance >= tradingFee ? tradingFee : availableBalance;
+        const profitShareAmountPaid =
+            availableBalance >= tradingFee ? availableBalance - tradingFee : 0;
+
+        return {
+            lockedAmount: availableBalance,
+            tradingFeeAmountPaid,
+            profitShareAmountPaid,
+            invoiceStatus: InvoiceStatus.LOCKED,
+            shouldLock: true,
+        };
+    }
+};
+
+// Helper function to create trade invoices
+const createTradeInvoices = async ({
+    walletsService,
+    userTrade,
+    tradingFee,
+    tradingFeeAmountPaid,
+    projectedProfitShareAmount,
+    profitShareAmountPaid,
+    invoiceStatus,
+}: {
+    walletsService: WalletsService;
+    userTrade: IUserTradeAllocation;
+    tradingFee: number;
+    tradingFeeAmountPaid: number;
+    projectedProfitShareAmount: number;
+    profitShareAmountPaid: number;
+    invoiceStatus: InvoiceStatus;
+}): Promise<{
+    tradingFeeInvoice: ICreateInvoiceResponse;
+    profitShareInvoice: ICreateInvoiceResponse;
+}> => {
+    const [tradingFeeInvoice, profitShareInvoice] = await Promise.all([
+        walletsService.createInvoice({
+            userId: userTrade.userId,
+            invoiceType: InvoiceType.TRADING_FEE,
+            amountDue: tradingFee,
+            amountPaid: tradingFeeAmountPaid,
+            currency: Currency.USDT,
+            tradeId: userTrade.tradeId,
+            tradeSide: userTrade.tradeSide,
+            baseAsset: userTrade.baseAsset,
+            logoUrl: "",
+            quoteCurrency: userTrade.quoteCurrency,
+            status: invoiceStatus,
+        }),
+        walletsService.createInvoice({
+            userId: userTrade.userId,
+            invoiceType: InvoiceType.PROFIT_SHARE,
+            amountDue: projectedProfitShareAmount,
+            amountPaid: profitShareAmountPaid,
+            currency: Currency.USDT,
+            tradeId: userTrade.tradeId,
+            tradeSide: userTrade.tradeSide,
+            baseAsset: userTrade.baseAsset,
+            logoUrl: "",
+            quoteCurrency: userTrade.quoteCurrency,
+            status: invoiceStatus,
+        }),
+    ]);
+
+    return { tradingFeeInvoice, profitShareInvoice };
+};
+
+// Helper function to publish user trade to appropriate queue
+const publishUserTradeToQueue = async ({
+    userTrade,
+    tradingEngineServiceSecrets,
+}: {
+    userTrade: IUserTradeAllocation;
+    tradingEngineServiceSecrets: ITradingEngineServiceSecrets;
+}): Promise<void> => {
+    const queueUrl = await mapUserConnectedTradingPlatformToQueueUrl({
+        platformName: userTrade.platformName,
+        tradingEngineServiceSecrets,
+    });
+
+    await publishMessageToQueue({
+        queueUrl,
+        message: JSON.stringify(userTrade),
+    });
+};
+
+// Helper function to process a single user trade
+const processSingleUserTrade = async ({
+    queueMessage,
+    walletsService,
+    tradingEngineServiceSecrets,
+}: {
+    queueMessage: IQueueMessageBody<IUserTradeAllocation>;
+    walletsService: WalletsService;
+    tradingEngineServiceSecrets: ITradingEngineServiceSecrets;
+}): Promise<{
+    messageId: string;
+    userTrade: IUserTradeAllocation;
+    isSuccess: boolean;
+    shouldAddToInsufficientBalance?: boolean;
+    wallet?: IUserWallet | null;
+}> => {
+    const userTrade = queueMessage.body;
+
+    try {
+        // Compute total amount to lock
+        const { totalAmountToLock, projectedProfitShareAmount, tradingFee } =
+            computeTotalAmountToLock({
+                entryPrice: userTrade.entryPrice,
+                takeProfitPrice: userTrade.takeProfitPrice,
+                tradeSide: userTrade.tradeSide,
+                tradeAmount: userTrade.tradeAmount,
+                riskUSDT: userTrade.riskAmount,
+                baseQuantity: userTrade.baseQuantity ?? 0,
+            });
+
+        // Get user wallet and invoices in parallel
+        const [userWallet, userUnpaidInvoices] = await Promise.all([
+            walletsService.getUserWallet({
+                userId: userTrade.userId,
+                currency: Currency.USDT,
+                walletType: WalletType.MAIN,
+            }),
+            walletsService.getInvoices({
+                userId: userTrade.userId,
+                statuses: [InvoiceStatus.PENDING, InvoiceStatus.OVERDUE],
+            }),
+        ]);
+
+        // Check if user has exceeded unpaid invoices limit
+        const hasExceededUnpaidInvoicesLimit = checkUserUnpaidInvoicesLimit(userUnpaidInvoices);
+        if (hasExceededUnpaidInvoicesLimit) {
+            return {
+                messageId: queueMessage.messageId,
+                userTrade,
+                isSuccess: false,
+                shouldAddToInsufficientBalance: true,
+                wallet: userWallet,
+            };
+        }
+
+        // Determine balance lock strategy
+        const availableBalance = userWallet?.availableBalance || 0;
+        const {
+            lockedAmount,
+            tradingFeeAmountPaid,
+            profitShareAmountPaid,
+            invoiceStatus,
+            shouldLock,
+        } = determineBalanceLockStrategy({
+            availableBalance,
+            totalAmountToLock,
+            tradingFee,
+            projectedProfitShareAmount,
+        });
+
+        // Lock balance if needed
+        if (shouldLock) {
+            const lockUserBalanceResult = await walletsService.lockUserBalance({
+                userId: userTrade.userId,
+                amount: lockedAmount,
+                currency: Currency.USDT,
+                walletType: WalletType.MAIN,
+            });
+
+            if (!lockUserBalanceResult.success) {
+                return {
+                    messageId: queueMessage.messageId,
+                    userTrade,
+                    isSuccess: false,
+                    shouldAddToInsufficientBalance: true,
+                    wallet: lockUserBalanceResult.wallet,
+                };
+            }
+        }
+
+        // Create invoices
+        const { tradingFeeInvoice, profitShareInvoice } =
+            await createTradeInvoices({
+                walletsService,
+                userTrade,
+                tradingFee,
+                tradingFeeAmountPaid,
+                projectedProfitShareAmount,
+                profitShareAmountPaid,
+                invoiceStatus,
+            });
+
+        // Check if invoice creation was successful
+        if (!tradingFeeInvoice.success || !profitShareInvoice.success) {
+            return {
+                messageId: queueMessage.messageId,
+                userTrade,
+                isSuccess: false,
+                shouldAddToInsufficientBalance: true,
+                wallet: userWallet,
+            };
+        }
+
+        // Publish to trading platform queue
+        await publishUserTradeToQueue({
+            userTrade,
+            tradingEngineServiceSecrets,
+        });
+
+        return {
+            messageId: queueMessage.messageId,
+            userTrade,
+            isSuccess: true,
+        };
+    } catch (error) {
+        console.error("Error processing single user trade", {
+            error,
+            userId: userTrade.userId,
+            masterTradeId: userTrade.masterTradeId,
+        });
+        throw error;
+    }
+};
+
+// Helper function to handle users with insufficient balance
+const handleInsufficientBalanceUsers = async ({
+    insufficientBalanceUsers,
+    tradingEngineServiceSecrets,
+}: {
+    insufficientBalanceUsers: Array<{
+        userTrade: IUserTradeAllocation;
+        wallet?: IUserWallet | null;
+    }>;
+    tradingEngineServiceSecrets: ITradingEngineServiceSecrets;
+}): Promise<void> => {
+    if (insufficientBalanceUsers.length === 0) return;
+
+    log.info("Users with insufficient balance found", {
+        count: insufficientBalanceUsers.length,
+        users: insufficientBalanceUsers,
+    });
+
+    await Promise.allSettled(
+        insufficientBalanceUsers.map(async ({ userTrade }) => {
+            try {
+                const failedOrder: IFailedTrade = {
+                    userId: userTrade.userId,
+                    tradeId: new mongoose.Types.ObjectId(userTrade.tradeId),
+                };
+
+                await publishMessageToQueue({
+                    queueUrl:
+                        tradingEngineServiceSecrets.HANDLE_FAILED_TRADES_QUEUE ??
+                        "",
+                    message: JSON.stringify(failedOrder),
+                });
+
+                // TODO: Send notification to users about insufficient balance
+            } catch (error) {
+                console.error("Error canceling and sending notification", {
+                    error,
+                });
+            }
+        })
+    );
+};
+
+// Main function - now much cleaner
 export const processUserTrades = async (
     queueMessages: IQueueMessageBody<IUserTradeAllocation>[]
 ) => {
@@ -102,95 +704,27 @@ export const processUserTrades = async (
         const userTradeProcessingResults = await Promise.allSettled(
             queueMessages.map(async (queueMessage) => {
                 try {
-                    const userTrade = queueMessage.body;
-
-                    // Compute total amount to lock
-                    const { totalAmountToLock } = computeTotalAmountToLock({
-                        entryPrice: userTrade.entryPrice,
-                        takeProfitPrice: userTrade.takeProfitPrice,
-                        tradeSide: userTrade.tradeSide,
-                        tradeAmount: userTrade.tradeAmount,
-                        riskUSDT: userTrade.riskAmount,
-                        baseQuantity: userTrade.baseQuantity ?? 0,
+                    const result = await processSingleUserTrade({
+                        queueMessage,
+                        walletsService,
+                        tradingEngineServiceSecrets,
                     });
 
-                    // Get user wallet
-                    const userWallet = await walletsService.getUserWallet({
-                        userId: userTrade.userId,
-                        currency: Currency.USDT,
-                        walletType: WalletType.MAIN,
-                    });
-
-                    // If user wallet is not found or insufficient balance, push to insufficient balance array
-                    if (
-                        !userWallet ||
-                        userWallet.availableBalance < totalAmountToLock
-                    ) {
-                        // TODO: Add a check to see if user has over 3 outstanding/unpaid invoices
-                        // If so, push to insufficient balance array
-                        // If not, continue
-
+                    // Track insufficient balance users
+                    if (result.shouldAddToInsufficientBalance) {
                         insufficientBalanceUsers.push({
-                            userTrade,
-                            wallet: userWallet,
+                            userTrade: result.userTrade,
+                            wallet: result.wallet,
                         });
-
-                        return {
-                            messageId: queueMessage.messageId,
-                            userTrade,
-                            isSuccess: false,
-                        };
                     }
 
-                    // Lock the balance if sufficient
-                    const lockUserBalanceResult =
-                        await walletsService.lockUserBalance({
-                            userId: userTrade.userId,
-                            amount: totalAmountToLock,
-                            currency: Currency.USDT,
-                            walletType: WalletType.MAIN,
-                        });
-
-                    // If lockUserBalanceResult is not successful, push to insufficient balance array
-                    if (!lockUserBalanceResult.success) {
-                        insufficientBalanceUsers.push({
-                            userTrade,
-                            wallet: lockUserBalanceResult.wallet,
-                        });
-
-                        return {
-                            messageId: queueMessage.messageId,
-                            userTrade,
-                            isSuccess: false,
-                        };
-                    }
-
-                    // Get queue url for user connected trading platform
-                    const queueUrl =
-                        await mapUserConnectedTradingPlatformToQueueUrl({
-                            platformName: userTrade.platformName,
-                            tradingEngineServiceSecrets,
-                        });
-
-                    // Publish message to queue to process binance orders
-                    await publishMessageToQueue({
-                        queueUrl,
-                        message: JSON.stringify(userTrade),
-                    });
-
-                    return {
-                        messageId: queueMessage.messageId,
-                        userTrade,
-                        isSuccess: true,
-                    };
+                    return result;
                 } catch (error) {
                     console.error("Error processing user trade", {
                         error,
                         userId: queueMessage.body.userId,
                         masterTradeId: queueMessage.body.masterTradeId,
                     });
-
-                    // This is a real error, should be marked as failed for retry
                     throw error;
                 }
             })
@@ -201,47 +735,15 @@ export const processUserTrades = async (
             if (result.status === "fulfilled") {
                 successMessageIds.push(result.value.messageId);
             } else {
-                // Real errors should be retried
                 failedMessageIds.push(result.reason.messageId || "unknown");
             }
         });
 
-        // Cancel pending trade and Send notifications for users with insufficient balance
-        if (insufficientBalanceUsers.length > 0) {
-            log.info("Users with insufficient balance found", {
-                count: insufficientBalanceUsers.length,
-                users: insufficientBalanceUsers,
-            });
-
-            await Promise.allSettled(
-                insufficientBalanceUsers.map(async ({ userTrade }) => {
-                    try {
-                        // Create failed order object
-                        const failedOrder: IFailedTrade = {
-                            userId: userTrade.userId,
-                            tradeId: new mongoose.Types.ObjectId(
-                                userTrade.tradeId
-                            ),
-                        };
-
-                        // publish failed order to queue
-                        await publishMessageToQueue({
-                            queueUrl:
-                                tradingEngineServiceSecrets.HANDLE_FAILED_TRADES_QUEUE ??
-                                "",
-                            message: JSON.stringify(failedOrder),
-                        });
-
-                        // TODO: Send notification to users about insufficient balance
-                    } catch (error) {
-                        console.error(
-                            "Error canceling and sending notification",
-                            { error }
-                        );
-                    }
-                })
-            );
-        }
+        // Handle users with insufficient balance
+        await handleInsufficientBalanceUsers({
+            insufficientBalanceUsers,
+            tradingEngineServiceSecrets,
+        });
 
         log.info("User trades processing completed", {
             totalProcessed: queueMessages.length,

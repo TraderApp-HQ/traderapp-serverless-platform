@@ -8,6 +8,7 @@ import {
     OrderType,
     TradeSide,
     TradeStatus,
+    InvoiceStatus,
 } from "src/services/TradingEngineService/enums";
 import {
     IFailedTrade,
@@ -129,6 +130,7 @@ describe("Trade Service Helpers", () => {
             tradeSide: TradeSide.LONG,
             orderPlacementType: OrderPlacementType.MARKET,
             accountType: "FUTURES" as AccountType,
+            baseQuantity: 0.001,
             ...overrides,
         });
 
@@ -151,7 +153,7 @@ describe("Trade Service Helpers", () => {
             awsRegion: "us-east-1",
         });
 
-        it("should process trades with sufficient balance successfully", async () => {
+        it("should process trades with full balance successfully", async () => {
             const userTrade = createMockUserTrade();
             const queueMessage = createQueueMessage(userTrade);
 
@@ -160,7 +162,15 @@ describe("Trade Service Helpers", () => {
                     availableBalance: 1000,
                     userId: "user123",
                 }),
-                lockUserBalance: jest.fn().mockResolvedValue({ success: true }),
+                getInvoices: jest.fn().mockResolvedValue([]), // No unpaid invoices
+                lockUserBalance: jest.fn().mockResolvedValue({
+                    success: true,
+                    wallet: { availableBalance: 1000 },
+                }),
+                createInvoice: jest.fn().mockResolvedValue({
+                    success: true,
+                    invoice: { id: "invoice123" },
+                }),
             };
             (WalletsService as jest.Mock).mockImplementation(
                 () => mockWalletsService
@@ -171,28 +181,125 @@ describe("Trade Service Helpers", () => {
 
             expect(result.successMessageIds).toHaveLength(1);
             expect(result.failedMessageIds).toHaveLength(0);
+            expect(mockWalletsService.getInvoices).toHaveBeenCalled();
             expect(mockWalletsService.lockUserBalance).toHaveBeenCalled();
-            expect(mockPublishMessageToQueue).toHaveBeenCalled();
+            expect(mockWalletsService.createInvoice).toHaveBeenCalledTimes(2); // Trading fee + profit share
+            expect(mockPublishMessageToQueue).toHaveBeenCalledWith({
+                queueUrl: mockSecrets.PROCESS_BINANCE_ORDERS_QUEUE,
+                message: expect.any(String),
+            });
         });
 
-        it("should handle insufficient balance by publishing to failed trades queue", async () => {
+        it("should process trades with partial balance successfully", async () => {
             const userTrade = createMockUserTrade();
             const queueMessage = createQueueMessage(userTrade);
 
             const mockWalletsService = {
                 getUserWallet: jest.fn().mockResolvedValue({
-                    availableBalance: 10,
+                    availableBalance: 20, // Less than required but >= $1
                     userId: "user123",
                 }),
-                lockUserBalance: jest.fn(),
+                getInvoices: jest.fn().mockResolvedValue([]),
+                lockUserBalance: jest.fn().mockResolvedValue({
+                    success: true,
+                    wallet: { availableBalance: 20 },
+                }),
+                createInvoice: jest.fn().mockResolvedValue({
+                    success: true,
+                    invoice: { id: "invoice123" },
+                }),
             };
             (WalletsService as jest.Mock).mockImplementation(
                 () => mockWalletsService
             );
             mockPublishMessageToQueue.mockResolvedValue(undefined);
 
-            await processUserTrades([queueMessage]);
+            const result = await processUserTrades([queueMessage]);
 
+            expect(result.successMessageIds).toHaveLength(1);
+            expect(mockWalletsService.lockUserBalance).toHaveBeenCalledWith({
+                userId: userTrade.userId,
+                amount: 20, // Lock entire available balance
+                currency: expect.any(String),
+                walletType: expect.any(String),
+            });
+            // Verify invoices created with LOCKED status
+            expect(mockWalletsService.createInvoice).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    status: InvoiceStatus.LOCKED,
+                })
+            );
+        });
+
+        it("should create PENDING invoices when balance is less than $1 and continue processing", async () => {
+            const userTrade = createMockUserTrade();
+            const queueMessage = createQueueMessage(userTrade);
+
+            const mockWalletsService = {
+                getUserWallet: jest.fn().mockResolvedValue({
+                    availableBalance: 0.5, // Less than $1
+                    userId: "user123",
+                }),
+                getInvoices: jest.fn().mockResolvedValue([]),
+                lockUserBalance: jest.fn(), // Should NOT be called
+                createInvoice: jest.fn().mockResolvedValue({
+                    success: true,
+                    invoice: { id: "invoice123" },
+                }),
+            };
+            (WalletsService as jest.Mock).mockImplementation(
+                () => mockWalletsService
+            );
+            mockPublishMessageToQueue.mockResolvedValue(undefined);
+
+            const result = await processUserTrades([queueMessage]);
+
+            expect(result.successMessageIds).toHaveLength(1);
+            expect(mockWalletsService.lockUserBalance).not.toHaveBeenCalled();
+            // Verify invoices created with PENDING status and $0 paid
+            expect(mockWalletsService.createInvoice).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    status: InvoiceStatus.PENDING,
+                    amountPaid: 0,
+                })
+            );
+            expect(mockPublishMessageToQueue).toHaveBeenCalledWith({
+                queueUrl: mockSecrets.PROCESS_BINANCE_ORDERS_QUEUE,
+                message: expect.any(String),
+            });
+        });
+
+        it("should handle users with 3+ unpaid invoices by publishing to failed trades queue", async () => {
+            const userTrade = createMockUserTrade();
+            const queueMessage = createQueueMessage(userTrade);
+
+            // Create 3 unpaid invoices for different trades
+            const unpaidInvoices = [
+                { tradeId: "trade1", status: InvoiceStatus.PENDING },
+                { tradeId: "trade2", status: InvoiceStatus.PENDING },
+                { tradeId: "trade3", status: InvoiceStatus.OVERDUE },
+            ];
+
+            const mockWalletsService = {
+                getUserWallet: jest.fn().mockResolvedValue({
+                    availableBalance: 1000,
+                    userId: "user123",
+                }),
+                getInvoices: jest.fn().mockResolvedValue(unpaidInvoices),
+                lockUserBalance: jest.fn(),
+                createInvoice: jest.fn(),
+            };
+            (WalletsService as jest.Mock).mockImplementation(
+                () => mockWalletsService
+            );
+            mockPublishMessageToQueue.mockResolvedValue(undefined);
+
+            const result = await processUserTrades([queueMessage]);
+
+            expect(result.successMessageIds).toHaveLength(1);
+            expect(mockWalletsService.lockUserBalance).not.toHaveBeenCalled();
+            expect(mockWalletsService.createInvoice).not.toHaveBeenCalled();
+            // Should publish to failed trades queue
             expect(mockPublishMessageToQueue).toHaveBeenCalledWith({
                 queueUrl: mockSecrets.HANDLE_FAILED_TRADES_QUEUE,
                 message: expect.stringContaining(userTrade.userId),
@@ -204,12 +311,49 @@ describe("Trade Service Helpers", () => {
             const queueMessage = createQueueMessage(userTrade);
 
             const mockWalletsService = {
-                getUserWallet: jest
-                    .fn()
-                    .mockResolvedValue({ availableBalance: 1000 }),
+                getUserWallet: jest.fn().mockResolvedValue({
+                    availableBalance: 1000,
+                    userId: "user123",
+                }),
+                getInvoices: jest.fn().mockResolvedValue([]),
                 lockUserBalance: jest.fn().mockResolvedValue({
                     success: false,
                     wallet: { availableBalance: 1000 },
+                }),
+                createInvoice: jest.fn(),
+            };
+            (WalletsService as jest.Mock).mockImplementation(
+                () => mockWalletsService
+            );
+            mockPublishMessageToQueue.mockResolvedValue(undefined);
+
+            const result = await processUserTrades([queueMessage]);
+
+            expect(result.successMessageIds).toHaveLength(1);
+            expect(mockWalletsService.createInvoice).not.toHaveBeenCalled();
+            expect(mockPublishMessageToQueue).toHaveBeenCalledWith({
+                queueUrl: mockSecrets.HANDLE_FAILED_TRADES_QUEUE,
+                message: expect.any(String),
+            });
+        });
+
+        it("should handle invoice creation failure", async () => {
+            const userTrade = createMockUserTrade();
+            const queueMessage = createQueueMessage(userTrade);
+
+            const mockWalletsService = {
+                getUserWallet: jest.fn().mockResolvedValue({
+                    availableBalance: 1000,
+                    userId: "user123",
+                }),
+                getInvoices: jest.fn().mockResolvedValue([]),
+                lockUserBalance: jest.fn().mockResolvedValue({
+                    success: true,
+                    wallet: { availableBalance: 1000 },
+                }),
+                createInvoice: jest.fn().mockResolvedValue({
+                    success: false, // Invoice creation fails
+                    error: "Invoice creation failed",
                 }),
             };
             (WalletsService as jest.Mock).mockImplementation(
@@ -217,12 +361,35 @@ describe("Trade Service Helpers", () => {
             );
             mockPublishMessageToQueue.mockResolvedValue(undefined);
 
-            await processUserTrades([queueMessage]);
+            const result = await processUserTrades([queueMessage]);
 
+            expect(result.successMessageIds).toHaveLength(1);
+            expect(mockWalletsService.lockUserBalance).toHaveBeenCalled();
+            expect(mockWalletsService.createInvoice).toHaveBeenCalled();
+            // Should publish to failed trades queue
             expect(mockPublishMessageToQueue).toHaveBeenCalledWith({
                 queueUrl: mockSecrets.HANDLE_FAILED_TRADES_QUEUE,
-                message: expect.any(String),
+                message: expect.stringContaining(userTrade.userId),
             });
+        });
+
+        it("should handle processing errors and mark as failed", async () => {
+            const userTrade = createMockUserTrade();
+            const queueMessage = createQueueMessage(userTrade);
+
+            const mockWalletsService = {
+                getUserWallet: jest.fn(() => Promise.reject(new Error("Database error"))),
+                getInvoices: jest.fn().mockResolvedValue([]),
+                lockUserBalance: jest.fn(),
+                createInvoice: jest.fn(),
+            };
+
+            (WalletsService as jest.Mock).mockImplementation(() => mockWalletsService);
+
+            const result = await processUserTrades([queueMessage]);
+
+            expect(result.failedMessageIds).toHaveLength(1);
+            expect(result.successMessageIds).toHaveLength(0);
         });
     });
 

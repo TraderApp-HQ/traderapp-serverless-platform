@@ -41,14 +41,22 @@ interface ICreateInvoiceInput {
     userId: string;
     currency: Currency;
     amountDue: number;
+    amountPaid?: number;
     invoiceType: InvoiceType;
     tradeId: string;
     tradeSide: TradeSide;
     baseAsset: string;
     logoUrl?: string;
     quoteCurrency: string;
+    status?: InvoiceStatus;
 }
 
+export interface ICreateInvoiceResponse {
+    success: boolean;
+    invoice?: IInvoice;
+    error?: string;
+    message?: string;
+}
 interface IUpdateInvoiceInput {
     invoiceId: string;
     amountPaid?: number;
@@ -64,7 +72,7 @@ export class WalletsService {
     private initialized: boolean = false;
     private initializationPromise: Promise<void> | null = null;
 
-    constructor() {}
+    constructor() { }
 
     // Initialize the service once
     private async initialize(): Promise<void> {
@@ -411,7 +419,7 @@ export class WalletsService {
             const completedDeposits = transactions.filter(
                 (t) =>
                     t.queueMessage.body.data.status ===
-                        CryptopayWebhookEventStatus.completed && t.userId
+                    CryptopayWebhookEventStatus.completed && t.userId
             );
 
             const transactionsToCredit = await Promise.all(
@@ -431,7 +439,7 @@ export class WalletsService {
                             if (
                                 existingTransaction &&
                                 existingTransaction.status ===
-                                    TransactionStatus.SUCCESS
+                                TransactionStatus.SUCCESS
                             ) {
                                 console.error(
                                     `Transaction ${transaction.externalTransactionId} already credited, skipping.`
@@ -1117,18 +1125,15 @@ export class WalletsService {
         userId,
         currency,
         amountDue,
+        amountPaid = 0,
         invoiceType,
         tradeId,
         tradeSide,
         baseAsset,
         logoUrl = "",
         quoteCurrency,
-    }: ICreateInvoiceInput): Promise<{
-        success: boolean;
-        invoice?: IInvoice;
-        error?: string;
-        message?: string;
-    }> {
+        status = InvoiceStatus.PENDING,
+    }: ICreateInvoiceInput): Promise<ICreateInvoiceResponse> {
         try {
             // Ensure service is initialized
             await this.initialize();
@@ -1157,14 +1162,13 @@ export class WalletsService {
 
             // Create new invoice
             const invoiceData: Partial<IInvoice> = {
-                id: new mongoose.Types.ObjectId().toString(),
                 userId,
                 invoiceType,
                 currency,
                 amountDue,
-                amountPaid: 0,
-                amountOutstanding: amountDue,
-                status: InvoiceStatus.PENDING,
+                amountPaid,
+                amountOutstanding: amountDue - amountPaid,
+                status,
                 tradeId,
                 tradeSide,
                 baseAsset,
@@ -1226,7 +1230,7 @@ export class WalletsService {
         }
     }
 
-    public async getInvoices({
+    public async getInvoice({
         userId,
         tradeId,
         status,
@@ -1236,6 +1240,44 @@ export class WalletsService {
         tradeId?: string;
         status?: InvoiceStatus;
         invoiceType?: InvoiceType;
+    } = {}): Promise<IInvoice | null> {
+        try {
+            // Ensure service is initialized
+            await this.initialize();
+            const connection = await this.getConnection();
+
+            const invoicesCollection = new MongoDBClient<IInvoice>(
+                connection,
+                WalletsServiceCollections.invoices
+            );
+
+            // Build filter object
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const filter: Record<string, any> = {};
+            if (userId) filter.userId = userId;
+            if (tradeId) filter.tradeId = tradeId;
+            if (status) filter.status = status;
+            if (invoiceType) filter.invoiceType = invoiceType;
+
+            const invoice = await invoicesCollection.findOne(filter);
+
+            return invoice;
+        } catch (error) {
+            console.error("General error in getInvoices:", { error });
+            throw error;
+        }
+    }
+
+    public async getInvoices({
+        userId,
+        tradeId,
+        statuses,
+        invoiceTypes,
+    }: {
+        userId?: string;
+        tradeId?: string;
+        statuses?: InvoiceStatus[];
+        invoiceTypes?: InvoiceType[];
     } = {}): Promise<IInvoice[]> {
         try {
             // Ensure service is initialized
@@ -1248,11 +1290,12 @@ export class WalletsService {
             );
 
             // Build filter object
-            const filter: Record<string, string> = {};
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const filter: Record<string, string | any> = {};
             if (userId) filter.userId = userId;
             if (tradeId) filter.tradeId = tradeId;
-            if (status) filter.status = status;
-            if (invoiceType) filter.invoiceType = invoiceType;
+            if (statuses) filter.status = { $in: statuses };
+            if (invoiceTypes) filter.invoiceType = { $in: invoiceTypes };
 
             const invoices = await invoicesCollection.find(filter);
 
