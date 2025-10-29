@@ -862,7 +862,7 @@ export class WalletsService {
                         switch (body.data.status) {
                             case CryptopayWebhookEventStatus.completed: {
                                 const amount = parseFloat(
-                                    body.data.paid_amount ?? "0"
+                                    body.data.received_amount ?? "0"
                                 );
 
                                 const transactionId = body.data.txid ?? "";

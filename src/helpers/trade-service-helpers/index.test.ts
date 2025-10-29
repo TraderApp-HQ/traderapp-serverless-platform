@@ -158,6 +158,9 @@ describe("Trade Service Helpers", () => {
             const queueMessage = createQueueMessage(userTrade);
 
             const mockWalletsService = {
+                computeTotalAmountToLock: jest
+                    .fn()
+                    .mockReturnValue({ totalAmountToLock: 50 }),
                 getUserWallet: jest.fn().mockResolvedValue({
                     availableBalance: 1000,
                     userId: "user123",
@@ -281,6 +284,9 @@ describe("Trade Service Helpers", () => {
             ];
 
             const mockWalletsService = {
+                computeTotalAmountToLock: jest
+                    .fn()
+                    .mockReturnValue({ totalAmountToLock: 2000 }),
                 getUserWallet: jest.fn().mockResolvedValue({
                     availableBalance: 1000,
                     userId: "user123",
@@ -325,7 +331,6 @@ describe("Trade Service Helpers", () => {
             (WalletsService as jest.Mock).mockImplementation(
                 () => mockWalletsService
             );
-            mockPublishMessageToQueue.mockResolvedValue(undefined);
 
             const result = await processUserTrades([queueMessage]);
 
