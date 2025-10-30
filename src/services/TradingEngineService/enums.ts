@@ -87,6 +87,8 @@ export enum TradingRuleName {
 
 export enum InvoiceStatus {
     PENDING = "PENDING", // Invoice is created but not
+    OVERDUE = "OVERDUE",
+    LOCKED = "LOCKED",
     PAID = "PAID",
     FAILED = "FAILED",
 }

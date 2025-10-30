@@ -34,6 +34,7 @@ export const processBinanceTrades = async (
         const binanceTradeProcessingResults = await Promise.allSettled(
             queueMessages.map(async (queueMessage) => {
                 const userTrade = queueMessage.body;
+                // console.log("##################userTrade", { userTrade });
                 try {
                     const apiKey = decrypt(userTrade.apiKey, decryptionKey);
                     const apiSecret = decrypt(
@@ -41,15 +42,20 @@ export const processBinanceTrades = async (
                         decryptionKey
                     );
 
+                    // console.log("##################apiKey", { apiKey });
+                    // console.log("##################apiSecret", { apiSecret });
+
                     // Call Binance client
                     const binanceClient = new BinanceClient(apiKey, apiSecret);
+                    // console.log("##################after binanceClient creation");
 
                     // Place trade on binance
                     const side = (
                         userTrade.tradeSide === TradeSide.LONG
-                            ? BinanceOrderSide.BUY
-                            : BinanceOrderSide.SELL
-                    ) as BinanceOrderSide;
+                            ? OrderSide.BUY
+                            : OrderSide.SELL
+                    ) as unknown as BinanceOrderSide;
+                    // console.log("############### after trade side")
                     const binanceTrade = await binanceClient.placeTrade({
                         symbol: `${userTrade.baseAsset}${userTrade.quoteCurrency}`,
                         side,
@@ -59,6 +65,7 @@ export const processBinanceTrades = async (
                         price: userTrade.entryPrice,
                         marginType: "CROSSED",
                     });
+                    // console.log("##################placedbinanceTrade", { binanceTrade });
 
                     // Create processed order object
                     const processedOrder: IProcessedTrade = {
@@ -86,6 +93,7 @@ export const processBinanceTrades = async (
                         createdAt: new Date().toISOString(),
                         updatedAt: new Date().toISOString(),
                     };
+                    // console.log("##################processedOrder", { processedOrder });
 
                     // publish processed order to queue
                     await publishMessageToQueue({
@@ -94,6 +102,7 @@ export const processBinanceTrades = async (
                             "",
                         message: JSON.stringify(processedOrder),
                     });
+
 
                     // Return processed order
                     return {

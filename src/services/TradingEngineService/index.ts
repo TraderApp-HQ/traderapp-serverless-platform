@@ -813,10 +813,10 @@ export class TradingEngineService {
         const pnlAmount = priceDiff * baseQuantity;
 
         return {
-            pnlAmount: Number(pnlAmount.toFixed(8)),
-            pnlPercentOfRisk: Number(((pnlAmount / riskUSDT) * 100).toFixed(4)),
+            pnlAmount: Number(pnlAmount.toFixed(2)),
+            pnlPercentOfRisk: Number(((pnlAmount / riskUSDT) * 100).toFixed(2)),
             pnlPercentOfRequiredMargin: Number(
-                ((pnlAmount / requiredMargin) * 100).toFixed(4)
+                ((pnlAmount / requiredMargin) * 100).toFixed(2)
             ),
         };
     }
