@@ -17,11 +17,6 @@ export interface IMetadata {
     dateTime?: string;
     network?: string;
     address?: string;
-    asset?: string;
-    stopLoss?: number;
-    estimatedProfit?: number;
-    estimatedLoss?: number;
-    entryPrice?: number;
 }
 
 export interface IQueueMessageBodyObject {

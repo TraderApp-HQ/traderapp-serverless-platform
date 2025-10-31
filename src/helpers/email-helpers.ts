@@ -8,7 +8,6 @@ import {
     PasswordResetTemplate,
     ReferralTemplate,
 } from "src/templates/email-templates";
-import NewTradeNotificationTemplate from "src/templates/email-templates/new-trade-notification-template";
 import SendDepositConfirmationEmailTemplate from "src/templates/email-templates/send-deposit-confirmation-email-template";
 import sendWithdrawalConfirmationEmailTemplate from "src/templates/email-templates/send-withdrawal-confirmation-email-tempate";
 
@@ -89,17 +88,6 @@ export const formatEmailMessageBody = ({
                 DATE_TIME: metadata?.dateTime,
                 ADDRESS: metadata?.address,
                 NETWORK: metadata?.network,
-            });
-        }
-
-        case EventTemplate.NEW_TRADE_NOTIFICATION_EMAIL: {
-            return applyReplacements(NewTradeNotificationTemplate, {
-                USER_NAME: recipient.firstName,
-                ASSET: metadata?.asset,
-                ENTRY_PRICE: metadata?.entryPrice?.toString(),
-                STOP_LOSS: metadata?.stopLoss?.toString(),
-                ESTIMATED_PROFIT: metadata?.estimatedProfit?.toString(),
-                ESTIMATED_LOSS: metadata?.estimatedLoss?.toString(),
             });
         }
 
