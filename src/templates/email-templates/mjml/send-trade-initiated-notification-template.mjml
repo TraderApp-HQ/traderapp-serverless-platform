@@ -106,7 +106,7 @@
       <!-- Banner -->
       <mj-section padding-bottom="20px">
         <mj-column>
-          <mj-image src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/Investing+1.png" alt="Deposit Confirmation Banner" width="236.3px" height="236.3px" />
+          <mj-image src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/banners+(2).png" alt="Deposit Confirmation Banner" />
         </mj-column>
       </mj-section>
 
@@ -123,7 +123,7 @@
       <mj-section padding="0 0 16px 0">
         <mj-column>
           <mj-text class="content" padding="0">
-            A new trade has just been copied to your Binance account. Below are the trade details for your reference.
+            A new trade has just been copied to your {PLATFORM_NAME} account. Below are the trade details for your reference.
             <br /><br />
             Please note that the trade has only been initiated and not active yet. We will notify you once the order has been filled and trade is active.
           </mj-text>
@@ -144,7 +144,7 @@
                             color: #0a0d14;
                         ">
             <p style="margin: 0; line-height: 2; display: block">
-              <b>Asset:</b> {ASSET} USDT
+              <b>Asset:</b> {BASE_ASSET_LOGO_URL} {BASE_ASSET} <span style="color: red">{TRADE_SIDE}</span>
             </p>
             <p style="margin: 0; line-height: 2; display: block">
               <b>Entry Price:</b> {ENTRY_PRICE}
@@ -153,10 +153,10 @@
               <b>Stop Loss Price:</b> {STOP_LOSS}
             </p>
             <p style="margin: 0; line-height: 2; display: block">
-              <b>Estimated Loss:</b> {ESTIMATED_LOSS} USDT
+              <b>Estimated Loss:</b> <span style="color: red"> {ESTIMATED_LOSS} USDT</span>
             </p>
             <p style="margin: 0; line-height: 2; display: block">
-              <b>Estimated Profit:</b> {ESTIMATED_PROFIT} USDT
+              <b>Estimated Profit:</b> <span style="color: green"> { ESTIMATED_PROFIT} USDT</span>
             </p>
             <p style="margin: 0; line-height: 2; display: block">
               <b>Date:</b> {DATE_TIME}

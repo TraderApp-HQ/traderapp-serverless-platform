@@ -9,6 +9,7 @@ import {
     ReferralTemplate,
 } from "src/templates/email-templates";
 import SendDepositConfirmationEmailTemplate from "src/templates/email-templates/send-deposit-confirmation-email-template";
+import SendTradeInitiatedNotificationTemplate from "src/templates/email-templates/send-trade-initiated-notification-template";
 import sendWithdrawalConfirmationEmailTemplate from "src/templates/email-templates/send-withdrawal-confirmation-email-tempate";
 
 interface IFormatEmailMessageInput {
@@ -88,6 +89,21 @@ export const formatEmailMessageBody = ({
                 DATE_TIME: metadata?.dateTime,
                 ADDRESS: metadata?.address,
                 NETWORK: metadata?.network,
+            });
+        }
+
+        case EventTemplate.SEND_TRADE_INITIATED_NOTIFICATION:{
+            return applyReplacements(SendTradeInitiatedNotificationTemplate, {
+               USER_NAME: recipient.firstName,
+               BASE_ASSET: metadata?.baseAsset,
+               BASE_ASSET_LOGO_URL: metadata?.baseAssetLogoUrl,
+               QUOTE_CURRENCY: metadata?.quoteCurrency,
+               ENTRY_PRICE: metadata?.entryPrice?.toString(),
+               STOP_LOSS: metadata?.stopLoss?.toString(),
+               TRADE_SIDE: metadata?.tradeSide,
+               ESTIMATED_PROFIT: metadata?.estimatedProfit?.toString(),
+               ESTIMATED_LOSS: metadata?.estimatedLoss?.toString(),
+               PLATFORM_NAME: metadata?.platformName,
             });
         }
 
