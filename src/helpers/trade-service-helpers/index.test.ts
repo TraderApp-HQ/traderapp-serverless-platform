@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import mongoose from "mongoose";
 import { TradingPlatform, AccountType } from "src/config/enums";
 import { IQueueMessageBody } from "src/config/interfaces";
@@ -26,6 +27,13 @@ import {
 jest.mock("src/clients/SQSClient/helpers");
 jest.mock("src/services/WalletsService");
 jest.mock("src/config/secrets/helpers");
+jest.mock("src/services/UsersService");
+
+import UsersService from "src/services/UsersService";
+
+const mockGetUserById = UsersService.getUserById as jest.MockedFunction<
+    typeof UsersService.getUserById
+>;
 
 // Mock TradingEngineService with a manual mock that can be configured per test
 const mockUpdateTrade = jest.fn();
@@ -84,6 +92,20 @@ describe("Trade Service Helpers", () => {
             pnlPercentOfRisk: 200,
             pnlPercentOfRequiredMargin: 20,
         });
+
+        // Mock getSecrets to return common secrets with email queue
+        mockGetSecrets.mockResolvedValue({
+            ...mockSecrets,
+            EMAIL_NOTIFICATIONS_QUEUE: "https://sqs.us-east-1.amazonaws.com/123/notifications",
+        });
+
+        // Mock getUserById
+        mockGetUserById.mockResolvedValue({
+            _id: "user123",
+            firstName: "John",
+            email: "john@example.com",
+            // Add other required user fields as needed
+        } as any);
     });
 
     describe("mapUserConnectedTradingPlatformToQueueUrl", () => {
@@ -131,6 +153,7 @@ describe("Trade Service Helpers", () => {
             orderPlacementType: OrderPlacementType.MARKET,
             accountType: "FUTURES" as AccountType,
             baseQuantity: 0.001,
+            baseAssetLogoUrl: "https://example.com/logo.png",
             ...overrides,
         });
 
@@ -412,6 +435,10 @@ describe("Trade Service Helpers", () => {
             total: 100,
             quoteCurrency: "USDT",
             quoteTotal: 100,
+            entryPrice: 100000,
+            stopLossPrice: 95000,
+            takeProfitPrice: 110000,
+            riskAmount: 10,
             tradingAccountId: new mongoose.Types.ObjectId(),
             platformName: TradingPlatform.BINANCE,
             platformId: 1,
@@ -438,6 +465,22 @@ describe("Trade Service Helpers", () => {
             awsRegion: "us-east-1",
         });
 
+        beforeEach(() => {
+            // Mock getSecrets to return common secrets with email queue
+            mockGetSecrets.mockResolvedValue({
+                ...mockSecrets,
+                EMAIL_NOTIFICATIONS_QUEUE: "https://sqs.us-east-1.amazonaws.com/123/notifications",
+            });
+
+            // Mock getUserById
+            mockGetUserById.mockResolvedValue({
+                _id: "user123",
+                firstName: "John",
+                email: "john@example.com",
+                // Add other required user fields as needed
+            } as any);
+        });
+
         it("should update trade status and create order batch and order", async () => {
             const processedTrade = createProcessedTrade();
             const queueMessage = createQueueMessage(processedTrade);
@@ -460,6 +503,15 @@ describe("Trade Service Helpers", () => {
             });
             expect(mockCreateOrderBatch).toHaveBeenCalled();
             expect(mockCreateOrder).toHaveBeenCalled();
+
+            // Verify notification was sent
+            expect(mockPublishMessageToQueue).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    queueUrl: "https://sqs.us-east-1.amazonaws.com/123/notifications",
+                    message: expect.stringContaining("Trade Initiated"),
+                })
+            );
+            expect(mockGetUserById).toHaveBeenCalledWith("user123");
         });
 
         it("should handle errors and mark as failed", async () => {

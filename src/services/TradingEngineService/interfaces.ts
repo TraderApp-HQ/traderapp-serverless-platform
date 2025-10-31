@@ -117,6 +117,7 @@ export interface IProcessUserTradingWithMasterTradeEvent {
     takeProfitPrice: number;
     entryPrice: number;
     baseAsset: string;
+    baseAssetLogoUrl?: string;
     quoteCurrency: string;
     pair: string;
     supportedTradingPlatforms: TradingPlatform[];
@@ -217,6 +218,7 @@ export interface IUserTradeAllocation {
     userId: string;
     tradingAccountId: mongoose.Types.ObjectId;
     baseQuantity?: number;
+    baseAssetLogoUrl?: string;
     platformName: TradingPlatform;
     apiKey: string;
     apiSecret: string;
@@ -261,6 +263,7 @@ export interface IProcessedTrade {
     userId: string;
     tradeId: mongoose.Types.ObjectId; // reference to the Trade model
     baseAsset: string;
+    baseAssetLogoUrl?: string;
     baseQuantity: number;
     orderType: OrderType;
     orderSide: OrderSide;
@@ -271,6 +274,10 @@ export interface IProcessedTrade {
     total: number;
     quoteCurrency: string;
     quoteTotal: number;
+    entryPrice: number;
+    stopLossPrice: number;
+    takeProfitPrice: number;
+    riskAmount: number;
     tradingAccountId: mongoose.Types.ObjectId; // reference to the user-trading-account _id
     platformName: TradingPlatform;
     platformId: number;

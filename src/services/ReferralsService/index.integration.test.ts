@@ -365,17 +365,26 @@ describe("ReferralsService Integration Tests", () => {
                 ["batch-msg-1", "batch-msg-2", "batch-msg-3"],
                 [
                     {
-                        user: { id: user1Id, isFirstDepositMade: true } as IUser,
+                        user: {
+                            id: user1Id,
+                            isFirstDepositMade: true,
+                        } as IUser,
                         referrals: [],
                         isTestReferralTracking: false,
                     },
                     {
-                        user: { id: user2Id, isFirstDepositMade: true } as IUser,
+                        user: {
+                            id: user2Id,
+                            isFirstDepositMade: true,
+                        } as IUser,
                         referrals: user2Referrals,
                         isTestReferralTracking: false,
                     },
                     {
-                        user: { id: user3Id, isFirstDepositMade: true } as IUser,
+                        user: {
+                            id: user3Id,
+                            isFirstDepositMade: true,
+                        } as IUser,
                         referrals: [],
                         isTestReferralTracking: false,
                     },
@@ -468,8 +477,8 @@ describe("ReferralsService Integration Tests", () => {
 
         it("should handle database errors gracefully and return failed message IDs", async () => {
             // Close the connections to simulate database error
-            await tradingEngineConnection.close().catch(() => { });
-            await usersConnection.close().catch(() => { });
+            await tradingEngineConnection.close().catch(() => {});
+            await usersConnection.close().catch(() => {});
 
             const queueMessage: IReferralQueueMessage = {
                 user: { id: "non-existent-user" } as IUser,
@@ -556,7 +565,10 @@ describe("ReferralsService Integration Tests", () => {
                 ["success-msg", "fail-msg"],
                 [
                     {
-                        user: { id: user1Id, isFirstDepositMade: true } as IUser,
+                        user: {
+                            id: user1Id,
+                            isFirstDepositMade: true,
+                        } as IUser,
                         referrals: [],
                         isTestReferralTracking: false,
                     } as IReferralQueueMessage,
@@ -978,12 +990,17 @@ describe("ReferralsService Integration Tests", () => {
             expect(result.failedMessageIds).toHaveLength(0);
 
             // Verify user gets null rank despite meeting balance requirement
-            const updatedUser = await getUserFromDb(usersConnection, mainUserId);
+            const updatedUser = await getUserFromDb(
+                usersConnection,
+                mainUserId
+            );
             expect(updatedUser?.referralRank).toBeNull();
             expect(updatedUser?.personalATC).toBe(
                 RANK_REQUIREMENTS[ReferralRank.TA_RECRUIT].personalATC
             );
-            expect(updatedUser?.maxRankFromReferrals).toBe(ReferralRank.TA_RECRUIT);
+            expect(updatedUser?.maxRankFromReferrals).toBe(
+                ReferralRank.TA_RECRUIT
+            );
         });
 
         it("should return null rank when user has not made first deposit but meets all other TA_LIEUTENANT criteria", async () => {
@@ -1015,7 +1032,10 @@ describe("ReferralsService Integration Tests", () => {
                 isTestReferralTracking: false,
             };
 
-            const sqsEvent = createSQSEvent("no-deposit-lieutenant", queueMessage);
+            const sqsEvent = createSQSEvent(
+                "no-deposit-lieutenant",
+                queueMessage
+            );
 
             // Execute the method
             const result = await ReferralsService.processUserReferralTracking(
@@ -1028,7 +1048,10 @@ describe("ReferralsService Integration Tests", () => {
             expect(result.failedMessageIds).toHaveLength(0);
 
             // Verify user gets null rank despite meeting all other criteria
-            const updatedUser = await getUserFromDb(usersConnection, mainUserId);
+            const updatedUser = await getUserFromDb(
+                usersConnection,
+                mainUserId
+            );
             expect(updatedUser?.referralRank).toBeNull();
             expect(updatedUser?.personalATC).toBe(
                 RANK_REQUIREMENTS[ReferralRank.TA_LIEUTENANT].personalATC
@@ -1036,7 +1059,9 @@ describe("ReferralsService Integration Tests", () => {
             expect(updatedUser?.communityATC).toBeGreaterThanOrEqual(
                 RANK_REQUIREMENTS[ReferralRank.TA_LIEUTENANT].communityATC
             );
-            expect(updatedUser?.maxRankFromReferrals).toBe(ReferralRank.TA_LIEUTENANT);
+            expect(updatedUser?.maxRankFromReferrals).toBe(
+                ReferralRank.TA_LIEUTENANT
+            );
         });
 
         it("should return null rank when user has not made first deposit but meets all other TA_CAPTAIN criteria", async () => {
@@ -1097,7 +1122,10 @@ describe("ReferralsService Integration Tests", () => {
             expect(result.failedMessageIds).toHaveLength(0);
 
             // Verify user gets null rank despite meeting all other criteria
-            const updatedUser = await getUserFromDb(usersConnection, mainUserId);
+            const updatedUser = await getUserFromDb(
+                usersConnection,
+                mainUserId
+            );
             expect(updatedUser?.referralRank).toBeNull();
             expect(updatedUser?.personalATC).toBe(
                 RANK_REQUIREMENTS[ReferralRank.TA_CAPTAIN].personalATC
@@ -1105,7 +1133,9 @@ describe("ReferralsService Integration Tests", () => {
             expect(updatedUser?.communityATC).toBeGreaterThanOrEqual(
                 RANK_REQUIREMENTS[ReferralRank.TA_CAPTAIN].communityATC
             );
-            expect(updatedUser?.maxRankFromReferrals).toBe(ReferralRank.TA_CAPTAIN);
+            expect(updatedUser?.maxRankFromReferrals).toBe(
+                ReferralRank.TA_CAPTAIN
+            );
         });
 
         it("should transition from null rank to TA_RECRUIT when user makes first deposit", async () => {
@@ -1136,7 +1166,10 @@ describe("ReferralsService Integration Tests", () => {
             );
 
             // Verify user has null rank
-            const userBeforeDeposit = await getUserFromDb(usersConnection, mainUserId);
+            const userBeforeDeposit = await getUserFromDb(
+                usersConnection,
+                mainUserId
+            );
             expect(userBeforeDeposit?.referralRank).toBeNull();
 
             // Second processing: after first deposit
@@ -1158,8 +1191,13 @@ describe("ReferralsService Integration Tests", () => {
             expect(result.failedMessageIds).toHaveLength(0);
 
             // Verify user now gets TA_RECRUIT rank
-            const userAfterDeposit = await getUserFromDb(usersConnection, mainUserId);
-            expect(userAfterDeposit?.referralRank).toBe(ReferralRank.TA_RECRUIT);
+            const userAfterDeposit = await getUserFromDb(
+                usersConnection,
+                mainUserId
+            );
+            expect(userAfterDeposit?.referralRank).toBe(
+                ReferralRank.TA_RECRUIT
+            );
             expect(userAfterDeposit?.personalATC).toBe(
                 RANK_REQUIREMENTS[ReferralRank.TA_RECRUIT].personalATC
             );
@@ -1202,30 +1240,40 @@ describe("ReferralsService Integration Tests", () => {
             );
 
             // Create referrals for user 3
-            const user3Referrals: IUser[] = await createReferralsWithRankAndBalance(
-                "batch-deposit-ref-",
-                100,
-                RANK_REQUIREMENTS[ReferralRank.TA_LIEUTENANT].communitySize,
-                usersConnection,
-                tradingEngineConnection,
-                ReferralRank.TA_RECRUIT
-            );
+            const user3Referrals: IUser[] =
+                await createReferralsWithRankAndBalance(
+                    "batch-deposit-ref-",
+                    100,
+                    RANK_REQUIREMENTS[ReferralRank.TA_LIEUTENANT].communitySize,
+                    usersConnection,
+                    tradingEngineConnection,
+                    ReferralRank.TA_RECRUIT
+                );
 
             const batchSqsEvent = createSQSEvent(
                 ["deposit-made", "no-deposit", "deposit-made-high"],
                 [
                     {
-                        user: { id: user1Id, isFirstDepositMade: true } as IUser,
+                        user: {
+                            id: user1Id,
+                            isFirstDepositMade: true,
+                        } as IUser,
                         referrals: [],
                         isTestReferralTracking: false,
                     },
                     {
-                        user: { id: user2Id, isFirstDepositMade: false } as IUser,
+                        user: {
+                            id: user2Id,
+                            isFirstDepositMade: false,
+                        } as IUser,
                         referrals: [],
                         isTestReferralTracking: false,
                     },
                     {
-                        user: { id: user3Id, isFirstDepositMade: true } as IUser,
+                        user: {
+                            id: user3Id,
+                            isFirstDepositMade: true,
+                        } as IUser,
                         referrals: user3Referrals,
                         isTestReferralTracking: false,
                     },
@@ -1282,15 +1330,23 @@ describe("ReferralsService Integration Tests", () => {
                 isTestReferralTracking: false,
             };
 
-            const sqsEvent1 = createSQSEvent("achieve-lieutenant", queueMessage1);
+            const sqsEvent1 = createSQSEvent(
+                "achieve-lieutenant",
+                queueMessage1
+            );
 
             await ReferralsService.processUserReferralTracking(
                 connections,
                 sqsEvent1
             );
 
-            const lieutenantUser = await getUserFromDb(usersConnection, mainUserId);
-            expect(lieutenantUser?.referralRank).toBe(ReferralRank.TA_LIEUTENANT);
+            const lieutenantUser = await getUserFromDb(
+                usersConnection,
+                mainUserId
+            );
+            expect(lieutenantUser?.referralRank).toBe(
+                ReferralRank.TA_LIEUTENANT
+            );
 
             // Second: Lose referrals but maintain first deposit status
             referrals.splice(0, 5); // Remove 5 referrals to cause demotion
@@ -1301,7 +1357,10 @@ describe("ReferralsService Integration Tests", () => {
                 isTestReferralTracking: false,
             };
 
-            const sqsEvent2 = createSQSEvent("demote-to-recruit", queueMessage2);
+            const sqsEvent2 = createSQSEvent(
+                "demote-to-recruit",
+                queueMessage2
+            );
 
             const result = await ReferralsService.processUserReferralTracking(
                 connections,
@@ -1313,7 +1372,10 @@ describe("ReferralsService Integration Tests", () => {
             expect(result.failedMessageIds).toHaveLength(0);
 
             // Should demote to TA_RECRUIT (not null) since first deposit is maintained
-            const demotedUser = await getUserFromDb(usersConnection, mainUserId);
+            const demotedUser = await getUserFromDb(
+                usersConnection,
+                mainUserId
+            );
             expect(demotedUser?.referralRank).toBe(ReferralRank.TA_RECRUIT);
             expect(demotedUser?.personalATC).toBe(
                 RANK_REQUIREMENTS[ReferralRank.TA_LIEUTENANT].personalATC
@@ -1347,7 +1409,10 @@ describe("ReferralsService Integration Tests", () => {
                 sqsEvent1
             );
 
-            const userWithRank = await getUserFromDb(usersConnection, mainUserId);
+            const userWithRank = await getUserFromDb(
+                usersConnection,
+                mainUserId
+            );
             expect(userWithRank?.referralRank).toBe(ReferralRank.TA_RECRUIT);
 
             // Second: User somehow loses first deposit status (edge case)
@@ -1369,7 +1434,10 @@ describe("ReferralsService Integration Tests", () => {
             expect(result.failedMessageIds).toHaveLength(0);
 
             // Should lose rank and become null
-            const userWithoutRank = await getUserFromDb(usersConnection, mainUserId);
+            const userWithoutRank = await getUserFromDb(
+                usersConnection,
+                mainUserId
+            );
             expect(userWithoutRank?.referralRank).toBeNull();
             expect(userWithoutRank?.personalATC).toBe(
                 RANK_REQUIREMENTS[ReferralRank.TA_RECRUIT].personalATC

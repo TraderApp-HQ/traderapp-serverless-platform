@@ -514,7 +514,6 @@ export class WalletsService {
                                 "";
 
                             const address = queueMessage.body.data.address;
-
                             const network = queueMessage.body.data.network;
 
                             await publishDepositConfirmationToQueue({
@@ -529,6 +528,7 @@ export class WalletsService {
                             log.info(
                                 `Successfully credited wallet for message ${messageId}`
                             );
+
                             return { messageId, success: true };
                         } catch (error) {
                             console.error(

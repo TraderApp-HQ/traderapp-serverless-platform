@@ -72,6 +72,7 @@ export const processBinanceTrades = async (
                         userId: userTrade.userId,
                         tradeId: new mongoose.Types.ObjectId(userTrade.tradeId),
                         baseAsset: userTrade.baseAsset,
+                        baseAssetLogoUrl: userTrade.baseAssetLogoUrl,
                         baseQuantity: userTrade.baseQuantity ?? 0,
                         orderType: OrderType.ENTRY,
                         orderSide:
@@ -85,6 +86,10 @@ export const processBinanceTrades = async (
                         total: userTrade.quoteTotal,
                         quoteCurrency: userTrade.quoteCurrency,
                         quoteTotal: userTrade.quoteTotal,
+                        entryPrice: userTrade.entryPrice,
+                        stopLossPrice: userTrade.stopLossPrice,
+                        takeProfitPrice: userTrade.takeProfitPrice,
+                        riskAmount: userTrade.riskAmount,
                         tradingAccountId: new mongoose.Types.ObjectId(
                             userTrade.tradingAccountId
                         ),

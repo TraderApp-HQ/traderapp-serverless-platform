@@ -1621,6 +1621,7 @@ export class TradingEngineService {
                         .availableBalance as number,
                     baseAsset: masterTrade.baseAsset as string,
                     baseQuantity: allocation.baseQuantity,
+                    baseAssetLogoUrl: masterTrade.baseAssetLogoUrl,
                     quoteCurrency: masterTrade.quoteCurrency as string,
                     quoteTotal: allocation.requiredMargin,
                     entryPrice: masterTrade.entryPrice,
