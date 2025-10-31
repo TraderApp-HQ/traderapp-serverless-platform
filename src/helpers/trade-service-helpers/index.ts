@@ -504,6 +504,7 @@ export const publishProcessedTradeToQueue = async (
 ) => {
     const { userId, processedTrade, queueUrl, pnlAmount } = input;
 
+
     const user = await UsersService.getUserById(userId);
     if (!user) {
         throw new Error(`User with the ID ${userId} not found`);
@@ -522,7 +523,7 @@ export const publishProcessedTradeToQueue = async (
             stopLoss: processedTrade.stopLossPrice,
             tradeSide: processedTrade.orderSide === OrderSide.BUY ? TradeSide.LONG : TradeSide.SHORT,
             estimatedLoss: processedTrade.riskAmount,
-            estimatedProfit: pnlAmount,
+            estimatedProfit: pnlAmount ?? "0",
             platformName: processedTrade.platformName,
             dateTime: format(dateTime, "do MMM, yyyy, h:mma"),
         },
