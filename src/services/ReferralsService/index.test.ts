@@ -11,7 +11,7 @@ describe("ReferralsService.computeRank", () => {
             communityATC: 0,
             referrals: [],
             isTestReferralTracking: false,
-            isFirstDepositMade: true
+            isFirstDepositMade: true,
         };
 
         const { rank, maxRankFromReferrals } = service.computeRank(criteria);
@@ -46,7 +46,7 @@ describe("ReferralsService.computeRank", () => {
                 ) as IUser[]),
             ],
             isTestReferralTracking: false,
-            isFirstDepositMade: true
+            isFirstDepositMade: true,
         };
 
         const { rank, maxRankFromReferrals } = service.computeRank(criteria);
@@ -74,7 +74,7 @@ describe("ReferralsService.computeRank", () => {
                 RANK_REQUIREMENTS[ReferralRank.TA_LIEUTENANT].communityATC,
             referrals,
             isTestReferralTracking: true,
-            isFirstDepositMade: true
+            isFirstDepositMade: true,
         };
 
         const { rank, maxRankFromReferrals } = service.computeRank(criteria);
@@ -109,7 +109,7 @@ describe("ReferralsService.computeRank", () => {
                 ) as IUser[]),
             ],
             isTestReferralTracking: false,
-            isFirstDepositMade: true
+            isFirstDepositMade: true,
         };
 
         const { rank, maxRankFromReferrals } = service.computeRank(criteria);
@@ -142,7 +142,7 @@ describe("ReferralsService.computeRank", () => {
                 ) as IUser[]),
             ],
             isTestReferralTracking: false,
-            isFirstDepositMade: true
+            isFirstDepositMade: true,
         };
 
         const { rank, maxRankFromReferrals } = service.computeRank(criteria);
@@ -163,7 +163,7 @@ describe("ReferralsService.computeRank", () => {
                 RANK_REQUIREMENTS[ReferralRank.TA_LIEUTENANT].communityATC,
             referrals,
             isTestReferralTracking: false,
-            isFirstDepositMade: true
+            isFirstDepositMade: true,
         };
 
         const { rank, maxRankFromReferrals } = service.computeRank(criteria);
@@ -198,7 +198,7 @@ describe("ReferralsService.computeRank", () => {
                 ) as IUser[]),
             ],
             isTestReferralTracking: false,
-            isFirstDepositMade: true
+            isFirstDepositMade: true,
         };
 
         const { rank, maxRankFromReferrals } = service.computeRank(criteria);
@@ -236,7 +236,7 @@ describe("ReferralsService.computeRank", () => {
                 ) as IUser[]),
             ],
             isTestReferralTracking: false,
-            isFirstDepositMade: true
+            isFirstDepositMade: true,
         };
 
         const { rank, maxRankFromReferrals } = service.computeRank(criteria);
@@ -270,7 +270,7 @@ describe("ReferralsService.computeRank", () => {
                 ) as IUser[]),
             ],
             isTestReferralTracking: false,
-            isFirstDepositMade: false
+            isFirstDepositMade: false,
         };
 
         const { rank, maxRankFromReferrals } = service.computeRank(criteria);
@@ -288,7 +288,7 @@ describe("ReferralsService.computeRank", () => {
             communityATC: 0,
             referrals: [],
             isTestReferralTracking: false,
-            isFirstDepositMade: false
+            isFirstDepositMade: false,
         };
 
         const { rank, maxRankFromReferrals } = service.computeRank(criteria);
@@ -306,7 +306,8 @@ describe("ReferralsService.computeRank", () => {
 
         const criteria: IRankCriteria = {
             personalATC: RANK_REQUIREMENTS[ReferralRank.TA_CAPTAIN].personalATC,
-            communityATC: RANK_REQUIREMENTS[ReferralRank.TA_CAPTAIN].communityATC,
+            communityATC:
+                RANK_REQUIREMENTS[ReferralRank.TA_CAPTAIN].communityATC,
             referrals: [
                 ...referrals,
                 ...(Array.from(
@@ -322,7 +323,7 @@ describe("ReferralsService.computeRank", () => {
                 ) as IUser[]),
             ],
             isTestReferralTracking: false,
-            isFirstDepositMade: false
+            isFirstDepositMade: false,
         };
 
         const { rank, maxRankFromReferrals } = service.computeRank(criteria);
@@ -342,8 +343,10 @@ describe("ReferralsService.computeRank", () => {
         );
 
         const criteria: IRankCriteria = {
-            personalATC: RANK_REQUIREMENTS[ReferralRank.TA_FIELD_MARSHAL].personalATC,
-            communityATC: RANK_REQUIREMENTS[ReferralRank.TA_FIELD_MARSHAL].communityATC,
+            personalATC:
+                RANK_REQUIREMENTS[ReferralRank.TA_FIELD_MARSHAL].personalATC,
+            communityATC:
+                RANK_REQUIREMENTS[ReferralRank.TA_FIELD_MARSHAL].communityATC,
             referrals: [
                 ...referrals,
                 ...(Array.from(
@@ -359,7 +362,7 @@ describe("ReferralsService.computeRank", () => {
                 ) as IUser[]),
             ],
             isTestReferralTracking: false,
-            isFirstDepositMade: false
+            isFirstDepositMade: false,
         };
 
         const { rank, maxRankFromReferrals } = service.computeRank(criteria);

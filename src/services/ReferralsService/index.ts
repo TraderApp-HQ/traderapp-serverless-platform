@@ -206,7 +206,7 @@ export class ReferralsService {
                                 communityATC: balances.communityBalance,
                                 referrals,
                                 isTestReferralTracking,
-                                isFirstDepositMade: user.isFirstDepositMade
+                                isFirstDepositMade: user.isFirstDepositMade,
                             }
                         );
 
@@ -298,8 +298,13 @@ export class ReferralsService {
     }
 
     public computeRank(criteria: IRankCriteria): IComputeRankResult {
-        const { personalATC, communityATC, referrals, isTestReferralTracking, isFirstDepositMade } =
-            criteria;
+        const {
+            personalATC,
+            communityATC,
+            referrals,
+            isTestReferralTracking,
+            isFirstDepositMade,
+        } = criteria;
 
         const communitySize = referrals.length;
         const maxRankFromReferrals =
@@ -317,7 +322,8 @@ export class ReferralsService {
                 maxRankFromReferrals
             );
             if (
-                isFirstDepositMade && hasRequiredRankReferrals &&
+                isFirstDepositMade &&
+                hasRequiredRankReferrals &&
                 personalATC >= RANK_REQUIREMENTS[currentRank].personalATC &&
                 communityATC >= RANK_REQUIREMENTS[currentRank].communityATC &&
                 communitySize >=
@@ -330,7 +336,8 @@ export class ReferralsService {
 
         // If no higher rank matched, check for TA_RECRUIT
         if (
-            !rank && isFirstDepositMade &&
+            !rank &&
+            isFirstDepositMade &&
             personalATC >=
                 RANK_REQUIREMENTS[ReferralRank.TA_RECRUIT].personalATC
         ) {

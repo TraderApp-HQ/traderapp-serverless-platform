@@ -1,7 +1,8 @@
 import { SQSRecord } from "aws-lambda";
 import mongoose from "mongoose";
-import { EventTemplate } from "src/config/enums";
+import { EventTemplate, TradingPlatform } from "src/config/enums";
 import { ReferralRank } from "./constants";
+import { TradeSide } from "src/services/TradingEngineService/enums";
 
 export interface IMessageRecipient {
     firstName: string;
@@ -17,6 +18,15 @@ export interface IMetadata {
     dateTime?: string;
     network?: string;
     address?: string;
+    baseAsset?: string;
+    baseAssetLogoUrl?: string;
+    quoteCurrency?: string;
+    entryPrice?: number;
+    stopLoss?: number;
+    tradeSide?: TradeSide;
+    estimatedLoss?: number;
+    estimatedProfit?: number;
+    platformName?: TradingPlatform;
 }
 
 export interface IQueueMessageBodyObject {

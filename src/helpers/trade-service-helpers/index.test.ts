@@ -131,6 +131,7 @@ describe("Trade Service Helpers", () => {
             orderPlacementType: OrderPlacementType.MARKET,
             accountType: "FUTURES" as AccountType,
             baseQuantity: 0.001,
+            baseAssetLogoUrl: "https://example.com/logo.png",
             ...overrides,
         });
 
@@ -413,6 +414,10 @@ describe("Trade Service Helpers", () => {
             total: 100,
             quoteCurrency: "USDT",
             quoteTotal: 100,
+            entryPrice: 100000,
+            stopLossPrice: 95000,
+            takeProfitPrice: 110000,
+            riskAmount: 10,
             tradingAccountId: new mongoose.Types.ObjectId(),
             platformName: TradingPlatform.BINANCE,
             platformId: 1,
