@@ -483,11 +483,11 @@ export class WalletsService {
                                     queueMessage.body.data.paid_amount ?? "0"
                                 ),
                             });
-                            // Publish user to queue for first deposit tracking if paid_amount is greater than $10
+                            // Publish user to queue for first deposit tracking if paid_amount is >= $20
                             if (
                                 parseFloat(
                                     queueMessage.body.data.paid_amount ?? "0"
-                                ) >= 10
+                                ) >= 20
                             ) {
                                 await publishMessageToQueue({
                                     queueUrl:
