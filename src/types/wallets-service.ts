@@ -73,6 +73,9 @@ export interface ITransaction {
     paymentProviderName: string;
     externalTransactionId: string;
     transactionHash?: string;
+    providerFee?: number;
+    processingFee?: number;
+    networkFee?: number;
     createdAt: Date;
     updatedAt: Date;
 }
