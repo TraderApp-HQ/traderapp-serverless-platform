@@ -293,7 +293,7 @@ export class CryptoPayClient {
 
         if (transaction.type === "ChannelPayment") {
             currencyName = transaction.data.paid_currency ?? "";
-            amount = parseFloat(transaction.data.received_amount ?? "");
+            amount = parseFloat(transaction.data.paid_amount ?? "");
             toCurrencyName = transaction.data.paid_currency;
             toAmount = parseFloat(transaction.data.paid_amount ?? "");
             transactionHash = transaction.data.txid ?? "";

@@ -17,7 +17,7 @@ describe("CryptoPayClient.formatTransaction", () => {
         webhooksSharedSecret: "w",
     });
 
-    it("uses received_amount for ChannelPayment amount and includes providerFee", () => {
+    it("uses _amount for ChannelPayment amount and includes providerFee", () => {
         const event: ICryptopayWebhookEvent = {
             type: CryptopayWebhookEventType.ChannelPayment,
             event: "completed",
@@ -43,7 +43,7 @@ describe("CryptoPayClient.formatTransaction", () => {
 
         const tx = client.formatTransaction(event, "user-1");
 
-        expect(tx.amount).toBe(99.5);
+        expect(tx.amount).toBe(100);
         expect(tx.toCurrencyName).toBe("USDT");
         expect(tx.paymentProviderName).toBe(WalletProvider.CRYPTOPAY);
         expect(tx.providerFee).toBe(0.5);
@@ -79,6 +79,6 @@ describe("CryptoPayClient.formatTransaction", () => {
 
         const tx = client.formatTransaction(event, "user-3");
         expect(tx.providerFee).toBe(0);
-        expect(tx.amount).toBe(9.9); // from received_amount
+        expect(tx.amount).toBe(10); // from received_amount
     });
 });
