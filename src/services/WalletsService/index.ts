@@ -186,7 +186,7 @@ export class WalletsService {
                             externalTransactionId:
                                 transaction.externalTransactionId,
                         },
-                        { $set: { status: transaction.status } }
+                        { $set: { status: transaction.status, providerFee: transaction.providerFee } }
                     );
                 }
             } else {
@@ -480,7 +480,7 @@ export class WalletsService {
                             await this.creditUserWallet({
                                 userId,
                                 amount: parseFloat(
-                                    queueMessage.body.data.paid_amount ?? "0"
+                                    queueMessage.body.data.received_amount ?? "0"
                                 ),
                             });
                             // Publish user to queue for first deposit tracking if paid_amount is >= $20
