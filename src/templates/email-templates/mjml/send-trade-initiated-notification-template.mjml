@@ -143,9 +143,16 @@
                             font-family: Manrope, Arial, sans-serif;
                             color: #0a0d14;
                         ">
-            <p style="margin: 0; line-height: 2; display: block">
-              <b>Asset:</b> {BASE_ASSET_LOGO_URL} {BASE_ASSET} <span style="color: red">{TRADE_SIDE}</span>
+            <p style="margin: 0; line-height: 2;">
+              <b>Asset:</b>
+              <span style="display: inline-flex; align-items: center; vertical-align: middle;">
+                <img src="{BASE_ASSET_LOGO_URL}" alt="" width="20" height="20" style="margin: 0 6px; vertical-align: middle;" />
+                <span style="vertical-align: middle;">{BASE_ASSET}</span>
+                <span style="color: red; margin-left: 6px; vertical-align: middle;">{TRADE_SIDE}</span>
+              </span>
             </p>
+
+
             <p style="margin: 0; line-height: 2; display: block">
               <b>Entry Price:</b> {ENTRY_PRICE}
             </p>
@@ -156,7 +163,7 @@
               <b>Estimated Loss:</b> <span style="color: red"> {ESTIMATED_LOSS} USDT</span>
             </p>
             <p style="margin: 0; line-height: 2; display: block">
-              <b>Estimated Profit:</b> <span style="color: green"> { ESTIMATED_PROFIT} USDT</span>
+              <b>Estimated Profit:</b> <span style="color: green"> {ESTIMATED_PROFIT} USDT</span>
             </p>
             <p style="margin: 0; line-height: 2; display: block">
               <b>Date:</b> {DATE_TIME}
