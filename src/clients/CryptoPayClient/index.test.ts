@@ -17,7 +17,7 @@ describe("CryptoPayClient.formatTransaction", () => {
         webhooksSharedSecret: "w",
     });
 
-    it("uses _amount for ChannelPayment amount and includes providerFee", () => {
+    it("uses paid amount for ChannelPayment amount and includes providerFee", () => {
         const event: ICryptopayWebhookEvent = {
             type: CryptopayWebhookEventType.ChannelPayment,
             event: "completed",
