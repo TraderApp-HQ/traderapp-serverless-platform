@@ -486,7 +486,7 @@ export class WalletsService {
                             // Publish user to queue for first deposit tracking if paid_amount is >= $20
                             if (
                                 parseFloat(
-                                    queueMessage.body.data.received_amount ?? "0"
+                                    queueMessage.body.data.paid_amount ?? "0"
                                 ) >= 20
                             ) {
                                 await publishMessageToQueue({
@@ -503,7 +503,7 @@ export class WalletsService {
 
                             // publish deposit notification to queue
                             const amount = parseFloat(
-                                queueMessage.body.data.received_amount ?? "0"
+                                queueMessage.body.data.paid_amount ?? "0"
                             );
 
                             const transactionId =
