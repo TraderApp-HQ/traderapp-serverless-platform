@@ -53,14 +53,14 @@ export interface ICryptoPayTransaction {
 export interface ICryptopayWebhookEvent {
     type: CryptopayWebhookEventType;
     event:
-    | "created"
-    | "completed"
-    | "on_hold"
-    | "refunded"
-    | "cancelled"
-    | "transaction_created"
-    | "transaction_confirmed"
-    | "status_changed";
+        | "created"
+        | "completed"
+        | "on_hold"
+        | "refunded"
+        | "cancelled"
+        | "transaction_created"
+        | "transaction_confirmed"
+        | "status_changed";
     data: {
         // Common fields across all types
         id: string;
@@ -267,7 +267,7 @@ export class CryptoPayClient {
         transaction: ICryptopayWebhookEvent,
         userId: string
     ): ITransaction {
-        const providerFee = parseFloat(transaction.data.fee) || 0
+        const providerFee = parseFloat(transaction.data.fee) || 0;
         let status = TransactionStatus.PENDING;
         let currencyName = "";
         let amount = 0;
@@ -285,7 +285,7 @@ export class CryptoPayClient {
             transaction.data.status === CryptopayWebhookEventStatus.cancelled ||
             transaction.data.status === CryptopayWebhookEventStatus.onHold ||
             transaction.data.status ===
-            CryptopayWebhookEventStatus.unresolved ||
+                CryptopayWebhookEventStatus.unresolved ||
             transaction.data.status === CryptopayWebhookEventStatus.refunded
         ) {
             status = TransactionStatus.FAILED;
@@ -335,7 +335,7 @@ export class CryptoPayClient {
             transactionNetwork: transaction.data.network,
             createdAt: new Date(),
             updatedAt: new Date(),
-            providerFee
+            providerFee,
         };
     }
 }

@@ -72,7 +72,7 @@ export class WalletsService {
     private initialized: boolean = false;
     private initializationPromise: Promise<void> | null = null;
 
-    constructor() { }
+    constructor() {}
 
     // Initialize the service once
     private async initialize(): Promise<void> {
@@ -186,7 +186,12 @@ export class WalletsService {
                             externalTransactionId:
                                 transaction.externalTransactionId,
                         },
-                        { $set: { status: transaction.status, providerFee: transaction.providerFee } }
+                        {
+                            $set: {
+                                status: transaction.status,
+                                providerFee: transaction.providerFee,
+                            },
+                        }
                     );
                 }
             } else {
@@ -419,7 +424,7 @@ export class WalletsService {
             const completedDeposits = transactions.filter(
                 (t) =>
                     t.queueMessage.body.data.status ===
-                    CryptopayWebhookEventStatus.completed && t.userId
+                        CryptopayWebhookEventStatus.completed && t.userId
             );
 
             const transactionsToCredit = await Promise.all(
@@ -439,7 +444,7 @@ export class WalletsService {
                             if (
                                 existingTransaction &&
                                 existingTransaction.status ===
-                                TransactionStatus.SUCCESS
+                                    TransactionStatus.SUCCESS
                             ) {
                                 console.error(
                                     `Transaction ${transaction.externalTransactionId} already credited, skipping.`
@@ -480,7 +485,8 @@ export class WalletsService {
                             await this.creditUserWallet({
                                 userId,
                                 amount: parseFloat(
-                                    queueMessage.body.data.received_amount ?? "0"
+                                    queueMessage.body.data.received_amount ??
+                                        "0"
                                 ),
                             });
                             // Publish user to queue for first deposit tracking if paid_amount is >= $20
