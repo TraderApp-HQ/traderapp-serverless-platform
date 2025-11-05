@@ -99,6 +99,7 @@ export interface IAllocateTradesUpToTargetAmountResult {
     positionSize: number;
     requiredMargin: number;
     baseQuantity?: number;
+    platformName?: TradingPlatform;
 }
 
 export interface IProcessUserTradingResult {
@@ -777,7 +778,11 @@ export class TradingEngineService {
         // 4. Required margin given leverage
         const requiredMargin = positionSize / leverage;
 
-        const baseQuantity = Math.floor(quantity / stepSize) * stepSize;
+        // Calculate the number of decimal places in stepSize
+        const decimalPlaces = stepSize.toString().split('.')[1]?.length || 0;
+        const baseQuantity = parseFloat(
+            (Math.floor(quantity / stepSize) * stepSize).toFixed(decimalPlaces)
+        );
         return {
             riskAmount,
             positionSize,
@@ -980,6 +985,7 @@ export class TradingEngineService {
             pair: string;
             side: TradeSide;
             status: TradeStatus;
+            platformName?: TradingPlatform;
         }
     ): Promise<ITrade> {
         try {
@@ -1495,6 +1501,7 @@ export class TradingEngineService {
                     pair: masterTrade.pair,
                     side: masterTrade.tradeSide,
                     status: TradeStatus.PENDING,
+                    platformName: allocation.platformName,
                 };
 
                 const createdTrade = await this.createTradeForUser(
@@ -1544,21 +1551,13 @@ export class TradingEngineService {
                 break;
             }
 
-            // const remainingAmount =
-            //     signalData.targetAmountToFill - currentAllocatedAmount;
-
-            // const finalTradeAmount = Math.min(
-            //     allocation.requiredMargin ?? 0,
-            //     remainingAmount
-            // );
-            // const finalBaseQuantity = finalTradeAmount / signalData.entryPrice;
-
             userTradeAllocations.push({
                 userId: allocation.userId,
                 riskAmount: allocation.riskAmount!,
                 positionSize: allocation.positionSize!,
                 requiredMargin: allocation.requiredMargin!,
                 baseQuantity: allocation.baseQuantity,
+                platformName: allocation.platformName,
             });
 
             currentAllocatedAmount += allocation.requiredMargin ?? 0;

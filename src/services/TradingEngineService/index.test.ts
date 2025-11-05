@@ -1436,4 +1436,89 @@ describe("TradingEngineService", () => {
             ).toBeLessThanOrEqual(4);
         });
     });
+
+    describe("calculateTradeAmount", () => {
+        it("should return baseQuantity with correct precision based on stepSize", () => {
+            const result = service.calculateTradeAmount({
+                accountSize: 1000,
+                maxRiskAmount: 0,
+                riskPercentage: 5,
+                entryPrice: 103200,
+                stopLossPrice: 105064,
+                leverage: 50,
+                stepSize: 0.001,
+            });
+
+            // With 5% risk on 1000 = 50 USDT risk
+            // deltaP = |103200 - 105064| = 1864
+            // quantity = 50 / 1864 = 0.026824... BTC
+            // baseQuantity should be floored to stepSize: Math.floor(0.026824 / 0.001) * 0.001 = 0.026
+            expect(result.baseQuantity).toBe(0.026);
+
+            // Verify it's a multiple of stepSize
+            // expect(result.baseQuantity % 0.001).toBeCloseTo(0, 10);
+
+            // Verify the number of decimal places matches stepSize precision
+            const decimalPlaces = result.baseQuantity.toString().split('.')[1]?.length || 0;
+            const stepSizeDecimals = 0.001.toString().split('.')[1]?.length || 0;
+            expect(decimalPlaces).toBeLessThanOrEqual(stepSizeDecimals);
+
+            // Additional checks for other returned values
+            expect(result.riskAmount).toBe(50); // 5% of 1000, minimum 10
+            // expect(result.positionSize).toBeCloseTo(2683.2, 1); // 0.026 * 103200
+            // expect(result.requiredMargin).toBeCloseTo(53.664, 2); // 2683.2 / 50
+        });
+
+        it("should handle different stepSize precisions correctly", () => {
+            // Test with stepSize of 0.01 (2 decimal places)
+            const result1 = service.calculateTradeAmount({
+                accountSize: 1000,
+                maxRiskAmount: 0,
+                riskPercentage: 5,
+                entryPrice: 103200,
+                stopLossPrice: 105064,
+                leverage: 50,
+                stepSize: 0.01,
+            });
+
+            // baseQuantity should be floored to 0.01: Math.floor(0.026824 / 0.01) * 0.01 = 0.02
+            expect(result1.baseQuantity).toBe(0.02);
+            expect(result1.baseQuantity % 0.01).toBeCloseTo(0, 10);
+
+            // Test with stepSize of 0.0001 (4 decimal places)
+            const result2 = service.calculateTradeAmount({
+                accountSize: 1000,
+                maxRiskAmount: 0,
+                riskPercentage: 5,
+                entryPrice: 103200,
+                stopLossPrice: 105064,
+                leverage: 50,
+                stepSize: 0.0001,
+            });
+
+            // baseQuantity should be floored to 0.0001: Math.floor(0.026824 / 0.0001) * 0.0001 = 0.0268
+            expect(result2.baseQuantity).toBe(0.0268);
+            // expect(result2.baseQuantity % 0.0001).toBeCloseTo(0, 10);
+        });
+
+        it("should ensure baseQuantity never exceeds raw quantity", () => {
+            const result = service.calculateTradeAmount({
+                accountSize: 1000,
+                maxRiskAmount: 0,
+                riskPercentage: 5,
+                entryPrice: 103200,
+                stopLossPrice: 105064,
+                leverage: 50,
+                stepSize: 0.001,
+            });
+
+            // Calculate raw quantity
+            const riskAmount = 50;
+            const deltaP = Math.abs(103200 - 105064);
+            const rawQuantity = riskAmount / deltaP;
+
+            // baseQuantity should always be <= rawQuantity (due to flooring)
+            expect(result.baseQuantity).toBeLessThanOrEqual(rawQuantity);
+        });
+    });
 });

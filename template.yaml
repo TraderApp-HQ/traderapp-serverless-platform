@@ -558,6 +558,7 @@ Resources:
                 - sqs:SendMessageBatch
               Resource:
                 - !GetAtt processBinanceOrdersQueue.Arn
+                - !GetAtt processBybitOrdersQueue.Arn
                 - !GetAtt handleFailedTradesQueue.Arn
 
   processBinanceOrders:
