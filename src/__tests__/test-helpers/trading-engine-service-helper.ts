@@ -472,7 +472,10 @@ export const createMasterTrade = async (
         accountType: options.accountType || AccountType.FUTURES,
         supportedTradingPlatforms: options.supportedTradingPlatforms || [
             TradingPlatform.BINANCE,
+            TradingPlatform.BYBIT,
         ],
+        defaultTradingPlatform:
+            options.defaultTradingPlatform || TradingPlatform.BINANCE,
         chartUrl: options.chartUrl || "https://example.com/chart.png",
         tradeNote: options.tradeNote || "Test trade note",
         pair: options.pair || "BTCUSDT",

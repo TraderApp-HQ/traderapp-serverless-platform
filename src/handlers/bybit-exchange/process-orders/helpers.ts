@@ -1,7 +1,10 @@
 import log from "@dazn/lambda-powertools-logger";
-import { OrderSide as BinanceOrderSide } from "binance-api-node";
 import mongoose from "mongoose";
-import { BinanceClient } from "src/clients/BinanceClient";
+import {
+    BybitFuturesClient,
+    BybitOrderResponse,
+    BybitOrderSide,
+} from "src/clients/BybitClient";
 import { publishMessageToQueue } from "src/clients/SQSClient/helpers";
 import { IQueueMessageBody } from "src/config/interfaces";
 import { getTradingEngineServiceSecrets } from "src/helpers/trade-service-helpers";
@@ -9,6 +12,7 @@ import {
     OrderType,
     TradeSide,
     OrderSide,
+    OrderPlacementType,
 } from "src/services/TradingEngineService/enums";
 import {
     IFailedTrade,
@@ -17,7 +21,7 @@ import {
 } from "src/services/TradingEngineService/interfaces";
 import { decrypt } from "src/utils/cypher-helpers";
 
-export const processBinanceTrades = async (
+export const processBybitTrades = async (
     queueMessages: IQueueMessageBody<IUserTradeAllocation>[]
 ) => {
     try {
@@ -31,7 +35,7 @@ export const processBinanceTrades = async (
             tradingEngineServiceSecrets.API_SECRET_KEY_ENCRYPTION_KEY;
 
         // Process all queue messages in parallel
-        const binanceTradeProcessingResults = await Promise.allSettled(
+        const bybitTradeProcessingResults = await Promise.allSettled(
             queueMessages.map(async (queueMessage) => {
                 const userTrade = queueMessage.body;
                 // console.log("##################userTrade", { userTrade });
@@ -46,24 +50,49 @@ export const processBinanceTrades = async (
                     // console.log("##################apiSecret", { apiSecret });
 
                     // Call Binance client
-                    const binanceClient = new BinanceClient(apiKey, apiSecret);
+                    const environment =
+                        process.env.ENV === "prod" ? "mainnet" : "demo";
+                    const bybitClient = new BybitFuturesClient({
+                        apiKey,
+                        apiSecret,
+                        environment,
+                    });
                     // console.log("##################after binanceClient creation");
 
-                    // Place trade on binance
+                    // Place trade on bybit
                     const side = (userTrade.tradeSide === TradeSide.LONG
-                        ? OrderSide.BUY
-                        : OrderSide.SELL) as unknown as BinanceOrderSide;
+                        ? "Buy"
+                        : "Sell") as unknown as BybitOrderSide;
                     // console.log("############### after trade side")
-                    const binanceTrade = await binanceClient.placeTrade({
-                        symbol: `${userTrade.baseAsset}${userTrade.quoteCurrency}`,
-                        side,
-                        quantity: userTrade.baseQuantity ?? 0,
-                        type: userTrade.orderPlacementType,
-                        leverage: userTrade.leverage ?? 50,
-                        price: userTrade.entryPrice,
-                        marginType: "CROSSED",
-                    });
-                    // console.log("##################placedbinanceTrade", { binanceTrade });
+                    let bybitTrade: BybitOrderResponse;
+
+                    if (
+                        userTrade.orderPlacementType ===
+                        OrderPlacementType.LIMIT
+                    ) {
+                        bybitTrade = await bybitClient.placeLimitOrder({
+                            symbol: `${userTrade.baseAsset}${userTrade.quoteCurrency}`,
+                            side,
+                            qty: (userTrade.baseQuantity ?? 0).toString(),
+                            leverage: userTrade.leverage ?? 50,
+                            price: userTrade.entryPrice.toString(),
+                        });
+                    } else if (
+                        userTrade.orderPlacementType ===
+                        OrderPlacementType.MARKET
+                    ) {
+                        bybitTrade = await bybitClient.placeMarketOrder({
+                            symbol: `${userTrade.baseAsset}${userTrade.quoteCurrency}`,
+                            side,
+                            qty: (userTrade.baseQuantity ?? 0).toString(),
+                            leverage: userTrade.leverage ?? 50,
+                        });
+                    } else {
+                        throw new Error(
+                            `Unsupported order placement type: ${userTrade.orderPlacementType}`
+                        );
+                    }
+                    // console.log("##################placedbybitTrade", { bybitTrade });
 
                     // Create processed order object
                     const processedOrder: IProcessedTrade = {
@@ -79,7 +108,7 @@ export const processBinanceTrades = async (
                                 ? OrderSide.BUY
                                 : OrderSide.SELL,
                         placementType: userTrade.orderPlacementType,
-                        externalOrderId: binanceTrade.clientOrderId,
+                        externalOrderId: bybitTrade.orderId,
                         side: userTrade.tradeSide,
                         price: userTrade.entryPrice,
                         total: userTrade.quoteTotal,
@@ -93,7 +122,7 @@ export const processBinanceTrades = async (
                             userTrade.tradingAccountId
                         ),
                         platformName: userTrade.platformName,
-                        platformId: 270, // Binance
+                        platformId: 521, // Bybit
                         createdAt: new Date().toISOString(),
                         updatedAt: new Date().toISOString(),
                     };
@@ -140,9 +169,9 @@ export const processBinanceTrades = async (
             })
         );
 
-        log.info("Binance results", { binanceTradeProcessingResults });
+        log.info("Bybit results", { bybitTradeProcessingResults });
 
-        binanceTradeProcessingResults.forEach((result) => {
+        bybitTradeProcessingResults.forEach((result) => {
             if (result.status === "fulfilled") {
                 successMessageIds.push(result.value.messageId);
             } else {
@@ -152,7 +181,7 @@ export const processBinanceTrades = async (
 
         return { successMessageIds, failedMessageIds };
     } catch (error) {
-        console.error("Error processing binance trades", { error });
+        console.error("Error processing bybit trades", { error });
         throw error;
     }
 };

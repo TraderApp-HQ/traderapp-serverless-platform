@@ -26,6 +26,7 @@ export enum Currency {
 export enum TradingPlatform {
     BINANCE = "BINANCE",
     KUCOIN = "KUCOIN",
+    BYBIT = "BYBIT",
 }
 
 export enum Category {

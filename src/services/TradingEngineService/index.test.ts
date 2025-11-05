@@ -8,6 +8,9 @@ import {
     createPlatformTradingRule,
     createMasterTrade,
     getMasterTradeById,
+    createTradingAccount,
+    createAccountBalance,
+    createDefaultUserTradingRules,
 } from "src/__tests__/test-helpers/trading-engine-service-helper";
 import { IQueueMessageBody } from "src/config/interfaces";
 import {
@@ -77,6 +80,7 @@ describe("TradingEngineService", () => {
         quoteCurrency: masterTrade.quoteCurrency,
         pair: masterTrade.pair,
         supportedTradingPlatforms: masterTrade.supportedTradingPlatforms,
+        defaultTradingPlatform: masterTrade.defaultTradingPlatform,
         tradeSide: masterTrade.side,
         targetOrdersAmountToFill: masterTrade.targetOrdersAmountToFill,
         orderPlacementType: masterTrade.orderPlacementType,
@@ -149,13 +153,22 @@ describe("TradingEngineService", () => {
             );
 
             // Keep original platform trading rules
-            await createPlatformTradingRule(testDb.tradingEngineConnection, {
-                pair: "BTCUSDT",
-                platform: TradingPlatform.BINANCE,
-                minQuantity: 0.001,
-                minNotional: 10,
-                stepSize: 0.001,
-            });
+            await Promise.all([
+                createPlatformTradingRule(testDb.tradingEngineConnection, {
+                    pair: "BTCUSDT",
+                    platform: TradingPlatform.BINANCE,
+                    minQuantity: 0.001,
+                    minNotional: 10,
+                    stepSize: 0.001,
+                }),
+                createPlatformTradingRule(testDb.tradingEngineConnection, {
+                    pair: "BTCUSDT",
+                    platform: TradingPlatform.BYBIT,
+                    minQuantity: 0.001,
+                    minNotional: 10,
+                    stepSize: 0.001,
+                }),
+            ]);
 
             // Mock queue publishing to fail for the second user
             mockPublishMessageToQueue
@@ -227,13 +240,22 @@ describe("TradingEngineService", () => {
             );
 
             // Create platform trading rules for BTCUSDT - this makes user1 succeed
-            await createPlatformTradingRule(testDb.tradingEngineConnection, {
-                pair: "BTCUSDT",
-                platform: TradingPlatform.BINANCE,
-                minQuantity: 0.001,
-                minNotional: 200,
-                stepSize: 0.001,
-            });
+            await Promise.all([
+                createPlatformTradingRule(testDb.tradingEngineConnection, {
+                    pair: "BTCUSDT",
+                    platform: TradingPlatform.BINANCE,
+                    minQuantity: 0.001,
+                    minNotional: 200,
+                    stepSize: 0.001,
+                }),
+                createPlatformTradingRule(testDb.tradingEngineConnection, {
+                    pair: "BTCUSDT",
+                    platform: TradingPlatform.BYBIT,
+                    minQuantity: 0.001,
+                    minNotional: 200,
+                    stepSize: 0.001,
+                }),
+            ]);
 
             const signalEvent = createMockMasterTradeEvent();
             const queueMessage = createMockQueueMessage(signalEvent);
@@ -275,13 +297,22 @@ describe("TradingEngineService", () => {
             );
 
             // Keep original platform trading rules
-            await createPlatformTradingRule(testDb.tradingEngineConnection, {
-                pair: "BTCUSDT",
-                platform: TradingPlatform.BINANCE,
-                minQuantity: 0.001,
-                minNotional: 10,
-                stepSize: 0.001,
-            });
+            await Promise.all([
+                createPlatformTradingRule(testDb.tradingEngineConnection, {
+                    pair: "BTCUSDT",
+                    platform: TradingPlatform.BINANCE,
+                    minQuantity: 0.001,
+                    minNotional: 10,
+                    stepSize: 0.001,
+                }),
+                createPlatformTradingRule(testDb.tradingEngineConnection, {
+                    pair: "BTCUSDT",
+                    platform: TradingPlatform.BYBIT,
+                    minQuantity: 0.001,
+                    minNotional: 10,
+                    stepSize: 0.001,
+                }),
+            ]);
 
             // Use higher leverage to meet minimum quantity requirements
             const masterTradeEvent = createMockMasterTradeEvent({
@@ -420,13 +451,22 @@ describe("TradingEngineService", () => {
             }
 
             // Create platform trading rules
-            await createPlatformTradingRule(testDb.tradingEngineConnection, {
-                pair: "BTCUSDT",
-                platform: TradingPlatform.BINANCE,
-                minQuantity: 0.001,
-                minNotional: 10,
-                stepSize: 0.001,
-            });
+            await Promise.all([
+                createPlatformTradingRule(testDb.tradingEngineConnection, {
+                    pair: "BTCUSDT",
+                    platform: TradingPlatform.BINANCE,
+                    minQuantity: 0.001,
+                    minNotional: 10,
+                    stepSize: 0.001,
+                }),
+                createPlatformTradingRule(testDb.tradingEngineConnection, {
+                    pair: "BTCUSDT",
+                    platform: TradingPlatform.BYBIT,
+                    minQuantity: 0.001,
+                    minNotional: 10,
+                    stepSize: 0.001,
+                }),
+            ]);
 
             const masterTradeEvent = createMockMasterTradeEvent({
                 targetOrdersAmountToFill: 800,
@@ -467,13 +507,22 @@ describe("TradingEngineService", () => {
                         ],
                     }
                 ),
-                createPlatformTradingRule(testDb.tradingEngineConnection, {
-                    pair: "BTCUSDT",
-                    platform: TradingPlatform.BINANCE,
-                    minQuantity: 0.001,
-                    minNotional: 10,
-                    stepSize: 0.001,
-                }),
+                await Promise.all([
+                    createPlatformTradingRule(testDb.tradingEngineConnection, {
+                        pair: "BTCUSDT",
+                        platform: TradingPlatform.BINANCE,
+                        minQuantity: 0.001,
+                        minNotional: 10,
+                        stepSize: 0.001,
+                    }),
+                    createPlatformTradingRule(testDb.tradingEngineConnection, {
+                        pair: "BTCUSDT",
+                        platform: TradingPlatform.BYBIT,
+                        minQuantity: 0.001,
+                        minNotional: 10,
+                        stepSize: 0.001,
+                    }),
+                ]),
             ]);
 
             const [masterTradeEvent1, masterTradeEvent2] = await Promise.all([
@@ -525,13 +574,22 @@ describe("TradingEngineService", () => {
             );
 
             // Create platform trading rules
-            await createPlatformTradingRule(testDb.tradingEngineConnection, {
-                pair: "BTCUSDT",
-                platform: TradingPlatform.BINANCE,
-                minQuantity: 0.001,
-                minNotional: 10,
-                stepSize: 0.001,
-            });
+            await Promise.all([
+                createPlatformTradingRule(testDb.tradingEngineConnection, {
+                    pair: "BTCUSDT",
+                    platform: TradingPlatform.BINANCE,
+                    minQuantity: 0.001,
+                    minNotional: 10,
+                    stepSize: 0.001,
+                }),
+                createPlatformTradingRule(testDb.tradingEngineConnection, {
+                    pair: "BTCUSDT",
+                    platform: TradingPlatform.BYBIT,
+                    minQuantity: 0.001,
+                    minNotional: 10,
+                    stepSize: 0.001,
+                }),
+            ]);
 
             // Mock all queue publishing to fail
             mockPublishMessageToQueue.mockRejectedValue(
@@ -576,13 +634,22 @@ describe("TradingEngineService", () => {
             );
 
             // Create platform trading rules
-            await createPlatformTradingRule(testDb.tradingEngineConnection, {
-                pair: "BTCUSDT",
-                platform: TradingPlatform.BINANCE,
-                minQuantity: 0.001,
-                minNotional: 10,
-                stepSize: 0.001,
-            });
+            await Promise.all([
+                createPlatformTradingRule(testDb.tradingEngineConnection, {
+                    pair: "BTCUSDT",
+                    platform: TradingPlatform.BINANCE,
+                    minQuantity: 0.001,
+                    minNotional: 10,
+                    stepSize: 0.001,
+                }),
+                createPlatformTradingRule(testDb.tradingEngineConnection, {
+                    pair: "BTCUSDT",
+                    platform: TradingPlatform.BYBIT,
+                    minQuantity: 0.001,
+                    minNotional: 10,
+                    stepSize: 0.001,
+                }),
+            ]);
 
             const masterTradeEvent = createMockMasterTradeEvent({
                 // Don't provide leverage - should be calculated
@@ -621,13 +688,22 @@ describe("TradingEngineService", () => {
             );
 
             // Use strict platform trading rules
-            await createPlatformTradingRule(testDb.tradingEngineConnection, {
-                pair: "BTCUSDT",
-                platform: TradingPlatform.BINANCE,
-                minQuantity: 0.001, // This will cause failure
-                minNotional: 10000,
-                stepSize: 0.001,
-            });
+            await Promise.all([
+                createPlatformTradingRule(testDb.tradingEngineConnection, {
+                    pair: "BTCUSDT",
+                    platform: TradingPlatform.BINANCE,
+                    minQuantity: 0.001, // This will cause failure
+                    minNotional: 10000,
+                    stepSize: 0.001,
+                }),
+                createPlatformTradingRule(testDb.tradingEngineConnection, {
+                    pair: "BTCUSDT",
+                    platform: TradingPlatform.BYBIT,
+                    minQuantity: 0.001,
+                    minNotional: 10000,
+                    stepSize: 0.001,
+                }),
+            ]);
 
             // Use low leverage that won't meet minimum quantity
             const masterTradeEvent = createMockMasterTradeEvent({
@@ -649,6 +725,302 @@ describe("TradingEngineService", () => {
 
             // No queue publishing should happen
             expect(mockPublishMessageToQueue).not.toHaveBeenCalled();
+        });
+
+        it("should choose only one trading platform per user when multiple platforms qualify", async () => {
+            const userId = "multi-platform-user";
+
+            // Create two trading accounts for the same user on different platforms
+            const binanceAccount = await createTradingAccount(
+                testDb.tradingEngineConnection,
+                {
+                    userId,
+                    platformName: TradingPlatform.BINANCE,
+                    connectionStatus: AccountConnectionStatus.CONNECTED,
+                }
+            );
+
+            const bybitAccount = await createTradingAccount(
+                testDb.tradingEngineConnection,
+                {
+                    userId,
+                    platformName: TradingPlatform.BYBIT,
+                    connectionStatus: AccountConnectionStatus.CONNECTED,
+                }
+            );
+
+            // Create balances for both accounts
+            await Promise.all([
+                createAccountBalance(testDb.tradingEngineConnection, {
+                    userId,
+                    platformName: TradingPlatform.BINANCE,
+                    tradingAccountId: new mongoose.Types.ObjectId(
+                        binanceAccount._id as string
+                    ),
+                    currency: Currency.USDT,
+                    availableBalance: 5000,
+                    accountType: AccountType.FUTURES,
+                }),
+                createAccountBalance(testDb.tradingEngineConnection, {
+                    userId,
+                    platformName: TradingPlatform.BYBIT,
+                    tradingAccountId: new mongoose.Types.ObjectId(
+                        bybitAccount._id as string
+                    ),
+                    currency: Currency.USDT,
+                    availableBalance: 5000,
+                    accountType: AccountType.FUTURES,
+                }),
+            ]);
+
+            // Create user trading rules
+            await createDefaultUserTradingRules(
+                testDb.tradingEngineConnection,
+                userId
+            );
+
+            // Create platform trading rules for both platforms
+            await Promise.all([
+                createPlatformTradingRule(testDb.tradingEngineConnection, {
+                    pair: "BTCUSDT",
+                    platform: TradingPlatform.BINANCE,
+                    minQuantity: 0.001,
+                    minNotional: 10,
+                    stepSize: 0.001,
+                }),
+                createPlatformTradingRule(testDb.tradingEngineConnection, {
+                    pair: "BTCUSDT",
+                    platform: TradingPlatform.BYBIT,
+                    minQuantity: 0.001,
+                    minNotional: 10,
+                    stepSize: 0.001,
+                }),
+            ]);
+
+            // Create master trade event with BINANCE as default platform
+            const masterTradeEvent = createMockMasterTradeEvent({
+                supportedTradingPlatforms: [
+                    TradingPlatform.BINANCE,
+                    TradingPlatform.BYBIT,
+                ],
+                defaultTradingPlatform: TradingPlatform.BINANCE,
+                targetOrdersAmountToFill: 250,
+            });
+            const queueMessage = createMockQueueMessage(masterTradeEvent);
+
+            const result = await service.processIncomingMasterTrades([
+                queueMessage,
+            ]);
+
+            expect(result.successMessageIds).toContain("test-message-123");
+            expect(result.userTradeAllocations).toHaveLength(1);
+            // Should choose BINANCE since it's the default platform
+            expect(result.userTradeAllocations[0].platformName).toBe(
+                TradingPlatform.BINANCE
+            );
+            expect(result.userTradeAllocations[0].userId).toBe(userId);
+        });
+
+        it("should choose first available platform when default platform doesn't qualify", async () => {
+            const userId = "default-platform-not-available";
+
+            // Create BYBIT account only (default BINANCE not available)
+            const bybitAccount = await createTradingAccount(
+                testDb.tradingEngineConnection,
+                {
+                    userId,
+                    platformName: TradingPlatform.BYBIT,
+                    connectionStatus: AccountConnectionStatus.CONNECTED,
+                }
+            );
+
+            // Create balance for BYBIT account
+            await createAccountBalance(testDb.tradingEngineConnection, {
+                userId,
+                platformName: TradingPlatform.BYBIT,
+                tradingAccountId: new mongoose.Types.ObjectId(
+                    bybitAccount._id as string
+                ),
+                currency: Currency.USDT,
+                availableBalance: 5000,
+                accountType: AccountType.FUTURES,
+            });
+
+            // Create user trading rules
+            await createDefaultUserTradingRules(
+                testDb.tradingEngineConnection,
+                userId
+            );
+
+            // Create platform trading rules for BYBIT only
+            await createPlatformTradingRule(testDb.tradingEngineConnection, {
+                pair: "BTCUSDT",
+                platform: TradingPlatform.BYBIT,
+                minQuantity: 0.001,
+                minNotional: 10,
+                stepSize: 0.001,
+            });
+
+            // Create master trade event with BINANCE as default but BYBIT is available
+            const masterTradeEvent = createMockMasterTradeEvent({
+                supportedTradingPlatforms: [
+                    TradingPlatform.BINANCE,
+                    TradingPlatform.BYBIT,
+                ],
+                defaultTradingPlatform: TradingPlatform.BINANCE,
+                targetOrdersAmountToFill: 250,
+            });
+            const queueMessage = createMockQueueMessage(masterTradeEvent);
+
+            const result = await service.processIncomingMasterTrades([
+                queueMessage,
+            ]);
+
+            expect(result.successMessageIds).toContain("test-message-123");
+            expect(result.userTradeAllocations).toHaveLength(1);
+            // Should choose BYBIT since BINANCE is not available
+            expect(result.userTradeAllocations[0].platformName).toBe(
+                TradingPlatform.BYBIT
+            );
+            expect(result.userTradeAllocations[0].userId).toBe(userId);
+        });
+
+        it("should handle multiple users each with multiple platforms correctly", async () => {
+            const user1 = "user-with-binance-and-bybit";
+            const user2 = "user-with-bybit-only";
+
+            // Create accounts for user1 on both platforms
+            const user1BinanceAccount = await createTradingAccount(
+                testDb.tradingEngineConnection,
+                {
+                    userId: user1,
+                    platformName: TradingPlatform.BINANCE,
+                    connectionStatus: AccountConnectionStatus.CONNECTED,
+                }
+            );
+
+            const user1BybitAccount = await createTradingAccount(
+                testDb.tradingEngineConnection,
+                {
+                    userId: user1,
+                    platformName: TradingPlatform.BYBIT,
+                    connectionStatus: AccountConnectionStatus.CONNECTED,
+                }
+            );
+
+            // Create account for user2 on BYBIT only
+            const user2BybitAccount = await createTradingAccount(
+                testDb.tradingEngineConnection,
+                {
+                    userId: user2,
+                    platformName: TradingPlatform.BYBIT,
+                    connectionStatus: AccountConnectionStatus.CONNECTED,
+                }
+            );
+
+            // Create balances
+            await Promise.all([
+                createAccountBalance(testDb.tradingEngineConnection, {
+                    userId: user1,
+                    platformName: TradingPlatform.BINANCE,
+                    tradingAccountId: new mongoose.Types.ObjectId(
+                        user1BinanceAccount._id as string
+                    ),
+                    currency: Currency.USDT,
+                    availableBalance: 5000,
+                    accountType: AccountType.FUTURES,
+                }),
+                createAccountBalance(testDb.tradingEngineConnection, {
+                    userId: user1,
+                    platformName: TradingPlatform.BYBIT,
+                    tradingAccountId: new mongoose.Types.ObjectId(
+                        user1BybitAccount._id as string
+                    ),
+                    currency: Currency.USDT,
+                    availableBalance: 5000,
+                    accountType: AccountType.FUTURES,
+                }),
+                createAccountBalance(testDb.tradingEngineConnection, {
+                    userId: user2,
+                    platformName: TradingPlatform.BYBIT,
+                    tradingAccountId: new mongoose.Types.ObjectId(
+                        user2BybitAccount._id as string
+                    ),
+                    currency: Currency.USDT,
+                    availableBalance: 5000,
+                    accountType: AccountType.FUTURES,
+                }),
+            ]);
+
+            // Create user trading rules for both users
+            await Promise.all([
+                createDefaultUserTradingRules(
+                    testDb.tradingEngineConnection,
+                    user1
+                ),
+                createDefaultUserTradingRules(
+                    testDb.tradingEngineConnection,
+                    user2
+                ),
+            ]);
+
+            // Create platform trading rules
+            await Promise.all([
+                createPlatformTradingRule(testDb.tradingEngineConnection, {
+                    pair: "BTCUSDT",
+                    platform: TradingPlatform.BINANCE,
+                    minQuantity: 0.001,
+                    minNotional: 10,
+                    stepSize: 0.001,
+                }),
+                createPlatformTradingRule(testDb.tradingEngineConnection, {
+                    pair: "BTCUSDT",
+                    platform: TradingPlatform.BYBIT,
+                    minQuantity: 0.001,
+                    minNotional: 10,
+                    stepSize: 0.001,
+                }),
+            ]);
+
+            // Create master trade event with BYBIT as default
+            const masterTradeEvent = createMockMasterTradeEvent({
+                supportedTradingPlatforms: [
+                    TradingPlatform.BINANCE,
+                    TradingPlatform.BYBIT,
+                ],
+                defaultTradingPlatform: TradingPlatform.BYBIT,
+                targetOrdersAmountToFill: 500,
+            });
+            const queueMessage = createMockQueueMessage(masterTradeEvent);
+
+            const result = await service.processIncomingMasterTrades([
+                queueMessage,
+            ]);
+
+            expect(result.successMessageIds).toContain("test-message-123");
+            expect(result.userTradeAllocations).toHaveLength(2);
+
+            // User1 should have BYBIT (default platform)
+            const user1Allocation = result.userTradeAllocations.find(
+                (a) => a.userId === user1
+            );
+            expect(user1Allocation?.platformName).toBe(TradingPlatform.BYBIT);
+
+            // User2 should have BYBIT (only available platform)
+            const user2Allocation = result.userTradeAllocations.find(
+                (a) => a.userId === user2
+            );
+            expect(user2Allocation?.platformName).toBe(TradingPlatform.BYBIT);
+
+            // Verify only one allocation per user
+            const user1Allocations = result.userTradeAllocations.filter(
+                (a) => a.userId === user1
+            );
+            const user2Allocations = result.userTradeAllocations.filter(
+                (a) => a.userId === user2
+            );
+            expect(user1Allocations).toHaveLength(1);
+            expect(user2Allocations).toHaveLength(1);
         });
     });
 

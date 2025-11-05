@@ -34,6 +34,8 @@ describe("processBinanceTrades", () => {
         TRADING_ENGINE_SERVICE_DB_URL: "mongodb://test",
         PROCESS_BINANCE_ORDERS_QUEUE:
             "https://sqs.us-east-1.amazonaws.com/123/binance-orders",
+        PROCESS_BYBIT_ORDERS_QUEUE:
+            "https://sqs.us-east-1.amazonaws.com/123/bybit-orders",
         PROCESS_USER_TRADES_QUEUE:
             "https://sqs.us-east-1.amazonaws.com/123/user-trades",
         HANDLE_FAILED_TRADES_QUEUE:

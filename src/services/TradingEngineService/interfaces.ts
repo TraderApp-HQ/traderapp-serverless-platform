@@ -95,6 +95,7 @@ export interface IMasterTrade extends Document {
     orderPlacementType?: OrderPlacementType;
     accountType?: AccountType;
     supportedTradingPlatforms: TradingPlatform[];
+    defaultTradingPlatform: TradingPlatform;
     chartUrl?: string;
     tradeNote?: string;
     pair: string;
@@ -121,6 +122,7 @@ export interface IProcessUserTradingWithMasterTradeEvent {
     quoteCurrency: string;
     pair: string;
     supportedTradingPlatforms: TradingPlatform[];
+    defaultTradingPlatform: TradingPlatform;
     tradeSide: TradeSide;
     targetOrdersAmountToFill: number;
     orderPlacementType?: OrderPlacementType; // default is MARKET if not provided
@@ -262,6 +264,7 @@ export interface IInvoice extends Document {
 export interface IProcessedTrade {
     userId: string;
     tradeId: mongoose.Types.ObjectId; // reference to the Trade model
+    masterTradeId: string;
     baseAsset: string;
     baseAssetLogoUrl?: string;
     baseQuantity: number;

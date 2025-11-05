@@ -4,10 +4,7 @@ import {
     CryptopayWebhookEventType,
     ICryptopayWebhookEvent,
 } from "./index";
-import {
-    TransactionStatus,
-    WalletProvider,
-} from "src/types/wallets-service";
+import { TransactionStatus, WalletProvider } from "src/types/wallets-service";
 
 describe("CryptoPayClient.formatTransaction", () => {
     const client = new CryptoPayClient({

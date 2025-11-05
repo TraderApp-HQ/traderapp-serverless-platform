@@ -40,6 +40,7 @@ const mockUpdateTrade = jest.fn();
 const mockCreateOrderBatch = jest.fn();
 const mockCreateOrder = jest.fn();
 const mockCalculatePnL = jest.fn();
+const mockUpdateMasterTradeData = jest.fn();
 
 jest.mock("src/services/TradingEngineService", () => {
     return {
@@ -48,6 +49,7 @@ jest.mock("src/services/TradingEngineService", () => {
             createOrderBatch: mockCreateOrderBatch,
             createOrder: mockCreateOrder,
             calculatePnL: mockCalculatePnL,
+            updateMasterTradeData: mockUpdateMasterTradeData,
         })),
     };
 });
@@ -66,6 +68,8 @@ describe("Trade Service Helpers", () => {
         TRADING_ENGINE_SERVICE_DB_URL: "mongodb://test",
         PROCESS_BINANCE_ORDERS_QUEUE:
             "https://sqs.us-east-1.amazonaws.com/123/binance-orders",
+        PROCESS_BYBIT_ORDERS_QUEUE:
+            "https://sqs.us-east-1.amazonaws.com/123/bybit-orders",
         PROCESS_USER_TRADES_QUEUE:
             "https://sqs.us-east-1.amazonaws.com/123/user-trades",
         HANDLE_FAILED_TRADES_QUEUE:
@@ -96,7 +100,8 @@ describe("Trade Service Helpers", () => {
         // Mock getSecrets to return common secrets with email queue
         mockGetSecrets.mockResolvedValue({
             ...mockSecrets,
-            EMAIL_NOTIFICATIONS_QUEUE: "https://sqs.us-east-1.amazonaws.com/123/notifications",
+            EMAIL_NOTIFICATIONS_QUEUE:
+                "https://sqs.us-east-1.amazonaws.com/123/notifications",
         });
 
         // Mock getUserById
@@ -115,7 +120,15 @@ describe("Trade Service Helpers", () => {
                 tradingEngineServiceSecrets: mockSecrets,
             });
 
+            const resultBybit = await mapUserConnectedTradingPlatformToQueueUrl(
+                {
+                    platformName: TradingPlatform.BYBIT,
+                    tradingEngineServiceSecrets: mockSecrets,
+                }
+            );
+
             expect(result).toBe(mockSecrets.PROCESS_BINANCE_ORDERS_QUEUE);
+            expect(resultBybit).toBe(mockSecrets.PROCESS_BYBIT_ORDERS_QUEUE);
         });
 
         it("should throw error for unsupported platform", async () => {
@@ -406,13 +419,17 @@ describe("Trade Service Helpers", () => {
             const queueMessage = createQueueMessage(userTrade);
 
             const mockWalletsService = {
-                getUserWallet: jest.fn(() => Promise.reject(new Error("Database error"))),
+                getUserWallet: jest.fn(() =>
+                    Promise.reject(new Error("Database error"))
+                ),
                 getInvoices: jest.fn().mockResolvedValue([]),
                 lockUserBalance: jest.fn(),
                 createInvoice: jest.fn(),
             };
 
-            (WalletsService as jest.Mock).mockImplementation(() => mockWalletsService);
+            (WalletsService as jest.Mock).mockImplementation(
+                () => mockWalletsService
+            );
 
             const result = await processUserTrades([queueMessage]);
 
@@ -425,7 +442,9 @@ describe("Trade Service Helpers", () => {
         const createProcessedTrade = (): IProcessedTrade => ({
             userId: "user123",
             tradeId: new mongoose.Types.ObjectId(),
+            masterTradeId: "68f86e5e738aa71abf5deebb",
             baseAsset: "BTC",
+            baseAssetLogoUrl: "https://example.com/logo.png",
             baseQuantity: 0.001,
             orderType: OrderType.ENTRY,
             orderSide: OrderSide.BUY,
@@ -470,7 +489,8 @@ describe("Trade Service Helpers", () => {
             // Mock getSecrets to return common secrets with email queue
             mockGetSecrets.mockResolvedValue({
                 ...mockSecrets,
-                EMAIL_NOTIFICATIONS_QUEUE: "https://sqs.us-east-1.amazonaws.com/123/notifications",
+                EMAIL_NOTIFICATIONS_QUEUE:
+                    "https://sqs.us-east-1.amazonaws.com/123/notifications",
             });
 
             // Mock getUserById
@@ -482,7 +502,7 @@ describe("Trade Service Helpers", () => {
             } as any);
         });
 
-        it("should update trade status and create order batch and order", async () => {
+        it("should update trade status, create order batch and order, and update master trade", async () => {
             const processedTrade = createProcessedTrade();
             const queueMessage = createQueueMessage(processedTrade);
 
@@ -494,6 +514,7 @@ describe("Trade Service Helpers", () => {
                 id: "68625959a18cb30d0f937702",
             });
             mockCreateOrder.mockResolvedValue({ id: "order123" });
+            mockUpdateMasterTradeData.mockResolvedValue(undefined);
 
             const result = await handleProcessedTrades([queueMessage]);
 
@@ -505,10 +526,20 @@ describe("Trade Service Helpers", () => {
             expect(mockCreateOrderBatch).toHaveBeenCalled();
             expect(mockCreateOrder).toHaveBeenCalled();
 
+            // Verify master trade was updated with incremented values
+            expect(mockUpdateMasterTradeData).toHaveBeenCalledWith({
+                masterTradeId: processedTrade.masterTradeId,
+                baseQuantity: processedTrade.baseQuantity,
+                quoteTotal: processedTrade.quoteTotal,
+                estimatedProfit: expect.any(Number), // The calculated profit
+                estimatedLoss: processedTrade.riskAmount,
+            });
+
             // Verify notification was sent
             expect(mockPublishMessageToQueue).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    queueUrl: "https://sqs.us-east-1.amazonaws.com/123/notifications",
+                    queueUrl:
+                        "https://sqs.us-east-1.amazonaws.com/123/notifications",
                     message: expect.stringContaining("Trade Initiated"),
                 })
             );
