@@ -387,6 +387,7 @@ describe("Trade Service Helpers", () => {
             (WalletsService as jest.Mock).mockImplementation(
                 () => mockWalletsService
             );
+            mockPublishMessageToQueue.mockResolvedValue(undefined);
 
             const result = await processUserTrades([queueMessage]);
 
