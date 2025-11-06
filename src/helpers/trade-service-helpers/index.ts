@@ -688,6 +688,7 @@ export const handleFailedTrades = async (
         const successMessageIds: string[] = [];
         const failedMessageIds: string[] = [];
         const tradingEngineService = new TradingEngineService();
+        const walletsService = new WalletsService();
 
         // handle failed order in parallel
         const failedOrderProcessingResults = await Promise.allSettled(
@@ -699,6 +700,33 @@ export const handleFailedTrades = async (
                         tradeId: failedOrder.tradeId.toString(),
                         updateData: { status: TradeStatus.FAILED },
                     });
+
+                    // Get invoices based on tradeIde and invoice types
+                    const invoices = await walletsService.getInvoices({
+                        tradeId: failedOrder.tradeId.toString(),
+                        invoiceTypes: [InvoiceType.TRADING_FEE, InvoiceType.PROFIT_SHARE],
+                    });
+
+                    // Compute total amount to unlock
+                    const totalAmountToUnlock = invoices.reduce((acc, invoice) => acc + invoice.amountPaid, 0);
+                    if (totalAmountToUnlock > 0) {
+                        // unlock user balance
+                        await walletsService.unlockUserBalance({
+                            userId: failedOrder.userId,
+                            amount: totalAmountToUnlock,
+                            currency: Currency.USDT,
+                            walletType: WalletType.MAIN,
+                        });
+                    }
+
+                    // archive invoices
+                    await Promise.allSettled(invoices.map(async (invoice) => {
+                        await walletsService.updateInvoice({
+                            invoiceId: (invoice._id as mongoose.Types.ObjectId).toString(),
+                            status: InvoiceStatus.ARCHIVED,
+                        });
+                    }));
+
                     return {
                         messageId: queueMessage.messageId,
                         failedOrder,

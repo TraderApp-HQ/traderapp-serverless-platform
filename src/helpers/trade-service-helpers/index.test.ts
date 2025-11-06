@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import mongoose from "mongoose";
-import { TradingPlatform, AccountType } from "src/config/enums";
+import { TradingPlatform, AccountType, Currency } from "src/config/enums";
 import { IQueueMessageBody } from "src/config/interfaces";
 import { ITradingEngineServiceSecrets } from "src/config/secrets/interfaces";
 import {
@@ -10,6 +10,7 @@ import {
     TradeSide,
     TradeStatus,
     InvoiceStatus,
+    InvoiceType,
 } from "src/services/TradingEngineService/enums";
 import {
     IFailedTrade,
@@ -57,6 +58,7 @@ jest.mock("src/services/TradingEngineService", () => {
 import { publishMessageToQueue } from "src/clients/SQSClient/helpers";
 import { WalletsService } from "src/services/WalletsService";
 import { getSecrets } from "src/config/secrets/helpers";
+import { WalletType } from "src/types/wallets-service";
 
 const mockPublishMessageToQueue = publishMessageToQueue as jest.MockedFunction<
     typeof publishMessageToQueue
@@ -584,10 +586,57 @@ describe("Trade Service Helpers", () => {
             awsRegion: "us-east-1",
         });
 
-        it("should update trade status to FAILED", async () => {
+        // Add mocks for WalletsService methods
+        const mockGetInvoices = jest.fn();
+        const mockUnlockUserBalance = jest.fn();
+        const mockUpdateInvoice = jest.fn();
+
+        beforeEach(() => {
+            // Reset WalletsService mocks
+            mockGetInvoices.mockReset();
+            mockUnlockUserBalance.mockReset();
+            mockUpdateInvoice.mockReset();
+
+            // Setup default mock implementations
+            (WalletsService as jest.Mock).mockImplementation(() => ({
+                getInvoices: mockGetInvoices,
+                unlockUserBalance: mockUnlockUserBalance,
+                updateInvoice: mockUpdateInvoice,
+            }));
+        });
+
+        it("should update trade status to FAILED, unlock balance, and archive invoices", async () => {
             const failedTrade = createFailedTrade();
             const queueMessage = createQueueMessage(failedTrade);
 
+            // Mock invoices with locked amounts
+            const mockInvoices = [
+                {
+                    _id: new mongoose.Types.ObjectId(),
+                    userId: failedTrade.userId,
+                    tradeId: failedTrade.tradeId.toString(),
+                    invoiceType: InvoiceType.TRADING_FEE,
+                    amountPaid: 10,
+                    amountDue: 10,
+                    status: InvoiceStatus.LOCKED,
+                },
+                {
+                    _id: new mongoose.Types.ObjectId(),
+                    userId: failedTrade.userId,
+                    tradeId: failedTrade.tradeId.toString(),
+                    invoiceType: InvoiceType.PROFIT_SHARE,
+                    amountPaid: 30,
+                    amountDue: 50,
+                    status: InvoiceStatus.LOCKED,
+                },
+            ];
+
+            mockGetInvoices.mockResolvedValue(mockInvoices);
+            mockUnlockUserBalance.mockResolvedValue(undefined);
+            mockUpdateInvoice.mockResolvedValue({
+                success: true,
+                invoice: { status: InvoiceStatus.ARCHIVED },
+            });
             mockUpdateTrade.mockResolvedValue({
                 id: failedTrade.tradeId.toString(),
             });
@@ -595,10 +644,101 @@ describe("Trade Service Helpers", () => {
             const result = await handleFailedTrades([queueMessage]);
 
             expect(result.successMessageIds).toHaveLength(1);
+
+            // Verify trade status was updated to FAILED
             expect(mockUpdateTrade).toHaveBeenCalledWith({
                 tradeId: failedTrade.tradeId.toString(),
                 updateData: { status: TradeStatus.FAILED },
             });
+
+            // Verify invoices were fetched
+            expect(mockGetInvoices).toHaveBeenCalledWith({
+                tradeId: failedTrade.tradeId.toString(),
+                invoiceTypes: [InvoiceType.TRADING_FEE, InvoiceType.PROFIT_SHARE],
+            });
+
+            // Verify balance was unlocked with correct total amount (10 + 30 = 40)
+            expect(mockUnlockUserBalance).toHaveBeenCalledWith({
+                userId: failedTrade.userId,
+                amount: 40,
+                currency: Currency.USDT,
+                walletType: WalletType.MAIN,
+            });
+
+            // Verify all invoices were archived
+            expect(mockUpdateInvoice).toHaveBeenCalledTimes(2);
+            mockInvoices.forEach((invoice) => {
+                expect(mockUpdateInvoice).toHaveBeenCalledWith({
+                    invoiceId: invoice._id.toString(),
+                    status: InvoiceStatus.ARCHIVED,
+                });
+            });
+        });
+
+        it("should not unlock balance when no amount was paid", async () => {
+            const failedTrade = createFailedTrade();
+            const queueMessage = createQueueMessage(failedTrade);
+
+            // Mock invoices with no locked amounts (amountPaid = 0)
+            const mockInvoices = [
+                {
+                    _id: new mongoose.Types.ObjectId(),
+                    userId: failedTrade.userId,
+                    tradeId: failedTrade.tradeId.toString(),
+                    invoiceType: InvoiceType.TRADING_FEE,
+                    amountPaid: 0,
+                    amountDue: 10,
+                    status: InvoiceStatus.PENDING,
+                },
+                {
+                    _id: new mongoose.Types.ObjectId(),
+                    userId: failedTrade.userId,
+                    tradeId: failedTrade.tradeId.toString(),
+                    invoiceType: InvoiceType.PROFIT_SHARE,
+                    amountPaid: 0,
+                    amountDue: 50,
+                    status: InvoiceStatus.PENDING,
+                },
+            ];
+
+            mockGetInvoices.mockResolvedValue(mockInvoices);
+            mockUpdateInvoice.mockResolvedValue({
+                success: true,
+                invoice: { status: InvoiceStatus.ARCHIVED },
+            });
+            mockUpdateTrade.mockResolvedValue({
+                id: failedTrade.tradeId.toString(),
+            });
+
+            const result = await handleFailedTrades([queueMessage]);
+
+            expect(result.successMessageIds).toHaveLength(1);
+
+            // Verify balance unlock was NOT called (total is 0)
+            expect(mockUnlockUserBalance).not.toHaveBeenCalled();
+
+            // Verify invoices were still archived
+            expect(mockUpdateInvoice).toHaveBeenCalledTimes(2);
+        });
+
+        it("should handle case with no invoices", async () => {
+            const failedTrade = createFailedTrade();
+            const queueMessage = createQueueMessage(failedTrade);
+
+            mockGetInvoices.mockResolvedValue([]); // No invoices
+            mockUpdateTrade.mockResolvedValue({
+                id: failedTrade.tradeId.toString(),
+            });
+
+            const result = await handleFailedTrades([queueMessage]);
+
+            expect(result.successMessageIds).toHaveLength(1);
+
+            // Verify balance unlock was NOT called
+            expect(mockUnlockUserBalance).not.toHaveBeenCalled();
+
+            // Verify invoice archive was NOT called
+            expect(mockUpdateInvoice).not.toHaveBeenCalled();
         });
 
         it("should handle errors gracefully", async () => {
@@ -609,6 +749,34 @@ describe("Trade Service Helpers", () => {
 
             const result = await handleFailedTrades([queueMessage]);
 
+            expect(result.failedMessageIds).toHaveLength(1);
+        });
+
+        it("should handle unlock balance errors gracefully", async () => {
+            const failedTrade = createFailedTrade();
+            const queueMessage = createQueueMessage(failedTrade);
+
+            const mockInvoices = [
+                {
+                    _id: new mongoose.Types.ObjectId(),
+                    userId: failedTrade.userId,
+                    tradeId: failedTrade.tradeId.toString(),
+                    invoiceType: InvoiceType.TRADING_FEE,
+                    amountPaid: 10,
+                    amountDue: 10,
+                    status: InvoiceStatus.LOCKED,
+                },
+            ];
+
+            mockGetInvoices.mockResolvedValue(mockInvoices);
+            mockUnlockUserBalance.mockRejectedValue(new Error("Unlock failed"));
+            mockUpdateTrade.mockResolvedValue({
+                id: failedTrade.tradeId.toString(),
+            });
+
+            const result = await handleFailedTrades([queueMessage]);
+
+            // Should still fail the message due to unlock error
             expect(result.failedMessageIds).toHaveLength(1);
         });
     });

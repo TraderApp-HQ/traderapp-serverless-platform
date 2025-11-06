@@ -91,6 +91,7 @@ export enum InvoiceStatus {
     LOCKED = "LOCKED",
     PAID = "PAID",
     FAILED = "FAILED",
+    ARCHIVED = "ARCHIVED",
 }
 
 export enum InvoiceType {
