@@ -609,6 +609,7 @@ Resources:
           - !Ref AWS::NoValue
       Policies:
         - AWSLambdaBasicExecutionRole
+        - !If [HasVpcConfig, AWSLambdaVPCAccessExecutionRole, !Ref "AWS::NoValue"]
         - Statement:
             - Effect: Allow
               Action:
@@ -623,12 +624,6 @@ Resources:
               Resource:
                 - !GetAtt handleProcessedTradesQueue.Arn
                 - !GetAtt handleFailedTradesQueue.Arn
-      # Add ManagedPolicyArns for VPC access
-      ManagedPolicyArns:
-        - !If
-          - HasVpcConfig
-          - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
-          - !Ref AWS::NoValue
 
   processBybitOrders:
     Type: AWS::Serverless::Function
@@ -660,6 +655,7 @@ Resources:
           - !Ref AWS::NoValue
       Policies:
         - AWSLambdaBasicExecutionRole
+        - !If [HasVpcConfig, AWSLambdaVPCAccessExecutionRole, !Ref "AWS::NoValue"]
         - Statement:
             - Effect: Allow
               Action:
@@ -674,12 +670,6 @@ Resources:
               Resource:
                 - !GetAtt handleProcessedTradesQueue.Arn
                 - !GetAtt handleFailedTradesQueue.Arn
-      # Add ManagedPolicyArns for VPC access
-      ManagedPolicyArns:
-        - !If
-          - HasVpcConfig
-          - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
-          - !Ref AWS::NoValue
 
   handleProcessedTrades:
     Type: AWS::Serverless::Function
