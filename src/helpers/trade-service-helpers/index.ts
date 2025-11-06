@@ -519,6 +519,7 @@ export const publishProcessedTradeToQueue = async (
 ) => {
     const { userId, processedTrade, queueUrl, pnlAmount } = input;
 
+
     const user = await UsersService.getUserById(userId);
     if (!user) {
         throw new Error(`User with the ID ${userId} not found`);
@@ -531,7 +532,7 @@ export const publishProcessedTradeToQueue = async (
         event: EventTemplate.SEND_TRADE_INITIATED_NOTIFICATION,
         metadata: {
             baseAsset: processedTrade.baseAsset,
-            baseAssetLogoUrl: processedTrade.baseAssetLogoUrl ?? "",
+            baseAssetLogoUrl: processedTrade.baseAssetLogoUrl,
             quoteCurrency: processedTrade.quoteCurrency,
             entryPrice: processedTrade.price,
             stopLoss: processedTrade.stopLossPrice,
