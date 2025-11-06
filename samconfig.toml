@@ -16,14 +16,14 @@ image_repositories = []
 
 [dev.deploy.parameters]
 stack_name = "dev"
-parameter_overrides = "Environment=\"dev\""
+parameter_overrides = "Environment=\"dev\" VpcId=\"vpc-013618c4404fd46c9\" SubnetIds=\"subnet-0a2945f0be1085106,subnet-0bb7daca3e59b5cae\" SecurityGroupIds=\"sg-0efa56150b3d11919\""
 s3_prefix = "dev"
 capabilities = "CAPABILITY_IAM"
 confirm_changeset = false
 
 [staging.deploy.parameters]
 stack_name = "staging"
-parameter_overrides = "Environment=\"staging\""
+parameter_overrides = "Environment=\"staging\" VpcId=\"vpc-013618c4404fd46c9\" SubnetIds=\"subnet-0a2945f0be1085106,subnet-0bb7daca3e59b5cae\" SecurityGroupIds=\"sg-0efa56150b3d11919\""
 s3_prefix = "staging"
 resolve_s3 = true
 capabilities = "CAPABILITY_IAM"
@@ -31,7 +31,7 @@ confirm_changeset = false
 
 [prod.deploy.parameters]
 stack_name = "prod"
-parameter_overrides = "Environment=\"prod\""
+parameter_overrides = "Environment=\"prod\" VpcId=\"vpc-0fbf59f4fa68abaa0\" SubnetIds=\"subnet-091da1f82047f878b,subnet-0a709dd1eddbc24a0\" SecurityGroupIds=\"sg-05dc53df766e736eb\""
 s3_prefix = "prod"
 resolve_s3 = true
 capabilities = "CAPABILITY_IAM"

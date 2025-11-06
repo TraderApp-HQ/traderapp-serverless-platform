@@ -28,6 +28,24 @@ Parameters:
       - staging
       - prod
     Description: Environment name to prefix resources
+  
+  VpcId:
+    Type: String
+    Description: VPC ID where Lambda functions will run
+    Default: "" # Make it optional for environments that don't need VPC
+  
+  SubnetIds:
+    Type: CommaDelimitedList
+    Description: Comma-separated list of subnet IDs (private subnets with NAT Gateway)
+    Default: ""
+  
+  SecurityGroupIds:
+    Type: CommaDelimitedList
+    Description: Comma-separated list of security group IDs for Lambda functions
+    Default: ""
+
+Conditions:
+  HasVpcConfig: !Not [!Equals [!Ref VpcId, ""]]
 
 Resources:
 # create queues
@@ -582,8 +600,20 @@ Resources:
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt processBinanceOrdersDLQ.Arn
+      # Add VPC Configuration
+      VpcConfig:
+        !If
+          - HasVpcConfig
+          - SubnetIds: !Ref SubnetIds
+            SecurityGroupIds: !Ref SecurityGroupIds
+          - !Ref AWS::NoValue
       Policies:
         - AWSLambdaBasicExecutionRole
+        # Add VPC execution role if using VPC
+        - !If
+          - HasVpcConfig
+          - AWSLambdaVPCAccessExecutionRole
+          - !Ref AWS::NoValue
         - Statement:
             - Effect: Allow
               Action:
@@ -620,8 +650,20 @@ Resources:
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt processBybitOrdersDLQ.Arn
+      # Add VPC Configuration
+      VpcConfig:
+        !If
+          - HasVpcConfig
+          - SubnetIds: !Ref SubnetIds
+            SecurityGroupIds: !Ref SecurityGroupIds
+          - !Ref AWS::NoValue
       Policies:
         - AWSLambdaBasicExecutionRole
+        # Add VPC execution role if using VPC
+        - !If
+          - HasVpcConfig
+          - AWSLambdaVPCAccessExecutionRole
+          - !Ref AWS::NoValue
         - Statement:
             - Effect: Allow
               Action:
