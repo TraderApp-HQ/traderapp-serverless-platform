@@ -18,6 +18,7 @@ image_repositories = []
 stack_name = "dev"
 parameter_overrides = "Environment=\"dev\" VpcId=\"vpc-013618c4404fd46c9\" SubnetIds=\"subnet-0a2945f0be1085106,subnet-0bb7daca3e59b5cae\" SecurityGroupIds=\"sg-0efa56150b3d11919\""
 s3_prefix = "dev"
+resolve_s3 = true
 capabilities = "CAPABILITY_IAM"
 confirm_changeset = false
 
