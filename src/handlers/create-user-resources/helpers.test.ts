@@ -15,6 +15,7 @@ import {
     TradingRuleCategory,
     TradingRuleType,
 } from "src/services/TradingEngineService/enums";
+import { TradingEngineServiceCollections } from "src/clients/MongoDBClient/constants";
 
 // Mock all dependencies
 jest.mock("mongoose");
@@ -38,6 +39,9 @@ describe("createUserResources Helper", () => {
 
     const mockPlatformTradingRules: ITradingRule[] = [
         {
+            _id: {
+                toString: () => "507f1f77bcf86cd799439011"
+            } as any,
             id: "rule-1",
             name: "Risk Percentage Per Trade",
             description: "Maximum risk per trade",
@@ -50,6 +54,9 @@ describe("createUserResources Helper", () => {
             updatedAt: "2024-01-01",
         } as ITradingRule,
         {
+            _id: {
+                toString: () => "507f1f77bcf86cd799439012"
+            } as any,
             id: "rule-2",
             name: "Maximum Concurrent Trades",
             description: "Max concurrent trades",
@@ -94,15 +101,15 @@ describe("createUserResources Helper", () => {
         };
 
         mockUserTradingRulesCollection = {
-            insertOne: jest.fn().mockResolvedValue({}),
+            updateOne: jest.fn().mockResolvedValue({ modifiedCount: 1, upsertedCount: 1 }), // Changed from insertOne to updateOne
         };
 
-        // Mock MongoDBClient constructor
+        // Mock MongoDBClient constructor - use actual constants
         (MongoDBClient as jest.Mock).mockImplementation((conn, collection) => {
-            if (collection === "trading-rules") {
+            if (collection === TradingEngineServiceCollections.tradingRules) {
                 return mockTradingRulesCollection;
             }
-            if (collection === "user-trading-rules") {
+            if (collection === TradingEngineServiceCollections.userTradingRules) {
                 return mockUserTradingRulesCollection;
             }
             return {};
@@ -139,18 +146,24 @@ describe("createUserResources Helper", () => {
             // Verify platform trading rules were fetched
             expect(mockTradingRulesCollection.findAll).toHaveBeenCalled();
 
-            // Verify user trading rules were created (2 users × 2 rules = 4 insertions)
-            expect(mockUserTradingRulesCollection.insertOne).toHaveBeenCalledTimes(4);
+            // Verify user trading rules were upserted (2 users × 2 rules = 4 upserts)
+            expect(mockUserTradingRulesCollection.updateOne).toHaveBeenCalledTimes(4);
 
             // Verify user trading rules data structure
-            expect(mockUserTradingRulesCollection.insertOne).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    userId: "user-123",
-                    ruleId: "rule-1",
-                    name: "Risk Percentage Per Trade",
-                    isCustomized: false,
-                    lastResetToDefault: null,
-                })
+            expect(mockUserTradingRulesCollection.updateOne).toHaveBeenCalledWith(
+                { userId: "user-123", ruleId: expect.any(String) },
+                {
+                    $set: expect.objectContaining({
+                        userId: "user-123",
+                        name: "Risk Percentage Per Trade",
+                    }),
+                    $setOnInsert: {
+                        isCustomized: false,
+                        lastResetToDefault: null,
+                        createdAt: expect.any(String),
+                    },
+                },
+                { upsert: true }
             );
 
             // Verify connection was closed
@@ -177,14 +190,14 @@ describe("createUserResources Helper", () => {
 
             const result = await createUserResources(mockQueueMessages);
 
-            // Only 1 user should have trading rules created (2 rules)
-            expect(mockUserTradingRulesCollection.insertOne).toHaveBeenCalledTimes(2);
+            // Only 1 user should have trading rules upserted (2 rules)
+            expect(mockUserTradingRulesCollection.updateOne).toHaveBeenCalledTimes(2);
 
             // Only first user's trading rules
-            expect(mockUserTradingRulesCollection.insertOne).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    userId: "user-123",
-                })
+            expect(mockUserTradingRulesCollection.updateOne).toHaveBeenCalledWith(
+                { userId: "user-123", ruleId: expect.any(String) },
+                expect.any(Object),
+                { upsert: true }
             );
 
             expect(result).toEqual({
@@ -205,7 +218,7 @@ describe("createUserResources Helper", () => {
 
             // No trading rules should be created
             expect(mockTradingRulesCollection.findAll).not.toHaveBeenCalled();
-            expect(mockUserTradingRulesCollection.insertOne).not.toHaveBeenCalled();
+            expect(mockUserTradingRulesCollection.updateOne).not.toHaveBeenCalled();
 
             expect(result).toEqual({
                 successMessageIds: [],
@@ -218,11 +231,11 @@ describe("createUserResources Helper", () => {
         });
 
         it("should handle trading rules creation failure for a user", async () => {
-            mockUserTradingRulesCollection.insertOne
-                .mockResolvedValueOnce({}) // user-123 rule-1: success
-                .mockResolvedValueOnce({}) // user-123 rule-2: success
+            mockUserTradingRulesCollection.updateOne
+                .mockResolvedValueOnce({ modifiedCount: 1 }) // user-123 rule-1: success
+                .mockResolvedValueOnce({ modifiedCount: 1 }) // user-123 rule-2: success
                 .mockRejectedValueOnce(new Error("DB error")) // user-456 rule-1: fail
-                .mockResolvedValueOnce({}); // user-456 rule-2: success (won't reach)
+                .mockResolvedValueOnce({ modifiedCount: 1 }); // user-456 rule-2: success (won't reach)
 
             const result = await createUserResources(mockQueueMessages);
 
@@ -246,7 +259,7 @@ describe("createUserResources Helper", () => {
             const result = await createUserResources(mockQueueMessages);
 
             // Wallets created but no trading rules
-            expect(mockUserTradingRulesCollection.insertOne).not.toHaveBeenCalled();
+            expect(mockUserTradingRulesCollection.updateOne).not.toHaveBeenCalled();
             expect(log.warn).toHaveBeenCalledWith("No platform trading rules found");
 
             // Should still succeed since wallets were created
@@ -333,8 +346,8 @@ describe("createUserResources Helper", () => {
 
             const result = await createUserResources(singleMessage);
 
-            // 1 user × 2 rules = 2 insertions
-            expect(mockUserTradingRulesCollection.insertOne).toHaveBeenCalledTimes(2);
+            // 1 user × 2 rules = 2 upserts
+            expect(mockUserTradingRulesCollection.updateOne).toHaveBeenCalledTimes(2);
 
             expect(result).toEqual({
                 successMessageIds: ["msg-1"],
@@ -356,6 +369,9 @@ describe("createUserResources Helper", () => {
             const mixedRules = [
                 ...mockPlatformTradingRules,
                 {
+                    _id: {
+                        toString: () => "507f1f77bcf86cd799439013"
+                    } as any,
                     id: "rule-3",
                     name: "Disabled Rule",
                     description: "This is disabled",
@@ -373,17 +389,21 @@ describe("createUserResources Helper", () => {
 
             const result = await createUserResources(mockQueueMessages);
 
-            // Should create user rules for all platform rules (including disabled ones)
-            // 2 users × 3 rules = 6 insertions
-            expect(mockUserTradingRulesCollection.insertOne).toHaveBeenCalledTimes(6);
+            // Should upsert user rules for all platform rules (including disabled ones)
+            // 2 users × 3 rules = 6 upserts
+            expect(mockUserTradingRulesCollection.updateOne).toHaveBeenCalledTimes(6);
 
             // Verify disabled rule is preserved
-            expect(mockUserTradingRulesCollection.insertOne).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    userId: "user-123",
-                    ruleId: "rule-3",
-                    isEnabled: false,
-                })
+            expect(mockUserTradingRulesCollection.updateOne).toHaveBeenCalledWith(
+                { userId: "user-123", ruleId: expect.any(String) },
+                {
+                    $set: expect.objectContaining({
+                        userId: "user-123",
+                        isEnabled: false,
+                    }),
+                    $setOnInsert: expect.any(Object),
+                },
+                { upsert: true }
             );
 
             expect(result.successMessageIds).toHaveLength(2);
