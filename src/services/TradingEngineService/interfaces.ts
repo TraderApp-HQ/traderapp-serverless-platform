@@ -70,6 +70,8 @@ export interface ITrade extends Document {
     entryPrice: number;
     stopLossPrice: number;
     takeProfitPrice: number;
+    estimatedProfit: number;
+    estimatedLoss: number;
     platformName?: TradingPlatform;
     pair: string;
     side: TradeSide;

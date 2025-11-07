@@ -23,7 +23,7 @@ import {
     IUserWallet,
     IUserWalletDepositDetail,
     IWalletCurrency,
-    IWalletInput,
+    ICreateUserResourcesInput,
     IWalletType,
     TransactionStatus,
     TransactionType,
@@ -631,7 +631,7 @@ export class WalletsService {
 
     // Create User Wallet
     public async createUserWallet(
-        queueMessages: IQueueMessageBody<IWalletInput>[]
+        queueMessages: IQueueMessageBody<ICreateUserResourcesInput>[]
     ): Promise<{
         successMessageIds: string[];
         failedMessageIds: string[];
@@ -687,30 +687,40 @@ export class WalletsService {
                         const walletPromises = walletTypes.flatMap((wallet) =>
                             wallet.currencies.map(async (currency) => {
                                 try {
-                                    await userWalletCollection.insertOne({
+                                    const walletData = {
                                         userId: queue.body.userId,
-                                        walletType: new mongoose.Types.ObjectId(
-                                            wallet.id
-                                        ),
+                                        walletType: wallet._id,
                                         walletTypeName: wallet.walletTypeName,
                                         currency: currency,
                                         currencyName: walletCurrencies.find(
-                                            (cur) =>
-                                                cur._id.toString() ===
-                                                currency._id.toString()
+                                            (cur) => cur._id.toString() === currency._id.toString()
                                         )?.name,
                                         currencySymbol: walletCurrencies.find(
-                                            (cur) =>
-                                                cur._id.toString() ===
-                                                currency._id.toString()
+                                            (cur) => cur._id.toString() === currency._id.toString()
                                         )?.symbol,
-                                        availableBalance: 0,
-                                        lockedBalance: 0,
-                                    });
+                                    };
+
+                                    // Upsert: insert if not exists, keep balances if exists
+                                    await userWalletCollection.updateOne(
+                                        {
+                                            userId: queue.body.userId,
+                                            walletType: wallet._id,
+                                            "currency._id": currency._id,
+                                        },
+                                        {
+                                            $set: walletData,
+                                            $setOnInsert: {
+                                                availableBalance: 0,
+                                                lockedBalance: 0,
+                                                createdAt: new Date().toISOString(),
+                                            },
+                                        },
+                                        { upsert: true }
+                                    );
                                     return { success: true };
                                 } catch (error) {
-                                    log.debug(
-                                        `Failed to create user wallet for currency ${currency._id}:`,
+                                    console.error(
+                                        `Failed to upsert user wallet for currency ${currency._id}:`,
                                         { error }
                                     );
                                     return { success: false };

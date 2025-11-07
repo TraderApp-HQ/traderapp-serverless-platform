@@ -1410,7 +1410,7 @@ export class TradingEngineService {
 
             const riskPercentage = riskPercentageRule
                 ? Number(riskPercentageRule.value)
-                : 1;
+                : 5; // default risk percentage is 5%
 
             // Calculate trade amount
             const { positionSize, requiredMargin, riskAmount, baseQuantity } =
@@ -1489,15 +1489,25 @@ export class TradingEngineService {
         // Create trades for each allocated user
         const tradeCreationResults = await Promise.allSettled(
             allocations.map(async (allocation) => {
+                const { pnlAmount } = this.calculatePnL({
+                    side: masterTrade.tradeSide,
+                    entryPrice: masterTrade.entryPrice,
+                    targetPrice: masterTrade.takeProfitPrice,
+                    baseQuantity: allocation.baseQuantity ?? 0,
+                    riskUSDT: allocation.riskAmount,
+                    requiredMargin: allocation.requiredMargin,
+                });
                 const trade = {
                     masterTradeId: masterTrade.masterTradeId,
                     baseAsset: masterTrade.baseAsset,
                     quoteCurrency: masterTrade.quoteCurrency,
-                    baseQuantity: allocation.positionSize,
+                    baseQuantity: allocation.baseQuantity ?? 0,
                     entryPrice: masterTrade.entryPrice,
                     stopLossPrice: masterTrade.stopLossPrice,
                     takeProfitPrice: masterTrade.takeProfitPrice,
                     quoteTotal: allocation.requiredMargin,
+                    estimatedProfit: pnlAmount,
+                    estimatedLoss: allocation.riskAmount,
                     pair: masterTrade.pair,
                     side: masterTrade.tradeSide,
                     status: TradeStatus.PENDING,

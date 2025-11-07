@@ -92,12 +92,12 @@ export interface IUserWallet {
     lockedBalance: number;
 }
 
-export interface IWalletInput {
+export interface ICreateUserResourcesInput {
     userId: string;
 }
 
 export interface IWalletType {
-    id: string;
+    _id: mongoose.Types.ObjectId;
     walletTypeName: WalletType; // WalletType enum value
     currencies: mongoose.Types.ObjectId[]; // Array of Currency references
 }
