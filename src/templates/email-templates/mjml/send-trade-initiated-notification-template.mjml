@@ -21,10 +21,11 @@
       }
 
       b {
-        font-family: Manrope, Arial, sans-serif;
+        font-family: Manrope;
         font-weight: 600;
+        font-style: SemiBold;
         font-size: 14px;
-        line-height: 1.6;
+        line-height: 1.4;
         color: #414141;
       }
 
@@ -34,14 +35,14 @@
         font-weight: 700;
         font-size: 14px;
         color: #414141;
-      	margin-left: 10px;
+        margin-left: 6px;
       }
 
       .tradeside {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        padding: 4px 10px;
+        padding: 4px 8px;
         margin-left: 8px;
         border-radius: 4px;
         font-family: Manrope, Arial, sans-serif;
@@ -57,25 +58,26 @@
         font-weight: 500;
         font-size: 14px;
         color: #667085;
+        margin-left: 10px;
       }
 
       .estimatedloss {
         font-weight: 500;
         font-size: 14px;
         color: #ed3b3b;
-      	margin-left: 10px;
+        margin-left: 10px;
       }
 
       .estimatedprofit {
         font-weight: 500;
         font-size: 14px;
         color: #067d55;
-      	margin-left: 10px;
+        margin-left: 10px;
       }
 
       .platform {
         font-family: IBM Plex Sans;
-        font-weight: 700;
+        font-weight: 600;
         font-size: 16px;
         color: #414141;
       }
@@ -90,13 +92,8 @@
       .deposit_details {
         font-family: Manrope;
         font-weight: 700;
-        font-style: Bold;
         font-size: 16px;
-        leading-trim: NONE;
-        line-height: 113px;
-        letter-spacing: 0%;
         color: #0A0D14;
-
       }
 
       .remark {
@@ -113,7 +110,7 @@
       .details-box {
         background-color: #f5f8ff;
         border-radius: 8px;
-        padding: 5px 15px;
+        padding: 12px 18px;
         box-sizing: border-box;
       }
 
@@ -186,51 +183,51 @@
         </mj-column>
       </mj-section>
 
-      <!-- Trade Summary -->
-      <mj-section css-class="details-box" padding="12px 0">
+      
+      <mj-section css-class="details-box">
         <mj-column>
-          <mj-text css-class="deposit_details" padding="0 0 6px 0">
+          <mj-text css-class="deposit_details" padding="0 0 10px 0">
             Trade Summary
           </mj-text>
 
-          <mj-text font-size="14px" line-height="2" padding="0">
-            <p style="margin: 0; display: flex; align-items: center;">
-              <b style="min-width: 90px;">Asset:</b>
-              <span style="display: inline-flex; align-items: center; gap: 6px;">
+          <mj-text font-size="14px" line-height="1.9" padding="0">
+            <p style="margin: 0 0 6px 0; display: flex; align-items: center;">
+              <mj-text css-class="b" style="min-width: 110px;">Asset:</mj-text>
+              <span style="display: inline-flex; align-items: center; margin-left: 10px;">
                 <img
                   src="{BASE_ASSET_LOGO_URL}"
                   alt=""
                   width="20"
                   height="20"
-                  style="display: inline-block; vertical-align: middle;"
+                  style="vertical-align: middle;"
                 />
                 <span class="baseasset">{BASE_ASSET}</span>
                 <span class="tradeside">{TRADE_SIDE}</span>
               </span>
             </p>
 
-            <p style="margin: 0; display: flex; align-items: center;">
-              <b style="min-width: 90px;">Entry Price:</b>
+            <p style="margin: 0 0 6px 0; display: flex; align-items: center;">
+              <mj-text css-class="b" style="min-width: 110px;">Entry Price:</mj-text>
               <span class="entryprice">{ENTRY_PRICE}</span>
             </p>
 
-            <p style="margin: 0; display: flex; align-items: center;">
-              <b style="min-width: 90px;">Stop Loss:</b>
+            <p style="margin: 0 0 6px 0; display: flex; align-items: center;">
+              <mj-text css-class="b" style="min-width: 110px;">Stop Loss:</mj-text>
               <span class="entryprice">{STOP_LOSS}</span>
             </p>
 
-            <p style="margin: 0; display: flex; align-items: center;">
-              <b style="min-width: 90px;">Estimated Loss:</b>
+            <p style="margin: 0 0 6px 0; display: flex; align-items: center;">
+              <mj-text css-class="b" style="min-width: 110px;">Estimated Loss:</mj-text>
               <span class="estimatedloss">{ESTIMATED_LOSS} USDT</span>
             </p>
 
-            <p style="margin: 0; display: flex; align-items: center;">
-              <b style="min-width: 90px;">Estimated Profit:</b>
+            <p style="margin: 0 0 6px 0; display: flex; align-items: center;">
+              <mj-text css-class="b" style="min-width: 110px;">Estimated Profit:</mj-text>
               <span class="estimatedprofit">{ESTIMATED_PROFIT} USDT</span>
             </p>
 
             <p style="margin: 0; display: flex; align-items: center;">
-              <b style="min-width: 90px;">Date:</b>
+              <mj-text css-class="b" style="min-width: 110px;">Date:</mj-text>
               <span class="entryprice">{DATE_TIME}</span>
             </p>
           </mj-text>
