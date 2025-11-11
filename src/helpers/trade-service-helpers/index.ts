@@ -3,10 +3,16 @@ import { format } from "date-fns";
 import mongoose from "mongoose";
 import { publishMessageToQueue } from "src/clients/SQSClient/helpers";
 import { Currency, EventTemplate, TradingPlatform } from "src/config/enums";
-import { IQueueMessageBody, IQueueMessageBodyObject } from "src/config/interfaces";
+import {
+    IQueueMessageBody,
+    IQueueMessageBodyObject,
+} from "src/config/interfaces";
 import { SecretLocation } from "src/config/secrets/enums";
 import { getSecrets } from "src/config/secrets/helpers";
-import { ICommonSecrets, ITradingEngineServiceSecrets } from "src/config/secrets/interfaces";
+import {
+    ICommonSecrets,
+    ITradingEngineServiceSecrets,
+} from "src/config/secrets/interfaces";
 import { TradingEngineService } from "src/services/TradingEngineService";
 import {
     InvoiceStatus,
@@ -24,7 +30,10 @@ import {
     IUserTradeAllocation,
 } from "src/services/TradingEngineService/interfaces";
 import UsersService from "src/services/UsersService";
-import { ICreateInvoiceResponse, WalletsService } from "src/services/WalletsService";
+import {
+    ICreateInvoiceResponse,
+    WalletsService,
+} from "src/services/WalletsService";
 import { IUserWallet, WalletType } from "src/types/wallets-service";
 
 export const getTradingEngineServiceSecrets = async () => {
@@ -36,9 +45,7 @@ export const getTradingEngineServiceSecrets = async () => {
 
 export const getCommonSecrets = async () => {
     const env = process.env.ENV ?? "";
-    return getSecrets<ICommonSecrets>(
-        `${SecretLocation.commonSecrets}/${env}`
-    );
+    return getSecrets<ICommonSecrets>(`${SecretLocation.commonSecrets}/${env}`);
 };
 
 export const mapUserConnectedTradingPlatformToQueueUrl = async ({
@@ -48,14 +55,18 @@ export const mapUserConnectedTradingPlatformToQueueUrl = async ({
     platformName: string;
     tradingEngineServiceSecrets: ITradingEngineServiceSecrets;
 }) => {
-    // Get process binance orders queue url
+    // Get process orders queue urls
     const processBinanceOrdersQueue =
         tradingEngineServiceSecrets.PROCESS_BINANCE_ORDERS_QUEUE ?? "";
+    const processBybitOrdersQueue =
+        tradingEngineServiceSecrets.PROCESS_BYBIT_ORDERS_QUEUE ?? "";
 
     // Map platform name to queue url
     switch (platformName) {
         case TradingPlatform.BINANCE:
             return processBinanceOrdersQueue;
+        case TradingPlatform.BYBIT:
+            return processBybitOrdersQueue;
         default:
             throw new Error(`Unsupported trading platform: ${platformName}`);
     }
@@ -79,7 +90,7 @@ export const computeTotalAmountToLock = (input: {
     } = input;
 
     // Compute trading fee of 1% of the trade amount or $1, whichever is greater
-    const tradingFee = Number((Math.max(tradeAmount * 0.01, 1)).toFixed(2));
+    const tradingFee = Number(Math.max(tradeAmount * 0.01, 1).toFixed(2));
 
     const tradingEngineService = new TradingEngineService();
     const { pnlAmount } = tradingEngineService.calculatePnL({
@@ -97,14 +108,17 @@ export const computeTotalAmountToLock = (input: {
     // Compute total amount to lock
     const totalAmountToLock = tradingFee + projectedProfitShareAmount;
 
-    return { tradingFee, projectedProfitShareAmount, totalAmountToLock, pnlAmount };
+    return {
+        tradingFee,
+        projectedProfitShareAmount,
+        totalAmountToLock,
+        pnlAmount,
+    };
 };
 
 // Helper function to check if user has exceeded unpaid invoices limit
 
-const checkUserUnpaidInvoicesLimit = (
-    unpaidInvoices: IInvoice[]
-): boolean => {
+const checkUserUnpaidInvoicesLimit = (unpaidInvoices: IInvoice[]): boolean => {
     const uniqueTradeIds = new Set(
         unpaidInvoices.map((invoice) => invoice.tradeId)
     );
@@ -280,7 +294,8 @@ const processSingleUserTrade = async ({
         ]);
 
         // Check if user has exceeded unpaid invoices limit
-        const hasExceededUnpaidInvoicesLimit = checkUserUnpaidInvoicesLimit(userUnpaidInvoices);
+        const hasExceededUnpaidInvoicesLimit =
+            checkUserUnpaidInvoicesLimit(userUnpaidInvoices);
         if (hasExceededUnpaidInvoicesLimit) {
             return {
                 messageId: queueMessage.messageId,
@@ -521,7 +536,10 @@ export const publishProcessedTradeToQueue = async (
             quoteCurrency: processedTrade.quoteCurrency,
             entryPrice: processedTrade.price,
             stopLoss: processedTrade.stopLossPrice,
-            tradeSide: processedTrade.orderSide === OrderSide.BUY ? TradeSide.LONG : TradeSide.SHORT,
+            tradeSide:
+                processedTrade.orderSide === OrderSide.BUY
+                    ? TradeSide.LONG
+                    : TradeSide.SHORT,
             estimatedLoss: processedTrade.riskAmount,
             estimatedProfit: pnlAmount,
             platformName: processedTrade.platformName,
@@ -546,7 +564,8 @@ export const handleProcessedTrades = async (
 
         // Get common secrets
         const commonSecrets = await getCommonSecrets();
-        const notificationsQueueUrl = commonSecrets.EMAIL_NOTIFICATIONS_QUEUE ?? "";
+        const notificationsQueueUrl =
+            commonSecrets.EMAIL_NOTIFICATIONS_QUEUE ?? "";
 
         // handle processed order in parallel
         const processedTradeProcessingResults = await Promise.allSettled(
@@ -595,12 +614,27 @@ export const handleProcessedTrades = async (
 
                     // calculate pnl
                     const { pnlAmount } = tradingEngineService.calculatePnL({
-                        side: processedOrder.orderSide === OrderSide.BUY ? TradeSide.LONG : TradeSide.SHORT,
+                        side:
+                            processedOrder.orderSide === OrderSide.BUY
+                                ? TradeSide.LONG
+                                : TradeSide.SHORT,
                         entryPrice: processedOrder.entryPrice,
                         targetPrice: processedOrder.takeProfitPrice,
                         baseQuantity: processedOrder.baseQuantity,
                         riskUSDT: processedOrder.riskAmount,
                         requiredMargin: processedOrder.quoteTotal,
+                    });
+
+                    // Calculate estimated profit (same as pnlAmount for take profit)
+                    const estimatedProfit = pnlAmount > 0 ? pnlAmount : 0;
+
+                    // Update master trade with incremented values
+                    await tradingEngineService.updateMasterTradeData({
+                        masterTradeId: processedOrder.masterTradeId,
+                        baseQuantity: processedOrder.baseQuantity ?? 0,
+                        quoteTotal: processedOrder.quoteTotal ?? 0,
+                        estimatedProfit: estimatedProfit ?? 0,
+                        estimatedLoss: processedOrder.riskAmount ?? 0,
                     });
 
                     // Publish to notifications queue
@@ -655,6 +689,7 @@ export const handleFailedTrades = async (
         const successMessageIds: string[] = [];
         const failedMessageIds: string[] = [];
         const tradingEngineService = new TradingEngineService();
+        const walletsService = new WalletsService();
 
         // handle failed order in parallel
         const failedOrderProcessingResults = await Promise.allSettled(
@@ -666,6 +701,33 @@ export const handleFailedTrades = async (
                         tradeId: failedOrder.tradeId.toString(),
                         updateData: { status: TradeStatus.FAILED },
                     });
+
+                    // Get invoices based on tradeIde and invoice types
+                    const invoices = await walletsService.getInvoices({
+                        tradeId: failedOrder.tradeId.toString(),
+                        invoiceTypes: [InvoiceType.TRADING_FEE, InvoiceType.PROFIT_SHARE],
+                    });
+
+                    // Compute total amount to unlock
+                    const totalAmountToUnlock = invoices.reduce((acc, invoice) => acc + invoice.amountPaid, 0);
+                    if (totalAmountToUnlock > 0) {
+                        // unlock user balance
+                        await walletsService.unlockUserBalance({
+                            userId: failedOrder.userId,
+                            amount: totalAmountToUnlock,
+                            currency: Currency.USDT,
+                            walletType: WalletType.MAIN,
+                        });
+                    }
+
+                    // archive invoices
+                    await Promise.allSettled(invoices.map(async (invoice) => {
+                        await walletsService.updateInvoice({
+                            invoiceId: (invoice._id as mongoose.Types.ObjectId).toString(),
+                            status: InvoiceStatus.ARCHIVED,
+                        });
+                    }));
+
                     return {
                         messageId: queueMessage.messageId,
                         failedOrder,

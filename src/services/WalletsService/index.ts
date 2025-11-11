@@ -23,7 +23,7 @@ import {
     IUserWallet,
     IUserWalletDepositDetail,
     IWalletCurrency,
-    IWalletInput,
+    ICreateUserResourcesInput,
     IWalletType,
     TransactionStatus,
     TransactionType,
@@ -186,7 +186,12 @@ export class WalletsService {
                             externalTransactionId:
                                 transaction.externalTransactionId,
                         },
-                        { $set: { status: transaction.status } }
+                        {
+                            $set: {
+                                status: transaction.status,
+                                providerFee: transaction.providerFee,
+                            },
+                        }
                     );
                 }
             } else {
@@ -480,14 +485,15 @@ export class WalletsService {
                             await this.creditUserWallet({
                                 userId,
                                 amount: parseFloat(
-                                    queueMessage.body.data.paid_amount ?? "0"
+                                    queueMessage.body.data.received_amount ??
+                                    "0"
                                 ),
                             });
-                            // Publish user to queue for first deposit tracking if paid_amount is greater than $10
+                            // Publish user to queue for first deposit tracking if paid_amount is >= $20
                             if (
                                 parseFloat(
                                     queueMessage.body.data.paid_amount ?? "0"
-                                ) >= 10
+                                ) >= 20
                             ) {
                                 await publishMessageToQueue({
                                     queueUrl:
@@ -625,7 +631,7 @@ export class WalletsService {
 
     // Create User Wallet
     public async createUserWallet(
-        queueMessages: IQueueMessageBody<IWalletInput>[]
+        queueMessages: IQueueMessageBody<ICreateUserResourcesInput>[]
     ): Promise<{
         successMessageIds: string[];
         failedMessageIds: string[];
@@ -681,30 +687,40 @@ export class WalletsService {
                         const walletPromises = walletTypes.flatMap((wallet) =>
                             wallet.currencies.map(async (currency) => {
                                 try {
-                                    await userWalletCollection.insertOne({
+                                    const walletData = {
                                         userId: queue.body.userId,
-                                        walletType: new mongoose.Types.ObjectId(
-                                            wallet.id
-                                        ),
+                                        walletType: wallet._id,
                                         walletTypeName: wallet.walletTypeName,
                                         currency: currency,
                                         currencyName: walletCurrencies.find(
-                                            (cur) =>
-                                                cur._id.toString() ===
-                                                currency._id.toString()
+                                            (cur) => cur._id.toString() === currency._id.toString()
                                         )?.name,
                                         currencySymbol: walletCurrencies.find(
-                                            (cur) =>
-                                                cur._id.toString() ===
-                                                currency._id.toString()
+                                            (cur) => cur._id.toString() === currency._id.toString()
                                         )?.symbol,
-                                        availableBalance: 0,
-                                        lockedBalance: 0,
-                                    });
+                                    };
+
+                                    // Upsert: insert if not exists, keep balances if exists
+                                    await userWalletCollection.updateOne(
+                                        {
+                                            userId: queue.body.userId,
+                                            walletType: wallet._id,
+                                            "currency._id": currency._id,
+                                        },
+                                        {
+                                            $set: walletData,
+                                            $setOnInsert: {
+                                                availableBalance: 0,
+                                                lockedBalance: 0,
+                                                createdAt: new Date().toISOString(),
+                                            },
+                                        },
+                                        { upsert: true }
+                                    );
                                     return { success: true };
                                 } catch (error) {
-                                    log.debug(
-                                        `Failed to create user wallet for currency ${currency._id}:`,
+                                    console.error(
+                                        `Failed to upsert user wallet for currency ${currency._id}:`,
                                         { error }
                                     );
                                     return { success: false };
@@ -1071,22 +1087,12 @@ export class WalletsService {
                 }
             );
 
-            console.log(
-                "##################result after lockUserBalance update",
-                { result }
-            );
-
             // Check if the update actually modified a document
             const wallet = await this.getUserWallet({
                 userId,
                 currency,
                 walletType,
             });
-
-            console.log(
-                "##################wallet after lockUserBalance update",
-                { wallet }
-            );
 
             if (!wallet) {
                 return {
@@ -1098,13 +1104,6 @@ export class WalletsService {
 
             // Either wallet doesn't exist or insufficient balance
             if (result.modifiedCount === 0) {
-                console.log(
-                    "##################inside if result.modifiedCount === 0",
-                    { modifiedCount: result.modifiedCount }
-                );
-                console.log("##################wallet.availableBalance", {
-                    availableBalance: wallet?.availableBalance,
-                });
                 return {
                     success: false,
                     error: "INSUFFICIENT_BALANCE",
@@ -1118,6 +1117,49 @@ export class WalletsService {
         } catch (error) {
             console.error("General error in lockUserBalance:", { error });
             throw error;
+        }
+    }
+
+    public async unlockUserBalance({
+        userId,
+        amount,
+        currency,
+        walletType,
+    }: {
+        userId: string;
+        amount: number;
+        currency: string;
+        walletType: string;
+    }) {
+        try {
+            // Ensure service is initialized
+            await this.initialize();
+            const connection = await this.getConnection();
+
+            const userWalletCollection = new MongoDBClient<IUserWallet>(
+                connection,
+                WalletsServiceCollections.userWallets
+            );
+
+            // Atomically check sufficient balance and lock if available
+            await userWalletCollection.updateOne(
+                {
+                    userId,
+                    currencySymbol: currency,
+                    walletTypeName: walletType,
+                    lockedBalance: { $gte: amount }, // Only update if sufficient balance
+                },
+                {
+                    $inc: {
+                        lockedBalance: -amount,
+                        availableBalance: amount,
+                    },
+                }
+            );
+        }
+        catch (error) {
+            console.error("General error in unlockUserBalance:", { error });
+            // throw error;
         }
     }
 
@@ -1329,7 +1371,7 @@ export class WalletsService {
 
             // Get current invoice
             const currentInvoice = await invoicesCollection.findOne({
-                id: invoiceId,
+                _id: new mongoose.Types.ObjectId(invoiceId),
             });
 
             if (!currentInvoice) {
@@ -1355,9 +1397,10 @@ export class WalletsService {
                 // Auto-update status based on payment
                 if (amountPaid >= newAmountDue) {
                     updateData.status = InvoiceStatus.PAID;
-                } else if (amountPaid > 0) {
-                    updateData.status = InvoiceStatus.PENDING; // Partially paid
                 }
+                // else if (amountPaid > 0) {
+                //     updateData.status = InvoiceStatus.PENDING; // Partially paid
+                // }
             }
 
             if (amountDue !== undefined) {
@@ -1375,7 +1418,7 @@ export class WalletsService {
 
             // Update the invoice
             const result = await invoicesCollection.updateOne(
-                { id: invoiceId },
+                { _id: new mongoose.Types.ObjectId(invoiceId) },
                 { $set: updateData }
             );
 
@@ -1389,7 +1432,7 @@ export class WalletsService {
 
             // Get updated invoice
             const updatedInvoice = await invoicesCollection.findOne({
-                id: invoiceId,
+                _id: new mongoose.Types.ObjectId(invoiceId),
             });
 
             log.info("Successfully updated invoice", {

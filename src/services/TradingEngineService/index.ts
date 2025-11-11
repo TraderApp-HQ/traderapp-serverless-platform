@@ -99,6 +99,7 @@ export interface IAllocateTradesUpToTargetAmountResult {
     positionSize: number;
     requiredMargin: number;
     baseQuantity?: number;
+    platformName?: TradingPlatform;
 }
 
 export interface IProcessUserTradingResult {
@@ -777,7 +778,11 @@ export class TradingEngineService {
         // 4. Required margin given leverage
         const requiredMargin = positionSize / leverage;
 
-        const baseQuantity = Math.floor(quantity / stepSize) * stepSize;
+        // Calculate the number of decimal places in stepSize
+        const decimalPlaces = stepSize.toString().split('.')[1]?.length || 0;
+        const baseQuantity = parseFloat(
+            (Math.floor(quantity / stepSize) * stepSize).toFixed(decimalPlaces)
+        );
         return {
             riskAmount,
             positionSize,
@@ -911,6 +916,58 @@ export class TradingEngineService {
         }
     }
 
+    public async updateMasterTradeData(input: {
+        masterTradeId: string;
+        baseQuantity: number;
+        quoteTotal: number;
+        estimatedProfit: number;
+        estimatedLoss: number;
+    }) {
+        const {
+            masterTradeId,
+            baseQuantity,
+            quoteTotal,
+            estimatedProfit,
+            estimatedLoss,
+        } = input;
+        try {
+            const connection = await this.getConnection();
+            const masterTradesCollection = new MongoDBClient<IMasterTrade>(
+                connection,
+                TradingEngineServiceCollections.masterTrades
+            );
+
+            // increment base quantity, quote total, estimated profit, estimated loss
+            await masterTradesCollection.updateOne(
+                { _id: new mongoose.Types.ObjectId(masterTradeId) },
+                {
+                    $inc: {
+                        baseQuantity,
+                        quoteTotal,
+                        estimatedProfit,
+                        estimatedLoss,
+                    },
+                }
+            );
+            log.info(`Updated master trade data ${masterTradeId}`, {
+                baseQuantity,
+                quoteTotal,
+                estimatedProfit,
+                estimatedLoss,
+            });
+        } catch (error) {
+            console.error("Error updating master trade data:", {
+                error,
+                masterTradeId,
+                baseQuantity,
+                quoteTotal,
+                estimatedProfit,
+                estimatedLoss,
+            });
+            throw error;
+        }
+    }
+
     /**
      * Creates trades for a specific user
      */
@@ -928,6 +985,7 @@ export class TradingEngineService {
             pair: string;
             side: TradeSide;
             status: TradeStatus;
+            platformName?: TradingPlatform;
         }
     ): Promise<ITrade> {
         try {
@@ -1352,7 +1410,7 @@ export class TradingEngineService {
 
             const riskPercentage = riskPercentageRule
                 ? Number(riskPercentageRule.value)
-                : 1;
+                : 5; // default risk percentage is 5%
 
             // Calculate trade amount
             const { positionSize, requiredMargin, riskAmount, baseQuantity } =
@@ -1431,18 +1489,29 @@ export class TradingEngineService {
         // Create trades for each allocated user
         const tradeCreationResults = await Promise.allSettled(
             allocations.map(async (allocation) => {
+                const { pnlAmount } = this.calculatePnL({
+                    side: masterTrade.tradeSide,
+                    entryPrice: masterTrade.entryPrice,
+                    targetPrice: masterTrade.takeProfitPrice,
+                    baseQuantity: allocation.baseQuantity ?? 0,
+                    riskUSDT: allocation.riskAmount,
+                    requiredMargin: allocation.requiredMargin,
+                });
                 const trade = {
                     masterTradeId: masterTrade.masterTradeId,
                     baseAsset: masterTrade.baseAsset,
                     quoteCurrency: masterTrade.quoteCurrency,
-                    baseQuantity: allocation.positionSize,
+                    baseQuantity: allocation.baseQuantity ?? 0,
                     entryPrice: masterTrade.entryPrice,
                     stopLossPrice: masterTrade.stopLossPrice,
                     takeProfitPrice: masterTrade.takeProfitPrice,
                     quoteTotal: allocation.requiredMargin,
+                    estimatedProfit: pnlAmount,
+                    estimatedLoss: allocation.riskAmount,
                     pair: masterTrade.pair,
                     side: masterTrade.tradeSide,
                     status: TradeStatus.PENDING,
+                    platformName: allocation.platformName,
                 };
 
                 const createdTrade = await this.createTradeForUser(
@@ -1492,21 +1561,13 @@ export class TradingEngineService {
                 break;
             }
 
-            // const remainingAmount =
-            //     signalData.targetAmountToFill - currentAllocatedAmount;
-
-            // const finalTradeAmount = Math.min(
-            //     allocation.requiredMargin ?? 0,
-            //     remainingAmount
-            // );
-            // const finalBaseQuantity = finalTradeAmount / signalData.entryPrice;
-
             userTradeAllocations.push({
                 userId: allocation.userId,
                 riskAmount: allocation.riskAmount!,
                 positionSize: allocation.positionSize!,
                 requiredMargin: allocation.requiredMargin!,
                 baseQuantity: allocation.baseQuantity,
+                platformName: allocation.platformName,
             });
 
             currentAllocatedAmount += allocation.requiredMargin ?? 0;
@@ -1586,10 +1647,36 @@ export class TradingEngineService {
             )
             .filter((result) => result.tradeAmount !== undefined);
 
+        // Step 3.1: Choose only one trading platform for users
+        const uniqueUserAllocations = new Map<string, IUserProcessingResult>();
+
+        for (const result of successfullyProcessedUsers) {
+            const existingAllocation = uniqueUserAllocations.get(result.userId);
+
+            if (!existingAllocation) {
+                // First allocation for this user, add it
+                uniqueUserAllocations.set(result.userId, result);
+            } else {
+                // User already has an allocation, choose based on defaultTradingPlatform
+                if (
+                    result.platformName === masterTrade.defaultTradingPlatform
+                ) {
+                    // Current result matches default platform, replace existing
+                    uniqueUserAllocations.set(result.userId, result);
+                }
+                // Otherwise, keep the existing allocation (first one found)
+            }
+        }
+
+        // Convert map back to array for allocation
+        const filteredSuccessfulUsers = Array.from(
+            uniqueUserAllocations.values()
+        );
+
         // Step 3: Allocate users up to target amount
         const { allocations, totalAllocated } =
             this.allocateTradesUpToTargetAmount(
-                successfullyProcessedUsers,
+                filteredSuccessfulUsers, // Use filtered users instead
                 masterTrade
             );
 
@@ -1597,28 +1684,32 @@ export class TradingEngineService {
         const createdTradesForAllocatedUsers =
             await this.createTradesForAllocatedUsers(allocations, masterTrade);
 
+        // Create a map of userId to filtered user processing result for faster lookup
+        const userAllocationMap = new Map(
+            filteredSuccessfulUsers.map((user) => [user.userId, user])
+        );
+
         const allocationsWithTrades: IUserTradeAllocation[] = allocations.map(
             (allocation, index) => {
-                const tradingAccount = usersWithAccountsAndBalances.find(
-                    (user) => user.userId === allocation.userId
-                );
+                const userResult = userAllocationMap.get(allocation.userId);
+
+                // if (!userResult) {
+                //     throw new Error(`User allocation not found for userId: ${allocation.userId}`);
+                // }
+
                 return {
                     ...allocation,
                     masterTradeId: masterTrade.masterTradeId,
                     tradeId: createdTradesForAllocatedUsers[index]
                         ._id as string,
-                    tradingAccountId: tradingAccount?.tradingAccount
-                        ._id as mongoose.Types.ObjectId,
-                    platformName: tradingAccount?.tradingAccount
-                        .platformName as TradingPlatform,
-                    apiKey: tradingAccount?.tradingAccount.apiKey as string,
-                    apiSecret: tradingAccount?.tradingAccount
-                        .apiSecret as string,
-                    passphrase: tradingAccount?.tradingAccount
-                        .passphrase as string,
+                    tradingAccountId:
+                        userResult?.tradingAccountId as mongoose.Types.ObjectId,
+                    platformName: userResult?.platformName as TradingPlatform,
+                    apiKey: userResult?.apiKey as string,
+                    apiSecret: userResult?.apiSecret as string,
+                    passphrase: userResult?.passphrase as string,
                     tradeAmount: allocation.requiredMargin,
-                    availableBalance: tradingAccount?.balance
-                        .availableBalance as number,
+                    availableBalance: userResult?.availableBalance as number,
                     baseAsset: masterTrade.baseAsset as string,
                     baseQuantity: allocation.baseQuantity,
                     baseAssetLogoUrl: masterTrade.baseAssetLogoUrl,
@@ -1719,11 +1810,6 @@ export class TradingEngineService {
                         // Process this signal and get allocations
                         const { allocations, totalAllocated } =
                             await this.processSingleMasterTrade(masterTrade);
-
-                        console.log(
-                            "allocations before master trade update",
-                            allocations
-                        );
 
                         // update master trade status to PROCESSED
                         const updatedMasterTrade = await this.updateMasterTrade(
