@@ -45,6 +45,14 @@ describe("processBinanceTrades", () => {
         API_SECRET_KEY_ENCRYPTION_KEY: "test-encryption-key",
         PROCESS_INCOMING_SIGNALS_QUEUE:
             "https://sqs.us-east-1.amazonaws.com/123/incoming-signals",
+        PROCESS_BYBIT_ORDERS_ACTIVATION_QUEUE:
+            "https://sqs.us-east-1.amazonaws.com/123/bybit-orders-activation",
+        PROCESS_BYBIT_STOP_LOSS_ORDERS_QUEUE:
+            "https://sqs.us-east-1.amazonaws.com/123/bybit-stop-loss-orders",
+        PROCESS_BYBIT_TAKE_PROFIT_ORDERS_QUEUE:
+            "https://sqs.us-east-1.amazonaws.com/123/bybit-take-profit-orders",
+        CLOSE_BYBIT_TRADES_QUEUE:
+            "https://sqs.us-east-1.amazonaws.com/123/close-bybit-trades",
     };
 
     const createMockUserTrade = (

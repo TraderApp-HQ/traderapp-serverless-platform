@@ -24,6 +24,7 @@ export enum OrderStatus {
 // Status of trades
 export enum TradeStatus {
     ACTIVE = "ACTIVE",
+    ACTIVATING = "ACTIVATING",
     CLOSED = "CLOSED",
     PENDING = "PENDING",
     PROCESSING = "PROCESSING",

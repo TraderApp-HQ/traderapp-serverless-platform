@@ -8,7 +8,8 @@ export const handler = async (event: SQSEvent): Promise<SQSBatchResponse> => {
     log.info("Handler for user resources creation");
     log.info("Received event ", { event });
 
-    const queueMessages = getParsedQueueMessagesBody<ICreateUserResourcesInput>(event);
+    const queueMessages =
+        getParsedQueueMessagesBody<ICreateUserResourcesInput>(event);
     const { failedMessageIds } = await createUserResources(queueMessages);
 
     return {

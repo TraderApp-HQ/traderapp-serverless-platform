@@ -78,7 +78,9 @@ async function createUserTradingRules(
             })
         );
 
-        log.info(`Upserted ${platformTradingRules.length} trading rules for user ${userId}`);
+        log.info(
+            `Upserted ${platformTradingRules.length} trading rules for user ${userId}`
+        );
     } catch (error) {
         log.error("Error creating user trading rules:", { error, userId });
         throw error;
@@ -115,12 +117,13 @@ export async function createUserResources(
 
         // Step 1: Create user wallets
         log.info("Creating user wallets...");
-        const walletCreationResult = await WalletsService.createUserWallet(
-            queueMessages
-        );
+        const walletCreationResult =
+            await WalletsService.createUserWallet(queueMessages);
 
         // Track wallet creation results
-        const walletSuccessIds = new Set(walletCreationResult.successMessageIds);
+        const walletSuccessIds = new Set(
+            walletCreationResult.successMessageIds
+        );
         const walletFailedIds = new Set(walletCreationResult.failedMessageIds);
 
         log.info("Wallet creation completed", {
@@ -134,14 +137,18 @@ export async function createUserResources(
         );
 
         if (successfulUserMessages.length === 0) {
-            log.warn("No successful wallet creations, skipping trading rules creation");
+            log.warn(
+                "No successful wallet creations, skipping trading rules creation"
+            );
             return {
                 successMessageIds: [],
                 failedMessageIds: queueMessages.map((qm) => qm.messageId),
             };
         }
 
-        log.info(`Creating trading rules for ${successfulUserMessages.length} users...`);
+        log.info(
+            `Creating trading rules for ${successfulUserMessages.length} users...`
+        );
 
         // Create trading rules for each user in parallel
         const tradingRulesResults = await Promise.allSettled(

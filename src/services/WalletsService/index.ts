@@ -72,7 +72,7 @@ export class WalletsService {
     private initialized: boolean = false;
     private initializationPromise: Promise<void> | null = null;
 
-    constructor() { }
+    constructor() {}
 
     // Initialize the service once
     private async initialize(): Promise<void> {
@@ -424,7 +424,7 @@ export class WalletsService {
             const completedDeposits = transactions.filter(
                 (t) =>
                     t.queueMessage.body.data.status ===
-                    CryptopayWebhookEventStatus.completed && t.userId
+                        CryptopayWebhookEventStatus.completed && t.userId
             );
 
             const transactionsToCredit = await Promise.all(
@@ -444,7 +444,7 @@ export class WalletsService {
                             if (
                                 existingTransaction &&
                                 existingTransaction.status ===
-                                TransactionStatus.SUCCESS
+                                    TransactionStatus.SUCCESS
                             ) {
                                 console.error(
                                     `Transaction ${transaction.externalTransactionId} already credited, skipping.`
@@ -486,7 +486,7 @@ export class WalletsService {
                                 userId,
                                 amount: parseFloat(
                                     queueMessage.body.data.received_amount ??
-                                    "0"
+                                        "0"
                                 ),
                             });
                             // Publish user to queue for first deposit tracking if paid_amount is >= $20
@@ -693,10 +693,14 @@ export class WalletsService {
                                         walletTypeName: wallet.walletTypeName,
                                         currency: currency,
                                         currencyName: walletCurrencies.find(
-                                            (cur) => cur._id.toString() === currency._id.toString()
+                                            (cur) =>
+                                                cur._id.toString() ===
+                                                currency._id.toString()
                                         )?.name,
                                         currencySymbol: walletCurrencies.find(
-                                            (cur) => cur._id.toString() === currency._id.toString()
+                                            (cur) =>
+                                                cur._id.toString() ===
+                                                currency._id.toString()
                                         )?.symbol,
                                     };
 
@@ -712,7 +716,8 @@ export class WalletsService {
                                             $setOnInsert: {
                                                 availableBalance: 0,
                                                 lockedBalance: 0,
-                                                createdAt: new Date().toISOString(),
+                                                createdAt:
+                                                    new Date().toISOString(),
                                             },
                                         },
                                         { upsert: true }
@@ -1156,8 +1161,7 @@ export class WalletsService {
                     },
                 }
             );
-        }
-        catch (error) {
+        } catch (error) {
             console.error("General error in unlockUserBalance:", { error });
             // throw error;
         }

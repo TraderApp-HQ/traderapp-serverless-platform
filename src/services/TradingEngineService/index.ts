@@ -677,10 +677,6 @@ export class TradingEngineService {
             const tradingAccounts = await accountsCollection.find({
                 platformName: { $in: platforms },
                 connectionStatus: AccountConnectionStatus.CONNECTED,
-                // isFuturesTradingEnabled: accountType === AccountType.FUTURES,
-                // isSpotTradingEnabled: accountType === AccountType.SPOT,
-                // apiKey: { $exists: true, $ne: "" },
-                // apiSecret: { $exists: true, $ne: "" },
             });
 
             if (tradingAccounts.length === 0) {
@@ -731,6 +727,28 @@ export class TradingEngineService {
         }
     }
 
+    public async getUserTradingAccount(
+        userId: string,
+        platformName: TradingPlatform
+    ): Promise<IUserTradingAccount> {
+        const connection = await this.getConnection();
+        const tradingAccountsCollection =
+            new MongoDBClient<IUserTradingAccount>(
+                connection,
+                TradingEngineServiceCollections.userTradingAccounts
+            );
+        const tradingAccount = await tradingAccountsCollection.findOne({
+            userId,
+            platformName,
+        });
+        if (!tradingAccount) {
+            throw new Error(
+                `No trading account found for user ${userId} on platform ${platformName}`
+            );
+        }
+        return tradingAccount;
+    }
+
     // Helper method to calculate trade amount based on risk amount, risk percentage, entry price, stop loss price, and leverage
     public calculateTradeAmount(
         input: ICalculateTradeAmountInput
@@ -779,7 +797,7 @@ export class TradingEngineService {
         const requiredMargin = positionSize / leverage;
 
         // Calculate the number of decimal places in stepSize
-        const decimalPlaces = stepSize.toString().split('.')[1]?.length || 0;
+        const decimalPlaces = stepSize.toString().split(".")[1]?.length || 0;
         const baseQuantity = parseFloat(
             (Math.floor(quantity / stepSize) * stepSize).toFixed(decimalPlaces)
         );
@@ -1268,6 +1286,27 @@ export class TradingEngineService {
             });
         } catch (error) {
             console.error("Error fetching order:", { error, orderId });
+            throw error;
+        }
+    }
+
+    /**
+     * Get order by trade ID
+     */
+    public async getOrderByTradeId(tradeId: string): Promise<IOrder | null> {
+        try {
+            const connection = await this.getConnection();
+            const ordersCollection = new MongoDBClient<IOrder>(
+                connection,
+                TradingEngineServiceCollections.orders
+            );
+
+            return ordersCollection.findOne({ tradeId });
+        } catch (error) {
+            console.error("Error fetching order by trade ID:", {
+                error,
+                tradeId,
+            });
             throw error;
         }
     }

@@ -81,6 +81,14 @@ describe("Trade Service Helpers", () => {
         API_SECRET_KEY_ENCRYPTION_KEY: "test-key",
         PROCESS_INCOMING_SIGNALS_QUEUE:
             "https://sqs.us-east-1.amazonaws.com/123/incoming-signals",
+        PROCESS_BYBIT_ORDERS_ACTIVATION_QUEUE:
+            "https://sqs.us-east-1.amazonaws.com/123/bybit-orders-activation",
+        PROCESS_BYBIT_STOP_LOSS_ORDERS_QUEUE:
+            "https://sqs.us-east-1.amazonaws.com/123/bybit-stop-loss-orders",
+        PROCESS_BYBIT_TAKE_PROFIT_ORDERS_QUEUE:
+            "https://sqs.us-east-1.amazonaws.com/123/bybit-take-profit-orders",
+        CLOSE_BYBIT_TRADES_QUEUE:
+            "https://sqs.us-east-1.amazonaws.com/123/close-bybit-trades",
     };
 
     beforeEach(() => {
@@ -654,7 +662,10 @@ describe("Trade Service Helpers", () => {
             // Verify invoices were fetched
             expect(mockGetInvoices).toHaveBeenCalledWith({
                 tradeId: failedTrade.tradeId.toString(),
-                invoiceTypes: [InvoiceType.TRADING_FEE, InvoiceType.PROFIT_SHARE],
+                invoiceTypes: [
+                    InvoiceType.TRADING_FEE,
+                    InvoiceType.PROFIT_SHARE,
+                ],
             });
 
             // Verify balance was unlocked with correct total amount (10 + 30 = 40)
