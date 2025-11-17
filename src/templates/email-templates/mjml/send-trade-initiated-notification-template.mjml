@@ -1,25 +1,84 @@
 <mjml>
   <mj-head>
     <mj-title>TraderApp - New Trade Notification</mj-title>
-    <mj-preview>Your A new trade has been initiated successfully.</mj-preview>
+    <mj-preview>A new trade has been initiated successfully.</mj-preview>
+
     <mj-attributes>
       <mj-all font-family="IBM Plex Sans, Arial, sans-serif" />
       <mj-section padding="20px 0" />
-      <mj-text font-size="14px" line-height="1.4" color="#454648" />
+      <mj-text font-size="14px" line-height="1.8" color="#454648" />
       <mj-image padding="0" align="center" />
     </mj-attributes>
+
     <mj-style inline="inline">
-      /* Global span styling */
+      /* Global text styling */
       span {
       font-family: Manrope, Arial, sans-serif;
       font-weight: 400;
       font-size: 14px;
-      line-height: 1.6;
+      line-height: 1.8;
       color: #0a0d14;
       }
 
-      .highlight {
+      b {
+      font-family: Manrope;
+      font-weight: 600;
+      font-style: SemiBold;
+      font-size: 14px;
+      line-height: 1.4;
+      color: #414141;
+      }
+
+      .baseasset {
+      display: inline-flex;
+      align-items: center;
       font-weight: 700;
+      font-size: 14px;
+      color: #414141;
+      margin-left: 6px;
+      }
+
+      .tradeside {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px 8px;
+      margin-left: 8px;
+      border-radius: 4px;
+      font-family: Manrope, Arial, sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      background-color: #fef1f2;
+      color: #ed3b3b;
+      vertical-align: middle;
+      }
+
+      .entryprice {
+      font-weight: 500;
+      font-size: 14px;
+      color: #667085;
+      margin-left: 10px;
+      }
+
+      .estimatedloss {
+      font-weight: 500;
+      font-size: 14px;
+      color: #ed3b3b;
+      margin-left: 10px;
+      }
+
+      .estimatedprofit {
+      font-weight: 500;
+      font-size: 14px;
+      color: #067d55;
+      margin-left: 10px;
+      }
+
+      .platform {
+      font-family: IBM Plex Sans;
+      font-weight: 600;
+      font-size: 16px;
       color: #414141;
       }
 
@@ -27,7 +86,6 @@
       font-family: Manrope;
       font-weight: 700;
       font-size: 18px;
-      line-height: 130%;
       color: #08123b;
       }
 
@@ -35,48 +93,32 @@
       font-family: Manrope;
       font-weight: 700;
       font-size: 16px;
-      line-height: 150%;
-      color: #0a0d14;
-      margin-bottom: 6px;
+      color: #0A0D14;
       }
 
       .remark {
-      font-family: Manrope;
       font-weight: 400;
       font-size: 16px;
-      line-height: 135%;
       color: #414141;
       }
 
       .remarkspan {
-      font-family: Manrope;
       font-weight: 600;
       font-size: 18px;
-      line-height: 135%;
       }
+
 
       .details-box {
       background-color: #f5f8ff;
       border-radius: 8px;
-      width: auto;
+      padding: 1px 12px;
       box-sizing: border-box;
-      padding: 5px 15px;
       }
 
       .social-box {
       background-color: #f5f8ff;
-      width: auto;
-      padding: 20px;
-      box-sizing: border-box;
       border-radius: 8px;
-      }
-
-      .banner-img {
-      width: 300px;
-      height: 200px;
-      angle: 0deg;
-      opacity: 1;
-      border-radius: 14.18px;
+      padding: 20px;
       }
 
       a {
@@ -94,8 +136,10 @@
       }
     </mj-style>
   </mj-head>
-  <mj-body background-color="#FFFFFF">
-    <mj-wrapper css-class="wrapper">
+
+  <mj-body background-color="#ffffff">
+    <mj-wrapper>
+
       <!-- Logo -->
       <mj-section padding-bottom="10px">
         <mj-column>
@@ -106,7 +150,7 @@
       <!-- Banner -->
       <mj-section padding-bottom="20px">
         <mj-column>
-          <mj-image src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/banners+(2).png" alt="Deposit Confirmation Banner" />
+          <mj-image src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/banners+(2).png" alt="Trade Notification Banner" />
         </mj-column>
       </mj-section>
 
@@ -123,50 +167,56 @@
       <mj-section padding="0 0 16px 0">
         <mj-column>
           <mj-text class="content" padding="0">
-            A new trade has just been copied to your {PLATFORM_NAME} account. Below are the trade details for your reference.
+            A new trade has just been copied to your
+            <span class="platform">{PLATFORM_NAME} account</span>.
+            Below are the trade details for your reference.
             <br /><br />
-            Please note that the trade has only been initiated and not active yet. We will notify you once the order has been filled and trade is active.
+            Please note that the trade has only been initiated and is not active yet.
+            We will notify you once the order has been filled and the trade becomes active.
           </mj-text>
         </mj-column>
       </mj-section>
 
-      <!-- Deposit Details -->
-      <mj-section css-class="details-box" padding="12px 0">
+      <!-- Trade Summary -->
+      <mj-section css-class="details-box">
         <mj-column>
-          <mj-text class="deposit_details" padding="0 0 6px 0" font-weight="bold" font-size="16px">
+          <mj-text css-class="deposit_details" padding="0 0 12px 0">
             Trade Summary
           </mj-text>
 
-          <!-- Bulletproof line spacing for all platforms -->
-          <mj-text class="details-box" padding="0" font-size="14px" line-height="1.6" style="
-                            line-height: 1.6;
-                            font-family: Manrope, Arial, sans-serif;
-                            color: #0a0d14;
-                        ">
-            <p style="margin: 0; line-height: 2;">
-              <b>Asset:</b>
-              <span style="display: inline-flex; align-items: center; vertical-align: middle;">
-                <img src="{BASE_ASSET_LOGO_URL}" alt="" width="20" height="20" style="margin: 0 6px; vertical-align: middle;" />
-                <span style="vertical-align: middle;">{BASE_ASSET}</span>
-                <span style="color: red; margin-left: 6px; vertical-align: middle;">{TRADE_SIDE}</span>
+          <mj-text font-size="14px" line-height="1.9" padding="0">
+            <p style="margin: 0 0 6px 0; display: flex; align-items: center;">
+              <mj-text css-class="b">Asset:</mj-text>
+              <span style="display: inline-flex; align-items: center; margin-left: 10px;">
+                <img src="{BASE_ASSET_LOGO_URL}" alt="" width="20" height="20" style="vertical-align: middle;" />
+                <span class="baseasset">{BASE_ASSET}/{QUOTE_CURRENCY}</span>
+                <span class="tradeside">{TRADE_SIDE}</span>
               </span>
             </p>
 
+            <p style="margin: 0 0 6px 0; display: flex; align-items: center;">
+              <mj-text css-class="b">Entry Price:</mj-text>
+              <span class="entryprice">{ENTRY_PRICE}</span>
+            </p>
 
-            <p style="margin: 0; line-height: 2; display: block">
-              <b>Entry Price:</b> {ENTRY_PRICE}
+            <p style="margin: 0 0 6px 0; display: flex; align-items: center;">
+              <mj-text css-class="b">Stop Loss:</mj-text>
+              <span class="entryprice">{STOP_LOSS}</span>
             </p>
-            <p style="margin: 0; line-height: 2; display: block">
-              <b>Stop Loss Price:</b> {STOP_LOSS}
+
+            <p style="margin: 0 0 6px 0; display: flex; align-items: center;">
+              <mj-text css-class="b">Estimated Loss:</mj-text>
+              <span class="estimatedloss">{ESTIMATED_LOSS} USDT</span>
             </p>
-            <p style="margin: 0; line-height: 2; display: block">
-              <b>Estimated Loss:</b> <span style="color: red"> {ESTIMATED_LOSS} USDT</span>
+
+            <p style="margin: 0 0 6px 0; display: flex; align-items: center;">
+              <mj-text css-class="b">Estimated Profit:</mj-text>
+              <span class="estimatedprofit">{ESTIMATED_PROFIT} USDT</span>
             </p>
-            <p style="margin: 0; line-height: 2; display: block">
-              <b>Estimated Profit:</b> <span style="color: green"> {ESTIMATED_PROFIT} USDT</span>
-            </p>
-            <p style="margin: 0; line-height: 2; display: block">
-              <b>Date:</b> {DATE_TIME}
+
+            <p style="margin: 0; display: flex; align-items: center;">
+              <mj-text css-class="b">Date:</mj-text>
+              <span class="entryprice">{DATE_TIME}</span>
             </p>
           </mj-text>
         </mj-column>
@@ -176,7 +226,7 @@
       <mj-section padding="16px 0">
         <mj-column>
           <mj-text class="content" padding="0">
-            Thanks for choosing TraderApp let’s make every trade count!
+            Thanks for choosing TraderApp — let’s make every trade count!
           </mj-text>
         </mj-column>
       </mj-section>
@@ -202,6 +252,7 @@
           </mj-social>
         </mj-column>
       </mj-section>
+
     </mj-wrapper>
   </mj-body>
 </mjml>
