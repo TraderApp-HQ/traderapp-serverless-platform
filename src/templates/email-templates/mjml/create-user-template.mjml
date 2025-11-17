@@ -2,8 +2,14 @@
     <mj-head>
         <mj-title>TraderApp</mj-title>
         <mj-style>
-            .br_20 { border: 1px solid #D1D7F0; border-radius: 10px !important;
-            } .otp { width: 500px !important; background: red; }
+            .br_20 {
+                border: 1px solid #d1d7f0;
+                border-radius: 10px !important;
+            }
+            .otp {
+                width: 500px !important;
+                background: red;
+            }
         </mj-style>
     </mj-head>
     <mj-body background-color="white">

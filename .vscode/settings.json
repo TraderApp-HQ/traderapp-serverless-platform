@@ -8,5 +8,9 @@
     "[prisma]": {
         "editor.defaultFormatter": "Prisma.prisma"
     },
-    "markdown.validate.enabled": true
+    "markdown.validate.enabled": true,
+    "[typescript]": {
+        "editor.defaultFormatter": "vscode.typescript-language-features"
+    },
+    "postman.settings.dotenv-detection-notification-visibility": false
 }

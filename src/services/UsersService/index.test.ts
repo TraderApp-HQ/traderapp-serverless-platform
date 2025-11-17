@@ -39,7 +39,6 @@ describe("UsersService Integration Tests", () => {
     const testMessageId = "test-message-onboarding-456";
 
     beforeAll(async () => {
-        // Create a real instance of UsersService and initialize it
         usersService = UsersService;
         await usersService["initialize"]();
         const connection = await usersService["getConnection"]();
@@ -48,28 +47,29 @@ describe("UsersService Integration Tests", () => {
             UsersServiceCollections.users
         );
 
-        // Create a test users
-        const testUser = await usersCollection.insertOne(testUserData);
+        // Create one test user that will be used across all tests
+        const uniqueTestUserData = {
+            ...testUserData,
+            email: `testuser+${Date.now()}+${Math.random()}@example.com`,
+        };
+
+        const testUser = await usersCollection.insertOne(uniqueTestUserData);
 
         if (testUser && testUser._id) {
-            // Update the id field for query purpose
             await usersCollection.findOneAndUpdate(
-                { _id: testUser?._id },
-                { $set: { id: testUser?._id.toString() } }
+                { _id: testUser._id },
+                { $set: { id: testUser._id.toString() } }
             );
-
-            testUserId = testUser?._id.toString();
+            testUserId = testUser._id.toString();
         }
     });
 
     afterAll(async () => {
-        // Clean up: delete the test user created during testing and close database connection
-        try {
+        // Clean up test user after all tests
+        if (testUserId) {
             await usersCollection.deleteOne({ id: testUserId });
-            await usersService.cleanup();
-        } catch (error) {
-            console.warn("Failed to cleanup UsersService:", error);
         }
+        await usersService.cleanup();
     });
 
     const createMockQueueMessage = (
@@ -172,6 +172,18 @@ describe("UsersService Integration Tests", () => {
         });
 
         it("Turn Off showOnboardingSteps flag after compulsory actions are completed.", async () => {
+            // First, set up the required conditions
+            await usersCollection.findOneAndUpdate(
+                { id: testUserId },
+                {
+                    $set: {
+                        isEmailVerified: true,
+                        isFirstDepositMade: true,
+                        isTradingAccountConnected: true,
+                    },
+                }
+            );
+
             // Arrange
             const queueMessage = createMockQueueMessage(
                 testUserId,

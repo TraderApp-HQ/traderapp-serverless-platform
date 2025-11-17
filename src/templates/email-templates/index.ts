@@ -5,3 +5,4 @@ export { default as OtpTemplate } from "./otp";
 export { default as PasswordResetTemplate } from "./password-reseet-template";
 export { default as TransactionNotificationTemplate } from "./transaction-notification-template";
 export { default as ReferralTemplate } from "./referral";
+export { default as SendEmailTemplate } from "./send-email-notifications-template";

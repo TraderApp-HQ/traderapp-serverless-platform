@@ -1,7 +1,8 @@
 import { SQSRecord } from "aws-lambda";
 import mongoose from "mongoose";
-import { EventTemplate } from "src/config/enums";
+import { EventTemplate, TradingPlatform } from "src/config/enums";
 import { ReferralRank } from "./constants";
+import { TradeSide } from "src/services/TradingEngineService/enums";
 
 export interface IMessageRecipient {
     firstName: string;
@@ -11,12 +12,30 @@ export interface IMessageRecipient {
     countryPhoneCode?: string;
 }
 
+export interface IMetadata {
+    transactionId?: string;
+    amount?: number;
+    dateTime?: string;
+    network?: string;
+    address?: string;
+    baseAsset?: string;
+    baseAssetLogoUrl?: string;
+    quoteCurrency?: string;
+    entryPrice?: number;
+    stopLoss?: number;
+    tradeSide?: TradeSide;
+    estimatedLoss?: number;
+    estimatedProfit?: number;
+    platformName?: TradingPlatform;
+}
+
 export interface IQueueMessageBodyObject {
     recipients: IMessageRecipient[];
     subject?: string;
     message: string;
     event: EventTemplate;
     sender?: IMessageRecipient;
+    metadata?: IMetadata;
 }
 
 export interface IQueueMessageBody<T = IQueueMessageBodyObject>
@@ -38,6 +57,7 @@ export interface IUser {
     firstName: string;
     lastName: string;
     email: string;
+    isFirstDepositMade: boolean;
     referralRank?: ReferralRankType;
 }
 
@@ -90,5 +110,6 @@ export interface IRankCriteria {
     personalATC: number;
     communityATC: number;
     referrals: IUser[];
+    isFirstDepositMade: boolean;
     isTestReferralTracking?: boolean;
 }

@@ -1,6 +1,5 @@
 import { SQSEvent } from "aws-lambda";
 import mongoose from "mongoose";
-import log from "@dazn/lambda-powertools-logger";
 import {
     RANK_INDEX_MAP,
     RANK_ORDER,
@@ -84,7 +83,10 @@ export class ReferralsService {
 
             return totalBalance;
         } catch (error) {
-            log.error("Failed to get total USDT balance", { error, userId });
+            console.error("Failed to get total USDT balance", {
+                error,
+                userId,
+            });
             throw new Error(`Failed to get total USDT balance: ${error}`);
         }
     }
@@ -204,6 +206,7 @@ export class ReferralsService {
                                 communityATC: balances.communityBalance,
                                 referrals,
                                 isTestReferralTracking,
+                                isFirstDepositMade: user.isFirstDepositMade,
                             }
                         );
 
@@ -219,14 +222,14 @@ export class ReferralsService {
                                 queueUrl:
                                     commonSecrets.TRACK_USER_ONBOARDING_CHECKLIST_QUEUE ??
                                     "",
-                                message: {
+                                message: JSON.stringify({
                                     userId: user.id,
                                     onboardingChecklistItem:
                                         UserOnboardingChecklist.IS_PERSONAL_ATC_FUNDED,
                                     value:
                                         balances.userBalance.availableBalance >
                                         50,
-                                },
+                                }),
                             }),
                         ]);
 
@@ -235,7 +238,7 @@ export class ReferralsService {
                             success: true,
                         };
                     } catch (error) {
-                        log.error(
+                        console.error(
                             `Failed to process referral message ${queueMessage.messageId}:`,
                             { error }
                         );
@@ -261,7 +264,7 @@ export class ReferralsService {
 
             return { successMessageIds, failedMessageIds };
         } catch (error) {
-            log.error("Error in processUserReferralTracking:", { error });
+            console.error("Error in processUserReferralTracking:", { error });
             return {
                 successMessageIds: [],
                 failedMessageIds: queueMessages.map((qm) => qm.messageId),
@@ -295,8 +298,13 @@ export class ReferralsService {
     }
 
     public computeRank(criteria: IRankCriteria): IComputeRankResult {
-        const { personalATC, communityATC, referrals, isTestReferralTracking } =
-            criteria;
+        const {
+            personalATC,
+            communityATC,
+            referrals,
+            isTestReferralTracking,
+            isFirstDepositMade,
+        } = criteria;
 
         const communitySize = referrals.length;
         const maxRankFromReferrals =
@@ -314,6 +322,7 @@ export class ReferralsService {
                 maxRankFromReferrals
             );
             if (
+                isFirstDepositMade &&
                 hasRequiredRankReferrals &&
                 personalATC >= RANK_REQUIREMENTS[currentRank].personalATC &&
                 communityATC >= RANK_REQUIREMENTS[currentRank].communityATC &&
@@ -328,6 +337,7 @@ export class ReferralsService {
         // If no higher rank matched, check for TA_RECRUIT
         if (
             !rank &&
+            isFirstDepositMade &&
             personalATC >=
                 RANK_REQUIREMENTS[ReferralRank.TA_RECRUIT].personalATC
         ) {

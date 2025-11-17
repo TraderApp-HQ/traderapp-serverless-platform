@@ -146,7 +146,7 @@ describe("ReferralsService Integration Tests", () => {
             ];
 
             const queueMessage: IReferralQueueMessage = {
-                user: { id: mainUserId } as IUser,
+                user: { id: mainUserId, isFirstDepositMade: true } as IUser,
                 referrals,
                 isTestReferralTracking: false,
             };
@@ -259,7 +259,7 @@ describe("ReferralsService Integration Tests", () => {
             }
 
             const queueMessage: IReferralQueueMessage = {
-                user: { id: mainUserId } as IUser,
+                user: { id: mainUserId, isFirstDepositMade: true } as IUser,
                 referrals,
                 isTestReferralTracking: true, // Use testCommunitySize for smaller test data
             };
@@ -365,17 +365,26 @@ describe("ReferralsService Integration Tests", () => {
                 ["batch-msg-1", "batch-msg-2", "batch-msg-3"],
                 [
                     {
-                        user: { id: user1Id } as IUser,
+                        user: {
+                            id: user1Id,
+                            isFirstDepositMade: true,
+                        } as IUser,
                         referrals: [],
                         isTestReferralTracking: false,
                     },
                     {
-                        user: { id: user2Id } as IUser,
+                        user: {
+                            id: user2Id,
+                            isFirstDepositMade: true,
+                        } as IUser,
                         referrals: user2Referrals,
                         isTestReferralTracking: false,
                     },
                     {
-                        user: { id: user3Id } as IUser,
+                        user: {
+                            id: user3Id,
+                            isFirstDepositMade: true,
+                        } as IUser,
                         referrals: [],
                         isTestReferralTracking: false,
                     },
@@ -440,7 +449,7 @@ describe("ReferralsService Integration Tests", () => {
             );
 
             const queueMessage: IReferralQueueMessage = {
-                user: { id: mainUserId } as IUser,
+                user: { id: mainUserId, isFirstDepositMade: true } as IUser,
                 referrals,
                 isTestReferralTracking: true,
             };
@@ -556,7 +565,10 @@ describe("ReferralsService Integration Tests", () => {
                 ["success-msg", "fail-msg"],
                 [
                     {
-                        user: { id: user1Id } as IUser,
+                        user: {
+                            id: user1Id,
+                            isFirstDepositMade: true,
+                        } as IUser,
                         referrals: [],
                         isTestReferralTracking: false,
                     } as IReferralQueueMessage,
@@ -604,7 +616,7 @@ describe("ReferralsService Integration Tests", () => {
             );
 
             const initialQueueMessage: IReferralQueueMessage = {
-                user: { id: mainUserId } as IUser,
+                user: { id: mainUserId, isFirstDepositMade: true } as IUser,
                 referrals: [],
                 isTestReferralTracking: false,
             };
@@ -644,7 +656,7 @@ describe("ReferralsService Integration Tests", () => {
             );
 
             const queueMessage: IReferralQueueMessage = {
-                user: { id: mainUserId } as IUser,
+                user: { id: mainUserId, isFirstDepositMade: true } as IUser,
                 referrals,
                 isTestReferralTracking: false,
             };
@@ -720,7 +732,7 @@ describe("ReferralsService Integration Tests", () => {
             const allReferrals = [...highRankReferrals, ...additionalReferrals];
 
             const queueMessage: IReferralQueueMessage = {
-                user: { id: mainUserId } as IUser,
+                user: { id: mainUserId, isFirstDepositMade: true } as IUser,
                 referrals: allReferrals,
                 isTestReferralTracking: false,
             };
@@ -747,7 +759,7 @@ describe("ReferralsService Integration Tests", () => {
             allReferrals.push(fieldMarshalReferral);
 
             const queueMessage2: IReferralQueueMessage = {
-                user: { id: mainUserId } as IUser,
+                user: { id: mainUserId, isFirstDepositMade: true } as IUser,
                 referrals: allReferrals,
                 isTestReferralTracking: false,
             };
@@ -800,7 +812,7 @@ describe("ReferralsService Integration Tests", () => {
             );
 
             const initialQueueMessage: IReferralQueueMessage = {
-                user: { id: mainUserId } as IUser,
+                user: { id: mainUserId, isFirstDepositMade: true } as IUser,
                 referrals,
                 isTestReferralTracking: false,
             };
@@ -830,7 +842,7 @@ describe("ReferralsService Integration Tests", () => {
             referrals.pop();
 
             const queueMessage: IReferralQueueMessage = {
-                user: { id: mainUserId } as IUser,
+                user: { id: mainUserId, isFirstDepositMade: true } as IUser,
                 referrals,
                 isTestReferralTracking: false,
             };
@@ -894,7 +906,7 @@ describe("ReferralsService Integration Tests", () => {
             const referrals = [...lieutenantReferrals, ...moreReferrals];
 
             const queueMessage: IReferralQueueMessage = {
-                user: { id: mainUserId } as IUser,
+                user: { id: mainUserId, isFirstDepositMade: true } as IUser,
                 referrals,
                 isTestReferralTracking: false,
             };
@@ -942,6 +954,494 @@ describe("ReferralsService Integration Tests", () => {
             );
             expect(updatedUser?.referralRank).toBeNull();
             expect(updatedUser?.personalATC).toBe(30);
+        });
+    });
+
+    describe("First Deposit Made Requirement", () => {
+        it("should return null rank when user has not made first deposit but meets all other TA_RECRUIT criteria", async () => {
+            const mainUserId = "no-first-deposit-recruit";
+            const mainAccountId = generateObjectId();
+
+            // Setup main user with sufficient balance for TA_RECRUIT
+            await setUpUserWithBalance(
+                usersConnection,
+                tradingEngineConnection,
+                mainUserId,
+                mainAccountId,
+                RANK_REQUIREMENTS[ReferralRank.TA_RECRUIT].personalATC
+            );
+
+            const queueMessage: IReferralQueueMessage = {
+                user: { id: mainUserId, isFirstDepositMade: false } as IUser,
+                referrals: [],
+                isTestReferralTracking: false,
+            };
+
+            const sqsEvent = createSQSEvent("no-deposit-recruit", queueMessage);
+
+            // Execute the method
+            const result = await ReferralsService.processUserReferralTracking(
+                connections,
+                sqsEvent
+            );
+
+            // Verify successful processing
+            expect(result.successMessageIds).toContain("no-deposit-recruit");
+            expect(result.failedMessageIds).toHaveLength(0);
+
+            // Verify user gets null rank despite meeting balance requirement
+            const updatedUser = await getUserFromDb(
+                usersConnection,
+                mainUserId
+            );
+            expect(updatedUser?.referralRank).toBeNull();
+            expect(updatedUser?.personalATC).toBe(
+                RANK_REQUIREMENTS[ReferralRank.TA_RECRUIT].personalATC
+            );
+            expect(updatedUser?.maxRankFromReferrals).toBe(
+                ReferralRank.TA_RECRUIT
+            );
+        });
+
+        it("should return null rank when user has not made first deposit but meets all other TA_LIEUTENANT criteria", async () => {
+            const mainUserId = "no-first-deposit-lieutenant";
+            const mainAccountId = generateObjectId();
+
+            // Setup main user with sufficient balance for TA_LIEUTENANT
+            await setUpUserWithBalance(
+                usersConnection,
+                tradingEngineConnection,
+                mainUserId,
+                mainAccountId,
+                RANK_REQUIREMENTS[ReferralRank.TA_LIEUTENANT].personalATC
+            );
+
+            // Create referrals that would qualify for TA_LIEUTENANT
+            const referrals: IUser[] = await createReferralsWithRankAndBalance(
+                "lieutenant-ref-",
+                100,
+                RANK_REQUIREMENTS[ReferralRank.TA_LIEUTENANT].communitySize,
+                usersConnection,
+                tradingEngineConnection,
+                ReferralRank.TA_RECRUIT
+            );
+
+            const queueMessage: IReferralQueueMessage = {
+                user: { id: mainUserId, isFirstDepositMade: false } as IUser,
+                referrals,
+                isTestReferralTracking: false,
+            };
+
+            const sqsEvent = createSQSEvent(
+                "no-deposit-lieutenant",
+                queueMessage
+            );
+
+            // Execute the method
+            const result = await ReferralsService.processUserReferralTracking(
+                connections,
+                sqsEvent
+            );
+
+            // Verify successful processing
+            expect(result.successMessageIds).toContain("no-deposit-lieutenant");
+            expect(result.failedMessageIds).toHaveLength(0);
+
+            // Verify user gets null rank despite meeting all other criteria
+            const updatedUser = await getUserFromDb(
+                usersConnection,
+                mainUserId
+            );
+            expect(updatedUser?.referralRank).toBeNull();
+            expect(updatedUser?.personalATC).toBe(
+                RANK_REQUIREMENTS[ReferralRank.TA_LIEUTENANT].personalATC
+            );
+            expect(updatedUser?.communityATC).toBeGreaterThanOrEqual(
+                RANK_REQUIREMENTS[ReferralRank.TA_LIEUTENANT].communityATC
+            );
+            expect(updatedUser?.maxRankFromReferrals).toBe(
+                ReferralRank.TA_LIEUTENANT
+            );
+        });
+
+        it("should return null rank when user has not made first deposit but meets all other TA_CAPTAIN criteria", async () => {
+            const mainUserId = "no-first-deposit-captain";
+            const mainAccountId = generateObjectId();
+
+            // Setup main user with sufficient balance for TA_CAPTAIN
+            await setUpUserWithBalance(
+                usersConnection,
+                tradingEngineConnection,
+                mainUserId,
+                mainAccountId,
+                RANK_REQUIREMENTS[ReferralRank.TA_CAPTAIN].personalATC
+            );
+
+            // Create high-rank referrals that would qualify for TA_CAPTAIN
+            const highRankReferrals = await createReferralsWithRankAndBalance(
+                "captain-high-ref-",
+                1000,
+                3,
+                usersConnection,
+                tradingEngineConnection,
+                ReferralRank.TA_LIEUTENANT
+            );
+
+            // Add enough lower rank referrals to meet community size requirement
+            const additionalNeeded =
+                RANK_REQUIREMENTS[ReferralRank.TA_CAPTAIN].communitySize -
+                highRankReferrals.length;
+
+            const additionalReferrals = await createReferralsWithRankAndBalance(
+                "captain-low-ref-",
+                100,
+                additionalNeeded,
+                usersConnection,
+                tradingEngineConnection,
+                ReferralRank.TA_RECRUIT
+            );
+
+            const allReferrals = [...highRankReferrals, ...additionalReferrals];
+
+            const queueMessage: IReferralQueueMessage = {
+                user: { id: mainUserId, isFirstDepositMade: false } as IUser,
+                referrals: allReferrals,
+                isTestReferralTracking: false,
+            };
+
+            const sqsEvent = createSQSEvent("no-deposit-captain", queueMessage);
+
+            // Execute the method
+            const result = await ReferralsService.processUserReferralTracking(
+                connections,
+                sqsEvent
+            );
+
+            // Verify successful processing
+            expect(result.successMessageIds).toContain("no-deposit-captain");
+            expect(result.failedMessageIds).toHaveLength(0);
+
+            // Verify user gets null rank despite meeting all other criteria
+            const updatedUser = await getUserFromDb(
+                usersConnection,
+                mainUserId
+            );
+            expect(updatedUser?.referralRank).toBeNull();
+            expect(updatedUser?.personalATC).toBe(
+                RANK_REQUIREMENTS[ReferralRank.TA_CAPTAIN].personalATC
+            );
+            expect(updatedUser?.communityATC).toBeGreaterThanOrEqual(
+                RANK_REQUIREMENTS[ReferralRank.TA_CAPTAIN].communityATC
+            );
+            expect(updatedUser?.maxRankFromReferrals).toBe(
+                ReferralRank.TA_CAPTAIN
+            );
+        });
+
+        it("should transition from null rank to TA_RECRUIT when user makes first deposit", async () => {
+            const mainUserId = "first-deposit-transition";
+            const mainAccountId = generateObjectId();
+
+            // Setup main user with sufficient balance for TA_RECRUIT
+            await setUpUserWithBalance(
+                usersConnection,
+                tradingEngineConnection,
+                mainUserId,
+                mainAccountId,
+                RANK_REQUIREMENTS[ReferralRank.TA_RECRUIT].personalATC
+            );
+
+            // First processing: no first deposit
+            const queueMessage1: IReferralQueueMessage = {
+                user: { id: mainUserId, isFirstDepositMade: false } as IUser,
+                referrals: [],
+                isTestReferralTracking: false,
+            };
+
+            const sqsEvent1 = createSQSEvent("before-deposit", queueMessage1);
+
+            await ReferralsService.processUserReferralTracking(
+                connections,
+                sqsEvent1
+            );
+
+            // Verify user has null rank
+            const userBeforeDeposit = await getUserFromDb(
+                usersConnection,
+                mainUserId
+            );
+            expect(userBeforeDeposit?.referralRank).toBeNull();
+
+            // Second processing: after first deposit
+            const queueMessage2: IReferralQueueMessage = {
+                user: { id: mainUserId, isFirstDepositMade: true } as IUser,
+                referrals: [],
+                isTestReferralTracking: false,
+            };
+
+            const sqsEvent2 = createSQSEvent("after-deposit", queueMessage2);
+
+            const result = await ReferralsService.processUserReferralTracking(
+                connections,
+                sqsEvent2
+            );
+
+            // Verify successful processing
+            expect(result.successMessageIds).toContain("after-deposit");
+            expect(result.failedMessageIds).toHaveLength(0);
+
+            // Verify user now gets TA_RECRUIT rank
+            const userAfterDeposit = await getUserFromDb(
+                usersConnection,
+                mainUserId
+            );
+            expect(userAfterDeposit?.referralRank).toBe(
+                ReferralRank.TA_RECRUIT
+            );
+            expect(userAfterDeposit?.personalATC).toBe(
+                RANK_REQUIREMENTS[ReferralRank.TA_RECRUIT].personalATC
+            );
+        });
+
+        it("should handle mixed batch where some users have made first deposit and others haven't", async () => {
+            // Setup multiple users
+            const user1Id = "batch-deposit-made";
+            const user1AccountId = generateObjectId();
+            const user2Id = "batch-no-deposit";
+            const user2AccountId = generateObjectId();
+            const user3Id = "batch-deposit-made-high-rank";
+            const user3AccountId = generateObjectId();
+
+            // User 1 - Made deposit, meets TA_RECRUIT
+            await setUpUserWithBalance(
+                usersConnection,
+                tradingEngineConnection,
+                user1Id,
+                user1AccountId,
+                RANK_REQUIREMENTS[ReferralRank.TA_RECRUIT].personalATC
+            );
+
+            // User 2 - No deposit, would meet TA_RECRUIT if had deposit
+            await setUpUserWithBalance(
+                usersConnection,
+                tradingEngineConnection,
+                user2Id,
+                user2AccountId,
+                RANK_REQUIREMENTS[ReferralRank.TA_RECRUIT].personalATC
+            );
+
+            // User 3 - Made deposit, meets TA_LIEUTENANT
+            await setUpUserWithBalance(
+                usersConnection,
+                tradingEngineConnection,
+                user3Id,
+                user3AccountId,
+                RANK_REQUIREMENTS[ReferralRank.TA_LIEUTENANT].personalATC
+            );
+
+            // Create referrals for user 3
+            const user3Referrals: IUser[] =
+                await createReferralsWithRankAndBalance(
+                    "batch-deposit-ref-",
+                    100,
+                    RANK_REQUIREMENTS[ReferralRank.TA_LIEUTENANT].communitySize,
+                    usersConnection,
+                    tradingEngineConnection,
+                    ReferralRank.TA_RECRUIT
+                );
+
+            const batchSqsEvent = createSQSEvent(
+                ["deposit-made", "no-deposit", "deposit-made-high"],
+                [
+                    {
+                        user: {
+                            id: user1Id,
+                            isFirstDepositMade: true,
+                        } as IUser,
+                        referrals: [],
+                        isTestReferralTracking: false,
+                    },
+                    {
+                        user: {
+                            id: user2Id,
+                            isFirstDepositMade: false,
+                        } as IUser,
+                        referrals: [],
+                        isTestReferralTracking: false,
+                    },
+                    {
+                        user: {
+                            id: user3Id,
+                            isFirstDepositMade: true,
+                        } as IUser,
+                        referrals: user3Referrals,
+                        isTestReferralTracking: false,
+                    },
+                ]
+            );
+
+            // Execute the method
+            const result = await ReferralsService.processUserReferralTracking(
+                connections,
+                batchSqsEvent
+            );
+
+            // Verify all processed successfully
+            expect(result.successMessageIds).toHaveLength(3);
+            expect(result.failedMessageIds).toHaveLength(0);
+
+            // Verify results
+            const updatedUser1 = await getUserFromDb(usersConnection, user1Id);
+            expect(updatedUser1?.referralRank).toBe(ReferralRank.TA_RECRUIT);
+
+            const updatedUser2 = await getUserFromDb(usersConnection, user2Id);
+            expect(updatedUser2?.referralRank).toBeNull(); // No deposit
+
+            const updatedUser3 = await getUserFromDb(usersConnection, user3Id);
+            expect(updatedUser3?.referralRank).toBe(ReferralRank.TA_LIEUTENANT);
+        });
+
+        it("should handle rank demotion while maintaining first deposit requirement", async () => {
+            const mainUserId = "demotion-with-deposit";
+            const mainAccountId = generateObjectId();
+
+            // Setup user who initially qualifies for TA_LIEUTENANT
+            await setUpUserWithBalance(
+                usersConnection,
+                tradingEngineConnection,
+                mainUserId,
+                mainAccountId,
+                RANK_REQUIREMENTS[ReferralRank.TA_LIEUTENANT].personalATC
+            );
+
+            const referrals = await createReferralsWithRankAndBalance(
+                "demotion-ref-",
+                100,
+                RANK_REQUIREMENTS[ReferralRank.TA_LIEUTENANT].communitySize,
+                usersConnection,
+                tradingEngineConnection,
+                ReferralRank.TA_RECRUIT
+            );
+
+            // First: Achieve TA_LIEUTENANT with first deposit made
+            const queueMessage1: IReferralQueueMessage = {
+                user: { id: mainUserId, isFirstDepositMade: true } as IUser,
+                referrals,
+                isTestReferralTracking: false,
+            };
+
+            const sqsEvent1 = createSQSEvent(
+                "achieve-lieutenant",
+                queueMessage1
+            );
+
+            await ReferralsService.processUserReferralTracking(
+                connections,
+                sqsEvent1
+            );
+
+            const lieutenantUser = await getUserFromDb(
+                usersConnection,
+                mainUserId
+            );
+            expect(lieutenantUser?.referralRank).toBe(
+                ReferralRank.TA_LIEUTENANT
+            );
+
+            // Second: Lose referrals but maintain first deposit status
+            referrals.splice(0, 5); // Remove 5 referrals to cause demotion
+
+            const queueMessage2: IReferralQueueMessage = {
+                user: { id: mainUserId, isFirstDepositMade: true } as IUser,
+                referrals,
+                isTestReferralTracking: false,
+            };
+
+            const sqsEvent2 = createSQSEvent(
+                "demote-to-recruit",
+                queueMessage2
+            );
+
+            const result = await ReferralsService.processUserReferralTracking(
+                connections,
+                sqsEvent2
+            );
+
+            // Verify successful processing
+            expect(result.successMessageIds).toContain("demote-to-recruit");
+            expect(result.failedMessageIds).toHaveLength(0);
+
+            // Should demote to TA_RECRUIT (not null) since first deposit is maintained
+            const demotedUser = await getUserFromDb(
+                usersConnection,
+                mainUserId
+            );
+            expect(demotedUser?.referralRank).toBe(ReferralRank.TA_RECRUIT);
+            expect(demotedUser?.personalATC).toBe(
+                RANK_REQUIREMENTS[ReferralRank.TA_LIEUTENANT].personalATC
+            );
+        });
+
+        it("should handle edge case where user loses first deposit status", async () => {
+            const mainUserId = "lose-deposit-status";
+            const mainAccountId = generateObjectId();
+
+            // Setup user with sufficient balance for TA_RECRUIT
+            await setUpUserWithBalance(
+                usersConnection,
+                tradingEngineConnection,
+                mainUserId,
+                mainAccountId,
+                RANK_REQUIREMENTS[ReferralRank.TA_RECRUIT].personalATC
+            );
+
+            // First: User has made first deposit and gets TA_RECRUIT
+            const queueMessage1: IReferralQueueMessage = {
+                user: { id: mainUserId, isFirstDepositMade: true } as IUser,
+                referrals: [],
+                isTestReferralTracking: false,
+            };
+
+            const sqsEvent1 = createSQSEvent("with-deposit", queueMessage1);
+
+            await ReferralsService.processUserReferralTracking(
+                connections,
+                sqsEvent1
+            );
+
+            const userWithRank = await getUserFromDb(
+                usersConnection,
+                mainUserId
+            );
+            expect(userWithRank?.referralRank).toBe(ReferralRank.TA_RECRUIT);
+
+            // Second: User somehow loses first deposit status (edge case)
+            const queueMessage2: IReferralQueueMessage = {
+                user: { id: mainUserId, isFirstDepositMade: false } as IUser,
+                referrals: [],
+                isTestReferralTracking: false,
+            };
+
+            const sqsEvent2 = createSQSEvent("without-deposit", queueMessage2);
+
+            const result = await ReferralsService.processUserReferralTracking(
+                connections,
+                sqsEvent2
+            );
+
+            // Verify successful processing
+            expect(result.successMessageIds).toContain("without-deposit");
+            expect(result.failedMessageIds).toHaveLength(0);
+
+            // Should lose rank and become null
+            const userWithoutRank = await getUserFromDb(
+                usersConnection,
+                mainUserId
+            );
+            expect(userWithoutRank?.referralRank).toBeNull();
+            expect(userWithoutRank?.personalATC).toBe(
+                RANK_REQUIREMENTS[ReferralRank.TA_RECRUIT].personalATC
+            );
         });
     });
 });

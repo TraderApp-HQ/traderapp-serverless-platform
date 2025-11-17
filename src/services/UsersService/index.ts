@@ -14,15 +14,22 @@ import {
 } from "src/types/users-service";
 import "dotenv/config";
 
-class UsersService {
+export class UsersService {
     private connection: mongoose.Connection | null = null;
     private secrets: IUsersServiceSecrets | null = null;
     private initialized: boolean = false;
     private initializationPromise: Promise<void> | null = null;
+    private isExternalConnection: boolean = false;
 
-    constructor() {}
+    constructor(connection?: mongoose.Connection) {
+        if (connection) {
+            this.connection = connection;
+            this.isExternalConnection = true;
+            this.initialized = true;
+        }
+    }
 
-    // Initialize the service once
+    // Initialize the service once (only needed when no external connection provided)
     private async initialize(): Promise<void> {
         if (this.initialized) return;
 
@@ -51,7 +58,7 @@ class UsersService {
 
                 this.initialized = true;
             } catch (error) {
-                log.error("Failed to initialize UsersService:", { error });
+                console.error("Failed to initialize UsersService:", { error });
                 throw error;
             } finally {
                 this.initializationPromise = null;
@@ -63,7 +70,8 @@ class UsersService {
 
     // Close resources
     private async closeResources(): Promise<void> {
-        if (this.connection) {
+        // Only close connection if we created it (not externally provided)
+        if (this.connection && !this.isExternalConnection) {
             await this.connection.close();
             this.connection = null;
         }
@@ -72,12 +80,17 @@ class UsersService {
     // For cleanup, especially in testing
     public async cleanup(): Promise<void> {
         await this.closeResources();
-        this.initialized = false;
+        if (!this.isExternalConnection) {
+            this.initialized = false;
+        }
     }
 
-    // Get connection (ensures initialization first)
+    // Get connection (ensures initialization first if needed)
     private async getConnection(): Promise<mongoose.Connection> {
-        await this.initialize();
+        if (!this.isExternalConnection) {
+            await this.initialize();
+        }
+
         if (!this.connection) {
             throw new Error("Database connection not available");
         }
@@ -86,7 +99,10 @@ class UsersService {
 
     // Get secrets (ensures initialization first)
     private async getSecrets(): Promise<IUsersServiceSecrets> {
-        await this.initialize();
+        if (!this.isExternalConnection) {
+            await this.initialize();
+        }
+
         if (!this.secrets) {
             throw new Error("Secrets not available");
         }
@@ -94,7 +110,7 @@ class UsersService {
     }
 
     // Get user by ID
-    private async getUserById(userId: string): Promise<IUser | null> {
+    public async getUserById(userId: string): Promise<IUser | null> {
         try {
             const connection = await this.getConnection();
             const usersCollection = new MongoDBClient<IUser>(
@@ -107,7 +123,7 @@ class UsersService {
 
             return user;
         } catch (error) {
-            log.error(`Failed to get user by ID ${userId}:`, { error });
+            console.error(`Failed to get user by ID ${userId}:`, { error });
             throw error;
         }
     }
@@ -225,7 +241,7 @@ class UsersService {
                             success: true,
                         };
                     } catch (error) {
-                        log.error(
+                        console.error(
                             `Failed to update onboarding task (${queue.body.onboardingChecklistItem}) for user ${queue.body.userId}:`,
                             {
                                 error,

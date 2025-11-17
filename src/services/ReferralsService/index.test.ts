@@ -11,6 +11,7 @@ describe("ReferralsService.computeRank", () => {
             communityATC: 0,
             referrals: [],
             isTestReferralTracking: false,
+            isFirstDepositMade: true,
         };
 
         const { rank, maxRankFromReferrals } = service.computeRank(criteria);
@@ -45,6 +46,7 @@ describe("ReferralsService.computeRank", () => {
                 ) as IUser[]),
             ],
             isTestReferralTracking: false,
+            isFirstDepositMade: true,
         };
 
         const { rank, maxRankFromReferrals } = service.computeRank(criteria);
@@ -72,6 +74,7 @@ describe("ReferralsService.computeRank", () => {
                 RANK_REQUIREMENTS[ReferralRank.TA_LIEUTENANT].communityATC,
             referrals,
             isTestReferralTracking: true,
+            isFirstDepositMade: true,
         };
 
         const { rank, maxRankFromReferrals } = service.computeRank(criteria);
@@ -106,6 +109,7 @@ describe("ReferralsService.computeRank", () => {
                 ) as IUser[]),
             ],
             isTestReferralTracking: false,
+            isFirstDepositMade: true,
         };
 
         const { rank, maxRankFromReferrals } = service.computeRank(criteria);
@@ -138,6 +142,7 @@ describe("ReferralsService.computeRank", () => {
                 ) as IUser[]),
             ],
             isTestReferralTracking: false,
+            isFirstDepositMade: true,
         };
 
         const { rank, maxRankFromReferrals } = service.computeRank(criteria);
@@ -158,6 +163,7 @@ describe("ReferralsService.computeRank", () => {
                 RANK_REQUIREMENTS[ReferralRank.TA_LIEUTENANT].communityATC,
             referrals,
             isTestReferralTracking: false,
+            isFirstDepositMade: true,
         };
 
         const { rank, maxRankFromReferrals } = service.computeRank(criteria);
@@ -192,6 +198,7 @@ describe("ReferralsService.computeRank", () => {
                 ) as IUser[]),
             ],
             isTestReferralTracking: false,
+            isFirstDepositMade: true,
         };
 
         const { rank, maxRankFromReferrals } = service.computeRank(criteria);
@@ -229,6 +236,7 @@ describe("ReferralsService.computeRank", () => {
                 ) as IUser[]),
             ],
             isTestReferralTracking: false,
+            isFirstDepositMade: true,
         };
 
         const { rank, maxRankFromReferrals } = service.computeRank(criteria);
@@ -262,6 +270,7 @@ describe("ReferralsService.computeRank", () => {
                 ) as IUser[]),
             ],
             isTestReferralTracking: false,
+            isFirstDepositMade: false,
         };
 
         const { rank, maxRankFromReferrals } = service.computeRank(criteria);
@@ -271,5 +280,94 @@ describe("ReferralsService.computeRank", () => {
 
         // maxRankFromReferrals should still be calculated correctly
         expect(maxRankFromReferrals).toBe(ReferralRank.TA_MAJOR);
+    });
+
+    it("should return null rank when isFirstDepositMade is false for TA_RECRUIT", () => {
+        const criteria: IRankCriteria = {
+            personalATC: RANK_REQUIREMENTS[ReferralRank.TA_RECRUIT].personalATC,
+            communityATC: 0,
+            referrals: [],
+            isTestReferralTracking: false,
+            isFirstDepositMade: false,
+        };
+
+        const { rank, maxRankFromReferrals } = service.computeRank(criteria);
+
+        expect(rank).toBeNull();
+        expect(maxRankFromReferrals).toBe(ReferralRank.TA_RECRUIT);
+    });
+
+    it("should return null rank when isFirstDepositMade is false for TA_CAPTAIN", () => {
+        const referrals: IUser[] = [
+            { id: "1", referralRank: ReferralRank.TA_LIEUTENANT } as IUser,
+            { id: "2", referralRank: ReferralRank.TA_CAPTAIN } as IUser,
+            { id: "3", referralRank: ReferralRank.TA_MAJOR } as IUser,
+        ];
+
+        const criteria: IRankCriteria = {
+            personalATC: RANK_REQUIREMENTS[ReferralRank.TA_CAPTAIN].personalATC,
+            communityATC:
+                RANK_REQUIREMENTS[ReferralRank.TA_CAPTAIN].communityATC,
+            referrals: [
+                ...referrals,
+                ...(Array.from(
+                    {
+                        length:
+                            RANK_REQUIREMENTS[ReferralRank.TA_CAPTAIN]
+                                .communitySize - referrals.length,
+                    },
+                    (_, i) => ({
+                        id: `${i + 4}`,
+                        referralRank: ReferralRank.TA_RECRUIT,
+                    })
+                ) as IUser[]),
+            ],
+            isTestReferralTracking: false,
+            isFirstDepositMade: false,
+        };
+
+        const { rank, maxRankFromReferrals } = service.computeRank(criteria);
+
+        expect(rank).toBeNull();
+        expect(maxRankFromReferrals).toBe(ReferralRank.TA_CAPTAIN);
+    });
+
+    it("should return null rank when isFirstDepositMade is false for TA_FIELD_MARSHAL", () => {
+        const referrals: IUser[] = Array.from(
+            { length: 3 },
+            () =>
+                ({
+                    id: "high-rank",
+                    referralRank: ReferralRank.TA_FIELD_MARSHAL,
+                }) as IUser
+        );
+
+        const criteria: IRankCriteria = {
+            personalATC:
+                RANK_REQUIREMENTS[ReferralRank.TA_FIELD_MARSHAL].personalATC,
+            communityATC:
+                RANK_REQUIREMENTS[ReferralRank.TA_FIELD_MARSHAL].communityATC,
+            referrals: [
+                ...referrals,
+                ...(Array.from(
+                    {
+                        length:
+                            RANK_REQUIREMENTS[ReferralRank.TA_FIELD_MARSHAL]
+                                .communitySize - referrals.length,
+                    },
+                    (_, i) => ({
+                        id: `${i + 4}`,
+                        referralRank: ReferralRank.TA_RECRUIT,
+                    })
+                ) as IUser[]),
+            ],
+            isTestReferralTracking: false,
+            isFirstDepositMade: false,
+        };
+
+        const { rank, maxRankFromReferrals } = service.computeRank(criteria);
+
+        expect(rank).toBeNull();
+        expect(maxRankFromReferrals).toBe(ReferralRank.TA_FIELD_MARSHAL);
     });
 });

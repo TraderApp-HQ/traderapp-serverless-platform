@@ -5,7 +5,6 @@ import { getParsedQueueMessagesBody } from "src/config/sqs/helpers";
 
 export const handler = async (event: SQSEvent): Promise<void> => {
     log.info("Received event", { event });
-    // const queueMessages = parseQueueMessagesBody(event);
     const queueMessages = getParsedQueueMessagesBody(event);
 
     const notificationService = NotificationsService;
