@@ -108,3 +108,8 @@ export interface IWalletCurrency {
     symbol: string;
     logoUrl: string;
 }
+
+export interface IUserAccountActivationFeeEvent {
+    userId: string;
+    amount: number;
+}

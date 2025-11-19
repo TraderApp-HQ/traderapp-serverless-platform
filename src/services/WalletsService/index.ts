@@ -27,6 +27,7 @@ import {
     IWalletType,
     TransactionStatus,
     TransactionType,
+    IUserAccountActivationFeeEvent,
 } from "src/types/wallets-service";
 import { publishDepositConfirmationToQueue } from "./helper";
 import { IInvoice } from "src/services/TradingEngineService/interfaces";
@@ -489,12 +490,24 @@ export class WalletsService {
                                     "0"
                                 ),
                             });
-                            // Publish user to queue for first deposit tracking if paid_amount is >= $20
+                            // Publish user to queue for activation fee & first deposit tracking if received_amount is >= $20
                             if (
                                 parseFloat(
-                                    queueMessage.body.data.paid_amount ?? "0"
+                                    queueMessage.body.data.received_amount ?? "0"
                                 ) >= 20
                             ) {
+                                // Activation fee Queue
+                                await publishMessageToQueue({
+                                    queueUrl:
+                                        walletSecrets.USER_ACCOUNT_ACTIVATION_FEE_QUEUE ??
+                                        "",
+                                    message: JSON.stringify({
+                                        userId,
+                                        amount: 20, // Activation fee
+                                    }),
+                                })
+
+                                // First Deposit Queue
                                 await publishMessageToQueue({
                                     queueUrl:
                                         commonSecrets.TRACK_USER_ONBOARDING_CHECKLIST_QUEUE ??
@@ -1527,6 +1540,70 @@ export class WalletsService {
                     error instanceof Error
                         ? error.message
                         : "Unknown error occurred",
+            };
+        }
+    }
+
+    // Process User Account Activation Fee
+    public async processUserAccountActivationFee(
+        queueMessages: IQueueMessageBody<IUserAccountActivationFeeEvent>[]
+    ): Promise<{
+        successMessageIds: string[];
+        failedMessageIds: string[];
+    }> {
+        try {
+            // Ensure service is initialized
+            await this.initialize();
+
+            const successMessageIds: string[] = [];
+            const failedMessageIds: string[] = [];
+
+            const results = await Promise.allSettled(
+                queueMessages.map(async (queue) => {
+                    try {
+                        const { userId, amount } = queue.body;
+                        await this.debitUserWallet({ userId, amount })
+                        return {
+                            messageId: queue.messageId,
+                            success: true,
+                        };
+                    } catch (error) {
+                        console.error(
+                            `Failed to deduct activation fee for user ${queue.body.userId}:`,
+                            {
+                                error,
+                            }
+                        );
+                        return {
+                            messageId: queue.messageId,
+                            success: false,
+                        };
+                    }
+                })
+            )
+
+            // Process result
+            results.forEach((result, index) => {
+                const messageId = queueMessages[index].messageId;
+
+                if (result.status === "fulfilled" && result.value.success) {
+                    successMessageIds.push(result.value.messageId);
+                } else {
+                    failedMessageIds.push(messageId);
+                }
+            });
+
+            return {
+                successMessageIds,
+                failedMessageIds,
+            };
+        } catch (error) {
+            console.error("General error in processUserAccountActivationFee:", {
+                error,
+            });
+            return {
+                successMessageIds: [],
+                failedMessageIds: queueMessages.map((qm) => qm.messageId),
             };
         }
     }

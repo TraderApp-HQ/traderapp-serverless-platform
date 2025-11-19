@@ -28,4 +28,5 @@ export interface IWalletsServiceSecrets {
     CRYPTOPAY_DEPOSITS_API_SECRET: string;
     CRYPTOPAY_WEBHOOK_SHARED_SECRET: string;
     WALLET_SERVICE_DB_URL: string;
+    USER_ACCOUNT_ACTIVATION_FEE_QUEUE: string;
 }

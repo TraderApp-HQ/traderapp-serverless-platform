@@ -230,6 +230,19 @@ Resources:
     Properties:
       QueueName: !Sub ${Environment}-handleFailedTradesDLQ
 
+  userAccountActivationFeeQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${Environment}-userAccountActivationFeeQueue
+      VisibilityTimeout: 90
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt userAccountActivationFeeDLQ.Arn
+        maxReceiveCount: 3
+  userAccountActivationFeeDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${Environment}-userAccountActivationFeeDLQ
+
 # create lambda functions
   sendEmailOtp:
     Type: AWS::Serverless::Function
@@ -369,6 +382,7 @@ Resources:
                 - sqs:SendMessageBatch
               Resource:
                 - !GetAtt trackUserOnboardingChecklistQueue.Arn
+                - !GetAtt userAccountActivationFeeDLQ.Arn
                 - !GetAtt emailNotificationsQueue.Arn
 
 
@@ -749,3 +763,34 @@ Resources:
             #   Resource:
             #     - !GetAtt handleProcessedTradesQueue.Arn
             #     - !GetAtt handleFailedTradesQueue.Arn
+  
+  processUserAccountActivationFee:
+    Type: AWS::Serverless::Function
+    Properties:
+      Environment:
+        Variables:
+          ENV: !Ref Environment
+      FunctionName: !Sub ${Environment}-processUserAccountActivationFee
+      Runtime: nodejs20.x
+      Architectures:
+        - x86_64
+      Handler: dist/handlers/process-user-account-activation-fee.handler
+      Events:
+        SQSQueueEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt userAccountActivationFeeQueue.Arn
+      MemorySize: 128
+      Timeout: 90
+      DeadLetterQueue:
+        Type: SQS
+        TargetArn: !GetAtt userAccountActivationFeeDLQ.Arn
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource:
+                - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:wallets-service-secrets/${Environment}*
+                - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:common-secrets/${Environment}*
