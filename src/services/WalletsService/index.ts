@@ -1568,13 +1568,20 @@ export class WalletsService {
 
             const results = await Promise.allSettled(
                 queueMessages.map(async (queue) => {
+                    const { userId, amount } = queue.body;
+
+                    // Helps to effect rollback if error occured
+                    // Transactions does not work for different db operations
+                    let rollBack: null | "wallet" | "activation" = null;
+
                     try {
-                        const { userId, amount } = queue.body;
                         // Debit User wallet
-                        await this.debitUserWallet({ userId, amount })
+                        await this.debitUserWallet({ userId, amount });
+                        rollBack = "wallet";
 
                         // Update user activation fee field
                         const user = await UsersService.updateUserActivationFee({ userId, amount });
+                        rollBack = "activation";
 
                         if (!user) {
                             throw new Error(`User ${userId} not found after activation fee update`);
@@ -1597,11 +1604,12 @@ export class WalletsService {
                             createdAt: new Date(),
                             updatedAt: new Date()
                         }
-                        await this.recordTransactionToDB(transaction)
+                        await this.recordTransactionToDB(transaction);
+                        rollBack = null; // All DB operations was successful
 
                         // Publish to First deposit queue if activation fee is now $20
                         const activationFee = user.activationFee ?? 0;
-                        if (activationFee >= 20) {
+                        if (activationFee >= 20 && queueUrl) {
                             // First Deposit Queue
                             await publishMessageToQueue({
                                 queueUrl,
@@ -1620,6 +1628,35 @@ export class WalletsService {
                             success: true,
                         };
                     } catch (error) {
+                        // Compensating Rollback operation on error
+                        if (rollBack !== null) {
+                            try {
+                                if (rollBack === "wallet") {
+                                    // Rollback: Credit wallet only
+                                    await this.creditUserWallet({ userId, amount });
+                                    console.log(`Rolled back wallet debit for user ${userId}`);
+                                } else if (rollBack === "activation") {
+                                    // Rollback: Credit wallet AND revert activation fee
+                                    await Promise.allSettled([
+                                        this.creditUserWallet({ userId, amount }),
+                                        UsersService.updateUserActivationFee({ userId, amount: -amount }),
+                                    ]);
+                                    console.log(`Rolled back wallet debit and activation fee for user ${userId}`);
+                                }
+                            } catch (rollbackError) {
+                                // Critical: Rollback failed - log for manual intervention
+                                console.error(
+                                    `CRITICAL: Failed to rollback for user ${userId}:`,
+                                    {
+                                        error: rollbackError,
+                                        originalError: error,
+                                        rollBackState: rollBack,
+                                        messageId: queue.messageId,
+                                    }
+                                );
+                            }
+                        }
+
                         console.error(
                             `Failed to deduct activation fee for user ${queue.body.userId}:`,
                             {

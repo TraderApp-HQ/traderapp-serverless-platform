@@ -307,7 +307,7 @@ export class UsersService {
             // Use $inc operator to atomically increase the activationFee
             const user = await usersCollection.findOneAndUpdate(
                 { id: userId },
-                { $inc: { activationFee: +amount } }
+                { $inc: { activationFee: amount } }
             );
 
             return user;
