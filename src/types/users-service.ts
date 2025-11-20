@@ -71,6 +71,7 @@ export interface IUser {
     personalATC?: number;
     communityATC?: number;
     isTestReferralTrackingInProgress?: boolean;
+    activationFee?: number;
 }
 
 export interface ITrackUserOnboardingChecklistInput {

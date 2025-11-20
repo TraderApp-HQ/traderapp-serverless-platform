@@ -28,6 +28,10 @@ import {
     TransactionStatus,
     TransactionType,
     IUserAccountActivationFeeEvent,
+    TransactionSource,
+    PaymentCategoryName,
+    WalletType,
+    WalletProvider,
 } from "src/types/wallets-service";
 import { publishDepositConfirmationToQueue } from "./helper";
 import { IInvoice } from "src/services/TradingEngineService/interfaces";
@@ -65,6 +69,8 @@ interface IUpdateInvoiceInput {
     amountDue?: number;
 }
 import { publishWithdrawlConfirmationToQueue } from "./helper.withdrawal";
+import UsersService from "../UsersService";
+import { randomUUID } from "crypto";
 
 export class WalletsService {
     private connection: mongoose.Connection | null = null;
@@ -286,10 +292,7 @@ export class WalletsService {
         try {
             // Ensure service is initialized
             await this.initialize();
-            const [walletSecrets, commonSecrets] = await Promise.all([
-                this.getWalletSecrets(),
-                this.getCommonSecrets(),
-            ]);
+            const walletSecrets = await this.getWalletSecrets();
 
             const cryptopayClient = new CryptoPayClient({
                 baseUrl: walletSecrets.CRYPTOPAY_BASE_URL,
@@ -483,6 +486,13 @@ export class WalletsService {
                 filteredTransactionsToCredit.map(
                     async ({ messageId, userId, queueMessage }) => {
                         try {
+                            // Get user with userId
+                            const user = await UsersService.getUserById(userId);
+                            if (!user) {
+                                throw new Error(`User with the ID ${userId} not found`);
+                            }
+
+                            // Credit user wallet
                             await this.creditUserWallet({
                                 userId,
                                 amount: parseFloat(
@@ -490,12 +500,20 @@ export class WalletsService {
                                     "0"
                                 ),
                             });
-                            // Publish user to queue for activation fee & first deposit tracking if received_amount is >= $20
-                            if (
-                                parseFloat(
-                                    queueMessage.body.data.received_amount ?? "0"
-                                ) >= 20
+
+
+                            // Publish user to queue if first deposit is false or activation fee is less than $20
+                            // for activationFee deduction & first deposit tracking
+                            if ((!user.isFirstDepositMade || (user.activationFee ?? 0 < 20))
                             ) {
+                                const depositedAmount = parseFloat(
+                                    queueMessage.body.data.paid_amount ?? "0"
+                                ); // Deposit by user
+
+                                const payableActivationFee = 20 - (user?.activationFee || 0); // User activation fee
+
+                                const calculatedActivationFee = depositedAmount > payableActivationFee ? payableActivationFee : depositedAmount; // Calculated fee
+
                                 // Activation fee Queue
                                 await publishMessageToQueue({
                                     queueUrl:
@@ -503,21 +521,9 @@ export class WalletsService {
                                         "",
                                     message: JSON.stringify({
                                         userId,
-                                        amount: 20, // Activation fee
+                                        amount: calculatedActivationFee, // Activation fee
                                     }),
                                 })
-
-                                // First Deposit Queue
-                                await publishMessageToQueue({
-                                    queueUrl:
-                                        commonSecrets.TRACK_USER_ONBOARDING_CHECKLIST_QUEUE ??
-                                        "",
-                                    message: JSON.stringify({
-                                        userId,
-                                        onboardingChecklistItem:
-                                            UserOnboardingChecklist.IS_FIRST_DEPOSIT_MADE,
-                                    }),
-                                });
                             }
 
                             // publish deposit notification to queue
@@ -1552,17 +1558,63 @@ export class WalletsService {
         failedMessageIds: string[];
     }> {
         try {
-            // Ensure service is initialized
+            // Ensure service is initialized and get secrets
             await this.initialize();
+            const commonSecrets = await this.getCommonSecrets();
 
             const successMessageIds: string[] = [];
             const failedMessageIds: string[] = [];
+            const queueUrl = commonSecrets.TRACK_USER_ONBOARDING_CHECKLIST_QUEUE ?? "";
 
             const results = await Promise.allSettled(
                 queueMessages.map(async (queue) => {
                     try {
                         const { userId, amount } = queue.body;
+                        // Debit User wallet
                         await this.debitUserWallet({ userId, amount })
+
+                        // Update user activation fee field
+                        const user = await UsersService.updateUserActivationFee({ userId, amount });
+
+                        if (!user) {
+                            throw new Error(`User ${userId} not found after activation fee update`);
+                        }
+
+                        // Record transaction
+                        const transaction: ITransaction = {
+                            userId,
+                            amount,
+                            transactionNetwork: "activation_fee",
+                            currencyName: "USDT",
+                            fromWallet: WalletType.MAIN,
+                            status: TransactionStatus.SUCCESS,
+                            transactionType: TransactionType.ACTIVATION,
+                            transactionSource: TransactionSource.INTERNAL,
+                            paymentCategoryName: PaymentCategoryName.CRYPTO,
+                            paymentMethodName: "Tether",
+                            paymentProviderName: WalletProvider.CRYPTOPAY,
+                            externalTransactionId: randomUUID(), // Generates random uuid
+                            createdAt: new Date(),
+                            updatedAt: new Date()
+                        }
+                        await this.recordTransactionToDB(transaction)
+
+                        // Publish to First deposit queue if activation fee is now $20
+                        const activationFee = user.activationFee ?? 0;
+                        if (activationFee >= 20) {
+                            // First Deposit Queue
+                            await publishMessageToQueue({
+                                queueUrl,
+                                message: JSON.stringify({
+                                    userId,
+                                    onboardingChecklistItem:
+                                        UserOnboardingChecklist.IS_FIRST_DEPOSIT_MADE,
+                                }),
+                            });
+                        }
+
+                        // TODO: Email notification for activationFee Deduction
+
                         return {
                             messageId: queue.messageId,
                             success: true,

@@ -28,6 +28,7 @@ export enum TransactionType {
     WITHDRAWAL = "WITHDRAWAL",
     TRANSFER = "TRANSFER",
     CONVERT = "CONVERT",
+    ACTIVATION = "ACTIVATION",
 }
 
 export enum TransactionSource {
