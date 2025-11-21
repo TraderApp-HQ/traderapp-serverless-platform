@@ -71,6 +71,7 @@ interface IUpdateInvoiceInput {
 import { publishWithdrawlConfirmationToQueue } from "./helper.withdrawal";
 import UsersService from "../UsersService";
 import { randomUUID } from "crypto";
+import { TraderAppActivationFee } from "src/config/constants";
 
 export class WalletsService {
     private connection: mongoose.Connection | null = null;
@@ -504,13 +505,13 @@ export class WalletsService {
 
                             // Publish user to queue if first deposit is false or activation fee is less than $20
                             // for activationFee deduction & first deposit tracking
-                            if ((!user.isFirstDepositMade || (user.activationFee ?? 0 < 20))
+                            if ((!user.isFirstDepositMade || (user.activationFee ?? 0) < TraderAppActivationFee)
                             ) {
                                 const depositedAmount = parseFloat(
-                                    queueMessage.body.data.paid_amount ?? "0"
+                                    queueMessage.body.data.received_amount ?? "0"
                                 ); // Deposit by user
 
-                                const payableActivationFee = 20 - (user?.activationFee || 0); // User activation fee
+                                const payableActivationFee = TraderAppActivationFee - (user?.activationFee || 0); // User activation fee
 
                                 const calculatedActivationFee = depositedAmount > payableActivationFee ? payableActivationFee : depositedAmount; // Calculated fee
 
@@ -1609,7 +1610,7 @@ export class WalletsService {
 
                         // Publish to First deposit queue if activation fee is now $20
                         const activationFee = user.activationFee ?? 0;
-                        if (activationFee >= 20 && queueUrl) {
+                        if (activationFee >= TraderAppActivationFee && queueUrl) {
                             // First Deposit Queue
                             await publishMessageToQueue({
                                 queueUrl,
@@ -1628,6 +1629,7 @@ export class WalletsService {
                             success: true,
                         };
                     } catch (error) {
+                        // TODO: Publish ROLLBACK operation to a different queue
                         // Compensating Rollback operation on error
                         if (rollBack !== null) {
                             try {
@@ -1646,13 +1648,16 @@ export class WalletsService {
                             } catch (rollbackError) {
                                 // Critical: Rollback failed - log for manual intervention
                                 console.error(
-                                    `CRITICAL: Failed to rollback for user ${userId}:`,
+                                    `##################################### CRITICAL ROLLBACK FAILURE: FAILED TO ROLLBACK FOR USER ${userId}:###################################################`,
                                     {
                                         error: rollbackError,
                                         originalError: error,
                                         rollBackState: rollBack,
                                         messageId: queue.messageId,
-                                    }
+                                        userId,
+                                        amount
+                                    },
+                                    "###################################################################################################################################################"
                                 );
                             }
                         }

@@ -77,3 +77,5 @@ export const TradingEngineServiceDbCollection = {
 export const UserServiceDbCollection = {
     users: "users",
 };
+
+export const TraderAppActivationFee = 20;
