@@ -28,6 +28,7 @@ export enum TransactionType {
     WITHDRAWAL = "WITHDRAWAL",
     TRANSFER = "TRANSFER",
     CONVERT = "CONVERT",
+    ACTIVATION = "ACTIVATION",
 }
 
 export enum TransactionSource {
@@ -107,4 +108,9 @@ export interface IWalletCurrency {
     name: string;
     symbol: string;
     logoUrl: string;
+}
+
+export interface IUserAccountActivationFeeEvent {
+    userId: string;
+    amount: number;
 }

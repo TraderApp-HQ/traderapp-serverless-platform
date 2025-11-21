@@ -27,6 +27,11 @@ import {
     IWalletType,
     TransactionStatus,
     TransactionType,
+    IUserAccountActivationFeeEvent,
+    TransactionSource,
+    PaymentCategoryName,
+    WalletType,
+    WalletProvider,
 } from "src/types/wallets-service";
 import { publishDepositConfirmationToQueue } from "./helper";
 import { IInvoice } from "src/services/TradingEngineService/interfaces";
@@ -64,6 +69,9 @@ interface IUpdateInvoiceInput {
     amountDue?: number;
 }
 import { publishWithdrawlConfirmationToQueue } from "./helper.withdrawal";
+import UsersService from "../UsersService";
+import { randomUUID } from "crypto";
+import { TraderAppActivationFee } from "src/config/constants";
 
 export class WalletsService {
     private connection: mongoose.Connection | null = null;
@@ -285,10 +293,7 @@ export class WalletsService {
         try {
             // Ensure service is initialized
             await this.initialize();
-            const [walletSecrets, commonSecrets] = await Promise.all([
-                this.getWalletSecrets(),
-                this.getCommonSecrets(),
-            ]);
+            const walletSecrets = await this.getWalletSecrets();
 
             const cryptopayClient = new CryptoPayClient({
                 baseUrl: walletSecrets.CRYPTOPAY_BASE_URL,
@@ -482,6 +487,13 @@ export class WalletsService {
                 filteredTransactionsToCredit.map(
                     async ({ messageId, userId, queueMessage }) => {
                         try {
+                            // Get user with userId
+                            const user = await UsersService.getUserById(userId);
+                            if (!user) {
+                                throw new Error(`User with the ID ${userId} not found`);
+                            }
+
+                            // Credit user wallet
                             await this.creditUserWallet({
                                 userId,
                                 amount: parseFloat(
@@ -489,22 +501,30 @@ export class WalletsService {
                                     "0"
                                 ),
                             });
-                            // Publish user to queue for first deposit tracking if paid_amount is >= $20
-                            if (
-                                parseFloat(
-                                    queueMessage.body.data.paid_amount ?? "0"
-                                ) >= 20
+
+
+                            // Publish user to queue if first deposit is false or activation fee is less than $20
+                            // for activationFee deduction & first deposit tracking
+                            if ((!user.isFirstDepositMade || (user.activationFee ?? 0) < TraderAppActivationFee)
                             ) {
+                                const depositedAmount = parseFloat(
+                                    queueMessage.body.data.received_amount ?? "0"
+                                ); // Deposit by user
+
+                                const payableActivationFee = TraderAppActivationFee - (user?.activationFee || 0); // User activation fee
+
+                                const calculatedActivationFee = depositedAmount > payableActivationFee ? payableActivationFee : depositedAmount; // Calculated fee
+
+                                // Activation fee Queue
                                 await publishMessageToQueue({
                                     queueUrl:
-                                        commonSecrets.TRACK_USER_ONBOARDING_CHECKLIST_QUEUE ??
+                                        walletSecrets.USER_ACCOUNT_ACTIVATION_FEE_QUEUE ??
                                         "",
                                     message: JSON.stringify({
                                         userId,
-                                        onboardingChecklistItem:
-                                            UserOnboardingChecklist.IS_FIRST_DEPOSIT_MADE,
+                                        amount: calculatedActivationFee, // Activation fee
                                     }),
-                                });
+                                })
                             }
 
                             // publish deposit notification to queue
@@ -1527,6 +1547,157 @@ export class WalletsService {
                     error instanceof Error
                         ? error.message
                         : "Unknown error occurred",
+            };
+        }
+    }
+
+    // Process User Account Activation Fee
+    public async processUserAccountActivationFee(
+        queueMessages: IQueueMessageBody<IUserAccountActivationFeeEvent>[]
+    ): Promise<{
+        successMessageIds: string[];
+        failedMessageIds: string[];
+    }> {
+        try {
+            // Ensure service is initialized and get secrets
+            await this.initialize();
+            const commonSecrets = await this.getCommonSecrets();
+
+            const successMessageIds: string[] = [];
+            const failedMessageIds: string[] = [];
+            const queueUrl = commonSecrets.TRACK_USER_ONBOARDING_CHECKLIST_QUEUE ?? "";
+
+            const results = await Promise.allSettled(
+                queueMessages.map(async (queue) => {
+                    const { userId, amount } = queue.body;
+
+                    // Helps to effect rollback if error occured
+                    // Transactions does not work for different db operations
+                    let rollBack: null | "wallet" | "activation" = null;
+
+                    try {
+                        // Debit User wallet
+                        await this.debitUserWallet({ userId, amount });
+                        rollBack = "wallet";
+
+                        // Update user activation fee field
+                        const user = await UsersService.updateUserActivationFee({ userId, amount });
+                        rollBack = "activation";
+
+                        if (!user) {
+                            throw new Error(`User ${userId} not found after activation fee update`);
+                        }
+
+                        // Record transaction
+                        const transaction: ITransaction = {
+                            userId,
+                            amount,
+                            transactionNetwork: "activation_fee",
+                            currencyName: "USDT",
+                            fromWallet: WalletType.MAIN,
+                            status: TransactionStatus.SUCCESS,
+                            transactionType: TransactionType.ACTIVATION,
+                            transactionSource: TransactionSource.INTERNAL,
+                            paymentCategoryName: PaymentCategoryName.CRYPTO,
+                            paymentMethodName: "Tether",
+                            paymentProviderName: WalletProvider.CRYPTOPAY,
+                            externalTransactionId: randomUUID(), // Generates random uuid
+                            createdAt: new Date(),
+                            updatedAt: new Date()
+                        }
+                        await this.recordTransactionToDB(transaction);
+                        rollBack = null; // All DB operations was successful
+
+                        // Publish to First deposit queue if activation fee is now $20
+                        const activationFee = user.activationFee ?? 0;
+                        if (activationFee >= TraderAppActivationFee && queueUrl) {
+                            // First Deposit Queue
+                            await publishMessageToQueue({
+                                queueUrl,
+                                message: JSON.stringify({
+                                    userId,
+                                    onboardingChecklistItem:
+                                        UserOnboardingChecklist.IS_FIRST_DEPOSIT_MADE,
+                                }),
+                            });
+                        }
+
+                        // TODO: Email notification for activationFee Deduction
+
+                        return {
+                            messageId: queue.messageId,
+                            success: true,
+                        };
+                    } catch (error) {
+                        // TODO: Publish ROLLBACK operation to a different queue
+                        // Compensating Rollback operation on error
+                        if (rollBack !== null) {
+                            try {
+                                if (rollBack === "wallet") {
+                                    // Rollback: Credit wallet only
+                                    await this.creditUserWallet({ userId, amount });
+                                    console.log(`Rolled back wallet debit for user ${userId}`);
+                                } else if (rollBack === "activation") {
+                                    // Rollback: Credit wallet AND revert activation fee
+                                    await Promise.allSettled([
+                                        this.creditUserWallet({ userId, amount }),
+                                        UsersService.updateUserActivationFee({ userId, amount: -amount }),
+                                    ]);
+                                    console.log(`Rolled back wallet debit and activation fee for user ${userId}`);
+                                }
+                            } catch (rollbackError) {
+                                // Critical: Rollback failed - log for manual intervention
+                                console.error(
+                                    `##################################### CRITICAL ROLLBACK FAILURE: FAILED TO ROLLBACK FOR USER ${userId}:###################################################`,
+                                    {
+                                        error: rollbackError,
+                                        originalError: error,
+                                        rollBackState: rollBack,
+                                        messageId: queue.messageId,
+                                        userId,
+                                        amount
+                                    },
+                                    "###################################################################################################################################################"
+                                );
+                            }
+                        }
+
+                        console.error(
+                            `Failed to deduct activation fee for user ${queue.body.userId}:`,
+                            {
+                                error,
+                            }
+                        );
+                        return {
+                            messageId: queue.messageId,
+                            success: false,
+                        };
+                    }
+                })
+            )
+
+            // Process result
+            results.forEach((result, index) => {
+                const messageId = queueMessages[index].messageId;
+
+                if (result.status === "fulfilled" && result.value.success) {
+                    successMessageIds.push(result.value.messageId);
+                } else {
+                    failedMessageIds.push(messageId);
+                }
+            });
+
+            return {
+                successMessageIds,
+                failedMessageIds,
+            };
+        } catch (error) {
+            console.error("General error in processUserAccountActivationFee:", {
+                error,
+            });
+            return {
+                successMessageIds: [],
+                failedMessageIds: queueMessages.map((qm) => qm.messageId),
             };
         }
     }

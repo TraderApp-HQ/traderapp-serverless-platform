@@ -23,7 +23,8 @@ export const publishDepositConfirmationToQueue = async (
         throw new Error(`User with the ID ${userId} not found`);
     }
 
-    const dateTime = new Date().toISOString();
+    const dateTime = new Date(); // Server time
+    const dateTimeGMT1 = new Date(dateTime.getTime() + 60 * 60 * 1000) // GMT+1 - Nigerian Time Zone
     const message: IQueueMessageBodyObject = {
         recipients: [{ firstName: user.firstName, emailAddress: user.email }],
         message: "Deposit Confirmation",
@@ -33,7 +34,7 @@ export const publishDepositConfirmationToQueue = async (
             transactionId,
             address,
             network,
-            dateTime: format(dateTime, "do MMM, yyyy, h:mma"),
+            dateTime: `${format(dateTimeGMT1, "do MMM, yyyy, h:mma")} (GMT+1)`,
         },
         subject: "Deposit Confirmation",
     };
