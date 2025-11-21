@@ -9,6 +9,7 @@ import {
     ReferralTemplate,
 } from "src/templates/email-templates";
 import SendDepositConfirmationEmailTemplate from "src/templates/email-templates/send-deposit-confirmation-email-template";
+import SendTradeActivatedNotificationTemplate from "src/templates/email-templates/send-trade-activated-notification-template";
 import SendTradeInitiatedNotificationTemplate from "src/templates/email-templates/send-trade-initiated-notification-template";
 import sendWithdrawalConfirmationEmailTemplate from "src/templates/email-templates/send-withdrawal-confirmation-email-tempate";
 
@@ -108,6 +109,23 @@ export const formatEmailMessageBody = ({
                     ? metadata?.platformName?.charAt(0).toUpperCase() + metadata?.platformName?.slice(1).toLowerCase()
                     : undefined,
 
+            });
+        }
+        case EventTemplate.SEND_TRADE_ACTIVATED_NOTIFICATION:{
+            return applyReplacements(SendTradeActivatedNotificationTemplate, {
+               USER_NAME: recipient.firstName,
+               BASE_ASSET: metadata?.baseAsset,
+               BASE_ASSET_LOGO_URL: metadata?.baseAssetLogoUrl,
+               QUOTE_CURRENCY: metadata?.quoteCurrency,
+               ENTRY_PRICE: metadata?.entryPrice?.toString(),
+               STOP_LOSS: metadata?.stopLoss?.toString(),
+               TRADE_SIDE: metadata?.tradeSide,
+               DATE_TIME: metadata?.dateTime,
+               ESTIMATED_PROFIT: metadata?.estimatedProfit?.toString(),
+               ESTIMATED_LOSS: metadata?.estimatedLoss?.toString(),
+               PLATFORM_NAME: metadata?.platformName
+                    ? metadata?.platformName?.charAt(0).toUpperCase() + metadata?.platformName?.slice(1).toLowerCase()
+                    : undefined,
             });
         }
 

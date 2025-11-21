@@ -1,7 +1,7 @@
 <mjml>
   <mj-head>
-    <mj-title>TraderApp - New Trade Notification</mj-title>
-    <mj-preview>A new trade has been initiated successfully.</mj-preview>
+    <mj-title>TraderApp - Active Trade Notification</mj-title>
+    <mj-preview>A new trade has been activated successfully.</mj-preview>
 
     <mj-attributes>
       <mj-all font-family="IBM Plex Sans, Arial, sans-serif" />
@@ -167,12 +167,8 @@
       <mj-section padding="0 0 16px 0">
         <mj-column>
           <mj-text class="content" padding="0">
-            A new trade has just been copied to your
-            <span class="platform">{PLATFORM_NAME} account</span>.
-            Below are the trade details for your reference.
-            <br /><br />
-            Please note that the trade has only been initiated and is not active yet.
-            We will notify you once the order has been filled and the trade becomes active.
+            Your trade on <span class="platform">{BASE_ASSET} / {QUOTE_CURRENCY}</span> <span style=" color: #ed3b3b;">({TRADE_SIDE})</span> is now active on your <span class="platform">{PLATFROM_NAME} account</span>. This means that the open order has been filled and the trade has started
+            <br />
           </mj-text>
         </mj-column>
       </mj-section>
