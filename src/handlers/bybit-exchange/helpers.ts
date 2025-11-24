@@ -20,6 +20,7 @@ import {
     OrderBatchStatus,
 } from "src/services/TradingEngineService/enums";
 import {
+    ICloseTradeEvent,
     IFailedTrade,
     IProcessedTrade,
     ITrade,
@@ -285,7 +286,7 @@ export const processBybitOrdersActivation = async (
                                     {
                                         status:
                                             Number(openPosition?.size ?? 0) >=
-                                            order.baseQuantity
+                                                order.baseQuantity
                                                 ? OrderStatus.FILLED
                                                 : OrderStatus.PARTIALLY_FILLED,
                                     }
@@ -295,7 +296,7 @@ export const processBybitOrdersActivation = async (
                                     {
                                         status:
                                             Number(openPosition?.size ?? 0) >=
-                                            order.baseQuantity
+                                                order.baseQuantity
                                                 ? OrderBatchStatus.FILLED
                                                 : OrderBatchStatus.PARTIALLY_FILLED,
                                     }
@@ -404,6 +405,12 @@ export const processBybitStopLossOrders = async (
                         });
                     }
 
+                    // Update trade stop loss price
+                    await tradingEngineService.updateTrade({
+                        tradeId: (trade._id as mongoose.Types.ObjectId).toString(),
+                        updateData: { stopLossPrice: trade.stopLossPrice },
+                    });
+
                     // return success message id
                     return { messageId: queueMessage.messageId, trade };
                 } catch (error) {
@@ -483,9 +490,15 @@ export const processBybitTakeProfitOrders = async (
                         // Set take profit for position
                         await bybitClient.setPositionStopLossTakeProfit({
                             symbol: trade.pair,
-                            takeProfit: trade.takeProfitPrice.toString(),
+                            takeProfit: trade.takeProfitPrice?.toString() ?? "0",
                         });
                     }
+
+                    // Update trade take profit price
+                    await tradingEngineService.updateTrade({
+                        tradeId: (trade._id as mongoose.Types.ObjectId).toString(),
+                        updateData: { takeProfitPrice: trade.takeProfitPrice },
+                    });
 
                     // return success message id
                     return { messageId: queueMessage.messageId, trade };
@@ -516,7 +529,7 @@ export const processBybitTakeProfitOrders = async (
 };
 
 export const closeBybitTrades = async (
-    queueMessages: IQueueMessageBody<ITrade>[]
+    queueMessages: IQueueMessageBody<ICloseTradeEvent>[]
 ) => {
     const successMessageIds: string[] = [];
     const failedMessageIds: string[] = [];
@@ -531,12 +544,12 @@ export const closeBybitTrades = async (
     try {
         const closeBybitTradesResults = await Promise.allSettled(
             queueMessages.map(async (queueMessage) => {
-                const trade = queueMessage.body;
+                const closeTradeEvent = queueMessage.body;
                 try {
                     // Get user trading account
                     const userTradingAccount =
                         await tradingEngineService.getUserTradingAccount(
-                            trade.userId,
+                            closeTradeEvent.trade.userId,
                             TradingPlatform.BYBIT
                         );
 
@@ -560,29 +573,49 @@ export const closeBybitTrades = async (
 
                     // Get Bybit open position for pair
                     const openPosition = await bybitClient.getOpenPosition(
-                        trade.pair
+                        closeTradeEvent.trade.pair
                     );
+
+
+                    // Close position
                     if (openPosition) {
-                        // Close position
+                        // Calculate quantity to close
+                        const qtyToClose = Number(openPosition.size) * (closeTradeEvent.qtyPercentToClose / 100);
                         await bybitClient.closePosition({
-                            symbol: trade.pair,
+                            symbol: closeTradeEvent.trade.pair,
                             side: openPosition.side === "Buy" ? "Sell" : "Buy",
-                            qty: openPosition.size,
+                            qty: qtyToClose.toString(),
+                        });
+
+                        if (closeTradeEvent.qtyPercentToClose < 100) {
+                            // Update user trade qty
+                            const qtyRemaining = Number(openPosition.size) - qtyToClose;
+                            await tradingEngineService.updateTrade({
+                                tradeId: (
+                                    closeTradeEvent.trade._id as mongoose.Types.ObjectId
+                                ).toString(),
+                                updateData: { baseQuantity: qtyRemaining },
+                            });
+                        }
+                    }
+
+                    if (closeTradeEvent.qtyPercentToClose >= 100) {
+                        // Update user trade status to CLOSED
+                        await tradingEngineService.updateTrade({
+                            tradeId: (
+                                closeTradeEvent.trade._id as mongoose.Types.ObjectId
+                            ).toString(),
+                            updateData: { status: TradeStatus.CLOSED },
                         });
                     }
 
-                    // Update trade status to CLOSED
-                    await tradingEngineService.updateTrade({
-                        tradeId: (
-                            trade._id as mongoose.Types.ObjectId
-                        ).toString(),
-                        updateData: { status: TradeStatus.CLOSED },
-                    });
 
                     // TODO: publish to trade settled queue for profit and loss calculation
 
+                    // TODO: publish to notifications queue
+
                     // return success message id
-                    return { messageId: queueMessage.messageId, trade };
+                    return { messageId: queueMessage.messageId, closeTradeEvent };
                 } catch (error) {
                     console.error("Error closing bybit trade", { error });
                     throw error;
