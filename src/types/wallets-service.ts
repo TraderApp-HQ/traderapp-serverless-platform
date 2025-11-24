@@ -28,6 +28,7 @@ export enum TransactionType {
     WITHDRAWAL = "WITHDRAWAL",
     TRANSFER = "TRANSFER",
     CONVERT = "CONVERT",
+    ACTIVATION = "ACTIVATION",
 }
 
 export enum TransactionSource {
@@ -73,8 +74,11 @@ export interface ITransaction {
     paymentProviderName: string;
     externalTransactionId: string;
     transactionHash?: string;
-    createdAt: string;
-    updatedAt: string;
+    providerFee?: number;
+    processingFee?: number;
+    networkFee?: number;
+    createdAt: Date;
+    updatedAt: Date;
 }
 
 export interface IUserWallet {
@@ -89,12 +93,12 @@ export interface IUserWallet {
     lockedBalance: number;
 }
 
-export interface IWalletInput {
+export interface ICreateUserResourcesInput {
     userId: string;
 }
 
 export interface IWalletType {
-    id: string;
+    _id: mongoose.Types.ObjectId;
     walletTypeName: WalletType; // WalletType enum value
     currencies: mongoose.Types.ObjectId[]; // Array of Currency references
 }
@@ -104,4 +108,9 @@ export interface IWalletCurrency {
     name: string;
     symbol: string;
     logoUrl: string;
+}
+
+export interface IUserAccountActivationFeeEvent {
+    userId: string;
+    amount: number;
 }

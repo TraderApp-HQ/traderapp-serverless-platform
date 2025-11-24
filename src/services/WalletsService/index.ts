@@ -1,34 +1,86 @@
-import mongoose from "mongoose";
 import log from "@dazn/lambda-powertools-logger";
+import "dotenv/config";
+import mongoose from "mongoose";
 import {
     CryptoPayClient,
     CryptopayWebhookEventStatus,
+    CryptopayWebhookEventType,
     ICryptopayWebhookEvent,
 } from "src/clients/CryptoPayClient";
 import { MongoDBClient } from "src/clients/MongoDBClient";
 import { WalletsServiceCollections } from "src/clients/MongoDBClient/constants";
+import { publishMessageToQueue } from "src/clients/SQSClient/helpers";
+import { IQueueMessageBody } from "src/config/interfaces";
+import { SecretLocation } from "src/config/secrets/enums";
+import { getSecrets } from "src/config/secrets/helpers";
+import {
+    ICommonSecrets,
+    IWalletsServiceSecrets,
+} from "src/config/secrets/interfaces";
+import { UserOnboardingChecklist } from "src/types/users-service";
 import {
     ITransaction,
     IUserWallet,
     IUserWalletDepositDetail,
     IWalletCurrency,
-    IWalletInput,
+    ICreateUserResourcesInput,
     IWalletType,
     TransactionStatus,
+    TransactionType,
+    IUserAccountActivationFeeEvent,
+    TransactionSource,
+    PaymentCategoryName,
+    WalletType,
+    WalletProvider,
 } from "src/types/wallets-service";
-import { IQueueMessageBody } from "src/config/interfaces";
-import { SecretLocation } from "src/config/secrets/enums";
-import { getSecrets } from "src/config/secrets/helpers";
-import { IWalletsServiceSecrets } from "src/config/secrets/interfaces";
-import "dotenv/config";
+import { publishDepositConfirmationToQueue } from "./helper";
+import { IInvoice } from "src/services/TradingEngineService/interfaces";
+import {
+    InvoiceType,
+    InvoiceStatus,
+    TradeSide,
+} from "src/services/TradingEngineService/enums";
+import { Currency } from "src/config/enums";
+
+interface ICreateInvoiceInput {
+    userId: string;
+    currency: Currency;
+    amountDue: number;
+    amountPaid?: number;
+    invoiceType: InvoiceType;
+    tradeId: string;
+    tradeSide: TradeSide;
+    baseAsset: string;
+    logoUrl?: string;
+    quoteCurrency: string;
+    status?: InvoiceStatus;
+}
+
+export interface ICreateInvoiceResponse {
+    success: boolean;
+    invoice?: IInvoice;
+    error?: string;
+    message?: string;
+}
+interface IUpdateInvoiceInput {
+    invoiceId: string;
+    amountPaid?: number;
+    status?: InvoiceStatus;
+    amountDue?: number;
+}
+import { publishWithdrawlConfirmationToQueue } from "./helper.withdrawal";
+import UsersService from "../UsersService";
+import { randomUUID } from "crypto";
+import { TraderAppActivationFee } from "src/config/constants";
 
 export class WalletsService {
     private connection: mongoose.Connection | null = null;
-    private secrets: IWalletsServiceSecrets | null = null;
+    private walletSecrets: IWalletsServiceSecrets | null = null;
+    private commonSecrets: ICommonSecrets | null = null;
     private initialized: boolean = false;
     private initializationPromise: Promise<void> | null = null;
 
-    constructor() {}
+    constructor() { }
 
     // Initialize the service once
     private async initialize(): Promise<void> {
@@ -48,18 +100,28 @@ export class WalletsService {
                 console.log(
                     `=============== Getting secrets  for ${SecretLocation.walletsServiceSecrets}/${env} =====================`
                 );
-                this.secrets = await getSecrets<IWalletsServiceSecrets>(
-                    `${SecretLocation.walletsServiceSecrets}/${env}`
-                );
+                // Fetch both secrets once
+                const [walletSecrets, commonSecrets] = await Promise.all([
+                    getSecrets<IWalletsServiceSecrets>(
+                        `${SecretLocation.walletsServiceSecrets}/${env}`
+                    ),
+                    getSecrets<ICommonSecrets>(
+                        `${SecretLocation.commonSecrets}/${env}`
+                    ),
+                ]);
+                this.walletSecrets = walletSecrets as IWalletsServiceSecrets;
+                this.commonSecrets = commonSecrets as ICommonSecrets;
 
                 // Create connection
                 this.connection = mongoose.createConnection(
-                    this.secrets.WALLET_SERVICE_DB_URL
+                    this.walletSecrets.WALLET_SERVICE_DB_URL
                 );
 
                 this.initialized = true;
             } catch (error) {
-                log.error("Failed to initialize WalletsService:", { error });
+                console.error("Failed to initialize WalletsService:", {
+                    error,
+                });
                 throw error;
             } finally {
                 this.initializationPromise = null;
@@ -93,12 +155,19 @@ export class WalletsService {
     }
 
     // Get secrets (ensures initialization first)
-    private async getSecrets(): Promise<IWalletsServiceSecrets> {
+    private async getWalletSecrets(): Promise<IWalletsServiceSecrets> {
         await this.initialize();
-        if (!this.secrets) {
+        if (!this.walletSecrets) {
             throw new Error("Secrets not available");
         }
-        return this.secrets;
+        return this.walletSecrets;
+    }
+    private async getCommonSecrets(): Promise<ICommonSecrets> {
+        await this.initialize();
+        if (!this.commonSecrets) {
+            throw new Error("Common Secrets not available");
+        }
+        return this.commonSecrets;
     }
 
     // Record transaction to DB
@@ -125,7 +194,12 @@ export class WalletsService {
                             externalTransactionId:
                                 transaction.externalTransactionId,
                         },
-                        { $set: { status: transaction.status } }
+                        {
+                            $set: {
+                                status: transaction.status,
+                                providerFee: transaction.providerFee,
+                            },
+                        }
                     );
                 }
             } else {
@@ -133,7 +207,7 @@ export class WalletsService {
                 await transactionsCollection.insertOne(transaction);
             }
         } catch (error) {
-            log.debug("Error recording transaction:", { error });
+            console.error("Error recording transaction:", { error });
             throw error;
         }
     }
@@ -153,7 +227,7 @@ export class WalletsService {
                 externalTransactionId,
             });
         } catch (error) {
-            log.debug(`Error getting transaction from DB:`, { error });
+            console.error(`Error getting transaction from DB:`, { error });
             throw error;
         }
     }
@@ -179,7 +253,32 @@ export class WalletsService {
                 { $inc: { availableBalance: amount } }
             );
         } catch (error) {
-            log.debug("Error crediting user wallet:", { error });
+            console.error("Error crediting user wallet:", { error });
+            throw error;
+        }
+    }
+
+    private async debitUserWallet({
+        userId,
+        amount,
+    }: {
+        userId: string;
+        amount: number;
+    }): Promise<void> {
+        try {
+            const connection = await this.getConnection();
+            const userWalletsCollection = new MongoDBClient<IUserWallet>(
+                connection,
+                WalletsServiceCollections.userWallets
+            );
+
+            // Use $inc operator to atomically decrement the availableBalance
+            await userWalletsCollection.updateOne(
+                { userId },
+                { $inc: { availableBalance: -amount } }
+            );
+        } catch (error) {
+            console.error("Error debiting user wallet:", { error });
             throw error;
         }
     }
@@ -194,13 +293,14 @@ export class WalletsService {
         try {
             // Ensure service is initialized
             await this.initialize();
-            const secrets = await this.getSecrets();
+            const walletSecrets = await this.getWalletSecrets();
 
             const cryptopayClient = new CryptoPayClient({
-                baseUrl: secrets.CRYPTOPAY_BASE_URL,
-                apiKey: secrets.CRYPTOPAY_DEPOSITS_API_KEY,
-                apiSecret: secrets.CRYPTOPAY_DEPOSITS_API_SECRET,
-                webhooksSharedSecret: secrets.CRYPTOPAY_WEBHOOK_SHARED_SECRET,
+                baseUrl: walletSecrets.CRYPTOPAY_BASE_URL,
+                apiKey: walletSecrets.CRYPTOPAY_DEPOSITS_API_KEY,
+                apiSecret: walletSecrets.CRYPTOPAY_DEPOSITS_API_SECRET,
+                webhooksSharedSecret:
+                    walletSecrets.CRYPTOPAY_WEBHOOK_SHARED_SECRET,
             });
 
             const connection = await this.getConnection();
@@ -231,7 +331,7 @@ export class WalletsService {
                             completedMessages.push(qm);
                             return { messageId: qm.messageId, success: true };
                         } catch (error) {
-                            log.debug(
+                            console.error(
                                 `Failed to confirm payment for message ${qm.messageId}:`,
                                 { error }
                             );
@@ -240,7 +340,7 @@ export class WalletsService {
                     })
             );
 
-            console.log("confirmationResults", { confirmationResults });
+            log.info("confirmationResults", { confirmationResults });
 
             // Track confirmation failures
             confirmationResults.forEach((result) => {
@@ -268,7 +368,7 @@ export class WalletsService {
                             success: true,
                         };
                     } catch (error) {
-                        log.debug(
+                        console.error(
                             `Failed to find wallet details for message ${qm.messageId}:`,
                             { error }
                         );
@@ -277,7 +377,7 @@ export class WalletsService {
                 })
             );
 
-            console.log("walletLookupResults", { walletLookupResults });
+            log.info("walletLookupResults", { walletLookupResults });
 
             // Process successful wallet lookups
             const successfulLookups = walletLookupResults
@@ -323,13 +423,13 @@ export class WalletsService {
                 };
             });
 
-            console.log("transactions", { transactions });
+            log.info("transactions", { transactions });
 
             // Step 4: Check which transactions need crediting (not already completed)
             const completedDeposits = transactions.filter(
                 (t) =>
                     t.queueMessage.body.data.status ===
-                        CryptopayWebhookEventStatus.completed && t.userId
+                    CryptopayWebhookEventStatus.completed && t.userId
             );
 
             const transactionsToCredit = await Promise.all(
@@ -349,16 +449,16 @@ export class WalletsService {
                             if (
                                 existingTransaction &&
                                 existingTransaction.status ===
-                                    TransactionStatus.SUCCESS
+                                TransactionStatus.SUCCESS
                             ) {
-                                console.log(
+                                console.error(
                                     `Transaction ${transaction.externalTransactionId} already credited, skipping.`
                                 );
                                 return null; // Skip this one
                             }
                             return { messageId, userId, queueMessage };
                         } catch (error) {
-                            console.log(
+                            console.error(
                                 `Failed to check transaction status for message ${messageId}:`,
                                 { error }
                             );
@@ -369,7 +469,7 @@ export class WalletsService {
                 )
             );
 
-            console.log("transactionsToCredit", { transactionsToCredit });
+            log.info("transactionsToCredit", { transactionsToCredit });
 
             // Filter out nulls (already credited or errored)
             const filteredTransactionsToCredit = transactionsToCredit.filter(
@@ -380,23 +480,84 @@ export class WalletsService {
                 queueMessage: IQueueMessageBody<ICryptopayWebhookEvent>;
             }[];
 
+            // check if first deposit has not been made so we can deduct activation fee
+
             // Step 5: Credit user wallets for transactions that need crediting
             const creditResults = await Promise.allSettled(
                 filteredTransactionsToCredit.map(
                     async ({ messageId, userId, queueMessage }) => {
                         try {
+                            // Get user with userId
+                            const user = await UsersService.getUserById(userId);
+                            if (!user) {
+                                throw new Error(`User with the ID ${userId} not found`);
+                            }
+
+                            // Credit user wallet
                             await this.creditUserWallet({
                                 userId,
                                 amount: parseFloat(
-                                    queueMessage.body.data.paid_amount ?? "0"
+                                    queueMessage.body.data.received_amount ??
+                                    "0"
                                 ),
                             });
-                            console.debug(
+
+
+                            // Publish user to queue if first deposit is false or activation fee is less than $20
+                            // for activationFee deduction & first deposit tracking
+                            if ((!user.isFirstDepositMade || (user.activationFee ?? 0) < TraderAppActivationFee)
+                            ) {
+                                const depositedAmount = parseFloat(
+                                    queueMessage.body.data.received_amount ?? "0"
+                                ); // Deposit by user
+
+                                const payableActivationFee = TraderAppActivationFee - (user?.activationFee || 0); // User activation fee
+
+                                const calculatedActivationFee = depositedAmount > payableActivationFee ? payableActivationFee : depositedAmount; // Calculated fee
+
+                                // Activation fee Queue
+                                await publishMessageToQueue({
+                                    queueUrl:
+                                        walletSecrets.USER_ACCOUNT_ACTIVATION_FEE_QUEUE ??
+                                        "",
+                                    message: JSON.stringify({
+                                        userId,
+                                        amount: calculatedActivationFee, // Activation fee
+                                    }),
+                                })
+                            }
+
+                            // publish deposit notification to queue
+                            const amount = parseFloat(
+                                queueMessage.body.data.paid_amount ?? "0"
+                            );
+
+                            const transactionId =
+                                queueMessage.body.data.txid ?? "";
+
+                            const queueUrl =
+                                this.commonSecrets?.EMAIL_NOTIFICATIONS_QUEUE ??
+                                "";
+
+                            const address = queueMessage.body.data.address;
+                            const network = queueMessage.body.data.network;
+
+                            await publishDepositConfirmationToQueue({
+                                amount,
+                                transactionId,
+                                userId,
+                                queueUrl,
+                                address,
+                                network,
+                            });
+
+                            log.info(
                                 `Successfully credited wallet for message ${messageId}`
                             );
+
                             return { messageId, success: true };
                         } catch (error) {
-                            console.debug(
+                            console.error(
                                 `Failed to credit wallet for message ${messageId}:`,
                                 { error }
                             );
@@ -406,7 +567,7 @@ export class WalletsService {
                 )
             );
 
-            console.log("creditResults", { creditResults });
+            log.info("creditResults", { creditResults });
 
             // Track credit failures
             creditResults.forEach((result) => {
@@ -431,7 +592,7 @@ export class WalletsService {
                         await this.recordTransactionToDB(transaction);
                         return { messageId, success: true };
                     } catch (error) {
-                        log.debug(
+                        console.error(
                             `Failed to record transaction for message ${messageId}:`,
                             { error }
                         );
@@ -440,7 +601,7 @@ export class WalletsService {
                 })
             );
 
-            console.log("transactionRecordResults", {
+            log.info("transactionRecordResults", {
                 transactionRecordResults,
             });
 
@@ -472,7 +633,7 @@ export class WalletsService {
                 failedMessageIds,
             };
         } catch (error) {
-            log.error("General error in processCryptoPayChannelsWebhook:", {
+            console.error("General error in processCryptoPayChannelsWebhook:", {
                 error,
             });
             return {
@@ -490,7 +651,7 @@ export class WalletsService {
 
     // Create User Wallet
     public async createUserWallet(
-        queueMessages: IQueueMessageBody<IWalletInput>[]
+        queueMessages: IQueueMessageBody<ICreateUserResourcesInput>[]
     ): Promise<{
         successMessageIds: string[];
         failedMessageIds: string[];
@@ -546,30 +707,40 @@ export class WalletsService {
                         const walletPromises = walletTypes.flatMap((wallet) =>
                             wallet.currencies.map(async (currency) => {
                                 try {
-                                    await userWalletCollection.insertOne({
+                                    const walletData = {
                                         userId: queue.body.userId,
-                                        walletType: new mongoose.Types.ObjectId(
-                                            wallet.id
-                                        ),
+                                        walletType: wallet._id,
                                         walletTypeName: wallet.walletTypeName,
                                         currency: currency,
                                         currencyName: walletCurrencies.find(
-                                            (cur) =>
-                                                cur._id.toString() ===
-                                                currency._id.toString()
+                                            (cur) => cur._id.toString() === currency._id.toString()
                                         )?.name,
                                         currencySymbol: walletCurrencies.find(
-                                            (cur) =>
-                                                cur._id.toString() ===
-                                                currency._id.toString()
+                                            (cur) => cur._id.toString() === currency._id.toString()
                                         )?.symbol,
-                                        availableBalance: 0,
-                                        lockedBalance: 0,
-                                    });
+                                    };
+
+                                    // Upsert: insert if not exists, keep balances if exists
+                                    await userWalletCollection.updateOne(
+                                        {
+                                            userId: queue.body.userId,
+                                            walletType: wallet._id,
+                                            "currency._id": currency._id,
+                                        },
+                                        {
+                                            $set: walletData,
+                                            $setOnInsert: {
+                                                availableBalance: 0,
+                                                lockedBalance: 0,
+                                                createdAt: new Date().toISOString(),
+                                            },
+                                        },
+                                        { upsert: true }
+                                    );
                                     return { success: true };
                                 } catch (error) {
-                                    log.debug(
-                                        `Failed to create user wallet for currency ${currency._id}:`,
+                                    console.error(
+                                        `Failed to upsert user wallet for currency ${currency._id}:`,
                                         { error }
                                     );
                                     return { success: false };
@@ -586,7 +757,7 @@ export class WalletsService {
                             success: allWalletsCreatedSuccessfully,
                         };
                     } catch (error) {
-                        log.error(
+                        console.error(
                             `Failed to create all wallets for user ${queue.messageId}:`,
                             {
                                 error,
@@ -624,7 +795,904 @@ export class WalletsService {
                 failedMessageIds,
             };
         } catch (error) {
-            log.error("General error in createUserWallet:", {
+            console.error("General error in createUserWallet:", {
+                error,
+            });
+            return {
+                successMessageIds: [],
+                failedMessageIds: queueMessages.map((qm) => qm.messageId),
+            };
+        }
+    }
+
+    public async processCryptoPayWithdrawalWebhook(
+        queueMessages: IQueueMessageBody<ICryptopayWebhookEvent>[]
+    ): Promise<{
+        successMessageIds: string[];
+        failedMessageIds: string[];
+    }> {
+        try {
+            await this.initialize();
+            const connection = await this.getConnection();
+
+            const transactionsCollection = new MongoDBClient<ITransaction>(
+                connection,
+                WalletsServiceCollections.transactions
+            );
+
+            const failedMessageIdSet = new Set<string>(); // retryable failures
+            const permanentFailureIdSet = new Set<string>(); // non-retryable, will be dropped
+
+            // Validate webhook type & lookup existing withdrawal transactions
+            const lookupResults = await Promise.allSettled(
+                queueMessages.map(async (message) => {
+                    const { body, messageId } = message;
+
+                    // Non-retryable: unsupported webhook type
+                    if (
+                        body.type !== CryptopayWebhookEventType.CoinWithdrawal
+                    ) {
+                        permanentFailureIdSet.add(messageId);
+                        log.warn(
+                            "Ignoring withdrawal webhook with invalid type",
+                            {
+                                messageId,
+                                type: body.type,
+                            }
+                        );
+                        return null;
+                    }
+
+                    const tx = await transactionsCollection.findOne({
+                        externalTransactionId: body.data.id,
+                        transactionType: TransactionType.WITHDRAWAL,
+                    });
+
+                    // Non-retryable: we will never find a transaction later (id mismatch / not created)
+                    if (!tx) {
+                        permanentFailureIdSet.add(messageId);
+                        log.warn(
+                            "Ignoring withdrawal webhook with unknown transaction id",
+                            {
+                                messageId,
+                                externalId: body.data.id,
+                            }
+                        );
+                        return null;
+                    }
+
+                    return {
+                        messageId,
+                        queueMessage: message,
+                        transaction: tx,
+                    };
+                })
+            );
+
+            const resolved: {
+                messageId: string;
+                queueMessage: IQueueMessageBody<ICryptopayWebhookEvent>;
+                transaction: ITransaction;
+            }[] = [];
+
+            lookupResults.forEach((res, i) => {
+                const messageId = queueMessages[i].messageId;
+                if (res.status === "fulfilled") {
+                    // fulfilled may be null (permanent skip) or an object
+                    if (res.value) {
+                        resolved.push(res.value);
+                    }
+                } else {
+                    failedMessageIdSet.add(messageId);
+                    console.error("Withdrawal lookup transient failure", {
+                        messageId,
+                        error: res.reason,
+                    });
+                }
+            });
+
+            // Update statuses (only for successfully resolved items)
+            const statusUpdateResults = await Promise.allSettled(
+                resolved.map(
+                    async ({ queueMessage: { body }, transaction }) => {
+                        switch (body.data.status) {
+                            case CryptopayWebhookEventStatus.completed: {
+                                const amount = parseFloat(
+                                    body.data.received_amount ?? "0"
+                                );
+
+                                const transactionId = body.data.txid ?? "";
+
+                                const queueUrl =
+                                    this.commonSecrets
+                                        ?.EMAIL_NOTIFICATIONS_QUEUE ?? "";
+
+                                const address = body.data.address ?? "";
+
+                                const network = body.data.network ?? "";
+
+                                await Promise.all([
+                                    transactionsCollection.updateOne(
+                                        {
+                                            _id: transaction._id,
+                                            status: {
+                                                $ne: TransactionStatus.SUCCESS,
+                                            },
+                                        },
+                                        {
+                                            $set: {
+                                                status: TransactionStatus.SUCCESS,
+                                                transactionHash:
+                                                    body.data.txid ??
+                                                    transaction.transactionHash,
+                                            },
+                                        }
+                                    ),
+
+                                    publishWithdrawlConfirmationToQueue({
+                                        amount,
+                                        userId: transaction.userId,
+                                        transactionId,
+                                        address,
+                                        network,
+                                        queueUrl,
+                                    }),
+                                ]);
+
+                                break;
+                            }
+                            case CryptopayWebhookEventStatus.cancelled:
+                                await transactionsCollection.updateOne(
+                                    {
+                                        _id: transaction._id,
+                                        status: {
+                                            $nin: [
+                                                TransactionStatus.FAILED,
+                                                TransactionStatus.SUCCESS,
+                                            ],
+                                        },
+                                    },
+                                    {
+                                        $set: {
+                                            status: TransactionStatus.FAILED,
+                                            transactionHash:
+                                                body.data.txid ??
+                                                transaction.transactionHash,
+                                        },
+                                    }
+                                );
+                                break;
+                            default:
+                                await transactionsCollection.updateOne(
+                                    {
+                                        _id: transaction._id,
+                                        status: {
+                                            $nin: [
+                                                TransactionStatus.PENDING,
+                                                TransactionStatus.SUCCESS,
+                                            ],
+                                        },
+                                    },
+                                    {
+                                        $set: {
+                                            status: TransactionStatus.PENDING,
+                                            transactionHash:
+                                                body.data.txid ??
+                                                transaction.transactionHash,
+                                        },
+                                    }
+                                );
+                                break;
+                        }
+                    }
+                )
+            );
+
+            statusUpdateResults.forEach((res, i) => {
+                const messageId = resolved[i].messageId;
+                if (res.status !== "fulfilled") {
+                    failedMessageIdSet.add(messageId);
+                    console.error(
+                        "Failed to update withdrawal transaction status (transient)",
+                        {
+                            messageId,
+                            error: res.status === "rejected" ? res.reason : res,
+                        }
+                    );
+                }
+            });
+
+            const failedMessageIds = Array.from(failedMessageIdSet);
+            const successMessageIds = queueMessages
+                .map((m) => m.messageId)
+                .filter((id) => !failedMessageIdSet.has(id));
+
+            if (permanentFailureIdSet.size) {
+                log.info(
+                    "Permanent withdrawal webhook failures skipped (no retry)",
+                    {
+                        permanentFailureIds: Array.from(permanentFailureIdSet),
+                    }
+                );
+            }
+
+            return { successMessageIds, failedMessageIds };
+        } catch (error) {
+            console.error(
+                "General error in processCryptoPayWithdrawalWebhook:",
+                {
+                    error,
+                }
+            );
+            return {
+                successMessageIds: [],
+                failedMessageIds: queueMessages.map((m) => m.messageId),
+            };
+        }
+    }
+
+    public async getUserWallet({
+        userId,
+        currency,
+        walletType,
+    }: {
+        userId: string;
+        currency: string;
+        walletType: string;
+    }): Promise<IUserWallet | null> {
+        try {
+            // Ensure service is initialized
+            await this.initialize();
+            const connection = await this.getConnection();
+
+            const userWalletCollection = new MongoDBClient<IUserWallet>(
+                connection,
+                WalletsServiceCollections.userWallets
+            );
+
+            const userWallet = await userWalletCollection.findOne({
+                userId,
+                currencySymbol: currency,
+                walletTypeName: walletType,
+            });
+
+            if (!userWallet) {
+                throw new Error(
+                    `No wallet found for user ${userId} with currency ${currency} and walletType ${walletType}`
+                );
+            }
+
+            return userWallet;
+        } catch (error) {
+            console.error("General error in getUserWallet:", { error });
+            return null;
+        }
+    }
+
+    public async lockUserBalance({
+        userId,
+        amount,
+        currency,
+        walletType,
+    }: {
+        userId: string;
+        amount: number;
+        currency: string;
+        walletType: string;
+    }) {
+        try {
+            // Ensure service is initialized
+            await this.initialize();
+            const connection = await this.getConnection();
+
+            // Get user wallet collection
+            const userWalletCollection = new MongoDBClient<IUserWallet>(
+                connection,
+                WalletsServiceCollections.userWallets
+            );
+
+            // Atomically check sufficient balance and lock if available
+            const result = await userWalletCollection.updateOne(
+                {
+                    userId,
+                    currencySymbol: currency,
+                    walletTypeName: walletType,
+                    availableBalance: { $gte: amount }, // Only update if sufficient balance
+                },
+                {
+                    $inc: {
+                        lockedBalance: amount,
+                        availableBalance: -amount,
+                    },
+                }
+            );
+
+            // Check if the update actually modified a document
+            const wallet = await this.getUserWallet({
+                userId,
+                currency,
+                walletType,
+            });
+
+            if (!wallet) {
+                return {
+                    success: false,
+                    error: "WALLET_NOT_FOUND",
+                    message: `No wallet found for user ${userId} with currency ${currency} and walletType ${walletType}`,
+                };
+            }
+
+            // Either wallet doesn't exist or insufficient balance
+            if (result.modifiedCount === 0) {
+                return {
+                    success: false,
+                    error: "INSUFFICIENT_BALANCE",
+                    message: `Insufficient balance. Required: ${amount}, Available: ${wallet.availableBalance}`,
+                    requiredAmount: amount,
+                    availableBalance: wallet.availableBalance,
+                };
+            }
+
+            return { success: true, wallet };
+        } catch (error) {
+            console.error("General error in lockUserBalance:", { error });
+            throw error;
+        }
+    }
+
+    public async unlockUserBalance({
+        userId,
+        amount,
+        currency,
+        walletType,
+    }: {
+        userId: string;
+        amount: number;
+        currency: string;
+        walletType: string;
+    }) {
+        try {
+            // Ensure service is initialized
+            await this.initialize();
+            const connection = await this.getConnection();
+
+            const userWalletCollection = new MongoDBClient<IUserWallet>(
+                connection,
+                WalletsServiceCollections.userWallets
+            );
+
+            // Atomically check sufficient balance and lock if available
+            await userWalletCollection.updateOne(
+                {
+                    userId,
+                    currencySymbol: currency,
+                    walletTypeName: walletType,
+                    lockedBalance: { $gte: amount }, // Only update if sufficient balance
+                },
+                {
+                    $inc: {
+                        lockedBalance: -amount,
+                        availableBalance: amount,
+                    },
+                }
+            );
+        }
+        catch (error) {
+            console.error("General error in unlockUserBalance:", { error });
+            // throw error;
+        }
+    }
+
+    public async createInvoice({
+        userId,
+        currency,
+        amountDue,
+        amountPaid = 0,
+        invoiceType,
+        tradeId,
+        tradeSide,
+        baseAsset,
+        logoUrl = "",
+        quoteCurrency,
+        status = InvoiceStatus.PENDING,
+    }: ICreateInvoiceInput): Promise<ICreateInvoiceResponse> {
+        try {
+            // Ensure service is initialized
+            await this.initialize();
+            const connection = await this.getConnection();
+
+            const invoicesCollection = new MongoDBClient<IInvoice>(
+                connection,
+                WalletsServiceCollections.invoices
+            );
+
+            // Check if invoice already exists for this trade
+            const existingInvoice = await invoicesCollection.findOne({
+                userId,
+                tradeId,
+                invoiceType,
+            });
+
+            if (existingInvoice) {
+                return {
+                    success: false,
+                    error: "INVOICE_ALREADY_EXISTS",
+                    message: `Invoice already exists for trade ${tradeId} and type ${invoiceType}`,
+                    invoice: existingInvoice,
+                };
+            }
+
+            // Create new invoice
+            const invoiceData: Partial<IInvoice> = {
+                userId,
+                invoiceType,
+                currency,
+                amountDue,
+                amountPaid,
+                amountOutstanding: amountDue - amountPaid,
+                status,
+                tradeId,
+                tradeSide,
+                baseAsset,
+                logoUrl,
+                quoteCurrency,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+            };
+
+            const createdInvoice =
+                await invoicesCollection.insertOne(invoiceData);
+
+            log.info("Successfully created invoice", {
+                userId,
+                invoiceId: createdInvoice.id,
+                tradeId,
+                invoiceType,
+                amountDue,
+            });
+
+            return {
+                success: true,
+                invoice: createdInvoice,
+            };
+        } catch (error) {
+            console.error("General error in createInvoice:", { error });
+            return {
+                success: false,
+                error: "SYSTEM_ERROR",
+                message:
+                    error instanceof Error
+                        ? error.message
+                        : "Unknown error occurred",
+            };
+        }
+    }
+
+    public async getInvoiceById(invoiceId: string): Promise<IInvoice> {
+        try {
+            // Ensure service is initialized
+            await this.initialize();
+            const connection = await this.getConnection();
+
+            const invoicesCollection = new MongoDBClient<IInvoice>(
+                connection,
+                WalletsServiceCollections.invoices
+            );
+
+            const invoice = await invoicesCollection.findOne({ id: invoiceId });
+
+            if (!invoice) {
+                throw new Error(`Invoice with ID ${invoiceId} not found`);
+            }
+
+            return invoice;
+        } catch (error) {
+            console.error("General error in getInvoiceById:", { error });
+            throw error;
+        }
+    }
+
+    public async getInvoice({
+        userId,
+        tradeId,
+        status,
+        invoiceType,
+    }: {
+        userId?: string;
+        tradeId?: string;
+        status?: InvoiceStatus;
+        invoiceType?: InvoiceType;
+    } = {}): Promise<IInvoice | null> {
+        try {
+            // Ensure service is initialized
+            await this.initialize();
+            const connection = await this.getConnection();
+
+            const invoicesCollection = new MongoDBClient<IInvoice>(
+                connection,
+                WalletsServiceCollections.invoices
+            );
+
+            // Build filter object
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const filter: Record<string, any> = {};
+            if (userId) filter.userId = userId;
+            if (tradeId) filter.tradeId = tradeId;
+            if (status) filter.status = status;
+            if (invoiceType) filter.invoiceType = invoiceType;
+
+            const invoice = await invoicesCollection.findOne(filter);
+
+            return invoice;
+        } catch (error) {
+            console.error("General error in getInvoices:", { error });
+            throw error;
+        }
+    }
+
+    public async getInvoices({
+        userId,
+        tradeId,
+        statuses,
+        invoiceTypes,
+    }: {
+        userId?: string;
+        tradeId?: string;
+        statuses?: InvoiceStatus[];
+        invoiceTypes?: InvoiceType[];
+    } = {}): Promise<IInvoice[]> {
+        try {
+            // Ensure service is initialized
+            await this.initialize();
+            const connection = await this.getConnection();
+
+            const invoicesCollection = new MongoDBClient<IInvoice>(
+                connection,
+                WalletsServiceCollections.invoices
+            );
+
+            // Build filter object
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const filter: Record<string, string | any> = {};
+            if (userId) filter.userId = userId;
+            if (tradeId) filter.tradeId = tradeId;
+            if (statuses) filter.status = { $in: statuses };
+            if (invoiceTypes) filter.invoiceType = { $in: invoiceTypes };
+
+            const invoices = await invoicesCollection.find(filter);
+
+            return invoices;
+        } catch (error) {
+            console.error("General error in getInvoices:", { error });
+            throw error;
+        }
+    }
+
+    public async updateInvoice({
+        invoiceId,
+        amountPaid,
+        status,
+        amountDue,
+    }: IUpdateInvoiceInput): Promise<{
+        success: boolean;
+        invoice?: IInvoice;
+        error?: string;
+        message?: string;
+    }> {
+        try {
+            // Ensure service is initialized
+            await this.initialize();
+            const connection = await this.getConnection();
+
+            const invoicesCollection = new MongoDBClient<IInvoice>(
+                connection,
+                WalletsServiceCollections.invoices
+            );
+
+            // Get current invoice
+            const currentInvoice = await invoicesCollection.findOne({
+                _id: new mongoose.Types.ObjectId(invoiceId),
+            });
+
+            if (!currentInvoice) {
+                return {
+                    success: false,
+                    error: "INVOICE_NOT_FOUND",
+                    message: `Invoice with ID ${invoiceId} not found`,
+                };
+            }
+
+            // Build update object
+            const updateData: Record<string, string | number> = {};
+
+            if (amountPaid !== undefined) {
+                updateData.amountPaid = amountPaid;
+                // Recalculate outstanding amount
+                const newAmountDue = amountDue ?? currentInvoice.amountDue;
+                updateData.amountOutstanding = Math.max(
+                    0,
+                    newAmountDue - amountPaid
+                );
+
+                // Auto-update status based on payment
+                if (amountPaid >= newAmountDue) {
+                    updateData.status = InvoiceStatus.PAID;
+                }
+                // else if (amountPaid > 0) {
+                //     updateData.status = InvoiceStatus.PENDING; // Partially paid
+                // }
+            }
+
+            if (amountDue !== undefined) {
+                updateData.amountDue = amountDue;
+                const currentAmountPaid = currentInvoice.amountPaid;
+                updateData.amountOutstanding = Math.max(
+                    0,
+                    amountDue - currentAmountPaid
+                );
+            }
+
+            if (status !== undefined) {
+                updateData.status = status;
+            }
+
+            // Update the invoice
+            const result = await invoicesCollection.updateOne(
+                { _id: new mongoose.Types.ObjectId(invoiceId) },
+                { $set: updateData }
+            );
+
+            if (result.modifiedCount === 0) {
+                return {
+                    success: false,
+                    error: "UPDATE_FAILED",
+                    message: "Failed to update invoice",
+                };
+            }
+
+            // Get updated invoice
+            const updatedInvoice = await invoicesCollection.findOne({
+                _id: new mongoose.Types.ObjectId(invoiceId),
+            });
+
+            log.info("Successfully updated invoice", {
+                invoiceId,
+                updateData,
+            });
+
+            return {
+                success: true,
+                invoice: updatedInvoice!,
+            };
+        } catch (error) {
+            console.error("General error in updateInvoice:", { error });
+            return {
+                success: false,
+                error: "SYSTEM_ERROR",
+                message:
+                    error instanceof Error
+                        ? error.message
+                        : "Unknown error occurred",
+            };
+        }
+    }
+
+    // Helper method to pay an invoice (combines update with wallet operations)
+    public async payInvoice({
+        invoiceId,
+        userId,
+        paymentAmount,
+    }: {
+        invoiceId: string;
+        userId: string;
+        paymentAmount: number;
+    }): Promise<{
+        success: boolean;
+        invoice?: IInvoice;
+        error?: string;
+        message?: string;
+    }> {
+        try {
+            // Get the invoice first
+            const invoice = await this.getInvoiceById(invoiceId);
+
+            if (!invoice) {
+                throw new Error(`Invoice with ID ${invoiceId} not found`);
+            }
+
+            // Verify user owns the invoice
+            if (invoice.userId !== userId) {
+                throw new Error("User not authorized to pay this invoice");
+            }
+
+            // Check if already paid
+            if (invoice.status === InvoiceStatus.PAID) {
+                throw new Error("Invoice is already paid");
+            }
+
+            // Lock user balance for payment
+            const lockResult = await this.lockUserBalance({
+                userId,
+                amount: paymentAmount,
+                currency: invoice.currency,
+                walletType: "MAIN", // Assuming MAIN wallet
+            });
+
+            if (!lockResult.success) {
+                throw new Error(lockResult.message);
+            }
+
+            // Update invoice with payment
+            const newAmountPaid = invoice.amountPaid + paymentAmount;
+            const updateResult = await this.updateInvoice({
+                invoiceId,
+                amountPaid: newAmountPaid,
+            });
+
+            if (!updateResult.success) {
+                // TODO: Rollback the locked balance if invoice update fails
+                return updateResult;
+            }
+
+            return {
+                success: true,
+                invoice: updateResult.invoice,
+            };
+        } catch (error) {
+            console.error("General error in payInvoice:", { error });
+            return {
+                success: false,
+                error: "SYSTEM_ERROR",
+                message:
+                    error instanceof Error
+                        ? error.message
+                        : "Unknown error occurred",
+            };
+        }
+    }
+
+    // Process User Account Activation Fee
+    public async processUserAccountActivationFee(
+        queueMessages: IQueueMessageBody<IUserAccountActivationFeeEvent>[]
+    ): Promise<{
+        successMessageIds: string[];
+        failedMessageIds: string[];
+    }> {
+        try {
+            // Ensure service is initialized and get secrets
+            await this.initialize();
+            const commonSecrets = await this.getCommonSecrets();
+
+            const successMessageIds: string[] = [];
+            const failedMessageIds: string[] = [];
+            const queueUrl = commonSecrets.TRACK_USER_ONBOARDING_CHECKLIST_QUEUE ?? "";
+
+            const results = await Promise.allSettled(
+                queueMessages.map(async (queue) => {
+                    const { userId, amount } = queue.body;
+
+                    // Helps to effect rollback if error occured
+                    // Transactions does not work for different db operations
+                    let rollBack: null | "wallet" | "activation" = null;
+
+                    try {
+                        // Debit User wallet
+                        await this.debitUserWallet({ userId, amount });
+                        rollBack = "wallet";
+
+                        // Update user activation fee field
+                        const user = await UsersService.updateUserActivationFee({ userId, amount });
+                        rollBack = "activation";
+
+                        if (!user) {
+                            throw new Error(`User ${userId} not found after activation fee update`);
+                        }
+
+                        // Record transaction
+                        const transaction: ITransaction = {
+                            userId,
+                            amount,
+                            transactionNetwork: "activation_fee",
+                            currencyName: "USDT",
+                            fromWallet: WalletType.MAIN,
+                            status: TransactionStatus.SUCCESS,
+                            transactionType: TransactionType.ACTIVATION,
+                            transactionSource: TransactionSource.INTERNAL,
+                            paymentCategoryName: PaymentCategoryName.CRYPTO,
+                            paymentMethodName: "Tether",
+                            paymentProviderName: WalletProvider.CRYPTOPAY,
+                            externalTransactionId: randomUUID(), // Generates random uuid
+                            createdAt: new Date(),
+                            updatedAt: new Date()
+                        }
+                        await this.recordTransactionToDB(transaction);
+                        rollBack = null; // All DB operations was successful
+
+                        // Publish to First deposit queue if activation fee is now $20
+                        const activationFee = user.activationFee ?? 0;
+                        if (activationFee >= TraderAppActivationFee && queueUrl) {
+                            // First Deposit Queue
+                            await publishMessageToQueue({
+                                queueUrl,
+                                message: JSON.stringify({
+                                    userId,
+                                    onboardingChecklistItem:
+                                        UserOnboardingChecklist.IS_FIRST_DEPOSIT_MADE,
+                                }),
+                            });
+                        }
+
+                        // TODO: Email notification for activationFee Deduction
+
+                        return {
+                            messageId: queue.messageId,
+                            success: true,
+                        };
+                    } catch (error) {
+                        // TODO: Publish ROLLBACK operation to a different queue
+                        // Compensating Rollback operation on error
+                        if (rollBack !== null) {
+                            try {
+                                if (rollBack === "wallet") {
+                                    // Rollback: Credit wallet only
+                                    await this.creditUserWallet({ userId, amount });
+                                    console.log(`Rolled back wallet debit for user ${userId}`);
+                                } else if (rollBack === "activation") {
+                                    // Rollback: Credit wallet AND revert activation fee
+                                    await Promise.allSettled([
+                                        this.creditUserWallet({ userId, amount }),
+                                        UsersService.updateUserActivationFee({ userId, amount: -amount }),
+                                    ]);
+                                    console.log(`Rolled back wallet debit and activation fee for user ${userId}`);
+                                }
+                            } catch (rollbackError) {
+                                // Critical: Rollback failed - log for manual intervention
+                                console.error(
+                                    `##################################### CRITICAL ROLLBACK FAILURE: FAILED TO ROLLBACK FOR USER ${userId}:###################################################`,
+                                    {
+                                        error: rollbackError,
+                                        originalError: error,
+                                        rollBackState: rollBack,
+                                        messageId: queue.messageId,
+                                        userId,
+                                        amount
+                                    },
+                                    "###################################################################################################################################################"
+                                );
+                            }
+                        }
+
+                        console.error(
+                            `Failed to deduct activation fee for user ${queue.body.userId}:`,
+                            {
+                                error,
+                            }
+                        );
+                        return {
+                            messageId: queue.messageId,
+                            success: false,
+                        };
+                    }
+                })
+            )
+
+            // Process result
+            results.forEach((result, index) => {
+                const messageId = queueMessages[index].messageId;
+
+                if (result.status === "fulfilled" && result.value.success) {
+                    successMessageIds.push(result.value.messageId);
+                } else {
+                    failedMessageIds.push(messageId);
+                }
+            });
+
+            return {
+                successMessageIds,
+                failedMessageIds,
+            };
+        } catch (error) {
+            console.error("General error in processUserAccountActivationFee:", {
                 error,
             });
             return {

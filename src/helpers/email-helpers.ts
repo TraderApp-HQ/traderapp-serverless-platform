@@ -1,5 +1,5 @@
 import { EventTemplate } from "src/config/enums";
-import { IMessageRecipient } from "src/config/interfaces";
+import { IMessageRecipient, IMetadata } from "src/config/interfaces";
 import {
     CreateUserTemplate,
     GeneralTemplate,
@@ -8,78 +8,116 @@ import {
     PasswordResetTemplate,
     ReferralTemplate,
 } from "src/templates/email-templates";
+import SendDepositConfirmationEmailTemplate from "src/templates/email-templates/send-deposit-confirmation-email-template";
+import SendTradeInitiatedNotificationTemplate from "src/templates/email-templates/send-trade-initiated-notification-template";
+import sendWithdrawalConfirmationEmailTemplate from "src/templates/email-templates/send-withdrawal-confirmation-email-tempate";
 
 interface IFormatEmailMessageInput {
     recipient: IMessageRecipient;
     message: string;
     event: EventTemplate;
     sender?: IMessageRecipient;
+    metadata?: IMetadata;
 }
+
+const applyReplacements = (
+    template: string,
+    replacements: Record<string, string | undefined>
+): string => {
+    let result = template;
+    for (const [key, value] of Object.entries(replacements)) {
+        if (value) {
+            result = result.replace(new RegExp(`{${key}}`, "g"), value);
+        }
+    }
+    return result;
+};
 
 export const formatEmailMessageBody = ({
     recipient,
     message,
     event,
     sender,
-}: IFormatEmailMessageInput) => {
-    let templateBody = "";
+    metadata,
+}: IFormatEmailMessageInput): string => {
     switch (event) {
-        case EventTemplate.GENERAL: {
-            templateBody = GeneralTemplate;
-            templateBody = templateBody.replace(
-                /{USER_NAME}/g,
-                recipient.firstName
-            );
-            templateBody = templateBody.replace(/{BODY}/g, message);
-            break;
+        case EventTemplate.GENERAL:
+            return applyReplacements(GeneralTemplate, {
+                USER_NAME: recipient.firstName,
+                BODY: message,
+            });
+
+        case EventTemplate.OTP:
+            return applyReplacements(OtpTemplate, {
+                USER_NAME: recipient.firstName,
+                OTP: message,
+            });
+
+        case EventTemplate.RESET_PASSWORD:
+            return applyReplacements(PasswordResetTemplate, {
+                USER_NAME: recipient.firstName,
+                RESET_LINK: message,
+            });
+
+        case EventTemplate.CREATE_USER:
+            return applyReplacements(CreateUserTemplate, {
+                USER_NAME: recipient.firstName,
+                RESET_LINK: message,
+            });
+
+        case EventTemplate.WELCOME:
+            return applyReplacements(GetStartedTemplate, {
+                USER_NAME: recipient.firstName,
+            });
+
+        case EventTemplate.SEND_DEPOSIT_CONFIRMATION_EMAIL: {
+            return applyReplacements(SendDepositConfirmationEmailTemplate, {
+                USER_NAME: recipient.firstName,
+                AMOUNT: metadata?.amount?.toString(),
+                TRANSACTION_ID: metadata?.transactionId,
+                DATE_TIME: metadata?.dateTime,
+                NETWORK: metadata?.network,
+                ADDRESS: metadata?.address,
+            });
         }
-        case EventTemplate.OTP: {
-            templateBody = OtpTemplate;
-            templateBody = templateBody.replace(
-                /{USER_NAME}/g,
-                recipient.firstName
-            );
-            templateBody = templateBody.replace(/{OTP}/g, message);
-            break;
+
+        case EventTemplate.SEND_WITHDRAWAL_CONFIRMATION_EMAIL: {
+            return applyReplacements(sendWithdrawalConfirmationEmailTemplate, {
+                USER_NAME: recipient.firstName,
+                AMOUNT: metadata?.amount?.toString(),
+                TRANSACTION_ID: metadata?.transactionId,
+                DATE_TIME: metadata?.dateTime,
+                ADDRESS: metadata?.address,
+                NETWORK: metadata?.network,
+            });
         }
-        case EventTemplate.RESET_PASSWORD: {
-            templateBody = PasswordResetTemplate;
-            templateBody = templateBody.replace(
-                /{USER_NAME}/g,
-                recipient.firstName
-            );
-            templateBody = templateBody.replace(/{RESET_LINK}/g, message);
-            break;
+
+        case EventTemplate.SEND_TRADE_INITIATED_NOTIFICATION:{
+            return applyReplacements(SendTradeInitiatedNotificationTemplate, {
+               USER_NAME: recipient.firstName,
+               BASE_ASSET: metadata?.baseAsset,
+               BASE_ASSET_LOGO_URL: metadata?.baseAssetLogoUrl,
+               QUOTE_CURRENCY: metadata?.quoteCurrency,
+               ENTRY_PRICE: metadata?.entryPrice?.toString(),
+               STOP_LOSS: metadata?.stopLoss?.toString(),
+               TRADE_SIDE: metadata?.tradeSide,
+               DATE_TIME: metadata?.dateTime,
+               ESTIMATED_PROFIT: metadata?.estimatedProfit?.toString(),
+               ESTIMATED_LOSS: metadata?.estimatedLoss?.toString(),
+               PLATFORM_NAME: metadata?.platformName
+                    ? metadata?.platformName?.charAt(0).toUpperCase() + metadata?.platformName?.slice(1).toLowerCase()
+                    : undefined,
+
+            });
         }
-        case EventTemplate.CREATE_USER: {
-            templateBody = CreateUserTemplate;
-            templateBody = templateBody.replace(
-                /{USER_NAME}/g,
-                recipient.firstName
-            );
-            templateBody = templateBody.replace(/{RESET_LINK}/g, message);
-            break;
-        }
-        case EventTemplate.WELCOME: {
-            templateBody = GetStartedTemplate;
-            templateBody = templateBody.replace(
-                /{USER_NAME}/g,
-                recipient.firstName
-            );
-            break;
-        }
-        case EventTemplate.INVITE_USER: {
-            templateBody = ReferralTemplate;
-            templateBody = templateBody.replace(/{REFERRAL_LINK}/g, message);
-            templateBody = templateBody.replace(
-                /{REFERRER}/g,
-                `${sender?.firstName} ${sender?.lastName}`
-            );
-            break;
-        }
+
+        case EventTemplate.INVITE_USER:
+            return applyReplacements(ReferralTemplate, {
+                REFERRAL_LINK: message,
+                REFERRER: `${sender?.firstName ?? ""} ${sender?.lastName ?? ""}`,
+            });
+
         default:
             throw new Error(`No email event with name ${event}`);
     }
-
-    return templateBody;
 };

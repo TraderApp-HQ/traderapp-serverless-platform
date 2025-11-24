@@ -52,3 +52,30 @@ export const RANK_REQUIREMENTS = {
         testCommunitySize: 12,
     },
 } as const;
+
+export const RANK_ORDER = [
+    ReferralRank.TA_RECRUIT,
+    ReferralRank.TA_LIEUTENANT,
+    ReferralRank.TA_CAPTAIN,
+    ReferralRank.TA_MAJOR,
+    ReferralRank.TA_COLONEL,
+    ReferralRank.TA_GENERAL,
+    ReferralRank.TA_FIELD_MARSHAL,
+];
+
+export const RANK_INDEX_MAP = Object.fromEntries(
+    RANK_ORDER.map((r, i) => [r, i])
+);
+
+export const REQUIRED_RANK_REFERRALS = 3;
+
+export const TradingEngineServiceDbCollection = {
+    userTradingAccountsCollection: "user-trading-accounts",
+    userTradingAccountBalanceCollection: "user-trading-account-balances",
+};
+
+export const UserServiceDbCollection = {
+    users: "users",
+};
+
+export const TraderAppActivationFee = 20;

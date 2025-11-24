@@ -25,6 +25,12 @@ export enum CryptopayWebhookEventStatus {
     processing = "processing",
 }
 
+export enum CryptopayWebhookEventType {
+    ChannelPayment = "ChannelPayment",
+    Invoice = "Invoice",
+    CoinWithdrawal = "CoinWithdrawal",
+}
+
 export interface ICryptoPayExchangeInfo {
     fee: string;
     pair: string;
@@ -45,7 +51,7 @@ export interface ICryptoPayTransaction {
 }
 
 export interface ICryptopayWebhookEvent {
-    type: "ChannelPayment" | "Invoice" | "CoinWithdrawal";
+    type: CryptopayWebhookEventType;
     event:
         | "created"
         | "completed"
@@ -261,6 +267,7 @@ export class CryptoPayClient {
         transaction: ICryptopayWebhookEvent,
         userId: string
     ): ITransaction {
+        const providerFee = parseFloat(transaction.data.fee) || 0;
         let status = TransactionStatus.PENDING;
         let currencyName = "";
         let amount = 0;
@@ -298,7 +305,7 @@ export class CryptoPayClient {
             toAmount = parseFloat(transaction.data.price_amount ?? "");
             fromCurrencyName = transaction.data.pay_currency;
             fromAmount = parseFloat(transaction.data.pay_amount ?? "");
-            transactionHash = (transaction.data.transactions ?? [])[0].txid;
+            transactionHash = (transaction.data.transactions ?? [])[0]?.txid;
             fromWalletAddress = transaction.data.address;
         } else if (transaction.type === "CoinWithdrawal") {
             currencyName = transaction.data.received_currency ?? "";
@@ -326,8 +333,9 @@ export class CryptoPayClient {
             fromWalletAddress,
             toWalletAddress,
             transactionNetwork: transaction.data.network,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            providerFee,
         };
     }
 }

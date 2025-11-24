@@ -1,0 +1,35 @@
+import crypto from "crypto";
+
+const IV_LENGTH = 16; // AES block size
+
+// Function to encrypt
+export const encrypt = (text: string, decryptionKey: string) => {
+    const iv = crypto.randomBytes(IV_LENGTH); // Generate a random initialization vector
+    const cipher = crypto.createCipheriv(
+        "aes-256-cbc",
+        Buffer.from(decryptionKey) as crypto.CipherKey,
+        iv as crypto.BinaryLike
+    );
+    let encrypted = cipher.update(text, "utf8", "hex");
+    encrypted += cipher.final("hex");
+    return iv.toString("hex") + ":" + encrypted; // Return iv and encrypted text
+};
+
+// Function to decrypt
+export const decrypt = (encrypted: string, decryptionKey: string) => {
+    const textParts = encrypted.split(":");
+    const iv = Buffer.from(textParts[0], "hex");
+    const encryptedText = Buffer.from(textParts[1], "hex");
+    const decipher = crypto.createDecipheriv(
+        "aes-256-cbc",
+        Buffer.from(decryptionKey) as crypto.CipherKey,
+        iv as crypto.BinaryLike
+    );
+    let decrypted: string = decipher.update(
+        encryptedText as NodeJS.ArrayBufferView,
+        undefined,
+        "utf8"
+    );
+    decrypted += decipher.final("utf8");
+    return decrypted;
+};

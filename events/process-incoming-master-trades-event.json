@@ -1,0 +1,20 @@
+{
+    "Records": [
+        {
+            "messageId": "b33efd0a-6a92-48b0-a331-354c03c80f6b",
+            "receiptHandle": "AQEBS7/CNqMmRuyE4jdiUmu8rVBmN+bX1mVNLYKyEaBuxm5eZO7MESqO83kfYq1bDUiOujTlC3AmkI2q/Tp2woN0Sl93GAJCYoXQO7HIn40GaFdZbWOx4fFT8pbZ8LhloXPVII13ZLGGxVCrxX+rYOQZ4kgz11X7rk9yuPU2zpgrCaG/2gIb69j1zaxU3BDvUhyKyl1fxuIVawNvI7Q7YopfSMv8bw2Xvote2N8bC616cNtGeVD64WUZiyXlOqLtMrOu1Ui6+ODrVn1c2TsQRz0WfxwkfY4j5mHJKryl2uu1fDONv9EV2X00TkW9nyMfJL9//DzoO9N74HMDEm2Sp5ytvr0p7ukY3vXUQMX2B56pLB3vSU24PExM91Ag/lCZgIi05g0eX9em6whANO88Cjcxe5TgXgKr/K9ibWdDjGtNXH4=",
+            "body": "{\"masterTradeId\":\"68f0ac8c362569534d6ba1f0\",\"stopLossPrice\":109320,\"takeProfitPrice\":113000,\"entryPrice\":110220,\"baseAsset\":\"BTC\",\"quoteCurrency\":\"USDT\",\"pair\":\"BTCUSDT\",\"supportedTradingPlatforms\":[\"BINANCE\"],\"tradeSide\":\"LONG\",\"targetOrdersAmountToFill\":100000000,\"orderPlacementType\":\"LIMIT\",\"accountType\":\"FUTURES\"}",
+            "attributes": {
+                "ApproximateReceiveCount": "1",
+                "SentTimestamp": "1760607360342",
+                "SenderId": "AROAYL6XCX7JMJGLMUIPX:i-0479be7fd7fa668da",
+                "ApproximateFirstReceiveTimestamp": "1760607360353"
+            },
+            "messageAttributes": {},
+            "md5OfBody": "d260688e77f2a689428c2c183e2d5d16",
+            "eventSource": "aws:sqs",
+            "eventSourceARN": "arn:aws:sqs:eu-west-1:575439814610:dev-processIncomingMasterTradesQueue",
+            "awsRegion": "eu-west-1"
+        }
+    ]
+}

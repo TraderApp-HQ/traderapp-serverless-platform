@@ -10,14 +10,24 @@ export class MongoDBClient<T> {
         this.collection = collection;
     }
 
-    async findOne(filter: Record<string, any>): Promise<T | null> {
+    async findOne(
+        filter: Record<string, any>,
+        options?: Record<string, any>
+    ): Promise<T | null> {
+        await this.connection.asPromise(); // Wait for connection to be ready
         return this.connection
             .collection(this.collection)
-            .findOne(filter) as Promise<T | null>;
+            .findOne(filter, options) as Promise<T | null>;
     }
 
-    async find(filter: Record<string, any>): Promise<T[]> {
-        const result = this.connection.collection(this.collection).find(filter);
+    async find(
+        filter: Record<string, any>,
+        options?: Record<string, any>
+    ): Promise<T[]> {
+        await this.connection.asPromise(); // Wait for connection to be ready
+        const result = this.connection
+            .collection(this.collection)
+            .find(filter, options);
         return (await result.toArray()) as T[];
     }
 
@@ -31,24 +41,54 @@ export class MongoDBClient<T> {
         return result;
     }
 
-    async insertOne(doc: Partial<T>): Promise<T> {
+    async insertOne(
+        doc: Partial<T>,
+        options?: Record<string, any>
+    ): Promise<T> {
+        await this.connection.asPromise(); // Wait for connection to be ready
         const result = await this.connection
             .collection(this.collection)
-            .insertOne(doc);
+            .insertOne(doc, options);
         return { ...doc, _id: result.insertedId } as T;
     }
 
     async updateOne(
         filter: Record<string, any>,
-        update: Record<string, any>
-    ): Promise<boolean> {
+        update: Record<string, any>,
+        options?: Record<string, any>
+    ): Promise<{
+        modifiedCount: number;
+        matchedCount: number;
+        acknowledged: boolean;
+    }> {
+        await this.connection.asPromise(); // Wait for connection to be ready
         const result = await this.connection
             .collection(this.collection)
-            .updateOne(filter, update);
-        return result.modifiedCount > 0;
+            .updateOne(filter, update, options);
+        return {
+            modifiedCount: result.modifiedCount,
+            matchedCount: result.matchedCount,
+            acknowledged: result.acknowledged,
+        };
+    }
+
+    async findOneAndUpdate(
+        filter: Record<string, any>,
+        update: Record<string, any>
+    ): Promise<T | null> {
+        await this.connection.asPromise(); // Wait for connection to be ready
+        const result = await this.connection
+            .collection(this.collection)
+            .findOneAndUpdate(
+                filter,
+                update,
+                { returnDocument: "after" } // returns the updated document
+            );
+        return result as T | null;
     }
 
     async deleteOne(filter: Record<string, any>): Promise<boolean> {
+        await this.connection.asPromise(); // Wait for connection to be ready
         const result = await this.connection
             .collection(this.collection)
             .deleteOne(filter);
@@ -56,6 +96,7 @@ export class MongoDBClient<T> {
     }
 
     async deleteMany(filter: Record<string, any>): Promise<boolean> {
+        await this.connection.asPromise(); // Wait for connection to be ready
         const result = await this.connection
             .collection(this.collection)
             .deleteMany(filter);
