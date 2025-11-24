@@ -185,14 +185,34 @@
           </mj-text>
 
           <mj-text font-size="14px" line-height="1.9" padding="0">
-            <p style="margin: 0 0 6px 0; display: flex; align-items: center;">
-              <mj-text css-class="b">Asset:</mj-text>
-              <span style="display: inline-flex; align-items: center; margin-left: 10px;">
-                <img src="{BASE_ASSET_LOGO_URL}" alt="" width="20" height="20" style="vertical-align: middle;" />
-                <span class="baseasset">{BASE_ASSET} / {QUOTE_CURRENCY}</span>
-                <span class="tradeside">{TRADE_SIDE}</span>
-              </span>
-            </p>
+            <mj-raw>
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 6px 0;">
+                <tr>
+
+                  <!-- LABEL -->
+                  <td style="vertical-align:middle;">
+                    <span class="b">Asset:</span>
+                  </td>
+
+                  <!-- ICON -->
+                  <td style="vertical-align:middle; padding-left:10px;">
+                    <img src="{BASE_ASSET_LOGO_URL}" alt="" width="20" height="20" style="display:block; border:0; outline:0;" />
+                  </td>
+
+                  <!-- BASE ASSET -->
+                  <td style="vertical-align:middle; padding-left:6px;">
+                    <span class="baseasset">{BASE_ASSET} / {QUOTE_CURRENCY}</span>
+                  </td>
+
+                  <!-- TRADE SIDE TAG -->
+                  <td style="vertical-align:middle; padding-left:8px;">
+                    <span class="tradeside">{TRADE_SIDE}</span>
+                  </td>
+
+                </tr>
+              </table>
+            </mj-raw>
+
 
             <p style="margin: 0 0 6px 0; display: flex; align-items: center;">
               <mj-text css-class="b">Entry Price:</mj-text>

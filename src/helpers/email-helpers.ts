@@ -97,7 +97,7 @@ export const formatEmailMessageBody = ({
             return applyReplacements(SendTradeInitiatedNotificationTemplate, {
                USER_NAME: recipient.firstName,
                BASE_ASSET: metadata?.baseAsset,
-               BASE_ASSET_LOGO_URL: metadata?.baseAssetLogoUrl,
+                BASE_ASSET_LOGO_URL: metadata?.baseAssetLogoUrl,
                QUOTE_CURRENCY: metadata?.quoteCurrency,
                ENTRY_PRICE: metadata?.entryPrice?.toString(),
                STOP_LOSS: metadata?.stopLoss?.toString(),
