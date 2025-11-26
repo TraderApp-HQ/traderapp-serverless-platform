@@ -22,6 +22,7 @@ import {
 import {
     ICloseTradeEvent,
     IFailedTrade,
+    IOrder,
     IProcessedTrade,
     ITrade,
     IUserTradeAllocation,
@@ -183,8 +184,13 @@ export const processBybitTrades = async (
                         message: JSON.stringify(failedOrder),
                     });
 
-                    // This is a real error, should be marked as failed for retry
-                    throw error;
+                    // Attach messageId to error before throwing
+                    const errorWithMessageId = new Error(
+                        error instanceof Error ? error.message : String(error)
+                    );
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    (errorWithMessageId as any).messageId = queueMessage.messageId;
+                    throw errorWithMessageId;
                 }
             })
         );
@@ -327,7 +333,13 @@ export const processBybitOrdersActivation = async (
                     console.error("Error updating trade status to ACTIVE", {
                         error,
                     });
-                    throw error;
+                    // Attach messageId to error before throwing
+                    const errorWithMessageId = new Error(
+                        error instanceof Error ? error.message : String(error)
+                    );
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    (errorWithMessageId as any).messageId = queueMessage.messageId;
+                    throw errorWithMessageId;
                 }
             })
         );
@@ -417,7 +429,13 @@ export const processBybitStopLossOrders = async (
                     console.error("Error processing bybit stop loss order", {
                         error,
                     });
-                    throw error;
+                    // Attach messageId to error before throwing
+                    const errorWithMessageId = new Error(
+                        error instanceof Error ? error.message : String(error)
+                    );
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    (errorWithMessageId as any).messageId = queueMessage.messageId;
+                    throw errorWithMessageId;
                 }
             })
         );
@@ -494,11 +512,19 @@ export const processBybitTakeProfitOrders = async (
                         });
                     }
 
-                    // Update trade take profit price
-                    await tradingEngineService.updateTrade({
-                        tradeId: (trade._id as mongoose.Types.ObjectId).toString(),
-                        updateData: { takeProfitPrice: trade.takeProfitPrice },
-                    });
+                    if (trade.takeProfitPrice) {
+                        // Update trade take profit price
+                        await tradingEngineService.updateTrade({
+                            tradeId: (trade._id as mongoose.Types.ObjectId).toString(),
+                            updateData: { takeProfitPrice: trade.takeProfitPrice },
+                        });
+                    }
+                    else {
+                        // Update trade take profit price
+                        await tradingEngineService.unsetTradeTakeProfit({
+                            tradeId: (trade._id as mongoose.Types.ObjectId).toString(),
+                        });
+                    }
 
                     // return success message id
                     return { messageId: queueMessage.messageId, trade };
@@ -506,7 +532,13 @@ export const processBybitTakeProfitOrders = async (
                     console.error("Error processing bybit take profit order", {
                         error,
                     });
-                    throw error;
+                    // Attach messageId to error before throwing
+                    const errorWithMessageId = new Error(
+                        error instanceof Error ? error.message : String(error)
+                    );
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    (errorWithMessageId as any).messageId = queueMessage.messageId;
+                    throw errorWithMessageId;
                 }
             })
         );
@@ -528,7 +560,7 @@ export const processBybitTakeProfitOrders = async (
     }
 };
 
-export const closeBybitTrades = async (
+export const processBybitCloseTrades = async (
     queueMessages: IQueueMessageBody<ICloseTradeEvent>[]
 ) => {
     const successMessageIds: string[] = [];
@@ -542,7 +574,7 @@ export const closeBybitTrades = async (
         tradingEngineServiceSecrets.API_SECRET_KEY_ENCRYPTION_KEY;
 
     try {
-        const closeBybitTradesResults = await Promise.allSettled(
+        const processBybitCloseTradesResults = await Promise.allSettled(
             queueMessages.map(async (queueMessage) => {
                 const closeTradeEvent = queueMessage.body;
                 try {
@@ -581,6 +613,8 @@ export const closeBybitTrades = async (
                     if (openPosition) {
                         // Calculate quantity to close
                         const qtyToClose = Number(openPosition.size) * (closeTradeEvent.qtyPercentToClose / 100);
+                        const qtyRemaining = Number(openPosition.size) - qtyToClose;
+
                         await bybitClient.closePosition({
                             symbol: closeTradeEvent.trade.pair,
                             side: openPosition.side === "Buy" ? "Sell" : "Buy",
@@ -588,13 +622,28 @@ export const closeBybitTrades = async (
                         });
 
                         if (closeTradeEvent.qtyPercentToClose < 100) {
-                            // Update user trade qty
-                            const qtyRemaining = Number(openPosition.size) - qtyToClose;
+                            // Calculate updated quote total, estimated profit and estimated loss
+                            const quoteTotalToClose = closeTradeEvent.trade.quoteTotal * (closeTradeEvent.qtyPercentToClose / 100);
+                            const quoteToalRemaining = closeTradeEvent.trade.quoteTotal - quoteTotalToClose;
+
+                            const estimatedProfitToClose = closeTradeEvent.trade.estimatedProfit * (closeTradeEvent.qtyPercentToClose / 100);
+                            const estimatedProfitRemaining = closeTradeEvent.trade.estimatedProfit - estimatedProfitToClose;
+
+                            const estimatedLossToClose = closeTradeEvent.trade.estimatedLoss * (closeTradeEvent.qtyPercentToClose / 100);
+                            const estimatedLossRemaining = closeTradeEvent.trade.estimatedLoss - estimatedLossToClose;
+
+                            // Update user trade
                             await tradingEngineService.updateTrade({
                                 tradeId: (
                                     closeTradeEvent.trade._id as mongoose.Types.ObjectId
                                 ).toString(),
-                                updateData: { baseQuantity: qtyRemaining },
+                                updateData: {
+                                    baseQuantity: qtyRemaining,
+                                    quoteTotal: quoteToalRemaining,
+                                    estimatedProfit: estimatedProfitRemaining,
+                                    estimatedLoss: estimatedLossRemaining,
+                                    status: TradeStatus.BREAK_EVEN
+                                },
                             });
                         }
                     }
@@ -618,12 +667,133 @@ export const closeBybitTrades = async (
                     return { messageId: queueMessage.messageId, closeTradeEvent };
                 } catch (error) {
                     console.error("Error closing bybit trade", { error });
-                    throw error;
+                    // Attach messageId to error before throwing
+                    const errorWithMessageId = new Error(
+                        error instanceof Error ? error.message : String(error)
+                    );
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    (errorWithMessageId as any).messageId = queueMessage.messageId;
+                    throw errorWithMessageId;
                 }
             })
         );
 
-        closeBybitTradesResults.forEach((result) => {
+        processBybitCloseTradesResults.forEach((result) => {
+            if (result.status === "fulfilled") {
+                successMessageIds.push(result.value.messageId);
+            } else {
+                failedMessageIds.push(result.reason.messageId || "unknown");
+            }
+        });
+
+        return { successMessageIds, failedMessageIds };
+    } catch (error) {
+        console.error("Error closing bybit trades", { error });
+        return {
+            successMessageIds: [],
+            failedMessageIds: queueMessages.map((qm) => qm.messageId),
+        };
+    }
+};
+
+export const processBybitCancelOrders = async (
+    queueMessages: IQueueMessageBody<IOrder>[]
+) => {
+    const successMessageIds: string[] = [];
+    const failedMessageIds: string[] = [];
+
+    const tradingEngineService = new TradingEngineService();
+
+    // Get decryption keys and decrypt api keys
+    const tradingEngineServiceSecrets = await getTradingEngineServiceSecrets();
+    const decryptionKey =
+        tradingEngineServiceSecrets.API_SECRET_KEY_ENCRYPTION_KEY;
+
+    try {
+        const processBybitCancelOrdersResults = await Promise.allSettled(
+            queueMessages.map(async (queueMessage) => {
+                const order = queueMessage.body;
+                try {
+                    // Get user trading account
+                    const userTradingAccount =
+                        await tradingEngineService.getUserTradingAccount(
+                            order.userId,
+                            TradingPlatform.BYBIT
+                        );
+
+                    // Decrypt api keys
+                    const apiKey = decrypt(
+                        userTradingAccount.apiKey ?? "",
+                        decryptionKey
+                    );
+                    const apiSecret = decrypt(
+                        userTradingAccount.apiSecret ?? "",
+                        decryptionKey
+                    );
+
+                    // Create Bybit client
+                    const bybitClient = new BybitFuturesClient({
+                        apiKey,
+                        apiSecret,
+                        environment:
+                            process.env.ENV === "prod" ? "mainnet" : "demo",
+                    });
+
+                    // Get Bybit order by external order id
+                    const openOrder = await bybitClient.getOrderById({
+                        symbol: `${order.baseAsset}${order.quoteCurrency}`,
+                        orderId: order.externalOrderId
+                    });
+
+                    if (openOrder && (openOrder.orderStatus === "New" || openOrder.orderStatus === "PartiallyFilled" || openOrder.orderStatus === "Untriggered")) {
+                        await bybitClient.cancelOrder({
+                            symbol: `${order.baseAsset}${order.quoteCurrency}`,
+                            orderId: order.externalOrderId
+                        });
+                    }
+
+                    const tradeId = typeof order.tradeId === 'string' ? order.tradeId : order.tradeId.toString();
+
+                    await Promise.all([
+                        // Update order status to CANCELLED
+                        tradingEngineService.updateOrder(
+                            (order._id as mongoose.Types.ObjectId).toString(),
+                            {
+                                status: OrderStatus.CANCELED,
+                            }
+                        ),
+                        // Update order batch status to CANCELLED
+                        tradingEngineService.updateOrderBatch(
+                            (order.orderBatchId as mongoose.Types.ObjectId).toString(),
+                            {
+                                status: OrderBatchStatus.CANCELED,
+                            }
+                        ),
+                        // Update user trade status to CLOSED
+                        tradingEngineService.updateTrade({
+                            tradeId,
+                            updateData: { status: TradeStatus.CANCELED },
+                        }),
+                    ]);
+
+                    // TODO: publish to notifications queue
+
+                    // return success message id
+                    return { messageId: queueMessage.messageId, order };
+                } catch (error) {
+                    console.error("Error closing bybit trade", { error });
+                    // Attach messageId to error before throwing
+                    const errorWithMessageId = new Error(
+                        error instanceof Error ? error.message : String(error)
+                    );
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    (errorWithMessageId as any).messageId = queueMessage.messageId;
+                    throw errorWithMessageId;
+                }
+            })
+        );
+
+        processBybitCancelOrdersResults.forEach((result) => {
             if (result.status === "fulfilled") {
                 successMessageIds.push(result.value.messageId);
             } else {

@@ -964,6 +964,10 @@ export class TradingEngineService {
                         quoteTotal,
                         estimatedProfit,
                         estimatedLoss,
+                        originalBaseQuantity: baseQuantity,
+                        originalQuoteTotal: quoteTotal,
+                        originalEstimatedProfit: estimatedProfit,
+                        originalEstimatedLoss: estimatedLoss
                     },
                 }
             );
@@ -991,20 +995,7 @@ export class TradingEngineService {
      */
     private async createTradeForUser(
         userId: string,
-        tradeData: {
-            masterTradeId: string;
-            baseAsset: string;
-            quoteCurrency: string;
-            baseQuantity: number;
-            entryPrice: number;
-            stopLossPrice: number;
-            takeProfitPrice: number;
-            quoteTotal: number;
-            pair: string;
-            side: TradeSide;
-            status: TradeStatus;
-            platformName?: TradingPlatform;
-        }
+        tradeData: Partial<ITrade>
     ): Promise<ITrade> {
         try {
             const connection = await this.getConnection();
@@ -1068,6 +1059,37 @@ export class TradingEngineService {
             throw error;
         }
     }
+
+    public async unsetTradeTakeProfit({
+        tradeId,
+    }: {
+        tradeId: string;
+    }): Promise<ITrade | null> {
+        try {
+            const connection = await this.getConnection();
+            const tradesCollection = new MongoDBClient<ITrade>(
+                connection,
+                TradingEngineServiceCollections.trades
+            );
+
+            const updatedTrade = await tradesCollection.findOneAndUpdate(
+                { _id: new mongoose.Types.ObjectId(tradeId) },
+                {
+                    $unset: { takeProfitPrice: "" },
+                }
+            );
+
+            log.info(`Unset trade take profit successfully: tradeId === ${tradeId}`);
+            return updatedTrade;
+        } catch (error) {
+            console.error("Error unsetting trade take profit:", {
+                error,
+                tradeId,
+            });
+            throw error;
+        }
+    }
+
 
     /**
      * Get a trade by ID
@@ -1536,7 +1558,7 @@ export class TradingEngineService {
                     riskUSDT: allocation.riskAmount,
                     requiredMargin: allocation.requiredMargin,
                 });
-                const trade = {
+                const trade: Partial<ITrade> = {
                     masterTradeId: masterTrade.masterTradeId,
                     baseAsset: masterTrade.baseAsset,
                     quoteCurrency: masterTrade.quoteCurrency,
@@ -1551,6 +1573,10 @@ export class TradingEngineService {
                     side: masterTrade.tradeSide,
                     status: TradeStatus.PENDING,
                     platformName: allocation.platformName,
+                    originalBaseQuantity: allocation.baseQuantity ?? 0,
+                    originalQuoteTotal: allocation.requiredMargin,
+                    originalEstimatedProfit: pnlAmount,
+                    originalEstimatedLoss: allocation.riskAmount,
                 };
 
                 const createdTrade = await this.createTradeForUser(

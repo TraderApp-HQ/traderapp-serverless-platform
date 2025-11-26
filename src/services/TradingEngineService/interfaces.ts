@@ -79,6 +79,10 @@ export interface ITrade extends Document {
     status: TradeStatus;
     createdAt: string;
     updatedAt: string;
+    originalBaseQuantity: number;
+    originalQuoteTotal: number;
+    originalEstimatedProfit: number;
+    originalEstimatedLoss: number;
 }
 
 export interface IMasterTrade extends Document {
@@ -113,6 +117,10 @@ export interface IMasterTrade extends Document {
     candlestick: CandleStick;
     risk: TradeRisk;
     category: Category;
+    originalBaseQuantity: number;
+    originalQuoteTotal: number;
+    originalEstimatedProfit: number;
+    originalEstimatedLoss: number;
 }
 
 export interface IProcessUserTradingWithMasterTradeEvent {
@@ -135,6 +143,11 @@ export interface IProcessUserTradingWithMasterTradeEvent {
 export interface ICloseTradeEvent {
     trade: ITrade;
     qtyPercentToClose: number;
+}
+
+export interface ICancelOrderEvent {
+    trade: ITrade;
+    order: IOrder;
 }
 
 export interface ITradingRule extends Document {

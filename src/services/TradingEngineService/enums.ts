@@ -31,6 +31,7 @@ export enum TradeStatus {
     PROCESSED = "PROCESSED",
     FAILED = "FAILED",
     CANCELED = "CANCELED",
+    BREAK_EVEN = "BREAK EVEN",
 }
 
 export enum OrderBatchStatus {

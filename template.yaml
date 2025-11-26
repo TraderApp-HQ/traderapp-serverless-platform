@@ -269,18 +269,31 @@ Resources:
     Properties:
       QueueName: !Sub ${Environment}-processBybitTakeProfitOrdersDLQ
 
-  closeBybitTradesQueue:
+  processBybitCloseTradesQueue:
     Type: AWS::SQS::Queue
     Properties:
-      QueueName: !Sub ${Environment}-closeBybitTradesQueue
+      QueueName: !Sub ${Environment}-processBybitCloseTradesQueue
       VisibilityTimeout: 60
       RedrivePolicy:
-        deadLetterTargetArn: !GetAtt closeBybitTradesDLQ.Arn
+        deadLetterTargetArn: !GetAtt processBybitCloseTradesDLQ.Arn
         maxReceiveCount: 3
-  closeBybitTradesDLQ:
+  processBybitCloseTradesDLQ:
     Type: AWS::SQS::Queue
     Properties:
-      QueueName: !Sub ${Environment}-closeBybitTradesDLQ
+      QueueName: !Sub ${Environment}-processBybitCloseTradesDLQ
+      
+  processBybitCancelOrdersQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${Environment}-processBybitCancelOrdersQueue
+      VisibilityTimeout: 60
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt processBybitCancelOrdersDLQ.Arn
+        maxReceiveCount: 3
+  processBybitCancelOrdersDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${Environment}-processBybitCancelOrdersDLQ
 
 # create lambda functions
   sendEmailOtp:
@@ -919,27 +932,27 @@ Resources:
             #     - !GetAtt processBybitStopLossOrdersQueue.Arn
             #     - !GetAtt processBybitTakeProfitOrdersQueue.Arn
 
-  closeBybitTrades:
+  processBybitCloseTrades:
     Type: AWS::Serverless::Function
     Properties:
       Environment:
         Variables:
           ENV: !Ref Environment
-      FunctionName: !Sub ${Environment}-closeBybitTrades
+      FunctionName: !Sub ${Environment}-processBybitCloseTrades
       Runtime: nodejs20.x
       Architectures:
         - x86_64
-      Handler: dist/handlers/bybit-exchange/close-bybit-trades.handler
+      Handler: dist/handlers/bybit-exchange/process-bybit-close-trades.handler
       Events:
         SQSQueueEvent:
           Type: SQS
           Properties:
-            Queue: !GetAtt closeBybitTradesQueue.Arn
+            Queue: !GetAtt processBybitCloseTradesQueue.Arn
       MemorySize: 128
       Timeout: 60
       DeadLetterQueue:
         Type: SQS
-        TargetArn: !GetAtt closeBybitTradesDLQ.Arn
+        TargetArn: !GetAtt processBybitCloseTradesDLQ.Arn
       Policies:
         - AWSLambdaBasicExecutionRole
         - Statement:
@@ -950,10 +963,35 @@ Resources:
                 - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:trading-engine-service-secrets/${Environment}*
                 - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:common-secrets/${Environment}*
                 - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:wallets-service-secrets/${Environment}*
-            # - Effect: Allow
-            #   Action:
-            #     - sqs:SendMessage
-            #     - sqs:SendMessageBatch
-            #   Resource:
-            #     - !GetAtt processBybitStopLossOrdersQueue.Arn
-            #     - !GetAtt processBybitTakeProfitOrdersQueue.Arn
+
+  processBybitCancelOrders:
+    Type: AWS::Serverless::Function
+    Properties:
+      Environment:
+        Variables:
+          ENV: !Ref Environment
+      FunctionName: !Sub ${Environment}-processBybitCancelOrders
+      Runtime: nodejs20.x
+      Architectures:
+        - x86_64
+      Handler: dist/handlers/bybit-exchange/process-bybit-cancel-orders.handler
+      Events:
+        SQSQueueEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt processBybitCancelOrdersQueue.Arn
+      MemorySize: 128
+      Timeout: 60
+      DeadLetterQueue:
+        Type: SQS
+        TargetArn: !GetAtt processBybitCancelOrdersDLQ.Arn
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource:
+                - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:trading-engine-service-secrets/${Environment}*
+                - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:common-secrets/${Environment}*
+                - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:wallets-service-secrets/${Environment}*
