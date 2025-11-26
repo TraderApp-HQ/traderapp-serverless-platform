@@ -1,258 +1,339 @@
 <mjml>
-  <mj-head>
-    <mj-title>TraderApp - New Trade Notification</mj-title>
-    <mj-preview>A new trade has been initiated successfully.</mj-preview>
+    <mj-head>
+        <mj-title>TraderApp - New Trade Notification</mj-title>
+        <mj-preview>A new trade has been initiated successfully.</mj-preview>
 
-    <mj-attributes>
-      <mj-all font-family="IBM Plex Sans, Arial, sans-serif" />
-      <mj-section padding="20px 0" />
-      <mj-text font-size="14px" line-height="1.8" color="#454648" />
-      <mj-image padding="0" align="center" />
-    </mj-attributes>
+        <mj-attributes>
+            <mj-all font-family="IBM Plex Sans, Arial, sans-serif" />
+            <mj-section padding="20px 0" />
+            <mj-text font-size="14px" line-height="1.8" color="#454648" />
+            <mj-image padding="0" align="center" />
+        </mj-attributes>
 
-    <mj-style inline="inline">
-      /* Global text styling */
-      span {
-      font-family: Manrope, Arial, sans-serif;
-      font-weight: 400;
-      font-size: 14px;
-      line-height: 1.8;
-      color: #0a0d14;
-      }
+        <mj-style inline="inline">
+            /* Global text styling */
+            span {
+                font-family: Manrope, Arial, sans-serif;
+                font-weight: 400;
+                font-size: 14px;
+                line-height: 1.8;
+                color: #0a0d14;
+            }
 
-      b {
-      font-family: Manrope;
-      font-weight: 600;
-      font-style: SemiBold;
-      font-size: 14px;
-      line-height: 1.4;
-      color: #414141;
-      }
+            b {
+                font-family: Manrope;
+                font-weight: 600;
+                font-style: SemiBold;
+                font-size: 14px;
+                line-height: 1.4;
+                color: #414141;
+            }
 
-      .baseasset {
-      display: inline-flex;
-      align-items: center;
-      font-weight: 700;
-      font-size: 14px;
-      color: #414141;
-      margin-left: 6px;
-      }
+            .baseasset {
+                display: inline-flex;
+                align-items: center;
+                font-weight: 700;
+                font-size: 14px;
+                color: #414141;
+                margin-left: 6px;
+            }
 
-      .tradeside {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 4px 8px;
-      margin-left: 8px;
-      border-radius: 4px;
-      font-family: Manrope, Arial, sans-serif;
-      font-size: 12px;
-      font-weight: 600;
-      text-transform: uppercase;
-      background-color: #fef1f2;
-      color: #ed3b3b;
-      vertical-align: middle;
-      }
+            .tradeside {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                padding: 4px 8px;
+                margin-left: 8px;
+                border-radius: 4px;
+                font-family: Manrope, Arial, sans-serif;
+                font-size: 12px;
+                font-weight: 600;
+                text-transform: uppercase;
+                background-color: #fef1f2;
+                color: #ed3b3b;
+                vertical-align: middle;
+            }
 
-      .entryprice {
-      font-weight: 500;
-      font-size: 14px;
-      color: #667085;
-      margin-left: 10px;
-      }
+            .entryprice {
+                font-weight: 500;
+                font-size: 14px;
+                color: #667085;
+                margin-left: 10px;
+            }
 
-      .estimatedloss {
-      font-weight: 500;
-      font-size: 14px;
-      color: #ed3b3b;
-      margin-left: 10px;
-      }
+            .estimatedloss {
+                font-weight: 500;
+                font-size: 14px;
+                color: #ed3b3b;
+                margin-left: 10px;
+            }
 
-      .estimatedprofit {
-      font-weight: 500;
-      font-size: 14px;
-      color: #067d55;
-      margin-left: 10px;
-      }
+            .estimatedprofit {
+                font-weight: 500;
+                font-size: 14px;
+                color: #067d55;
+                margin-left: 10px;
+            }
 
-      .platform {
-      font-family: IBM Plex Sans;
-      font-weight: 600;
-      font-size: 16px;
-      color: #414141;
-      }
+            .platform {
+                font-family: IBM Plex Sans;
+                font-weight: 600;
+                font-size: 16px;
+                color: #414141;
+            }
 
-      .name-text {
-      font-family: Manrope;
-      font-weight: 700;
-      font-size: 18px;
-      color: #08123b;
-      }
+            .name-text {
+                font-family: Manrope;
+                font-weight: 700;
+                font-size: 18px;
+                color: #08123b;
+            }
 
-      .deposit_details {
-      font-family: Manrope;
-      font-weight: 700;
-      font-size: 16px;
-      color: #0A0D14;
-      }
+            .deposit_details {
+                font-family: Manrope;
+                font-weight: 700;
+                font-size: 16px;
+                color: #0a0d14;
+            }
 
-      .remark {
-      font-weight: 400;
-      font-size: 16px;
-      color: #414141;
-      }
+            .remark {
+                font-weight: 400;
+                font-size: 16px;
+                color: #414141;
+            }
 
-      .remarkspan {
-      font-weight: 600;
-      font-size: 18px;
-      }
+            .remarkspan {
+                font-weight: 600;
+                font-size: 18px;
+            }
 
+            .details-box {
+                background-color: #f5f8ff;
+                border-radius: 8px;
+                padding: 1px 12px;
+                box-sizing: border-box;
+            }
 
-      .details-box {
-      background-color: #f5f8ff;
-      border-radius: 8px;
-      padding: 1px 12px;
-      box-sizing: border-box;
-      }
+            .social-box {
+                background-color: #f5f8ff;
+                border-radius: 8px;
+                padding: 20px;
+            }
 
-      .social-box {
-      background-color: #f5f8ff;
-      border-radius: 8px;
-      padding: 20px;
-      }
+            a {
+                color: #1836b2;
+                text-decoration: none;
+            }
 
-      a {
-      color: #1836b2;
-      text-decoration: none;
-      }
+            @media only screen and (max-width: 480px) {
+                .name-text,
+                .remark,
+                .deposit_details,
+                .content {
+                    text-align: center !important;
+                }
+            }
+        </mj-style>
+    </mj-head>
 
-      @media only screen and (max-width: 480px) {
-      .name-text,
-      .remark,
-      .deposit_details,
-      .content {
-      text-align: center !important;
-      }
-      }
-    </mj-style>
-  </mj-head>
+    <mj-body background-color="#ffffff">
+        <mj-wrapper>
+            <!-- Logo -->
+            <mj-section padding-bottom="10px">
+                <mj-column>
+                    <mj-image
+                        width="150px"
+                        src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/traderapp-logo.png"
+                        alt="TraderApp Logo"
+                    />
+                </mj-column>
+            </mj-section>
 
-  <mj-body background-color="#ffffff">
-    <mj-wrapper>
+            <!-- Banner -->
+            <mj-section padding-bottom="20px">
+                <mj-column>
+                    <mj-image
+                        src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/banners+(2).png"
+                        alt="Trade Notification Banner"
+                    />
+                </mj-column>
+            </mj-section>
 
-      <!-- Logo -->
-      <mj-section padding-bottom="10px">
-        <mj-column>
-          <mj-image width="150px" src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/traderapp-logo.png" alt="TraderApp Logo" />
-        </mj-column>
-      </mj-section>
+            <!-- Greeting -->
+            <mj-section padding="0">
+                <mj-column>
+                    <mj-text css-class="name-text" padding="0 0 8px 0">
+                        Hello {USER_NAME},
+                    </mj-text>
+                </mj-column>
+            </mj-section>
 
-      <!-- Banner -->
-      <mj-section padding-bottom="20px">
-        <mj-column>
-          <mj-image src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/banners+(2).png" alt="Trade Notification Banner" />
-        </mj-column>
-      </mj-section>
+            <!-- Main Message -->
+            <mj-section padding="0 0 16px 0">
+                <mj-column>
+                    <mj-text class="content" padding="0">
+                        A new trade has just been copied to your
+                        <span class="platform">{PLATFORM_NAME} account</span>.
+                        Below are the trade details for your reference.
+                        <br /><br />
+                        Please note that the trade has only been initiated and
+                        is not active yet. We will notify you once the order has
+                        been filled and the trade becomes active.
+                    </mj-text>
+                </mj-column>
+            </mj-section>
 
-      <!-- Greeting -->
-      <mj-section padding="0">
-        <mj-column>
-          <mj-text css-class="name-text" padding="0 0 8px 0">
-            Hello {USER_NAME},
-          </mj-text>
-        </mj-column>
-      </mj-section>
+            <!-- Trade Summary -->
+            <mj-section css-class="details-box">
+                <mj-column>
+                    <mj-text css-class="deposit_details" padding="0 0 12px 0">
+                        Trade Summary
+                    </mj-text>
 
-      <!-- Main Message -->
-      <mj-section padding="0 0 16px 0">
-        <mj-column>
-          <mj-text class="content" padding="0">
-            A new trade has just been copied to your
-            <span class="platform">{PLATFORM_NAME} account</span>.
-            Below are the trade details for your reference.
-            <br /><br />
-            Please note that the trade has only been initiated and is not active yet.
-            We will notify you once the order has been filled and the trade becomes active.
-          </mj-text>
-        </mj-column>
-      </mj-section>
+                    <mj-text font-size="14px" line-height="1.9" padding="0">
+                        <p
+                            style="
+                                margin: 0 0 6px 0;
+                                display: flex;
+                                align-items: center;
+                            "
+                        >
+                            <mj-text css-class="b">Asset:</mj-text>
+                            <span
+                                style="
+                                    display: inline-flex;
+                                    align-items: center;
+                                    margin-left: 10px;
+                                "
+                            >
+                                <img
+                                    src="{BASE_ASSET_LOGO_URL}"
+                                    alt=""
+                                    width="20"
+                                    height="20"
+                                    style="vertical-align: middle"
+                                />
+                                <span class="baseasset"
+                                    >{BASE_ASSET}/{QUOTE_CURRENCY}</span
+                                >
+                                <span class="tradeside">{TRADE_SIDE}</span>
+                            </span>
+                        </p>
 
-      <!-- Trade Summary -->
-      <mj-section css-class="details-box">
-        <mj-column>
-          <mj-text css-class="deposit_details" padding="0 0 12px 0">
-            Trade Summary
-          </mj-text>
+                        <p
+                            style="
+                                margin: 0 0 6px 0;
+                                display: flex;
+                                align-items: center;
+                            "
+                        >
+                            <mj-text css-class="b">Entry Price:</mj-text>
+                            <span class="entryprice">{ENTRY_PRICE}</span>
+                        </p>
 
-          <mj-text font-size="14px" line-height="1.9" padding="0">
-            <p style="margin: 0 0 6px 0; display: flex; align-items: center;">
-              <mj-text css-class="b">Asset:</mj-text>
-              <span style="display: inline-flex; align-items: center; margin-left: 10px;">
-                <img src="{BASE_ASSET_LOGO_URL}" alt="" width="20" height="20" style="vertical-align: middle;" />
-                <span class="baseasset">{BASE_ASSET}/{QUOTE_CURRENCY}</span>
-                <span class="tradeside">{TRADE_SIDE}</span>
-              </span>
-            </p>
+                        <p
+                            style="
+                                margin: 0 0 6px 0;
+                                display: flex;
+                                align-items: center;
+                            "
+                        >
+                            <mj-text css-class="b">Stop Loss:</mj-text>
+                            <span class="entryprice">{STOP_LOSS}</span>
+                        </p>
 
-            <p style="margin: 0 0 6px 0; display: flex; align-items: center;">
-              <mj-text css-class="b">Entry Price:</mj-text>
-              <span class="entryprice">{ENTRY_PRICE}</span>
-            </p>
+                        <p
+                            style="
+                                margin: 0 0 6px 0;
+                                display: flex;
+                                align-items: center;
+                            "
+                        >
+                            <mj-text css-class="b">Estimated Loss:</mj-text>
+                            <span class="estimatedloss"
+                                >{ESTIMATED_LOSS} USDT</span
+                            >
+                        </p>
 
-            <p style="margin: 0 0 6px 0; display: flex; align-items: center;">
-              <mj-text css-class="b">Stop Loss:</mj-text>
-              <span class="entryprice">{STOP_LOSS}</span>
-            </p>
+                        <p
+                            style="
+                                margin: 0 0 6px 0;
+                                display: flex;
+                                align-items: center;
+                            "
+                        >
+                            <mj-text css-class="b">Estimated Profit:</mj-text>
+                            <span class="estimatedprofit"
+                                >{ESTIMATED_PROFIT} USDT</span
+                            >
+                        </p>
 
-            <p style="margin: 0 0 6px 0; display: flex; align-items: center;">
-              <mj-text css-class="b">Estimated Loss:</mj-text>
-              <span class="estimatedloss">{ESTIMATED_LOSS} USDT</span>
-            </p>
+                        <p
+                            style="
+                                margin: 0;
+                                display: flex;
+                                align-items: center;
+                            "
+                        >
+                            <mj-text css-class="b">Date:</mj-text>
+                            <span class="entryprice">{DATE_TIME}</span>
+                        </p>
+                    </mj-text>
+                </mj-column>
+            </mj-section>
 
-            <p style="margin: 0 0 6px 0; display: flex; align-items: center;">
-              <mj-text css-class="b">Estimated Profit:</mj-text>
-              <span class="estimatedprofit">{ESTIMATED_PROFIT} USDT</span>
-            </p>
+            <!-- Support Message -->
+            <mj-section padding="16px 0">
+                <mj-column>
+                    <mj-text class="content" padding="0">
+                        Thanks for choosing TraderApp — let’s make every trade
+                        count!
+                    </mj-text>
+                </mj-column>
+            </mj-section>
 
-            <p style="margin: 0; display: flex; align-items: center;">
-              <mj-text css-class="b">Date:</mj-text>
-              <span class="entryprice">{DATE_TIME}</span>
-            </p>
-          </mj-text>
-        </mj-column>
-      </mj-section>
+            <!-- Closing -->
+            <mj-section padding="0 0 16px 0">
+                <mj-column>
+                    <mj-text class="remark" padding="0">
+                        Warm regards,<br />
+                        <span class="remarkspan">The TraderApp Team</span>
+                    </mj-text>
+                </mj-column>
+            </mj-section>
 
-      <!-- Support Message -->
-      <mj-section padding="16px 0">
-        <mj-column>
-          <mj-text class="content" padding="0">
-            Thanks for choosing TraderApp — let’s make every trade count!
-          </mj-text>
-        </mj-column>
-      </mj-section>
-
-      <!-- Closing -->
-      <mj-section padding="0 0 16px 0">
-        <mj-column>
-          <mj-text class="remark" padding="0">
-            Warm regards,<br />
-            <span class="remarkspan">The TraderApp Team</span>
-          </mj-text>
-        </mj-column>
-      </mj-section>
-
-      <!-- Social Links -->
-      <mj-section css-class="social-box" padding="20px 0">
-        <mj-column>
-          <mj-social align="center" mode="horizontal" icon-size="32px" padding="0">
-            <mj-social-element href="https://x.com/traderapp" src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/twitter22.png" alt="Twitter" />
-            <mj-social-element href="https://www.facebook.com/traderappofficial?mibextid=ZbWKwL" src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/facebook22.png" alt="Facebook" />
-            <mj-social-element href="https://instagram.com/traderapphq" src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/ig22.png" alt="Instagram" />
-            <mj-social-element href="https://traderapp.finance/#" src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/tiktok22.png" alt="TikTok" />
-          </mj-social>
-        </mj-column>
-      </mj-section>
-
-    </mj-wrapper>
-  </mj-body>
+            <!-- Social Links -->
+            <mj-section css-class="social-box" padding="20px 0">
+                <mj-column>
+                    <mj-social
+                        align="center"
+                        mode="horizontal"
+                        icon-size="32px"
+                        padding="0"
+                    >
+                        <mj-social-element
+                            href="https://x.com/traderapp"
+                            src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/twitter22.png"
+                            alt="Twitter"
+                        />
+                        <mj-social-element
+                            href="https://www.facebook.com/traderappofficial?mibextid=ZbWKwL"
+                            src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/facebook22.png"
+                            alt="Facebook"
+                        />
+                        <mj-social-element
+                            href="https://instagram.com/traderapphq"
+                            src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/ig22.png"
+                            alt="Instagram"
+                        />
+                        <mj-social-element
+                            href="https://traderapp.finance/#"
+                            src="https://traderapp-assets.s3.eu-west-1.amazonaws.com/email/tiktok22.png"
+                            alt="TikTok"
+                        />
+                    </mj-social>
+                </mj-column>
+            </mj-section>
+        </mj-wrapper>
+    </mj-body>
 </mjml>

@@ -52,7 +52,6 @@ export interface BybitPosition {
         side: string;
         size: string;
         positionValue: string;
-        entryPrice: string;
         tradeMode: number;
         leverage: string;
         positionIdx: number;
@@ -61,6 +60,30 @@ export interface BybitPosition {
         markPrice: string;
         liqPrice: string;
         bustPrice: string;
+        autoAddMargin: number;
+        avgPrice: string;
+        riskLimitValue: string;
+        takeProfit: string;
+        isReduceOnly: boolean;
+        positionIMByMp: string;
+        tpslMode: string;
+        riskId: number;
+        trailingStop: string;
+        liqPriceByMp: string;
+        adlRankIndicator: number;
+        positionMM: string;
+        createdTime: string;
+        positionIM: string;
+        positionMMByMp: string;
+        seq: number;
+        updatedTime: string;
+        positionBalance: string;
+        leverageSysUpdatedTime: string;
+        curRealisedPnl: string;
+        positionStatus: string;
+        mmrSysUpdatedTime: string;
+        stopLoss: string;
+        sessionAvgPrice: string;
     }>;
 }
 
@@ -118,7 +141,7 @@ export interface BybitOrderDetails {
     cumExecValue: string;
     cumExecFee: string;
     avgPrice: string;
-    orderStatus: string;
+    orderStatus: | "New" | "PartiallyFilled" | "Untriggered" | "Filled" | "Cancelled" | "Rejected" | "Deactivated" | "Triggered";
     updatedTime: string;
     createdTime: string;
 }

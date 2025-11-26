@@ -1459,8 +1459,10 @@ describe("TradingEngineService", () => {
             // expect(result.baseQuantity % 0.001).toBeCloseTo(0, 10);
 
             // Verify the number of decimal places matches stepSize precision
-            const decimalPlaces = result.baseQuantity.toString().split('.')[1]?.length || 0;
-            const stepSizeDecimals = 0.001.toString().split('.')[1]?.length || 0;
+            const decimalPlaces =
+                result.baseQuantity.toString().split(".")[1]?.length || 0;
+            const stepSizeDecimals =
+                (0.001).toString().split(".")[1]?.length || 0;
             expect(decimalPlaces).toBeLessThanOrEqual(stepSizeDecimals);
 
             // Additional checks for other returned values

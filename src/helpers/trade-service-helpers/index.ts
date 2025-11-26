@@ -519,7 +519,6 @@ export const publishProcessedTradeToQueue = async (
 ) => {
     const { userId, processedTrade, queueUrl, pnlAmount } = input;
 
-
     const user = await UsersService.getUserById(userId);
     if (!user) {
         throw new Error(`User with the ID ${userId} not found`);
@@ -705,11 +704,17 @@ export const handleFailedTrades = async (
                     // Get invoices based on tradeIde and invoice types
                     const invoices = await walletsService.getInvoices({
                         tradeId: failedOrder.tradeId.toString(),
-                        invoiceTypes: [InvoiceType.TRADING_FEE, InvoiceType.PROFIT_SHARE],
+                        invoiceTypes: [
+                            InvoiceType.TRADING_FEE,
+                            InvoiceType.PROFIT_SHARE,
+                        ],
                     });
 
                     // Compute total amount to unlock
-                    const totalAmountToUnlock = invoices.reduce((acc, invoice) => acc + invoice.amountPaid, 0);
+                    const totalAmountToUnlock = invoices.reduce(
+                        (acc, invoice) => acc + invoice.amountPaid,
+                        0
+                    );
                     if (totalAmountToUnlock > 0) {
                         // unlock user balance
                         await walletsService.unlockUserBalance({
@@ -721,12 +726,16 @@ export const handleFailedTrades = async (
                     }
 
                     // archive invoices
-                    await Promise.allSettled(invoices.map(async (invoice) => {
-                        await walletsService.updateInvoice({
-                            invoiceId: (invoice._id as mongoose.Types.ObjectId).toString(),
-                            status: InvoiceStatus.ARCHIVED,
-                        });
-                    }));
+                    await Promise.allSettled(
+                        invoices.map(async (invoice) => {
+                            await walletsService.updateInvoice({
+                                invoiceId: (
+                                    invoice._id as mongoose.Types.ObjectId
+                                ).toString(),
+                                status: InvoiceStatus.ARCHIVED,
+                            });
+                        })
+                    );
 
                     return {
                         messageId: queueMessage.messageId,

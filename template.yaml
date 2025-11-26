@@ -243,6 +243,71 @@ Resources:
     Properties:
       QueueName: !Sub ${Environment}-userAccountActivationFeeDLQ
 
+  processBybitOrdersActivationQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${Environment}-processBybitOrdersActivationQueue
+      VisibilityTimeout: 60
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt processBybitOrdersActivationDLQ.Arn
+        maxReceiveCount: 3
+  processBybitOrdersActivationDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${Environment}-processBybitOrdersActivationDLQ
+
+  processBybitStopLossOrdersQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${Environment}-processBybitStopLossOrdersQueue
+      VisibilityTimeout: 60
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt processBybitStopLossOrdersDLQ.Arn
+        maxReceiveCount: 3
+  processBybitStopLossOrdersDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${Environment}-processBybitStopLossOrdersDLQ
+
+  processBybitTakeProfitOrdersQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${Environment}-processBybitTakeProfitOrdersQueue
+      VisibilityTimeout: 60
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt processBybitTakeProfitOrdersDLQ.Arn
+        maxReceiveCount: 3
+  processBybitTakeProfitOrdersDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${Environment}-processBybitTakeProfitOrdersDLQ
+
+  processBybitCloseTradesQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${Environment}-processBybitCloseTradesQueue
+      VisibilityTimeout: 60
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt processBybitCloseTradesDLQ.Arn
+        maxReceiveCount: 3
+  processBybitCloseTradesDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${Environment}-processBybitCloseTradesDLQ
+      
+  processBybitCancelOrdersQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${Environment}-processBybitCancelOrdersQueue
+      VisibilityTimeout: 60
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt processBybitCancelOrdersDLQ.Arn
+        maxReceiveCount: 3
+  processBybitCancelOrdersDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${Environment}-processBybitCancelOrdersDLQ
+
 # create lambda functions
   sendEmailOtp:
     Type: AWS::Serverless::Function
@@ -801,3 +866,185 @@ Resources:
               Resource:
                 - !GetAtt trackUserOnboardingChecklistQueue.Arn
                 - !GetAtt emailNotificationsQueue.Arn
+
+
+  processBybitOrdersActivation:
+    Type: AWS::Serverless::Function
+    Properties:
+      Environment:
+        Variables:
+          ENV: !Ref Environment
+      FunctionName: !Sub ${Environment}-processBybitOrdersActivation
+      Runtime: nodejs20.x
+      Architectures:
+        - x86_64
+      Handler: dist/handlers/bybit-exchange/process-bybit-orders-activation.handler
+      Events:
+        SQSQueueEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt processBybitOrdersActivationQueue.Arn
+      MemorySize: 128
+      Timeout: 60
+      DeadLetterQueue:
+        Type: SQS
+        TargetArn: !GetAtt processBybitOrdersActivationDLQ.Arn
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource:
+                - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:trading-engine-service-secrets/${Environment}*
+                - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:common-secrets/${Environment}*
+                - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:wallets-service-secrets/${Environment}*
+            - Effect: Allow
+              Action:
+                - sqs:SendMessage
+                - sqs:SendMessageBatch
+              Resource:
+                - !GetAtt processBybitStopLossOrdersQueue.Arn
+                - !GetAtt processBybitTakeProfitOrdersQueue.Arn
+
+  processBybitStopLossOrders:
+    Type: AWS::Serverless::Function
+    Properties:
+      Environment:
+        Variables:
+          ENV: !Ref Environment
+      FunctionName: !Sub ${Environment}-processBybitStopLossOrders
+      Runtime: nodejs20.x
+      Architectures:
+        - x86_64
+      Handler: dist/handlers/bybit-exchange/process-bybit-stop-loss-orders.handler
+      Events:
+        SQSQueueEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt processBybitStopLossOrdersQueue.Arn
+      MemorySize: 128
+      Timeout: 60
+      DeadLetterQueue:
+        Type: SQS
+        TargetArn: !GetAtt processBybitStopLossOrdersDLQ.Arn
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource:
+                - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:trading-engine-service-secrets/${Environment}*
+                - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:common-secrets/${Environment}*
+                - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:wallets-service-secrets/${Environment}*
+            # - Effect: Allow
+            #   Action:
+            #     - sqs:SendMessage
+            #     - sqs:SendMessageBatch
+            #   Resource:
+            #     - !GetAtt processBybitStopLossOrdersQueue.Arn
+            #     - !GetAtt processBybitTakeProfitOrdersQueue.Arn
+
+  processBybitTakeProfitOrders:
+    Type: AWS::Serverless::Function
+    Properties:
+      Environment:
+        Variables:
+          ENV: !Ref Environment
+      FunctionName: !Sub ${Environment}-processBybitTakeProfitOrders
+      Runtime: nodejs20.x
+      Architectures:
+        - x86_64
+      Handler: dist/handlers/bybit-exchange/process-bybit-take-profit-orders.handler
+      Events:
+        SQSQueueEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt processBybitTakeProfitOrdersQueue.Arn
+      MemorySize: 128
+      Timeout: 60
+      DeadLetterQueue:
+        Type: SQS
+        TargetArn: !GetAtt processBybitTakeProfitOrdersDLQ.Arn
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource:
+                - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:trading-engine-service-secrets/${Environment}*
+                - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:common-secrets/${Environment}*
+                - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:wallets-service-secrets/${Environment}*
+            # - Effect: Allow
+            #   Action:
+            #     - sqs:SendMessage
+            #     - sqs:SendMessageBatch
+            #   Resource:
+            #     - !GetAtt processBybitStopLossOrdersQueue.Arn
+            #     - !GetAtt processBybitTakeProfitOrdersQueue.Arn
+
+  processBybitCloseTrades:
+    Type: AWS::Serverless::Function
+    Properties:
+      Environment:
+        Variables:
+          ENV: !Ref Environment
+      FunctionName: !Sub ${Environment}-processBybitCloseTrades
+      Runtime: nodejs20.x
+      Architectures:
+        - x86_64
+      Handler: dist/handlers/bybit-exchange/process-bybit-close-trades.handler
+      Events:
+        SQSQueueEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt processBybitCloseTradesQueue.Arn
+      MemorySize: 128
+      Timeout: 60
+      DeadLetterQueue:
+        Type: SQS
+        TargetArn: !GetAtt processBybitCloseTradesDLQ.Arn
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource:
+                - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:trading-engine-service-secrets/${Environment}*
+                - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:common-secrets/${Environment}*
+                - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:wallets-service-secrets/${Environment}*
+
+  processBybitCancelOrders:
+    Type: AWS::Serverless::Function
+    Properties:
+      Environment:
+        Variables:
+          ENV: !Ref Environment
+      FunctionName: !Sub ${Environment}-processBybitCancelOrders
+      Runtime: nodejs20.x
+      Architectures:
+        - x86_64
+      Handler: dist/handlers/bybit-exchange/process-bybit-cancel-orders.handler
+      Events:
+        SQSQueueEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt processBybitCancelOrdersQueue.Arn
+      MemorySize: 128
+      Timeout: 60
+      DeadLetterQueue:
+        Type: SQS
+        TargetArn: !GetAtt processBybitCancelOrdersDLQ.Arn
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource:
+                - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:trading-engine-service-secrets/${Environment}*
+                - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:common-secrets/${Environment}*
+                - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:wallets-service-secrets/${Environment}*

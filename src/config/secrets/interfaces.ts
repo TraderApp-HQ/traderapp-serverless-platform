@@ -21,6 +21,10 @@ export interface ITradingEngineServiceSecrets {
     PROCESS_BYBIT_ORDERS_QUEUE: string;
     HANDLE_PROCESSED_TRADES_QUEUE: string;
     HANDLE_FAILED_TRADES_QUEUE: string;
+    PROCESS_BYBIT_ORDERS_ACTIVATION_QUEUE: string;
+    PROCESS_BYBIT_STOP_LOSS_ORDERS_QUEUE: string;
+    PROCESS_BYBIT_TAKE_PROFIT_ORDERS_QUEUE: string;
+    PROCESS_BYBIT_CLOSE_TRADES_QUEUE: string;
 }
 export interface IWalletsServiceSecrets {
     CRYPTOPAY_BASE_URL: string;

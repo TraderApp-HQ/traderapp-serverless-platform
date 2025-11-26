@@ -92,22 +92,22 @@ export const formatEmailMessageBody = ({
             });
         }
 
-        case EventTemplate.SEND_TRADE_INITIATED_NOTIFICATION:{
+        case EventTemplate.SEND_TRADE_INITIATED_NOTIFICATION: {
             return applyReplacements(SendTradeInitiatedNotificationTemplate, {
-               USER_NAME: recipient.firstName,
-               BASE_ASSET: metadata?.baseAsset,
-               BASE_ASSET_LOGO_URL: metadata?.baseAssetLogoUrl,
-               QUOTE_CURRENCY: metadata?.quoteCurrency,
-               ENTRY_PRICE: metadata?.entryPrice?.toString(),
-               STOP_LOSS: metadata?.stopLoss?.toString(),
-               TRADE_SIDE: metadata?.tradeSide,
-               DATE_TIME: metadata?.dateTime,
-               ESTIMATED_PROFIT: metadata?.estimatedProfit?.toString(),
-               ESTIMATED_LOSS: metadata?.estimatedLoss?.toString(),
-               PLATFORM_NAME: metadata?.platformName
-                    ? metadata?.platformName?.charAt(0).toUpperCase() + metadata?.platformName?.slice(1).toLowerCase()
+                USER_NAME: recipient.firstName,
+                BASE_ASSET: metadata?.baseAsset,
+                BASE_ASSET_LOGO_URL: metadata?.baseAssetLogoUrl,
+                QUOTE_CURRENCY: metadata?.quoteCurrency,
+                ENTRY_PRICE: metadata?.entryPrice?.toString(),
+                STOP_LOSS: metadata?.stopLoss?.toString(),
+                TRADE_SIDE: metadata?.tradeSide,
+                DATE_TIME: metadata?.dateTime,
+                ESTIMATED_PROFIT: metadata?.estimatedProfit?.toString(),
+                ESTIMATED_LOSS: metadata?.estimatedLoss?.toString(),
+                PLATFORM_NAME: metadata?.platformName
+                    ? metadata?.platformName?.charAt(0).toUpperCase() +
+                      metadata?.platformName?.slice(1).toLowerCase()
                     : undefined,
-
             });
         }
 
