@@ -51,7 +51,7 @@ describe("processBinanceTrades", () => {
             "https://sqs.us-east-1.amazonaws.com/123/bybit-stop-loss-orders",
         PROCESS_BYBIT_TAKE_PROFIT_ORDERS_QUEUE:
             "https://sqs.us-east-1.amazonaws.com/123/bybit-take-profit-orders",
-        CLOSE_BYBIT_TRADES_QUEUE:
+        PROCESS_BYBIT_CLOSE_TRADES_QUEUE:
             "https://sqs.us-east-1.amazonaws.com/123/close-bybit-trades",
     };
 

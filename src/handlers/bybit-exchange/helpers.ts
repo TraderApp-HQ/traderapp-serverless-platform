@@ -45,16 +45,12 @@ export const processBybitTrades = async (
         const bybitTradeProcessingResults = await Promise.allSettled(
             queueMessages.map(async (queueMessage) => {
                 const userTrade = queueMessage.body;
-                // console.log("##################userTrade", { userTrade });
                 try {
                     const apiKey = decrypt(userTrade.apiKey, decryptionKey);
                     const apiSecret = decrypt(
                         userTrade.apiSecret,
                         decryptionKey
                     );
-
-                    // console.log("##################apiKey", { apiKey });
-                    // console.log("##################apiSecret", { apiSecret });
 
                     // Call Binance client
                     const environment =
@@ -64,7 +60,6 @@ export const processBybitTrades = async (
                         apiSecret,
                         environment,
                     });
-                    // console.log("##################after binanceClient creation");
 
                     // Close open position if it exists
                     const openPosition = await bybitClient.getOpenPosition(
@@ -82,14 +77,14 @@ export const processBybitTrades = async (
                     const side = (userTrade.tradeSide === TradeSide.LONG
                         ? "Buy"
                         : "Sell") as unknown as BybitOrderSide;
-                    // console.log("############### after trade side")
+
                     let bybitTrade: BybitOrderResponse;
 
                     if (
                         userTrade.orderPlacementType ===
                         OrderPlacementType.LIMIT
                     ) {
-                        console.log("##################placing limit order");
+                        console.log("################## placing limit order ################");
                         bybitTrade = await bybitClient.placeLimitOrder({
                             symbol: `${userTrade.baseAsset}${userTrade.quoteCurrency}`,
                             side,
@@ -101,7 +96,7 @@ export const processBybitTrades = async (
                         userTrade.orderPlacementType ===
                         OrderPlacementType.MARKET
                     ) {
-                        console.log("##################placing market order");
+                        console.log("################## placing market order ################");
                         bybitTrade = await bybitClient.placeMarketOrder({
                             symbol: `${userTrade.baseAsset}${userTrade.quoteCurrency}`,
                             side,
