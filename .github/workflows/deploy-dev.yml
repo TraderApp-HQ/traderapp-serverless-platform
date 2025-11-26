@@ -65,8 +65,8 @@ jobs:
         run: npm run build
       
       - name: Deploy the service
-        # run: sam deploy --config-env dev
-        run: npm run deploy
+        run: sam deploy --config-env dev
+        # run: npm run deploy
 
       - name: Deploy secrets
         run: npm run deploy-secrets dev
