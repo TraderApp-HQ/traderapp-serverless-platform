@@ -967,7 +967,7 @@ export class TradingEngineService {
                         originalBaseQuantity: baseQuantity,
                         originalQuoteTotal: quoteTotal,
                         originalEstimatedProfit: estimatedProfit,
-                        originalEstimatedLoss: estimatedLoss
+                        originalEstimatedLoss: estimatedLoss,
                     },
                 }
             );
@@ -1079,7 +1079,9 @@ export class TradingEngineService {
                 }
             );
 
-            log.info(`Unset trade take profit successfully: tradeId === ${tradeId}`);
+            log.info(
+                `Unset trade take profit successfully: tradeId === ${tradeId}`
+            );
             return updatedTrade;
         } catch (error) {
             console.error("Error unsetting trade take profit:", {
@@ -1089,7 +1091,6 @@ export class TradingEngineService {
             throw error;
         }
     }
-
 
     /**
      * Get a trade by ID
