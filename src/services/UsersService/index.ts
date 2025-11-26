@@ -169,7 +169,7 @@ export class UsersService {
                                 UserOnboardingChecklist.SHOW_ONBOARDING_STEPS &&
                                 !user[onboardingChecklistItem]) ||
                             onboardingChecklistItem ===
-                            UserOnboardingChecklist.IS_PERSONAL_ATC_FUNDED
+                                UserOnboardingChecklist.IS_PERSONAL_ATC_FUNDED
                         ) {
                             // Update the user onboarding task field
                             const updatedUser =
@@ -204,8 +204,8 @@ export class UsersService {
                                             ...(showOnboardingSteps &&
                                                 isSocialAccountConnected &&
                                                 isOnboardingTaskDone && {
-                                                showOnboardingSteps: false,
-                                            }),
+                                                    showOnboardingSteps: false,
+                                                }),
                                             // and update the trading status of the user depending on the personal ATC status after checking isEmailVerified -> isFirstDepositMade -> isTradingAccountConnected
                                             tradingStatus: isPersonalATCFunded
                                                 ? TradingStatus.ACTIVE
@@ -218,7 +218,7 @@ export class UsersService {
                             // The block below accounts for manual dismisal of the onboarding tasks using the optional dismiss button after the comulsory tasks are completed.
                         } else if (
                             onboardingChecklistItem ===
-                            UserOnboardingChecklist.SHOW_ONBOARDING_STEPS &&
+                                UserOnboardingChecklist.SHOW_ONBOARDING_STEPS &&
                             user[onboardingChecklistItem]
                         ) {
                             await usersCollection.updateOne(
@@ -312,7 +312,10 @@ export class UsersService {
 
             return user;
         } catch (error) {
-            console.error(`Failed to update activation fee for user ${userId}:`, { error });
+            console.error(
+                `Failed to update activation fee for user ${userId}:`,
+                { error }
+            );
             throw error;
         }
     }

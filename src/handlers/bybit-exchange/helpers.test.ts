@@ -42,8 +42,9 @@ const mockBybitFuturesClient = BybitFuturesClient as jest.MockedClass<
 const mockPublishMessageToQueue = publishMessageToQueue as jest.MockedFunction<
     typeof publishMessageToQueue
 >;
-const mockTradingEngineService =
-    TradingEngineService as jest.MockedClass<typeof TradingEngineService>;
+const mockTradingEngineService = TradingEngineService as jest.MockedClass<
+    typeof TradingEngineService
+>;
 const mockDecrypt = decrypt as jest.MockedFunction<typeof decrypt>;
 const mockGetTradingEngineServiceSecrets =
     getTradingEngineServiceSecrets as jest.MockedFunction<
@@ -159,7 +160,10 @@ const setupBybitMocks = (
     mockBybitInstance.setPositionStopLossTakeProfit?.mockResolvedValue({});
 
     mockBybitFuturesClient.mockImplementation(
-        () => mockBybitInstance as unknown as InstanceType<typeof BybitFuturesClient>
+        () =>
+            mockBybitInstance as unknown as InstanceType<
+                typeof BybitFuturesClient
+            >
     );
 
     return mockBybitInstance;
@@ -191,9 +195,7 @@ const setupTradingEngineMocks = (): MockTradingEngineInstance => {
     return mockTradingEngineInstance;
 };
 
-const createMockTrade = (
-    overrides: Partial<ITrade> = {}
-): ITrade => {
+const createMockTrade = (overrides: Partial<ITrade> = {}): ITrade => {
     const trade = {
         _id: new mongoose.Types.ObjectId(),
         id: "trade-1",
@@ -349,8 +351,14 @@ describe("Bybit Exchange Helpers", () => {
             });
 
             const queueMessages = [
-                createMockQueueMessage<IUserTradeAllocation>(userTrade1, "msg-1"),
-                createMockQueueMessage<IUserTradeAllocation>(userTrade2, "msg-2"),
+                createMockQueueMessage<IUserTradeAllocation>(
+                    userTrade1,
+                    "msg-1"
+                ),
+                createMockQueueMessage<IUserTradeAllocation>(
+                    userTrade2,
+                    "msg-2"
+                ),
             ];
 
             setupTradingEngineMocks();
@@ -381,9 +389,7 @@ describe("Bybit Exchange Helpers", () => {
             const result = await processBybitOrdersActivation([queueMessage]);
 
             expect(result.successMessageIds).toContain("msg-1");
-            expect(
-                mockTradingEngineInstance.updateTrade
-            ).toHaveBeenCalledWith({
+            expect(mockTradingEngineInstance.updateTrade).toHaveBeenCalledWith({
                 tradeId: trade._id?.toString(),
                 updateData: {
                     status: TradeStatus.ACTIVE,
@@ -430,9 +436,7 @@ describe("Bybit Exchange Helpers", () => {
                 symbol: "BTCUSDT",
                 stopLoss: "49000",
             });
-            expect(
-                mockTradingEngineInstance.updateTrade
-            ).toHaveBeenCalled();
+            expect(mockTradingEngineInstance.updateTrade).toHaveBeenCalled();
         });
 
         it("should skip if no open position exists", async () => {
@@ -448,9 +452,7 @@ describe("Bybit Exchange Helpers", () => {
             expect(
                 mockBybitInstance.setPositionStopLossTakeProfit
             ).not.toHaveBeenCalled();
-            expect(
-                mockTradingEngineInstance.updateTrade
-            ).toHaveBeenCalled();
+            expect(mockTradingEngineInstance.updateTrade).toHaveBeenCalled();
         });
 
         it("should handle API errors gracefully", async () => {
@@ -491,9 +493,7 @@ describe("Bybit Exchange Helpers", () => {
                 symbol: "BTCUSDT",
                 takeProfit: "51000",
             });
-            expect(
-                mockTradingEngineInstance.updateTrade
-            ).toHaveBeenCalled();
+            expect(mockTradingEngineInstance.updateTrade).toHaveBeenCalled();
         });
 
         it("should handle missing take profit price", async () => {
@@ -549,12 +549,10 @@ describe("Bybit Exchange Helpers", () => {
             expect(result.successMessageIds).toContain("msg-1");
             expect(mockBybitInstance.closePosition).toHaveBeenCalledWith({
                 symbol: "BTCUSDT",
-                side: "Sell",
+                side: "Buy",
                 qty: "0.01",
             });
-            expect(
-                mockTradingEngineInstance.updateTrade
-            ).toHaveBeenCalledWith({
+            expect(mockTradingEngineInstance.updateTrade).toHaveBeenCalledWith({
                 tradeId: trade._id?.toString(),
                 updateData: { status: TradeStatus.CLOSED },
             });
@@ -591,9 +589,7 @@ describe("Bybit Exchange Helpers", () => {
                 side: expect.any(String),
                 qty: "0.01",
             });
-            expect(
-                mockTradingEngineInstance.updateTrade
-            ).toHaveBeenCalledWith({
+            expect(mockTradingEngineInstance.updateTrade).toHaveBeenCalledWith({
                 tradeId: trade._id?.toString(),
                 updateData: expect.objectContaining({
                     baseQuantity: 0.01,
@@ -651,7 +647,7 @@ describe("Bybit Exchange Helpers", () => {
             expect(result.successMessageIds).toContain("msg-1");
             expect(mockBybitInstance.closePosition).toHaveBeenCalledWith({
                 symbol: "ETHUSDT",
-                side: "Buy",
+                side: "Sell",
                 qty: "0.05",
             });
         });
@@ -690,9 +686,7 @@ describe("Bybit Exchange Helpers", () => {
                 orderId: "ext-order-123",
                 orderStatus: "New",
             });
-            mockBybitInstance.cancelOrder = jest
-                .fn()
-                .mockResolvedValue({});
+            mockBybitInstance.cancelOrder = jest.fn().mockResolvedValue({});
 
             const result = await processBybitCancelOrders([queueMessage]);
 
@@ -701,9 +695,7 @@ describe("Bybit Exchange Helpers", () => {
                 symbol: "BTCUSDT",
                 orderId: "ext-order-123",
             });
-            expect(
-                mockTradingEngineInstance.updateOrder
-            ).toHaveBeenCalledWith(
+            expect(mockTradingEngineInstance.updateOrder).toHaveBeenCalledWith(
                 order._id?.toString(),
                 expect.objectContaining({
                     status: OrderStatus.CANCELED,
@@ -718,12 +710,10 @@ describe("Bybit Exchange Helpers", () => {
                 })
             );
 
-            expect(
-                mockTradingEngineInstance.updateTrade
-            ).toHaveBeenCalledWith({
+            expect(mockTradingEngineInstance.updateTrade).toHaveBeenCalledWith({
                 tradeId: order.tradeId?.toString(),
                 updateData: expect.objectContaining({
-                    status: TradeStatus.CANCELED
+                    status: TradeStatus.CANCELED,
                 }),
             });
         });
@@ -759,9 +749,7 @@ describe("Bybit Exchange Helpers", () => {
                 orderId: "ext-order-456",
                 orderStatus: "PartiallyFilled",
             });
-            mockBybitInstance.cancelOrder = jest
-                .fn()
-                .mockResolvedValue({});
+            mockBybitInstance.cancelOrder = jest.fn().mockResolvedValue({});
 
             const result = await processBybitCancelOrders([queueMessage]);
 
@@ -801,18 +789,14 @@ describe("Bybit Exchange Helpers", () => {
                 orderId: "ext-order-789",
                 orderStatus: "Filled",
             });
-            mockBybitInstance.cancelOrder = jest
-                .fn()
-                .mockResolvedValue({});
+            mockBybitInstance.cancelOrder = jest.fn().mockResolvedValue({});
 
             const result = await processBybitCancelOrders([queueMessage]);
 
             expect(result.successMessageIds).toContain("msg-1");
             // Cancel should not be called for filled orders
             expect(mockBybitInstance.cancelOrder).not.toHaveBeenCalled();
-            expect(
-                mockTradingEngineInstance.updateOrder
-            ).toHaveBeenCalledWith(
+            expect(mockTradingEngineInstance.updateOrder).toHaveBeenCalledWith(
                 order._id?.toString(),
                 expect.objectContaining({
                     status: OrderStatus.CANCELED,
@@ -866,7 +850,10 @@ describe("Bybit Exchange Helpers", () => {
             };
 
             mockBybitFuturesClient.mockImplementation(
-                () => mockBybitInstance as unknown as InstanceType<typeof BybitFuturesClient>
+                () =>
+                    mockBybitInstance as unknown as InstanceType<
+                        typeof BybitFuturesClient
+                    >
             );
 
             const result = await processBybitCancelOrders([queueMessage]);
@@ -930,9 +917,7 @@ describe("Bybit Exchange Helpers", () => {
                 orderId: "ext-order",
                 orderStatus: "New",
             });
-            mockBybitInstance.cancelOrder = jest
-                .fn()
-                .mockResolvedValue({});
+            mockBybitInstance.cancelOrder = jest.fn().mockResolvedValue({});
 
             const result = await processBybitCancelOrders(queueMessages);
 

@@ -612,7 +612,7 @@ export const processBybitCloseTrades = async (
 
                         await bybitClient.closePosition({
                             symbol: closeTradeEvent.trade.pair,
-                            side: openPosition.side === "Buy" ? "Sell" : "Buy",
+                            side: openPosition.side as BybitOrderSide,
                             qty: qtyToClose.toString(),
                         });
 

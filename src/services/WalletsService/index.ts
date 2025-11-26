@@ -490,7 +490,9 @@ export class WalletsService {
                             // Get user with userId
                             const user = await UsersService.getUserById(userId);
                             if (!user) {
-                                throw new Error(`User with the ID ${userId} not found`);
+                                throw new Error(
+                                    `User with the ID ${userId} not found`
+                                );
                             }
 
                             // Credit user wallet
@@ -502,18 +504,26 @@ export class WalletsService {
                                 ),
                             });
 
-
                             // Publish user to queue if first deposit is false or activation fee is less than $20
                             // for activationFee deduction & first deposit tracking
-                            if ((!user.isFirstDepositMade || (user.activationFee ?? 0) < TraderAppActivationFee)
+                            if (
+                                !user.isFirstDepositMade ||
+                                (user.activationFee ?? 0) <
+                                    TraderAppActivationFee
                             ) {
                                 const depositedAmount = parseFloat(
-                                    queueMessage.body.data.received_amount ?? "0"
+                                    queueMessage.body.data.received_amount ??
+                                        "0"
                                 ); // Deposit by user
 
-                                const payableActivationFee = TraderAppActivationFee - (user?.activationFee || 0); // User activation fee
+                                const payableActivationFee =
+                                    TraderAppActivationFee -
+                                    (user?.activationFee || 0); // User activation fee
 
-                                const calculatedActivationFee = depositedAmount > payableActivationFee ? payableActivationFee : depositedAmount; // Calculated fee
+                                const calculatedActivationFee =
+                                    depositedAmount > payableActivationFee
+                                        ? payableActivationFee
+                                        : depositedAmount; // Calculated fee
 
                                 // Activation fee Queue
                                 await publishMessageToQueue({
@@ -524,7 +534,7 @@ export class WalletsService {
                                         userId,
                                         amount: calculatedActivationFee, // Activation fee
                                     }),
-                                })
+                                });
                             }
 
                             // publish deposit notification to queue
@@ -1569,7 +1579,8 @@ export class WalletsService {
 
             const successMessageIds: string[] = [];
             const failedMessageIds: string[] = [];
-            const queueUrl = commonSecrets.TRACK_USER_ONBOARDING_CHECKLIST_QUEUE ?? "";
+            const queueUrl =
+                commonSecrets.TRACK_USER_ONBOARDING_CHECKLIST_QUEUE ?? "";
 
             const results = await Promise.allSettled(
                 queueMessages.map(async (queue) => {
@@ -1585,11 +1596,15 @@ export class WalletsService {
                         rollBack = "wallet";
 
                         // Update user activation fee field
-                        const user = await UsersService.updateUserActivationFee({ userId, amount });
+                        const user = await UsersService.updateUserActivationFee(
+                            { userId, amount }
+                        );
                         rollBack = "activation";
 
                         if (!user) {
-                            throw new Error(`User ${userId} not found after activation fee update`);
+                            throw new Error(
+                                `User ${userId} not found after activation fee update`
+                            );
                         }
 
                         // Record transaction
@@ -1607,14 +1622,17 @@ export class WalletsService {
                             paymentProviderName: WalletProvider.CRYPTOPAY,
                             externalTransactionId: randomUUID(), // Generates random uuid
                             createdAt: new Date(),
-                            updatedAt: new Date()
-                        }
+                            updatedAt: new Date(),
+                        };
                         await this.recordTransactionToDB(transaction);
                         rollBack = null; // All DB operations was successful
 
                         // Publish to First deposit queue if activation fee is now $20
                         const activationFee = user.activationFee ?? 0;
-                        if (activationFee >= TraderAppActivationFee && queueUrl) {
+                        if (
+                            activationFee >= TraderAppActivationFee &&
+                            queueUrl
+                        ) {
                             // First Deposit Queue
                             await publishMessageToQueue({
                                 queueUrl,
@@ -1639,15 +1657,28 @@ export class WalletsService {
                             try {
                                 if (rollBack === "wallet") {
                                     // Rollback: Credit wallet only
-                                    await this.creditUserWallet({ userId, amount });
-                                    console.log(`Rolled back wallet debit for user ${userId}`);
+                                    await this.creditUserWallet({
+                                        userId,
+                                        amount,
+                                    });
+                                    console.log(
+                                        `Rolled back wallet debit for user ${userId}`
+                                    );
                                 } else if (rollBack === "activation") {
                                     // Rollback: Credit wallet AND revert activation fee
                                     await Promise.allSettled([
-                                        this.creditUserWallet({ userId, amount }),
-                                        UsersService.updateUserActivationFee({ userId, amount: -amount }),
+                                        this.creditUserWallet({
+                                            userId,
+                                            amount,
+                                        }),
+                                        UsersService.updateUserActivationFee({
+                                            userId,
+                                            amount: -amount,
+                                        }),
                                     ]);
-                                    console.log(`Rolled back wallet debit and activation fee for user ${userId}`);
+                                    console.log(
+                                        `Rolled back wallet debit and activation fee for user ${userId}`
+                                    );
                                 }
                             } catch (rollbackError) {
                                 // Critical: Rollback failed - log for manual intervention
@@ -1659,7 +1690,7 @@ export class WalletsService {
                                         rollBackState: rollBack,
                                         messageId: queue.messageId,
                                         userId,
-                                        amount
+                                        amount,
                                     },
                                     "###################################################################################################################################################"
                                 );
@@ -1678,7 +1709,7 @@ export class WalletsService {
                         };
                     }
                 })
-            )
+            );
 
             // Process result
             results.forEach((result, index) => {

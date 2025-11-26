@@ -24,7 +24,7 @@ export const publishDepositConfirmationToQueue = async (
     }
 
     const dateTime = new Date(); // Server time
-    const dateTimeGMT1 = new Date(dateTime.getTime() + 60 * 60 * 1000) // GMT+1 - Nigerian Time Zone
+    const dateTimeGMT1 = new Date(dateTime.getTime() + 60 * 60 * 1000); // GMT+1 - Nigerian Time Zone
     const message: IQueueMessageBodyObject = {
         recipients: [{ firstName: user.firstName, emailAddress: user.email }],
         message: "Deposit Confirmation",

@@ -680,16 +680,15 @@ Resources:
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt processBinanceOrdersDLQ.Arn
-      # Add VPC Configuration
-      # VpcConfig:
-      #   !If
-      #     - HasVpcConfig
-      #     - SubnetIds: !Ref SubnetIds
-      #       SecurityGroupIds: !Ref SecurityGroupIds
-      #     - !Ref AWS::NoValue
+      VpcConfig: !If
+        - HasVpcConfig
+        - SubnetIds: !Ref SubnetIds
+          SecurityGroupIds: !Ref SecurityGroupIds
+        - !Ref AWS::NoValue
       Policies:
         - AWSLambdaBasicExecutionRole
-        # - !If [HasVpcConfig, AWSLambdaVPCAccessExecutionRole, !Ref "AWS::NoValue"]
+        - AWSLambdaVPCAccessExecutionRole
+        - AWSLambdaSQSQueueExecutionRole
         - Statement:
             - Effect: Allow
               Action:
@@ -726,16 +725,15 @@ Resources:
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt processBybitOrdersDLQ.Arn
-      # Add VPC Configuration
-      # VpcConfig:
-      #   !If
-      #     - HasVpcConfig
-      #     - SubnetIds: !Ref SubnetIds
-      #       SecurityGroupIds: !Ref SecurityGroupIds
-      #     - !Ref AWS::NoValue
+      VpcConfig: !If
+        - HasVpcConfig
+        - SubnetIds: !Ref SubnetIds
+          SecurityGroupIds: !Ref SecurityGroupIds
+        - !Ref AWS::NoValue
       Policies:
         - AWSLambdaBasicExecutionRole
-        # - !If [HasVpcConfig, AWSLambdaVPCAccessExecutionRole, !Ref "AWS::NoValue"]
+        - AWSLambdaVPCAccessExecutionRole
+        - AWSLambdaSQSQueueExecutionRole
         - Statement:
             - Effect: Allow
               Action:
@@ -772,8 +770,15 @@ Resources:
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt handleProcessedTradesDLQ.Arn
+      VpcConfig: !If
+        - HasVpcConfig
+        - SubnetIds: !Ref SubnetIds
+          SecurityGroupIds: !Ref SecurityGroupIds
+        - !Ref AWS::NoValue
       Policies:
         - AWSLambdaBasicExecutionRole
+        - AWSLambdaVPCAccessExecutionRole
+        - AWSLambdaSQSQueueExecutionRole
         - Statement:
             - Effect: Allow
               Action:
@@ -810,8 +815,15 @@ Resources:
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt handleFailedTradesDLQ.Arn
+      VpcConfig: !If
+        - HasVpcConfig
+        - SubnetIds: !Ref SubnetIds
+          SecurityGroupIds: !Ref SecurityGroupIds
+        - !Ref AWS::NoValue
       Policies:
         - AWSLambdaBasicExecutionRole
+        - AWSLambdaVPCAccessExecutionRole
+        - AWSLambdaSQSQueueExecutionRole
         - Statement:
             - Effect: Allow
               Action:
@@ -889,8 +901,15 @@ Resources:
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt processBybitOrdersActivationDLQ.Arn
+      VpcConfig: !If
+        - HasVpcConfig
+        - SubnetIds: !Ref SubnetIds
+          SecurityGroupIds: !Ref SecurityGroupIds
+        - !Ref AWS::NoValue
       Policies:
         - AWSLambdaBasicExecutionRole
+        - AWSLambdaVPCAccessExecutionRole
+        - AWSLambdaSQSQueueExecutionRole
         - Statement:
             - Effect: Allow
               Action:
@@ -928,8 +947,15 @@ Resources:
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt processBybitStopLossOrdersDLQ.Arn
+      VpcConfig: !If
+        - HasVpcConfig
+        - SubnetIds: !Ref SubnetIds
+          SecurityGroupIds: !Ref SecurityGroupIds
+        - !Ref AWS::NoValue
       Policies:
         - AWSLambdaBasicExecutionRole
+        - AWSLambdaVPCAccessExecutionRole
+        - AWSLambdaSQSQueueExecutionRole
         - Statement:
             - Effect: Allow
               Action:
@@ -967,8 +993,15 @@ Resources:
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt processBybitTakeProfitOrdersDLQ.Arn
+      VpcConfig: !If
+        - HasVpcConfig
+        - SubnetIds: !Ref SubnetIds
+          SecurityGroupIds: !Ref SecurityGroupIds
+        - !Ref AWS::NoValue
       Policies:
         - AWSLambdaBasicExecutionRole
+        - AWSLambdaVPCAccessExecutionRole
+        - AWSLambdaSQSQueueExecutionRole
         - Statement:
             - Effect: Allow
               Action:
@@ -1045,8 +1078,15 @@ Resources:
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt processBybitCancelOrdersDLQ.Arn
+      VpcConfig: !If
+        - HasVpcConfig
+        - SubnetIds: !Ref SubnetIds
+          SecurityGroupIds: !Ref SecurityGroupIds
+        - !Ref AWS::NoValue
       Policies:
         - AWSLambdaBasicExecutionRole
+        - AWSLambdaVPCAccessExecutionRole
+        - AWSLambdaSQSQueueExecutionRole
         - Statement:
             - Effect: Allow
               Action:
