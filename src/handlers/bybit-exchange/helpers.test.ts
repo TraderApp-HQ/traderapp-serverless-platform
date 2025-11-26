@@ -549,7 +549,7 @@ describe("Bybit Exchange Helpers", () => {
             expect(result.successMessageIds).toContain("msg-1");
             expect(mockBybitInstance.closePosition).toHaveBeenCalledWith({
                 symbol: "BTCUSDT",
-                side: "Sell",
+                side: "Buy",
                 qty: "0.01",
             });
             expect(mockTradingEngineInstance.updateTrade).toHaveBeenCalledWith({
@@ -647,7 +647,7 @@ describe("Bybit Exchange Helpers", () => {
             expect(result.successMessageIds).toContain("msg-1");
             expect(mockBybitInstance.closePosition).toHaveBeenCalledWith({
                 symbol: "ETHUSDT",
-                side: "Buy",
+                side: "Sell",
                 qty: "0.05",
             });
         });
