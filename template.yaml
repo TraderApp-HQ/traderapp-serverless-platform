@@ -29,23 +29,23 @@ Parameters:
       - prod
     Description: Environment name to prefix resources
   
-#   VpcId:
-#     Type: String
-#     Description: VPC ID where Lambda functions will run
-#     Default: "" # Make it optional for environments that don't need VPC
+  VpcId:
+    Type: String
+    Description: VPC ID where Lambda functions will run
+    Default: "" # Make it optional for environments that don't need VPC
   
-#   SubnetIds:
-#     Type: CommaDelimitedList
-#     Description: Comma-separated list of subnet IDs (private subnets with NAT Gateway)
-#     Default: ""
+  SubnetIds:
+    Type: CommaDelimitedList
+    Description: Comma-separated list of subnet IDs (private subnets with NAT Gateway)
+    Default: ""
   
-#   SecurityGroupIds:
-#     Type: CommaDelimitedList
-#     Description: Comma-separated list of security group IDs for Lambda functions
-#     Default: ""
+  SecurityGroupIds:
+    Type: CommaDelimitedList
+    Description: Comma-separated list of security group IDs for Lambda functions
+    Default: ""
 
-# Conditions:
-#   HasVpcConfig: !Not [!Equals [!Ref VpcId, ""]]
+Conditions:
+  HasVpcConfig: !Not [!Equals [!Join ["", !Ref SecurityGroupIds], ""]]
 
 Resources:
 # create queues
@@ -1006,8 +1006,15 @@ Resources:
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt processBybitCloseTradesDLQ.Arn
+      VpcConfig: !If
+        - HasVpcConfig
+        - SubnetIds: !Ref SubnetIds
+          SecurityGroupIds: !Ref SecurityGroupIds
+        - !Ref AWS::NoValue
       Policies:
         - AWSLambdaBasicExecutionRole
+        - AWSLambdaVPCAccessExecutionRole
+        - AWSLambdaSQSQueueExecutionRole
         - Statement:
             - Effect: Allow
               Action:
