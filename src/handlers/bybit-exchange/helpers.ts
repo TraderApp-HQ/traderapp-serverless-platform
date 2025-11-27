@@ -261,10 +261,9 @@ export const processBybitOrdersActivation = async (
                     );
                     if (openPosition) {
                         // Update trade status to ACTIVE
+                        const tradeId = trade._id ? (trade._id as mongoose.Types.ObjectId).toString() : trade.id;
                         await tradingEngineService.updateTrade({
-                            tradeId: (
-                                trade._id as mongoose.Types.ObjectId
-                            ).toString(),
+                            tradeId,
                             updateData: {
                                 status: TradeStatus.ACTIVE,
                                 entryPrice: Number(openPosition?.avgPrice ?? 0),
@@ -273,17 +272,14 @@ export const processBybitOrdersActivation = async (
 
                         // Get order by trade id
                         const order =
-                            await tradingEngineService.getOrderByTradeId(
-                                (
-                                    trade._id as mongoose.Types.ObjectId
-                                ).toString()
-                            );
+                            await tradingEngineService.getOrderByTradeId(tradeId);
 
                         if (order) {
                             // Update order status to FILLED
+                            const orderId = order._id ? (order._id as mongoose.Types.ObjectId).toString() : order.id;
                             await Promise.all([
                                 tradingEngineService.updateOrder(
-                                    order._id as string,
+                                    orderId,
                                     {
                                         status:
                                             Number(openPosition?.size ?? 0) >=
@@ -412,9 +408,11 @@ export const processBybitStopLossOrders = async (
                         });
                     }
 
+                    const tradeId = trade._id ? (trade._id as mongoose.Types.ObjectId).toString() : trade.id;
+
                     // Update trade stop loss price
                     await tradingEngineService.updateTrade({
-                        tradeId: (trade._id as mongoose.Types.ObjectId).toString(),
+                        tradeId,
                         updateData: { stopLossPrice: trade.stopLossPrice },
                     });
 
@@ -507,18 +505,18 @@ export const processBybitTakeProfitOrders = async (
                         });
                     }
 
+                    const tradeId = trade._id ? (trade._id as mongoose.Types.ObjectId).toString() : trade.id;
+
                     if (trade.takeProfitPrice) {
                         // Update trade take profit price
                         await tradingEngineService.updateTrade({
-                            tradeId: (trade._id as mongoose.Types.ObjectId).toString(),
+                            tradeId,
                             updateData: { takeProfitPrice: trade.takeProfitPrice },
                         });
                     }
                     else {
                         // Update trade take profit price
-                        await tradingEngineService.unsetTradeTakeProfit({
-                            tradeId: (trade._id as mongoose.Types.ObjectId).toString(),
-                        });
+                        await tradingEngineService.unsetTradeTakeProfit({ tradeId });
                     }
 
                     // return success message id
@@ -603,6 +601,8 @@ export const processBybitCloseTrades = async (
                         closeTradeEvent.trade.pair
                     );
 
+                    const tradeId = closeTradeEvent.trade._id ? (closeTradeEvent.trade._id as mongoose.Types.ObjectId).toString() : closeTradeEvent.trade.id;
+
 
                     // Close position
                     if (openPosition) {
@@ -629,9 +629,7 @@ export const processBybitCloseTrades = async (
 
                             // Update user trade
                             await tradingEngineService.updateTrade({
-                                tradeId: (
-                                    closeTradeEvent.trade._id as mongoose.Types.ObjectId
-                                ).toString(),
+                                tradeId,
                                 updateData: {
                                     baseQuantity: qtyRemaining,
                                     quoteTotal: quoteToalRemaining,
@@ -646,9 +644,7 @@ export const processBybitCloseTrades = async (
                     if (closeTradeEvent.qtyPercentToClose >= 100) {
                         // Update user trade status to CLOSED
                         await tradingEngineService.updateTrade({
-                            tradeId: (
-                                closeTradeEvent.trade._id as mongoose.Types.ObjectId
-                            ).toString(),
+                            tradeId,
                             updateData: { status: TradeStatus.CLOSED },
                         });
                     }
@@ -748,11 +744,12 @@ export const processBybitCancelOrders = async (
                     }
 
                     const tradeId = typeof order.tradeId === 'string' ? order.tradeId : order.tradeId.toString();
+                    const orderId = order._id ? (order._id as mongoose.Types.ObjectId).toString() : order.id;
 
                     await Promise.all([
                         // Update order status to CANCELLED
                         tradingEngineService.updateOrder(
-                            (order._id as mongoose.Types.ObjectId).toString(),
+                            orderId,
                             {
                                 status: OrderStatus.CANCELED,
                             }
