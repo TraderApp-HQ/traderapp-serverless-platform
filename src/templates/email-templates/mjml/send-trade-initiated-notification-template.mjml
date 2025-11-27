@@ -49,8 +49,6 @@
       font-size: 12px;
       font-weight: 600;
       text-transform: uppercase;
-      background-color: #fef1f2;
-      color: #ed3b3b;
       vertical-align: middle;
       }
 
@@ -206,7 +204,7 @@
 
                   <!-- TRADE SIDE TAG -->
                   <td style="vertical-align:middle; padding-left:8px;">
-                    <span class="tradeside">{TRADE_SIDE}</span>
+                    <span class="tradeside" style="{TRADE_SIDE_TEXT_COLOR}">{TRADE_SIDE}</span>
                   </td>
 
                 </tr>

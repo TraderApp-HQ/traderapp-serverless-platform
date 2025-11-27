@@ -11,6 +11,7 @@
     </mj-attributes>
 
     <mj-style inline="inline">
+
       /* Global text styling */
       span {
       font-family: Manrope, Arial, sans-serif;
@@ -49,8 +50,6 @@
       font-size: 12px;
       font-weight: 600;
       text-transform: uppercase;
-      background-color: #fef1f2;
-      color: #ed3b3b;
       vertical-align: middle;
       }
 
@@ -167,7 +166,7 @@
       <mj-section padding="0 0 16px 0">
         <mj-column>
           <mj-text class="content" padding="0">
-            Your trade on <span class="platform">{BASE_ASSET} / {QUOTE_CURRENCY}</span> <span style=" color: #ed3b3b;">({TRADE_SIDE})</span> is now active on your <span class="platform">{PLATFORM_NAME} account</span>. This means that the open order has been filled and the trade has started
+            Your trade on <span class="platform">{BASE_ASSET} / {QUOTE_CURRENCY}</span> <span style="{TRADE_SIDE_TEXT_COLOR}">({TRADE_SIDE})</span> is now active on your <span class="platform">{PLATFORM_NAME} account</span>. This means that the open order has been filled and the trade has started
             <br />
           </mj-text>
         </mj-column>
@@ -202,7 +201,7 @@
 
                   <!-- TRADE SIDE TAG -->
                   <td style="vertical-align:middle; padding-left:8px;">
-                    <span class="tradeside">{TRADE_SIDE}</span>
+                    <span class="tradeside" style="{TRADE_SIDE_TEXT_COLOR}">{TRADE_SIDE}</span>
                   </td>
 
                 </tr>
