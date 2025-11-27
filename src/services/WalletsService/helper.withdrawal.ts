@@ -23,7 +23,8 @@ export const publishWithdrawlConfirmationToQueue = async (
         throw new Error(`User with the ID ${userId} not found`);
     }
 
-    const dateTime = new Date().toISOString();
+    const dateTime = new Date(); // Server time
+    const dateTimeGMT1 = new Date(dateTime.getTime() + 60 * 60 * 1000); // GMT+1 - Nigerian Time Zone
     const message: IQueueMessageBodyObject = {
         recipients: [{ firstName: user.firstName, emailAddress: user.email }],
         message: "Withdrawal Successful",
@@ -33,7 +34,7 @@ export const publishWithdrawlConfirmationToQueue = async (
             transactionId,
             address,
             network,
-            dateTime: format(dateTime, "do MMMM yyyy, h:mm a"),
+            dateTime: `${format(dateTimeGMT1, "do MMM, yyyy, h:mma")} (GMT+1)`,
         },
         subject: "Withdrawal Successful",
     };

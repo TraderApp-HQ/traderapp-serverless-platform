@@ -677,10 +677,6 @@ export class TradingEngineService {
             const tradingAccounts = await accountsCollection.find({
                 platformName: { $in: platforms },
                 connectionStatus: AccountConnectionStatus.CONNECTED,
-                // isFuturesTradingEnabled: accountType === AccountType.FUTURES,
-                // isSpotTradingEnabled: accountType === AccountType.SPOT,
-                // apiKey: { $exists: true, $ne: "" },
-                // apiSecret: { $exists: true, $ne: "" },
             });
 
             if (tradingAccounts.length === 0) {
@@ -731,6 +727,28 @@ export class TradingEngineService {
         }
     }
 
+    public async getUserTradingAccount(
+        userId: string,
+        platformName: TradingPlatform
+    ): Promise<IUserTradingAccount> {
+        const connection = await this.getConnection();
+        const tradingAccountsCollection =
+            new MongoDBClient<IUserTradingAccount>(
+                connection,
+                TradingEngineServiceCollections.userTradingAccounts
+            );
+        const tradingAccount = await tradingAccountsCollection.findOne({
+            userId,
+            platformName,
+        });
+        if (!tradingAccount) {
+            throw new Error(
+                `No trading account found for user ${userId} on platform ${platformName}`
+            );
+        }
+        return tradingAccount;
+    }
+
     // Helper method to calculate trade amount based on risk amount, risk percentage, entry price, stop loss price, and leverage
     public calculateTradeAmount(
         input: ICalculateTradeAmountInput
@@ -779,7 +797,7 @@ export class TradingEngineService {
         const requiredMargin = positionSize / leverage;
 
         // Calculate the number of decimal places in stepSize
-        const decimalPlaces = stepSize.toString().split('.')[1]?.length || 0;
+        const decimalPlaces = stepSize.toString().split(".")[1]?.length || 0;
         const baseQuantity = parseFloat(
             (Math.floor(quantity / stepSize) * stepSize).toFixed(decimalPlaces)
         );
@@ -946,6 +964,10 @@ export class TradingEngineService {
                         quoteTotal,
                         estimatedProfit,
                         estimatedLoss,
+                        originalBaseQuantity: baseQuantity,
+                        originalQuoteTotal: quoteTotal,
+                        originalEstimatedProfit: estimatedProfit,
+                        originalEstimatedLoss: estimatedLoss,
                     },
                 }
             );
@@ -973,20 +995,7 @@ export class TradingEngineService {
      */
     private async createTradeForUser(
         userId: string,
-        tradeData: {
-            masterTradeId: string;
-            baseAsset: string;
-            quoteCurrency: string;
-            baseQuantity: number;
-            entryPrice: number;
-            stopLossPrice: number;
-            takeProfitPrice: number;
-            quoteTotal: number;
-            pair: string;
-            side: TradeSide;
-            status: TradeStatus;
-            platformName?: TradingPlatform;
-        }
+        tradeData: Partial<ITrade>
     ): Promise<ITrade> {
         try {
             const connection = await this.getConnection();
@@ -1046,6 +1055,38 @@ export class TradingEngineService {
                 error,
                 tradeId,
                 updateData,
+            });
+            throw error;
+        }
+    }
+
+    public async unsetTradeTakeProfit({
+        tradeId,
+    }: {
+        tradeId: string;
+    }): Promise<ITrade | null> {
+        try {
+            const connection = await this.getConnection();
+            const tradesCollection = new MongoDBClient<ITrade>(
+                connection,
+                TradingEngineServiceCollections.trades
+            );
+
+            const updatedTrade = await tradesCollection.findOneAndUpdate(
+                { _id: new mongoose.Types.ObjectId(tradeId) },
+                {
+                    $unset: { takeProfitPrice: "" },
+                }
+            );
+
+            log.info(
+                `Unset trade take profit successfully: tradeId === ${tradeId}`
+            );
+            return updatedTrade;
+        } catch (error) {
+            console.error("Error unsetting trade take profit:", {
+                error,
+                tradeId,
             });
             throw error;
         }
@@ -1268,6 +1309,27 @@ export class TradingEngineService {
             });
         } catch (error) {
             console.error("Error fetching order:", { error, orderId });
+            throw error;
+        }
+    }
+
+    /**
+     * Get order by trade ID
+     */
+    public async getOrderByTradeId(tradeId: string): Promise<IOrder | null> {
+        try {
+            const connection = await this.getConnection();
+            const ordersCollection = new MongoDBClient<IOrder>(
+                connection,
+                TradingEngineServiceCollections.orders
+            );
+
+            return ordersCollection.findOne({ tradeId });
+        } catch (error) {
+            console.error("Error fetching order by trade ID:", {
+                error,
+                tradeId,
+            });
             throw error;
         }
     }
@@ -1497,7 +1559,7 @@ export class TradingEngineService {
                     riskUSDT: allocation.riskAmount,
                     requiredMargin: allocation.requiredMargin,
                 });
-                const trade = {
+                const trade: Partial<ITrade> = {
                     masterTradeId: masterTrade.masterTradeId,
                     baseAsset: masterTrade.baseAsset,
                     quoteCurrency: masterTrade.quoteCurrency,
@@ -1512,6 +1574,10 @@ export class TradingEngineService {
                     side: masterTrade.tradeSide,
                     status: TradeStatus.PENDING,
                     platformName: allocation.platformName,
+                    originalBaseQuantity: allocation.baseQuantity ?? 0,
+                    originalQuoteTotal: allocation.requiredMargin,
+                    originalEstimatedProfit: pnlAmount,
+                    originalEstimatedLoss: allocation.riskAmount,
                 };
 
                 const createdTrade = await this.createTradeForUser(
