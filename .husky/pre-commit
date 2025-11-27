@@ -2,5 +2,6 @@ npm run format:write
 npm run compile
 npm run clean
 npx lint-staged
-git reset HEAD dist/
+git add dist/ && git reset HEAD dist/
+# git reset HEAD dist/
 # npm run test
