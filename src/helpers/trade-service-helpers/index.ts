@@ -27,6 +27,7 @@ import {
     IFailedTrade,
     IInvoice,
     IProcessedTrade,
+    ITrade,
     IUserTradeAllocation,
 } from "src/services/TradingEngineService/interfaces";
 import UsersService from "src/services/UsersService";
@@ -524,7 +525,8 @@ export const publishProcessedTradeToQueue = async (
         throw new Error(`User with the ID ${userId} not found`);
     }
 
-    const dateTime = new Date().toISOString();
+    const dateTime = new Date(); // Server time
+    const dateTimeGMT1 = new Date(dateTime.getTime() + 60 * 60 * 1000); // GMT+1 - Nigerian Time Zone
     const message: IQueueMessageBodyObject = {
         recipients: [{ firstName: user.firstName, emailAddress: user.email }],
         message: "Trade Initiated",
@@ -542,7 +544,7 @@ export const publishProcessedTradeToQueue = async (
             estimatedLoss: processedTrade.riskAmount,
             estimatedProfit: pnlAmount,
             platformName: processedTrade.platformName,
-            dateTime: format(dateTime, "do MMM, yyyy, h:mma"),
+            dateTime: `${format(dateTimeGMT1, "do MMM, yyyy, h:mma")} (GMT+1)`,
         },
         subject: "Trade Initiated",
     };
@@ -772,4 +774,48 @@ export const handleFailedTrades = async (
             failedMessageIds: queueMessages.map((qm) => qm.messageId),
         };
     }
+};
+
+interface IPublishActivatedTradeToQueueInput {
+    userId: string;
+    userTrade: ITrade;
+    queueUrl: string;
+    baseAssetLogoUrl: string;
+}
+
+export const publishActivatedTradeToQueue = async (
+    input: IPublishActivatedTradeToQueueInput
+) => {
+    const { userId, userTrade, queueUrl, baseAssetLogoUrl } = input;
+
+    const user = await UsersService.getUserById(userId);
+    if (!user) {
+        throw new Error(`User with the ID ${userId} not found`);
+    }
+
+    const dateTime = new Date(); // Server time
+    const dateTimeGMT1 = new Date(dateTime.getTime() + 60 * 60 * 1000); // GMT+1 - Nigerian Time Zone
+    const message: IQueueMessageBodyObject = {
+        recipients: [{ firstName: user.firstName, emailAddress: user.email }],
+        message: "Trade Activated",
+        event: EventTemplate.SEND_TRADE_ACTIVATED_NOTIFICATION,
+        metadata: {
+            baseAsset: userTrade.baseAsset,
+            baseAssetLogoUrl,
+            quoteCurrency: userTrade.quoteCurrency,
+            entryPrice: userTrade.entryPrice,
+            stopLoss: userTrade.stopLossPrice,
+            tradeSide: userTrade.side,
+            estimatedLoss: userTrade.estimatedLoss,
+            estimatedProfit: userTrade.estimatedProfit,
+            platformName: userTrade.platformName,
+            dateTime: `${format(dateTimeGMT1, "do MMM, yyyy, h:mma")} (GMT+1)`,
+        },
+        subject: "Trade Activated",
+    };
+
+    await publishMessageToQueue({
+        queueUrl,
+        message: JSON.stringify(message),
+    });
 };

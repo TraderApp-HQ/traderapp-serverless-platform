@@ -1112,6 +1112,23 @@ export class TradingEngineService {
         }
     }
 
+    public async getMasterTradeById(masterTradeId: string): Promise<IMasterTrade | null> {
+        try {
+            const connection = await this.getConnection();
+            const masterTradesCollection = new MongoDBClient<IMasterTrade>(
+                connection,
+                TradingEngineServiceCollections.masterTrades
+            );
+
+            return await masterTradesCollection.findOne({
+                _id: new mongoose.Types.ObjectId(masterTradeId),
+            });
+        } catch (error) {
+            console.error("Error fetching trade:", { error, masterTradeId });
+            throw error;
+        }
+    }
+
     /**
      * Create an order batch
      */

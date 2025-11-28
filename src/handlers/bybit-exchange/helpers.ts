@@ -8,7 +8,7 @@ import {
 import { publishMessageToQueue } from "src/clients/SQSClient/helpers";
 import { TradingPlatform } from "src/config/enums";
 import { IQueueMessageBody } from "src/config/interfaces";
-import { getTradingEngineServiceSecrets } from "src/helpers/trade-service-helpers";
+import { getCommonSecrets, getTradingEngineServiceSecrets, publishActivatedTradeToQueue } from "src/helpers/trade-service-helpers";
 import { TradingEngineService } from "src/services/TradingEngineService";
 import {
     OrderType,
@@ -219,8 +219,12 @@ export const processBybitOrdersActivation = async (
         const tradingEngineService = new TradingEngineService();
 
         // Get decryption keys and decrypt api keys
-        const tradingEngineServiceSecrets =
-            await getTradingEngineServiceSecrets();
+        const [tradingEngineServiceSecrets, commonSecrets] = await Promise.all([
+            getTradingEngineServiceSecrets(),
+            getCommonSecrets()
+        ]);
+
+        const notificationsQueueUrl = commonSecrets.EMAIL_NOTIFICATIONS_QUEUE ?? "";
         const decryptionKey =
             tradingEngineServiceSecrets.API_SECRET_KEY_ENCRYPTION_KEY;
 
@@ -301,6 +305,9 @@ export const processBybitOrdersActivation = async (
                             ]);
                         }
 
+                        // Get master trade
+                        const masterTrade = await tradingEngineService.getMasterTradeById(trade.masterTradeId)
+
                         // Publish to stop loss and take profit orders queues
                         await Promise.all([
                             publishMessageToQueue({
@@ -315,6 +322,12 @@ export const processBybitOrdersActivation = async (
                                     "",
                                 message: JSON.stringify(trade),
                             }),
+                            publishActivatedTradeToQueue({
+                                userId: trade.userId,
+                                userTrade: trade,
+                                queueUrl: notificationsQueueUrl,
+                                baseAssetLogoUrl: masterTrade?.baseAssetLogoUrl ?? "",
+                            })
                         ]);
                     }
 

@@ -1190,6 +1190,17 @@ describe("TradingEngineService", () => {
         });
     });
 
+    describe("getMasterTrade", () => {
+        it("should return master trade", async () => {
+            const result = await service.getMasterTradeById((masterTrade._id as mongoose.Types.ObjectId).toString());
+
+            expect(result).toBeDefined();
+            expect((result?._id as mongoose.Types.ObjectId).toString()).toBe(
+                (masterTrade._id as mongoose.Types.ObjectId).toString()
+            );
+        });
+    });
+
     describe("getUsersTradingAccountsAndBalances", () => {
         it("should return users with connected accounts and balances", async () => {
             const userId = "balance-user";

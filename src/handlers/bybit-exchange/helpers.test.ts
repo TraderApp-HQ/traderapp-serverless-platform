@@ -26,8 +26,8 @@ import {
 import { AccountType, TradingPlatform } from "src/config/enums";
 import mongoose from "mongoose";
 import { decrypt } from "src/utils/cypher-helpers";
-import { getTradingEngineServiceSecrets } from "src/helpers/trade-service-helpers";
-import { ITradingEngineServiceSecrets } from "src/config/secrets/interfaces";
+import { getCommonSecrets, getTradingEngineServiceSecrets, publishActivatedTradeToQueue } from "src/helpers/trade-service-helpers";
+import { ICommonSecrets, ITradingEngineServiceSecrets } from "src/config/secrets/interfaces";
 
 // Mock dependencies
 jest.mock("src/clients/BybitClient");
@@ -42,6 +42,9 @@ const mockBybitFuturesClient = BybitFuturesClient as jest.MockedClass<
 const mockPublishMessageToQueue = publishMessageToQueue as jest.MockedFunction<
     typeof publishMessageToQueue
 >;
+const mockPublishActivatedTradeToQueue = publishActivatedTradeToQueue as jest.MockedFunction<
+    typeof publishActivatedTradeToQueue
+>;
 const mockTradingEngineService = TradingEngineService as jest.MockedClass<
     typeof TradingEngineService
 >;
@@ -50,6 +53,10 @@ const mockGetTradingEngineServiceSecrets =
     getTradingEngineServiceSecrets as jest.MockedFunction<
         typeof getTradingEngineServiceSecrets
     >;
+
+const mockGetCommonSecrets = getCommonSecrets as jest.MockedFunction<
+    typeof getCommonSecrets
+>;
 
 interface MockBybitInstance {
     getOpenPosition: jest.Mock;
@@ -68,6 +75,7 @@ interface MockTradingEngineInstance {
     updateOrder?: jest.Mock;
     updateOrderBatch?: jest.Mock;
     unsetTradeTakeProfit?: jest.Mock;
+    getMasterTradeById?: jest.Mock;
 }
 
 interface BybitPositionData {
@@ -251,12 +259,21 @@ const mockSecrets: ITradingEngineServiceSecrets = {
         "https://sqs.us-east-1.amazonaws.com/123/close-bybit-trades",
 };
 
+const mockCommonSecrets: ICommonSecrets = {
+    EMAIL_NOTIFICATIONS_QUEUE: "https://sqs.us-east-1.amazonaws.com/123/email-notifications",
+    PORT: "3000",
+    SPLIT_IO_CLIENT_KEY: "test-split-key",
+    TRACK_USER_ONBOARDING_CHECKLIST_QUEUE: "https://sqs.us-east-1.amazonaws.com/123/user-onboarding-checklist",
+};
+
 describe("Bybit Exchange Helpers", () => {
     beforeEach(() => {
         jest.clearAllMocks();
         mockPublishMessageToQueue.mockResolvedValue(undefined);
         mockDecrypt.mockImplementation((value) => `decrypted-${value}`);
         mockGetTradingEngineServiceSecrets.mockResolvedValue(mockSecrets);
+        mockGetCommonSecrets.mockResolvedValue(mockCommonSecrets);
+        mockPublishActivatedTradeToQueue.mockResolvedValue(undefined);
     });
 
     describe("processBybitTrades", () => {
@@ -380,6 +397,23 @@ describe("Bybit Exchange Helpers", () => {
             const queueMessage = createMockQueueMessage<ITrade>(trade, "msg-1");
 
             const mockTradingEngineInstance = setupTradingEngineMocks();
+
+            // Update mock to return order data
+            mockTradingEngineInstance.getOrderByTradeId = jest
+                .fn()
+                .mockResolvedValue({
+                    _id: new mongoose.Types.ObjectId(),
+                    baseQuantity: 0.01,
+                    orderBatchId: new mongoose.Types.ObjectId(),
+                });
+
+            // Add mock for getMasterTradeById
+            mockTradingEngineInstance.getMasterTradeById = jest
+                .fn()
+                .mockResolvedValue({
+                    baseAssetLogoUrl: "https://example.com/btc.png",
+                });
+
             setupBybitMocks({
                 size: "0.01",
                 avgPrice: "50000",
@@ -389,6 +423,7 @@ describe("Bybit Exchange Helpers", () => {
             const result = await processBybitOrdersActivation([queueMessage]);
 
             expect(result.successMessageIds).toContain("msg-1");
+            expect(result.failedMessageIds).toHaveLength(0);
             expect(mockTradingEngineInstance.updateTrade).toHaveBeenCalledWith({
                 tradeId: trade._id?.toString(),
                 updateData: {
@@ -396,6 +431,20 @@ describe("Bybit Exchange Helpers", () => {
                     entryPrice: expect.any(Number),
                 },
             });
+            expect(mockTradingEngineInstance.getMasterTradeById).toHaveBeenCalledWith(
+                trade.masterTradeId
+            );
+            expect(mockTradingEngineInstance.getOrderByTradeId).toHaveBeenCalledWith(
+                trade._id?.toString()
+            );
+            expect(mockPublishActivatedTradeToQueue).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    userId: trade.userId,
+                    userTrade: trade,
+                    queueUrl: mockCommonSecrets.EMAIL_NOTIFICATIONS_QUEUE,
+                    baseAssetLogoUrl: "https://example.com/btc.png",
+                })
+            );
         });
 
         it("should handle activation failures", async () => {

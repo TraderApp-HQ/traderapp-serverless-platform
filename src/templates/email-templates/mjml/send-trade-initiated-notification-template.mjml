@@ -38,21 +38,19 @@
                 margin-left: 6px;
             }
 
-            .tradeside {
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                padding: 4px 8px;
-                margin-left: 8px;
-                border-radius: 4px;
-                font-family: Manrope, Arial, sans-serif;
-                font-size: 12px;
-                font-weight: 600;
-                text-transform: uppercase;
-                background-color: #fef1f2;
-                color: #ed3b3b;
-                vertical-align: middle;
-            }
+      .tradeside {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px 8px;
+      margin-left: 8px;
+      border-radius: 4px;
+      font-family: Manrope, Arial, sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      vertical-align: middle;
+      }
 
             .entryprice {
                 font-weight: 500;
@@ -190,35 +188,35 @@
                         Trade Summary
                     </mj-text>
 
-                    <mj-text font-size="14px" line-height="1.9" padding="0">
-                        <p
-                            style="
-                                margin: 0 0 6px 0;
-                                display: flex;
-                                align-items: center;
-                            "
-                        >
-                            <mj-text css-class="b">Asset:</mj-text>
-                            <span
-                                style="
-                                    display: inline-flex;
-                                    align-items: center;
-                                    margin-left: 10px;
-                                "
-                            >
-                                <img
-                                    src="{BASE_ASSET_LOGO_URL}"
-                                    alt=""
-                                    width="20"
-                                    height="20"
-                                    style="vertical-align: middle"
-                                />
-                                <span class="baseasset"
-                                    >{BASE_ASSET}/{QUOTE_CURRENCY}</span
-                                >
-                                <span class="tradeside">{TRADE_SIDE}</span>
-                            </span>
-                        </p>
+          <mj-text font-size="14px" line-height="1.9" padding="0">
+            <mj-raw>
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 6px 0;">
+                <tr>
+
+                  <!-- LABEL -->
+                  <td style="vertical-align:middle;">
+                    <span class="b">Asset:</span>
+                  </td>
+
+                  <!-- ICON -->
+                  <td style="vertical-align:middle; padding-left:10px;">
+                    <img src="{BASE_ASSET_LOGO_URL}" alt="" width="20" height="20" style="display:block; border:0; outline:0;" />
+                  </td>
+
+                  <!-- BASE ASSET -->
+                  <td style="vertical-align:middle; padding-left:6px;">
+                    <span class="baseasset">{BASE_ASSET} / {QUOTE_CURRENCY}</span>
+                  </td>
+
+                  <!-- TRADE SIDE TAG -->
+                  <td style="vertical-align:middle; padding-left:8px;">
+                    <span class="tradeside" style="{TRADE_SIDE_TEXT_COLOR}">{TRADE_SIDE}</span>
+                  </td>
+
+                </tr>
+              </table>
+            </mj-raw>
+
 
                         <p
                             style="
