@@ -798,7 +798,7 @@ export const publishActivatedTradeToQueue = async (
     const message: IQueueMessageBodyObject = {
         recipients: [{ firstName: user.firstName, emailAddress: user.email }],
         message: "Trade Activated",
-        event: EventTemplate.SEND_TRADE_INITIATED_NOTIFICATION,
+        event: EventTemplate.SEND_TRADE_ACTIVATED_NOTIFICATION,
         metadata: {
             baseAsset: userTrade.baseAsset,
             baseAssetLogoUrl,
