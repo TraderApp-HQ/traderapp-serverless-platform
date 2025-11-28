@@ -1190,6 +1190,17 @@ describe("TradingEngineService", () => {
         });
     });
 
+    describe("getMasterTrade", () => {
+        it("should return master trade", async () => {
+            const result = await service.getMasterTradeById((masterTrade._id as mongoose.Types.ObjectId).toString());
+
+            expect(result).toBeDefined();
+            expect((result?._id as mongoose.Types.ObjectId).toString()).toBe(
+                (masterTrade._id as mongoose.Types.ObjectId).toString()
+            );
+        });
+    });
+
     describe("getUsersTradingAccountsAndBalances", () => {
         it("should return users with connected accounts and balances", async () => {
             const userId = "balance-user";
@@ -1459,8 +1470,10 @@ describe("TradingEngineService", () => {
             // expect(result.baseQuantity % 0.001).toBeCloseTo(0, 10);
 
             // Verify the number of decimal places matches stepSize precision
-            const decimalPlaces = result.baseQuantity.toString().split('.')[1]?.length || 0;
-            const stepSizeDecimals = 0.001.toString().split('.')[1]?.length || 0;
+            const decimalPlaces =
+                result.baseQuantity.toString().split(".")[1]?.length || 0;
+            const stepSizeDecimals =
+                (0.001).toString().split(".")[1]?.length || 0;
             expect(decimalPlaces).toBeLessThanOrEqual(stepSizeDecimals);
 
             // Additional checks for other returned values

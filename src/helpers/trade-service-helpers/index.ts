@@ -27,6 +27,7 @@ import {
     IFailedTrade,
     IInvoice,
     IProcessedTrade,
+    ITrade,
     IUserTradeAllocation,
 } from "src/services/TradingEngineService/interfaces";
 import UsersService from "src/services/UsersService";
@@ -519,13 +520,13 @@ export const publishProcessedTradeToQueue = async (
 ) => {
     const { userId, processedTrade, queueUrl, pnlAmount } = input;
 
-
     const user = await UsersService.getUserById(userId);
     if (!user) {
         throw new Error(`User with the ID ${userId} not found`);
     }
 
-    const dateTime = new Date().toISOString();
+    const dateTime = new Date(); // Server time
+    const dateTimeGMT1 = new Date(dateTime.getTime() + 60 * 60 * 1000); // GMT+1 - Nigerian Time Zone
     const message: IQueueMessageBodyObject = {
         recipients: [{ firstName: user.firstName, emailAddress: user.email }],
         message: "Trade Initiated",
@@ -543,7 +544,7 @@ export const publishProcessedTradeToQueue = async (
             estimatedLoss: processedTrade.riskAmount,
             estimatedProfit: pnlAmount,
             platformName: processedTrade.platformName,
-            dateTime: format(dateTime, "do MMM, yyyy, h:mma"),
+            dateTime: `${format(dateTimeGMT1, "do MMM, yyyy, h:mma")} (GMT+1)`,
         },
         subject: "Trade Initiated",
     };
@@ -705,11 +706,17 @@ export const handleFailedTrades = async (
                     // Get invoices based on tradeIde and invoice types
                     const invoices = await walletsService.getInvoices({
                         tradeId: failedOrder.tradeId.toString(),
-                        invoiceTypes: [InvoiceType.TRADING_FEE, InvoiceType.PROFIT_SHARE],
+                        invoiceTypes: [
+                            InvoiceType.TRADING_FEE,
+                            InvoiceType.PROFIT_SHARE,
+                        ],
                     });
 
                     // Compute total amount to unlock
-                    const totalAmountToUnlock = invoices.reduce((acc, invoice) => acc + invoice.amountPaid, 0);
+                    const totalAmountToUnlock = invoices.reduce(
+                        (acc, invoice) => acc + invoice.amountPaid,
+                        0
+                    );
                     if (totalAmountToUnlock > 0) {
                         // unlock user balance
                         await walletsService.unlockUserBalance({
@@ -721,12 +728,16 @@ export const handleFailedTrades = async (
                     }
 
                     // archive invoices
-                    await Promise.allSettled(invoices.map(async (invoice) => {
-                        await walletsService.updateInvoice({
-                            invoiceId: (invoice._id as mongoose.Types.ObjectId).toString(),
-                            status: InvoiceStatus.ARCHIVED,
-                        });
-                    }));
+                    await Promise.allSettled(
+                        invoices.map(async (invoice) => {
+                            await walletsService.updateInvoice({
+                                invoiceId: (
+                                    invoice._id as mongoose.Types.ObjectId
+                                ).toString(),
+                                status: InvoiceStatus.ARCHIVED,
+                            });
+                        })
+                    );
 
                     return {
                         messageId: queueMessage.messageId,
@@ -763,4 +774,48 @@ export const handleFailedTrades = async (
             failedMessageIds: queueMessages.map((qm) => qm.messageId),
         };
     }
+};
+
+interface IPublishActivatedTradeToQueueInput {
+    userId: string;
+    userTrade: ITrade;
+    queueUrl: string;
+    baseAssetLogoUrl: string;
+}
+
+export const publishActivatedTradeToQueue = async (
+    input: IPublishActivatedTradeToQueueInput
+) => {
+    const { userId, userTrade, queueUrl, baseAssetLogoUrl } = input;
+
+    const user = await UsersService.getUserById(userId);
+    if (!user) {
+        throw new Error(`User with the ID ${userId} not found`);
+    }
+
+    const dateTime = new Date(); // Server time
+    const dateTimeGMT1 = new Date(dateTime.getTime() + 60 * 60 * 1000); // GMT+1 - Nigerian Time Zone
+    const message: IQueueMessageBodyObject = {
+        recipients: [{ firstName: user.firstName, emailAddress: user.email }],
+        message: "Trade Activated",
+        event: EventTemplate.SEND_TRADE_INITIATED_NOTIFICATION,
+        metadata: {
+            baseAsset: userTrade.baseAsset,
+            baseAssetLogoUrl,
+            quoteCurrency: userTrade.quoteCurrency,
+            entryPrice: userTrade.entryPrice,
+            stopLoss: userTrade.stopLossPrice,
+            tradeSide: userTrade.side,
+            estimatedLoss: userTrade.estimatedLoss,
+            estimatedProfit: userTrade.estimatedProfit,
+            platformName: userTrade.platformName,
+            dateTime: `${format(dateTimeGMT1, "do MMM, yyyy, h:mma")} (GMT+1)`,
+        },
+        subject: "Trade Activated",
+    };
+
+    await publishMessageToQueue({
+        queueUrl,
+        message: JSON.stringify(message),
+    });
 };

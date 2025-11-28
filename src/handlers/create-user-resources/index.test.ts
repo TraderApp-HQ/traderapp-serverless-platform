@@ -74,7 +74,9 @@ describe("create-user-resources Lambda Handler", () => {
         expect(result).toEqual({
             batchItemFailures: [],
         });
-        expect(mockLogInfo).toHaveBeenCalledWith("Handler for user resources creation");
+        expect(mockLogInfo).toHaveBeenCalledWith(
+            "Handler for user resources creation"
+        );
     });
 
     it("should return failed message IDs in batchItemFailures when resources creation fails", async () => {

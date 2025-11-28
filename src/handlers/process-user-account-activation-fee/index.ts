@@ -1,16 +1,15 @@
-import log from "@dazn/lambda-powertools-logger";
 import { SQSBatchResponse, SQSEvent } from "aws-lambda";
+import log from "@dazn/lambda-powertools-logger";
 import { getParsedQueueMessagesBody } from "src/config/sqs/helpers";
-import { ICreateUserResourcesInput } from "src/types/wallets-service";
-import { createUserResources } from "./helpers";
+import WalletsService from "src/services/WalletsService";
+import { IUserAccountActivationFeeEvent } from "src/types/wallets-service";
 
 export const handler = async (event: SQSEvent): Promise<SQSBatchResponse> => {
-    log.info("Handler for user resources creation");
     log.info("Received event ", { event });
-
     const queueMessages =
-        getParsedQueueMessagesBody<ICreateUserResourcesInput>(event);
-    const { failedMessageIds } = await createUserResources(queueMessages);
+        getParsedQueueMessagesBody<IUserAccountActivationFeeEvent>(event);
+    const { failedMessageIds } =
+        await WalletsService.processUserAccountActivationFee(queueMessages);
 
     return {
         batchItemFailures: failedMessageIds.map((id) => ({

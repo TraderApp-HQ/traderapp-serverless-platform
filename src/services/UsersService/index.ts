@@ -288,6 +288,37 @@ export class UsersService {
             };
         }
     }
+
+    // Update user activation fee
+    public async updateUserActivationFee({
+        userId,
+        amount,
+    }: {
+        userId: string;
+        amount: number;
+    }): Promise<IUser | null> {
+        try {
+            const connection = await this.getConnection();
+            const usersCollection = new MongoDBClient<IUser>(
+                connection,
+                UsersServiceCollections.users
+            );
+
+            // Use $inc operator to atomically increase the activationFee
+            const user = await usersCollection.findOneAndUpdate(
+                { id: userId },
+                { $inc: { activationFee: amount } }
+            );
+
+            return user;
+        } catch (error) {
+            console.error(
+                `Failed to update activation fee for user ${userId}:`,
+                { error }
+            );
+            throw error;
+        }
+    }
 }
 
 export default new UsersService();

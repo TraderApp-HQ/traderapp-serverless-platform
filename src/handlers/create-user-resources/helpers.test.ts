@@ -40,7 +40,7 @@ describe("createUserResources Helper", () => {
     const mockPlatformTradingRules: ITradingRule[] = [
         {
             _id: {
-                toString: () => "507f1f77bcf86cd799439011"
+                toString: () => "507f1f77bcf86cd799439011",
             } as any,
             id: "rule-1",
             name: "Risk Percentage Per Trade",
@@ -55,7 +55,7 @@ describe("createUserResources Helper", () => {
         } as ITradingRule,
         {
             _id: {
-                toString: () => "507f1f77bcf86cd799439012"
+                toString: () => "507f1f77bcf86cd799439012",
             } as any,
             id: "rule-2",
             name: "Maximum Concurrent Trades",
@@ -88,7 +88,9 @@ describe("createUserResources Helper", () => {
             close: jest.fn().mockResolvedValue(undefined),
         };
 
-        (mongoose.createConnection as jest.Mock).mockReturnValue(mockConnection);
+        (mongoose.createConnection as jest.Mock).mockReturnValue(
+            mockConnection
+        );
 
         // Mock getSecrets
         (getSecrets as jest.Mock).mockResolvedValue({
@@ -101,7 +103,9 @@ describe("createUserResources Helper", () => {
         };
 
         mockUserTradingRulesCollection = {
-            updateOne: jest.fn().mockResolvedValue({ modifiedCount: 1, upsertedCount: 1 }), // Changed from insertOne to updateOne
+            updateOne: jest
+                .fn()
+                .mockResolvedValue({ modifiedCount: 1, upsertedCount: 1 }), // Changed from insertOne to updateOne
         };
 
         // Mock MongoDBClient constructor - use actual constants
@@ -109,7 +113,9 @@ describe("createUserResources Helper", () => {
             if (collection === TradingEngineServiceCollections.tradingRules) {
                 return mockTradingRulesCollection;
             }
-            if (collection === TradingEngineServiceCollections.userTradingRules) {
+            if (
+                collection === TradingEngineServiceCollections.userTradingRules
+            ) {
                 return mockUserTradingRulesCollection;
             }
             return {};
@@ -147,10 +153,14 @@ describe("createUserResources Helper", () => {
             expect(mockTradingRulesCollection.findAll).toHaveBeenCalled();
 
             // Verify user trading rules were upserted (2 users × 2 rules = 4 upserts)
-            expect(mockUserTradingRulesCollection.updateOne).toHaveBeenCalledTimes(4);
+            expect(
+                mockUserTradingRulesCollection.updateOne
+            ).toHaveBeenCalledTimes(4);
 
             // Verify user trading rules data structure
-            expect(mockUserTradingRulesCollection.updateOne).toHaveBeenCalledWith(
+            expect(
+                mockUserTradingRulesCollection.updateOne
+            ).toHaveBeenCalledWith(
                 { userId: "user-123", ruleId: expect.any(String) },
                 {
                     $set: expect.objectContaining({
@@ -191,10 +201,14 @@ describe("createUserResources Helper", () => {
             const result = await createUserResources(mockQueueMessages);
 
             // Only 1 user should have trading rules upserted (2 rules)
-            expect(mockUserTradingRulesCollection.updateOne).toHaveBeenCalledTimes(2);
+            expect(
+                mockUserTradingRulesCollection.updateOne
+            ).toHaveBeenCalledTimes(2);
 
             // Only first user's trading rules
-            expect(mockUserTradingRulesCollection.updateOne).toHaveBeenCalledWith(
+            expect(
+                mockUserTradingRulesCollection.updateOne
+            ).toHaveBeenCalledWith(
                 { userId: "user-123", ruleId: expect.any(String) },
                 expect.any(Object),
                 { upsert: true }
@@ -218,7 +232,9 @@ describe("createUserResources Helper", () => {
 
             // No trading rules should be created
             expect(mockTradingRulesCollection.findAll).not.toHaveBeenCalled();
-            expect(mockUserTradingRulesCollection.updateOne).not.toHaveBeenCalled();
+            expect(
+                mockUserTradingRulesCollection.updateOne
+            ).not.toHaveBeenCalled();
 
             expect(result).toEqual({
                 successMessageIds: [],
@@ -259,8 +275,12 @@ describe("createUserResources Helper", () => {
             const result = await createUserResources(mockQueueMessages);
 
             // Wallets created but no trading rules
-            expect(mockUserTradingRulesCollection.updateOne).not.toHaveBeenCalled();
-            expect(log.warn).toHaveBeenCalledWith("No platform trading rules found");
+            expect(
+                mockUserTradingRulesCollection.updateOne
+            ).not.toHaveBeenCalled();
+            expect(log.warn).toHaveBeenCalledWith(
+                "No platform trading rules found"
+            );
 
             // Should still succeed since wallets were created
             expect(result).toEqual({
@@ -271,11 +291,13 @@ describe("createUserResources Helper", () => {
 
         it("should handle database connection failure", async () => {
             const connectionError = new Error("Connection failed");
-            mockConnection.on = jest.fn((event: string, callback: (error?: Error) => void) => {
-                if (event === "error") {
-                    setTimeout(() => callback(connectionError), 0);
+            mockConnection.on = jest.fn(
+                (event: string, callback: (error?: Error) => void) => {
+                    if (event === "error") {
+                        setTimeout(() => callback(connectionError), 0);
+                    }
                 }
-            });
+            );
 
             const result = await createUserResources(mockQueueMessages);
 
@@ -347,7 +369,9 @@ describe("createUserResources Helper", () => {
             const result = await createUserResources(singleMessage);
 
             // 1 user × 2 rules = 2 upserts
-            expect(mockUserTradingRulesCollection.updateOne).toHaveBeenCalledTimes(2);
+            expect(
+                mockUserTradingRulesCollection.updateOne
+            ).toHaveBeenCalledTimes(2);
 
             expect(result).toEqual({
                 successMessageIds: ["msg-1"],
@@ -370,7 +394,7 @@ describe("createUserResources Helper", () => {
                 ...mockPlatformTradingRules,
                 {
                     _id: {
-                        toString: () => "507f1f77bcf86cd799439013"
+                        toString: () => "507f1f77bcf86cd799439013",
                     } as any,
                     id: "rule-3",
                     name: "Disabled Rule",
@@ -391,10 +415,14 @@ describe("createUserResources Helper", () => {
 
             // Should upsert user rules for all platform rules (including disabled ones)
             // 2 users × 3 rules = 6 upserts
-            expect(mockUserTradingRulesCollection.updateOne).toHaveBeenCalledTimes(6);
+            expect(
+                mockUserTradingRulesCollection.updateOne
+            ).toHaveBeenCalledTimes(6);
 
             // Verify disabled rule is preserved
-            expect(mockUserTradingRulesCollection.updateOne).toHaveBeenCalledWith(
+            expect(
+                mockUserTradingRulesCollection.updateOne
+            ).toHaveBeenCalledWith(
                 { userId: "user-123", ruleId: expect.any(String) },
                 {
                     $set: expect.objectContaining({
