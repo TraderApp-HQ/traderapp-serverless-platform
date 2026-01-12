@@ -20,7 +20,7 @@ RUN wget https://download.mql5.com/cdn/web/metaquotes.software.corp/mt5/mt5setup
 
 # Python deps
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt 
 
 # App code
 COPY app ./app
