@@ -1096,3 +1096,20 @@ Resources:
                 - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:trading-engine-service-secrets/${Environment}*
                 - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:common-secrets/${Environment}*
                 - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:wallets-service-secrets/${Environment}*
+
+  mt5AccountConnect:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${Environment}-mt5-account-connect
+      PackageType: Image
+      Timeout: 30
+      MemorySize: 2048
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /mt5-platform/connect
+            Method: post
+    Metadata:
+      DockerContext: ./src/mt5-platform
+      Dockerfile: Dockerfile

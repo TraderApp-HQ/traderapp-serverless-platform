@@ -30,6 +30,14 @@ resolve_s3 = true
 capabilities = "CAPABILITY_IAM"
 confirm_changeset = false
 
+[local.deploy.parameters]
+stack_name = "local"
+parameter_overrides = "Environment=\"local\" VpcId=\"vpc-013618c4404fd46c9\" SubnetIds=\"subnet-0a2945f0be1085106,subnet-0bb7daca3e59b5cae\" SecurityGroupIds=\"sg-08bbf252a36a52f6f\""
+s3_prefix = "local"
+resolve_s3 = true
+capabilities = "CAPABILITY_IAM"
+confirm_changeset = false
+
 [prod.deploy.parameters]
 stack_name = "prod"
 parameter_overrides = "Environment=\"prod\" VpcId=\"vpc-0fbf59f4fa68abaa0\" SubnetIds=\"subnet-091da1f82047f878b,subnet-0a709dd1eddbc24a0\" SecurityGroupIds=\"sg-05dc53df766e736eb\""
